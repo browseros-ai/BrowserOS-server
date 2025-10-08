@@ -147,7 +147,7 @@ export async function shutdownHTTPServer(
   return new Promise((resolve) => {
     logger(`Closing ${sessions.size} active sessions`);
 
-    const closePromises: Promise<void>[] = [];
+    const closePromises: Array<Promise<void>> = [];
     for (const [sessionId, session] of sessions.entries()) {
       closePromises.push(
         session.transport.close().catch(() => {

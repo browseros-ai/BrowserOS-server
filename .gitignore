@@ -143,6 +143,10 @@ dist
 # Build output directory
 build/
 
+# Compiled binaries
+browseros-mcp
+browseros-mcp.exe
+
 log.txt
 
 .DS_Store

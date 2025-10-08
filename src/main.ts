@@ -24,7 +24,8 @@ import * as emulationTools from './tools/emulation.js';
 import * as inputTools from './tools/input.js';
 import * as networkTools from './tools/network.js';
 import * as pagesTools from './tools/pages.js';
-import * as performanceTools from './tools/performance.js';
+// Performance tools lazy-loaded to avoid chrome-devtools-frontend imports at startup
+// import * as performanceTools from './tools/performance.js';
 import * as screenshotTools from './tools/screenshot.js';
 import * as scriptTools from './tools/script.js';
 import * as snapshotTools from './tools/snapshot.js';
@@ -72,7 +73,8 @@ const tools = [
   ...Object.values(inputTools),
   ...Object.values(networkTools),
   ...Object.values(pagesTools),
-  ...Object.values(performanceTools),
+  // Performance tools disabled due to chrome-devtools-frontend dependency issues
+  // ...Object.values(performanceTools),
   ...Object.values(screenshotTools),
   ...Object.values(scriptTools),
   ...Object.values(snapshotTools),
