@@ -44,20 +44,33 @@ export function createHTTPServer(options: HTTPServerOptions): http.Server {
     }
 
     if (req.method === 'GET') {
-      const transport = new SSEServerTransport('/mcp', res);
-      const mcpServer = createServer();
+      try {
+        const transport = new SSEServerTransport('/mcp', res);
+        const mcpServer = createServer();
 
-      await mcpServer.connect(transport);
+        transport.onerror = (error: Error) => {
+          logger(
+            `Transport error (session ${transport.sessionId}): ${error.message}`,
+          );
+        };
 
-      sessions.set(transport.sessionId, {transport, server: mcpServer});
+        transport.onclose = () => {
+          sessions.delete(transport.sessionId);
+          logger(`SSE connection closed: session ${transport.sessionId}`);
+        };
 
-      logger(`SSE connection established: session ${transport.sessionId}`);
+        await mcpServer.connect(transport);
 
-      transport.onclose = () => {
-        sessions.delete(transport.sessionId);
-        logger(`SSE connection closed: session ${transport.sessionId}`);
-      };
+        sessions.set(transport.sessionId, {transport, server: mcpServer});
 
+        logger(`SSE connection established: session ${transport.sessionId}`);
+      } catch (error) {
+        console.error('Error establishing SSE connection:', error);
+        if (!res.headersSent) {
+          res.writeHead(500, {'Content-Type': 'text/plain'});
+          res.end('Failed to establish SSE connection');
+        }
+      }
       return;
     }
 
@@ -76,30 +89,33 @@ export function createHTTPServer(options: HTTPServerOptions): http.Server {
         return;
       }
 
-      try {
-        let body = '';
-        req.on('data', (chunk) => {
-          body += chunk.toString();
-        });
-        req.on('end', async () => {
-          try {
-            const parsedBody = JSON.parse(body);
-            await session.transport.handlePostMessage(req, res, parsedBody);
-          } catch (error) {
-            console.error('Error handling POST message:', error);
-            if (!res.headersSent) {
-              res.writeHead(500, {'Content-Type': 'text/plain'});
-              res.end('Internal Server Error');
-            }
-          }
-        });
-      } catch (error) {
-        console.error('Error processing POST:', error);
+      let body = '';
+
+      req.on('error', (error) => {
+        console.error('Request stream error:', error);
         if (!res.headersSent) {
           res.writeHead(500, {'Content-Type': 'text/plain'});
-          res.end('Internal Server Error');
+          res.end('Request error');
         }
-      }
+      });
+
+      req.on('data', (chunk) => {
+        body += chunk.toString();
+      });
+
+      req.on('end', async () => {
+        try {
+          const parsedBody = JSON.parse(body);
+          await session.transport.handlePostMessage(req, res, parsedBody);
+        } catch (error) {
+          console.error('Error handling POST message:', error);
+          if (!res.headersSent) {
+            res.writeHead(500, {'Content-Type': 'text/plain'});
+            res.end('Internal Server Error');
+          }
+        }
+      });
+
       return;
     }
 
