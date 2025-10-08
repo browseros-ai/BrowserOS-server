@@ -50,6 +50,22 @@ const version = readPackageJson().version ?? 'unknown';
 const ports = parseArguments();
 
 logger(`Starting BrowserOS MCP Server v${version}`);
+
+let context: McpContext;
+try {
+  const browser = await ensureBrowserConnected(
+    `http://127.0.0.1:${ports.cdpPort}`,
+  );
+  logger(`Connected to CDP at http://127.0.0.1:${ports.cdpPort}`);
+  context = await McpContext.from(browser, logger);
+} catch (error) {
+  console.error(
+    `Error: Failed to connect to CDP at http://127.0.0.1:${ports.cdpPort}`,
+  );
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exit(2);
+}
+
 const server = new McpServer(
   {
     name: 'chrome_devtools',
@@ -61,18 +77,6 @@ const server = new McpServer(
 server.server.setRequestHandler(SetLevelRequestSchema, () => {
   return {};
 });
-
-let context: McpContext;
-async function getContext(): Promise<McpContext> {
-  const browser = await ensureBrowserConnected(
-    `http://127.0.0.1:${ports.cdpPort}`,
-  );
-
-  if (context?.browser !== browser) {
-    context = await McpContext.from(browser, logger);
-  }
-  return context;
-}
 
 const logDisclaimers = () => {
   console.error(
@@ -96,7 +100,6 @@ function registerTool(tool: ToolDefinition): void {
       const guard = await toolMutex.acquire();
       try {
         logger(`${tool.name} request: ${JSON.stringify(params, null, '  ')}`);
-        const context = await getContext();
         const response = new McpResponse();
         await tool.handler(
           {
