@@ -15,10 +15,9 @@ import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import type {CallToolResult} from '@modelcontextprotocol/sdk/types.js';
 import {SetLevelRequestSchema} from '@modelcontextprotocol/sdk/types.js';
 
-import type {Channel} from './browser.js';
-import {ensureBrowserConnected, ensureBrowserLaunched} from './browser.js';
-import {parseArguments} from './cli.js';
-import {logger, saveLogsToFile} from './logger.js';
+import {ensureBrowserConnected} from './browser.js';
+import {parseArguments} from './args.js';
+import {logger} from './logger.js';
 import {McpContext} from './McpContext.js';
 import {McpResponse} from './McpResponse.js';
 import {Mutex} from './Mutex.js';
@@ -41,7 +40,7 @@ function readPackageJson(): {version?: string} {
   }
   try {
     const json = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-    assert.strict(json['name'], 'chrome-devtools-mcp');
+    assert.strict(json['name'], 'browseros-mcp');
     return json;
   } catch {
     return {};
@@ -50,11 +49,9 @@ function readPackageJson(): {version?: string} {
 
 const version = readPackageJson().version ?? 'unknown';
 
-export const args = parseArguments(version);
+const ports = parseArguments();
 
-const logFile = args.logFile ? saveLogsToFile(args.logFile) : undefined;
-
-logger(`Starting Chrome DevTools MCP Server v${version}`);
+logger(`Starting BrowserOS MCP Server v${version}`);
 const server = new McpServer(
   {
     name: 'chrome_devtools',
@@ -69,23 +66,9 @@ server.server.setRequestHandler(SetLevelRequestSchema, () => {
 
 let context: McpContext;
 async function getContext(): Promise<McpContext> {
-  const extraArgs: string[] = [];
-  if (args.proxyServer) {
-    extraArgs.push(`--proxy-server=${args.proxyServer}`);
-  }
-  const browser = args.browserUrl
-    ? await ensureBrowserConnected(args.browserUrl)
-    : await ensureBrowserLaunched({
-        headless: args.headless,
-        executablePath: args.executablePath,
-        customDevTools: args.customDevtools,
-        channel: args.channel as Channel,
-        isolated: args.isolated,
-        logFile,
-        viewport: args.viewport,
-        args: extraArgs,
-        acceptInsecureCerts: args.acceptInsecureCerts,
-      });
+  const browser = await ensureBrowserConnected(
+    `http://127.0.0.1:${ports.cdpPort}`,
+  );
 
   if (context?.browser !== browser) {
     context = await McpContext.from(browser, logger);
