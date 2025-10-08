@@ -9,12 +9,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
-import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import type {CallToolResult} from '@modelcontextprotocol/sdk/types.js';
 import {SetLevelRequestSchema} from '@modelcontextprotocol/sdk/types.js';
 
 import {parseArguments} from './args.js';
 import {ensureBrowserConnected} from './browser.js';
+import {createHTTPServer, shutdownHTTPServer} from './http-server.js';
 import {logger} from './logger.js';
 import {McpContext} from './McpContext.js';
 import {McpResponse} from './McpResponse.js';
@@ -66,74 +66,6 @@ try {
   process.exit(2);
 }
 
-const server = new McpServer(
-  {
-    name: 'chrome_devtools',
-    title: 'Chrome DevTools MCP server',
-    version,
-  },
-  {capabilities: {logging: {}}},
-);
-server.server.setRequestHandler(SetLevelRequestSchema, () => {
-  return {};
-});
-
-const logDisclaimers = () => {
-  console.error(
-    `chrome-devtools-mcp exposes content of the browser instance to the MCP clients allowing them to inspect,
-debug, and modify any data in the browser or DevTools.
-Avoid sharing sensitive or personal information that you do not want to share with MCP clients.`,
-  );
-};
-
-const toolMutex = new Mutex();
-
-function registerTool(tool: ToolDefinition): void {
-  server.registerTool(
-    tool.name,
-    {
-      description: tool.description,
-      inputSchema: tool.schema,
-      annotations: tool.annotations,
-    },
-    async (params): Promise<CallToolResult> => {
-      const guard = await toolMutex.acquire();
-      try {
-        logger(`${tool.name} request: ${JSON.stringify(params, null, '  ')}`);
-        const response = new McpResponse();
-        await tool.handler(
-          {
-            params,
-          },
-          response,
-          context,
-        );
-        try {
-          const content = await response.handle(tool.name, context);
-          return {
-            content,
-          };
-        } catch (error) {
-          const errorText =
-            error instanceof Error ? error.message : String(error);
-
-          return {
-            content: [
-              {
-                type: 'text',
-                text: errorText,
-              },
-            ],
-            isError: true,
-          };
-        }
-      } finally {
-        guard.dispose();
-      }
-    },
-  );
-}
-
 const tools = [
   ...Object.values(consoleTools),
   ...Object.values(emulationTools),
@@ -145,11 +77,97 @@ const tools = [
   ...Object.values(scriptTools),
   ...Object.values(snapshotTools),
 ];
-for (const tool of tools) {
-  registerTool(tool as unknown as ToolDefinition);
+
+const toolMutex = new Mutex();
+
+function createServerWithTools(): McpServer {
+  const server = new McpServer(
+    {
+      name: 'browseros_mcp',
+      title: 'BrowserOS MCP server',
+      version,
+    },
+    {capabilities: {logging: {}}},
+  );
+
+  server.server.setRequestHandler(SetLevelRequestSchema, () => {
+    return {};
+  });
+
+  function registerTool(tool: ToolDefinition): void {
+    server.registerTool(
+      tool.name,
+      {
+        description: tool.description,
+        inputSchema: tool.schema,
+        annotations: tool.annotations,
+      },
+      async (params): Promise<CallToolResult> => {
+        const guard = await toolMutex.acquire();
+        try {
+          logger(`${tool.name} request: ${JSON.stringify(params, null, '  ')}`);
+          const response = new McpResponse();
+          await tool.handler(
+            {
+              params,
+            },
+            response,
+            context,
+          );
+          try {
+            const content = await response.handle(tool.name, context);
+            return {
+              content,
+            };
+          } catch (error) {
+            const errorText =
+              error instanceof Error ? error.message : String(error);
+
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: errorText,
+                },
+              ],
+              isError: true,
+            };
+          }
+        } finally {
+          guard.dispose();
+        }
+      },
+    );
+  }
+
+  for (const tool of tools) {
+    registerTool(tool as unknown as ToolDefinition);
+  }
+
+  return server;
 }
 
-const transport = new StdioServerTransport();
-await server.connect(transport);
-logger('Chrome DevTools MCP Server connected');
-logDisclaimers();
+const httpServer = createHTTPServer({
+  port: ports.mcpPort,
+  version,
+  createServer: createServerWithTools,
+  logger,
+});
+
+console.error(
+  `browseros-mcp exposes content of the BrowserOS instance to the MCP clients`,
+);
+
+process.on('SIGINT', async () => {
+  logger('Shutting down server...');
+  await shutdownHTTPServer(httpServer, logger);
+  logger('Server shutdown complete');
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  logger('Shutting down server...');
+  await shutdownHTTPServer(httpServer, logger);
+  logger('Server shutdown complete');
+  process.exit(0);
+});
