@@ -1,9 +1,7 @@
 /**
  * @license
- * Copyright 2025 Google LLC
- * SPDX-License-Identifier: Apache-2.0
+ * Copyright 2025 BrowserOS
  */
-
 import z from 'zod';
 
 import {logger} from '../logger.js';

@@ -1,9 +1,7 @@
 /**
  * @license
- * Copyright 2025 Google LLC
- * SPDX-License-Identifier: Apache-2.0
+ * Copyright 2025 BrowserOS
  */
-
 import './polyfill.js';
 
 import assert from 'node:assert';
@@ -15,8 +13,8 @@ import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import type {CallToolResult} from '@modelcontextprotocol/sdk/types.js';
 import {SetLevelRequestSchema} from '@modelcontextprotocol/sdk/types.js';
 
-import {ensureBrowserConnected} from './browser.js';
 import {parseArguments} from './args.js';
+import {ensureBrowserConnected} from './browser.js';
 import {logger} from './logger.js';
 import {McpContext} from './McpContext.js';
 import {McpResponse} from './McpResponse.js';

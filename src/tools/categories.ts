@@ -1,9 +1,7 @@
 /**
  * @license
- * Copyright 2025 Google LLC
- * SPDX-License-Identifier: Apache-2.0
+ * Copyright 2025 BrowserOS
  */
-
 export enum ToolCategories {
   INPUT_AUTOMATION = 'Input automation',
   NAVIGATION_AUTOMATION = 'Navigation automation',

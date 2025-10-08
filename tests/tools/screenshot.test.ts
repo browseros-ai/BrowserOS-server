@@ -1,7 +1,6 @@
 /**
  * @license
- * Copyright 2025 Google LLC
- * SPDX-License-Identifier: Apache-2.0
+ * Copyright 2025 BrowserOS
  */
 import assert from 'node:assert';
 import {rm, stat, mkdir, chmod, writeFile} from 'node:fs/promises';

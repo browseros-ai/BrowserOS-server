@@ -1,9 +1,7 @@
 /**
  * @license
- * Copyright 2025 Google LLC
- * SPDX-License-Identifier: Apache-2.0
+ * Copyright 2025 BrowserOS
  */
-
 import type {Browser, ConnectOptions, Target} from 'puppeteer-core';
 import puppeteer from 'puppeteer-core';
 

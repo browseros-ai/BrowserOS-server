@@ -1,3 +1,7 @@
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ */
 import assert from 'node:assert';
 import {describe, it} from 'node:test';
 

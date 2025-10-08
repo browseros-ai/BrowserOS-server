@@ -1,9 +1,7 @@
 /**
  * @license
- * Copyright 2025 Google LLC
- * SPDX-License-Identifier: Apache-2.0
+ * Copyright 2025 BrowserOS
  */
-
 export interface ServerPorts {
   cdpPort: number;
   mcpPort: number;
@@ -72,5 +70,5 @@ export function parseArguments(argv = process.argv): ServerPorts {
     exitWithError('Missing required argument --mcp-port=<port>');
   }
 
-  return { cdpPort, mcpPort };
+  return {cdpPort, mcpPort};
 }

@@ -1,7 +1,6 @@
 /**
  * @license
- * Copyright 2025 Google LLC
- * SPDX-License-Identifier: Apache-2.0
+ * Copyright 2025 BrowserOS
  */
 import type {Page, Protocol} from 'puppeteer-core';
 import type {CdpPage} from 'puppeteer-core/internal/cdp/Page.js';
