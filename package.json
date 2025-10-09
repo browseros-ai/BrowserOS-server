@@ -13,13 +13,14 @@
     "build:binary": "bun build --compile src/index.ts --outfile browseros-mcp --minify --bytecode --target bun-linux-x64",
     "build:binary:macos": "bun build --compile src/index.ts --outfile browseros-mcp --minify --bytecode --target bun-darwin-arm64",
     "build:binary:windows": "bun build --compile src/index.ts --outfile browseros-mcp.exe --minify --bytecode --target bun-windows-x64",
+    "dist": "rimraf dist && mkdir -p dist && bun build --compile src/index.ts --outfile dist/browseros-mcp-linux-x64 --minify --sourcemap --target=bun-linux-x64-modern && bun build --compile src/index.ts --outfile dist/browseros-mcp-linux-arm64 --minify --sourcemap --target=bun-linux-arm64 && bun build --compile src/index.ts --outfile dist/browseros-mcp-windows-x64.exe --minify --sourcemap --target=bun-windows-x64-modern && bun build --compile src/index.ts --outfile dist/browseros-mcp-darwin-arm64 --minify --sourcemap --target=bun-darwin-arm64 && bun build --compile src/index.ts --outfile dist/browseros-mcp-darwin-x64 --minify --sourcemap --target=bun-darwin-x64",
     "format": "eslint --cache --fix . && prettier --write --cache .",
     "check-format": "eslint --cache . && prettier --check --cache .;",
     "docs": "npm run docs:generate && npm run format",
     "docs:generate": "node --experimental-strip-types scripts/generate-docs.ts",
     "prepare": "node --experimental-strip-types scripts/prepare.ts",
     "sync-server-json-version": "node --experimental-strip-types scripts/sync-server-json-version.ts && npm run format",
-    "clean": "rm -rf build browseros-mcp browseros-mcp.exe"
+    "clean": "rimraf build dist browseros-mcp browseros-mcp.exe"
   },
   "files": [
     "src",
@@ -42,6 +43,7 @@
   "devDependencies": {
     "@eslint/js": "^9.35.0",
     "@stylistic/eslint-plugin": "^5.4.0",
+    "@types/bun": "latest",
     "@types/debug": "^4.1.12",
     "@types/filesystem": "^0.0.36",
     "@types/node": "^24.3.3",
@@ -55,10 +57,10 @@
     "globals": "^16.4.0",
     "prettier": "^3.6.2",
     "puppeteer": "24.23.0",
+    "rimraf": "^6.0.1",
     "sinon": "^21.0.0",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.43.0",
-    "@types/bun": "latest"
+    "typescript-eslint": "^8.43.0"
   },
   "engines": {
     "bun": ">=1.0.0",

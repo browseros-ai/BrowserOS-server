@@ -12,6 +12,8 @@ if (typeof Bun === 'undefined') {
   process.exit(1);
 }
 
-await import('./main.js');
+(async () => {
+  await import('./main.js');
+})();
 
 export {};
