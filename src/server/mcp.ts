@@ -21,6 +21,7 @@ export interface McpServerConfig {
   context: McpContext;
   toolMutex: Mutex;
   logger: (message: string) => void;
+  mcpServerEnabled: boolean;
 }
 
 function createServerWithTools(config: McpServerConfig): McpServer {
@@ -93,15 +94,15 @@ function createServerWithTools(config: McpServerConfig): McpServer {
 }
 
 export function createMcpServer(config: McpServerConfig): http.Server {
-  const {port, logger} = config;
+  const {port, logger, mcpServerEnabled} = config;
 
-  // Create the MCP server once - it will be reused across requests
-  const mcpServer = createServerWithTools(config);
+  // Only create MCP server if enabled
+  const mcpServer = mcpServerEnabled ? createServerWithTools(config) : null;
 
   const httpServer = http.createServer(async (req, res) => {
     const url = new URL(req.url!, `http://${req.headers.host}`);
 
-    // Health check endpoint
+    // Health check endpoint (always available)
     if (url.pathname === '/health') {
       res.writeHead(200, {'Content-Type': 'text/plain'});
       res.end('OK');
@@ -110,6 +111,22 @@ export function createMcpServer(config: McpServerConfig): http.Server {
 
     // MCP endpoint
     if (url.pathname === '/mcp') {
+      // Return disabled status if MCP server is not enabled
+      if (!mcpServerEnabled || !mcpServer) {
+        res.writeHead(503, {'Content-Type': 'application/json'});
+        res.end(
+          JSON.stringify({
+            jsonrpc: '2.0',
+            error: {
+              code: -32000,
+              message: 'MCP server is disabled',
+            },
+            id: null,
+          }),
+        );
+        return;
+      }
+
       try {
         // Create a new transport for each request to prevent request ID collisions.
         // Different clients may use the same JSON-RPC request IDs, which would cause

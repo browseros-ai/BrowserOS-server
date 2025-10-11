@@ -37,17 +37,23 @@ const ports = parseArguments();
   const toolMutex = new Mutex();
 
   const server = createMcpServer({
-    port: ports.mcpPort,
+    port: ports.httpMcpPort,
     version,
     tools: allTools,
     context,
     toolMutex,
     logger,
+    mcpServerEnabled: ports.mcpServerEnabled,
   });
 
-  console.error(
-    `browseros-mcp exposes content of the BrowserOS instance to the MCP clients`,
-  );
+  if (ports.mcpServerEnabled) {
+    console.error(
+      `browseros-mcp exposes content of the BrowserOS instance to the MCP clients`,
+    );
+  } else {
+    logger('MCP server disabled (--disable-mcp-server)');
+    logger(`Health check available at http://127.0.0.1:${ports.httpMcpPort}/health`);
+  }
 
   process.on('SIGINT', async () => {
     logger('Shutting down server...');

@@ -8,16 +8,17 @@ import {describe, it} from 'node:test';
 import {parseArguments} from '../src/args.js';
 
 describe('args parsing', () => {
-  it('parses valid cdp-port and mcp-port', () => {
+  it('parses valid cdp-port and http-mcp-port', () => {
     const ports = parseArguments([
       'node',
       'index.js',
       '--cdp-port=9222',
-      '--mcp-port=9223',
+      '--http-mcp-port=9223',
     ]);
     assert.deepStrictEqual(ports, {
       cdpPort: 9222,
-      mcpPort: 9223,
+      httpMcpPort: 9223,
+      mcpServerEnabled: true,
     });
   });
 
@@ -26,11 +27,12 @@ describe('args parsing', () => {
       'node',
       'index.js',
       '--cdp-port=9347',
-      '--mcp-port=8080',
+      '--http-mcp-port=8080',
     ]);
     assert.deepStrictEqual(ports, {
       cdpPort: 9347,
-      mcpPort: 8080,
+      httpMcpPort: 8080,
+      mcpServerEnabled: true,
     });
   });
 
@@ -39,11 +41,12 @@ describe('args parsing', () => {
       'node',
       'index.js',
       '--cdp-port=1',
-      '--mcp-port=1',
+      '--http-mcp-port=1',
     ]);
     assert.deepStrictEqual(ports, {
       cdpPort: 1,
-      mcpPort: 1,
+      httpMcpPort: 1,
+      mcpServerEnabled: true,
     });
   });
 
@@ -52,11 +55,12 @@ describe('args parsing', () => {
       'node',
       'index.js',
       '--cdp-port=65535',
-      '--mcp-port=65535',
+      '--http-mcp-port=65535',
     ]);
     assert.deepStrictEqual(ports, {
       cdpPort: 65535,
-      mcpPort: 65535,
+      httpMcpPort: 65535,
+      mcpServerEnabled: true,
     });
   });
 
@@ -64,12 +68,13 @@ describe('args parsing', () => {
     const ports = parseArguments([
       'node',
       'index.js',
-      '--mcp-port=9223',
+      '--http-mcp-port=9223',
       '--cdp-port=9222',
     ]);
     assert.deepStrictEqual(ports, {
       cdpPort: 9222,
-      mcpPort: 9223,
+      httpMcpPort: 9223,
+      mcpServerEnabled: true,
     });
   });
 
@@ -78,11 +83,12 @@ describe('args parsing', () => {
       'node',
       'index.js',
       '--cdp-port=9001',
-      '--mcp-port=9223',
+      '--http-mcp-port=9223',
     ]);
     assert.deepStrictEqual(ports, {
       cdpPort: 9001,
-      mcpPort: 9223,
+      httpMcpPort: 9223,
+      mcpServerEnabled: true,
     });
   });
 
@@ -91,11 +97,37 @@ describe('args parsing', () => {
       'node',
       'index.js',
       '--cdp-port=54321',
-      '--mcp-port=54322',
+      '--http-mcp-port=54322',
     ]);
     assert.deepStrictEqual(ports, {
       cdpPort: 54321,
-      mcpPort: 54322,
+      httpMcpPort: 54322,
+      mcpServerEnabled: true,
+    });
+  });
+
+  it('defaults mcpServerEnabled to true when flag not provided', () => {
+    const ports = parseArguments([
+      'node',
+      'index.js',
+      '--cdp-port=9222',
+      '--http-mcp-port=9223',
+    ]);
+    assert.strictEqual(ports.mcpServerEnabled, true);
+  });
+
+  it('parses --disable-mcp-server flag', () => {
+    const ports = parseArguments([
+      'node',
+      'index.js',
+      '--cdp-port=9222',
+      '--http-mcp-port=9223',
+      '--disable-mcp-server',
+    ]);
+    assert.deepStrictEqual(ports, {
+      cdpPort: 9222,
+      httpMcpPort: 9223,
+      mcpServerEnabled: false,
     });
   });
 });

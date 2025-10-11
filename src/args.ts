@@ -2,34 +2,31 @@
  * @license
  * Copyright 2025 BrowserOS
  */
+import {Command, InvalidArgumentError} from 'commander';
+
 export interface ServerPorts {
   cdpPort: number;
-  mcpPort: number;
+  httpMcpPort: number;
+  mcpServerEnabled: boolean;
+  // Future: httpsMcpPort?: number;
 }
 
-const USAGE = 'Usage: bun run index.ts --cdp-port=<port> --mcp-port=<port>';
-
-function exitWithError(message: string): never {
-  console.error(`Error: ${message}`);
-  console.error(USAGE);
-  process.exit(1);
-}
-
-function parsePort(arg: string, argName: string): number {
-  const value = arg.split('=')[1];
-
-  if (!value) {
-    exitWithError(`Missing value for ${argName}`);
-  }
-
+/**
+ * Validate and parse a port number string.
+ *
+ * @param value - Port number as string
+ * @returns Parsed port number
+ * @throws InvalidArgumentError if port is invalid
+ */
+function parsePort(value: string): number {
   const port = parseInt(value, 10);
 
   if (isNaN(port)) {
-    exitWithError(`Invalid value for ${argName}: "${value}"`);
+    throw new InvalidArgumentError('Not a valid port number');
   }
 
   if (port < 1 || port > 65535) {
-    exitWithError(`${argName} must be between 1 and 65535, got: ${port}`);
+    throw new InvalidArgumentError('Port must be between 1 and 65535');
   }
 
   return port;
@@ -38,37 +35,33 @@ function parsePort(arg: string, argName: string): number {
 /**
  * Parse command-line arguments for BrowserOS MCP server.
  *
- * Expects exactly two arguments:
- * - --cdp-port=<number>: Port where CDP WebSocket is listening
- * - --mcp-port=<number>: Port where MCP HTTP server should listen
+ * Required:
+ * - --cdp-port <number>: Port where CDP WebSocket is listening
+ * - --http-mcp-port <number>: Port where MCP HTTP server should listen
  *
- * Exits with code 1 if arguments are missing, invalid, or unknown arguments are provided.
+ * Optional:
+ * - --disable-mcp-server: Disable MCP server (default: server enabled)
+ *
+ * Exits with code 1 if arguments are invalid or missing.
  *
  * @param argv - Optional argv array for testing. Defaults to process.argv
  */
 export function parseArguments(argv = process.argv): ServerPorts {
-  const args = argv.slice(2);
+  const program = new Command();
 
-  let cdpPort: number | undefined;
-  let mcpPort: number | undefined;
+  program
+    .name('browseros-mcp')
+    .description('BrowserOS MCP Server')
+    .requiredOption('--cdp-port <port>', 'CDP WebSocket port', parsePort)
+    .requiredOption('--http-mcp-port <port>', 'MCP HTTP server port', parsePort)
+    .option('--disable-mcp-server', 'Disable MCP server', false)
+    .parse(argv);
 
-  for (const arg of args) {
-    if (arg.startsWith('--cdp-port=')) {
-      cdpPort = parsePort(arg, '--cdp-port');
-    } else if (arg.startsWith('--mcp-port=')) {
-      mcpPort = parsePort(arg, '--mcp-port');
-    } else {
-      exitWithError(`Unknown argument: "${arg}"`);
-    }
-  }
+  const options = program.opts();
 
-  if (cdpPort === undefined) {
-    exitWithError('Missing required argument --cdp-port=<port>');
-  }
-
-  if (mcpPort === undefined) {
-    exitWithError('Missing required argument --mcp-port=<port>');
-  }
-
-  return {cdpPort, mcpPort};
+  return {
+    cdpPort: options.cdpPort,
+    httpMcpPort: options.httpMcpPort,
+    mcpServerEnabled: !options.disableMcpServer,
+  };
 }
