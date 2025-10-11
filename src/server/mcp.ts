@@ -105,6 +105,12 @@ export function createMcpServer(config: McpServerConfig): http.Server {
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url!, `http://${req.headers.host}`);
 
+    if (url.pathname === '/health') {
+      res.writeHead(200, {'Content-Type': 'text/plain'});
+      res.end('OK');
+      return;
+    }
+
     if (url.pathname !== '/mcp') {
       res.writeHead(404, {'Content-Type': 'text/plain'});
       res.end('Not Found');
