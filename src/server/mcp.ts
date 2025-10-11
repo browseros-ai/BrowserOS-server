@@ -5,21 +5,14 @@
 import http from 'node:http';
 
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
+import {StreamableHTTPServerTransport} from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import type {CallToolResult} from '@modelcontextprotocol/sdk/types.js';
 import {SetLevelRequestSchema} from '@modelcontextprotocol/sdk/types.js';
-import {SSEServerTransport} from '@modelcontextprotocol/sdk/server/sse.js';
 
 import type {McpContext} from '../McpContext.js';
 import {McpResponse} from '../McpResponse.js';
 import type {Mutex} from '../Mutex.js';
 import type {ToolDefinition} from '../tools/ToolDefinition.js';
-
-interface Session {
-  transport: SSEServerTransport;
-  server: McpServer;
-}
-
-const sessions = new Map<string, Session>();
 
 export interface McpServerConfig {
   port: number;
@@ -30,184 +23,137 @@ export interface McpServerConfig {
   logger: (message: string) => void;
 }
 
-export function createMcpServer(config: McpServerConfig): http.Server {
-  const {port, version, tools, context, toolMutex, logger} = config;
+function createServerWithTools(config: McpServerConfig): McpServer {
+  const {version, tools, context, toolMutex, logger} = config;
 
-  function createServerWithTools(): McpServer {
-    const server = new McpServer(
+  const server = new McpServer(
+    {
+      name: 'browseros_mcp',
+      title: 'BrowserOS MCP server',
+      version,
+    },
+    {capabilities: {logging: {}}},
+  );
+
+  server.server.setRequestHandler(SetLevelRequestSchema, () => {
+    return {};
+  });
+
+  function registerTool(tool: ToolDefinition): void {
+    server.registerTool(
+      tool.name,
       {
-        name: 'browseros_mcp',
-        title: 'BrowserOS MCP server',
-        version,
+        description: tool.description,
+        inputSchema: tool.schema,
+        annotations: tool.annotations,
       },
-      {capabilities: {logging: {}}},
-    );
-
-    server.server.setRequestHandler(SetLevelRequestSchema, () => {
-      return {};
-    });
-
-    function registerTool(tool: ToolDefinition): void {
-      server.registerTool(
-        tool.name,
-        {
-          description: tool.description,
-          inputSchema: tool.schema,
-          annotations: tool.annotations,
-        },
-        async (params): Promise<CallToolResult> => {
-          const guard = await toolMutex.acquire();
+      async (params): Promise<CallToolResult> => {
+        const guard = await toolMutex.acquire();
+        try {
+          logger(`${tool.name} request: ${JSON.stringify(params, null, '  ')}`);
+          const response = new McpResponse();
+          await tool.handler(
+            {
+              params,
+            },
+            response,
+            context,
+          );
           try {
-            logger(
-              `${tool.name} request: ${JSON.stringify(params, null, '  ')}`,
-            );
-            const response = new McpResponse();
-            await tool.handler(
-              {
-                params,
-              },
-              response,
-              context,
-            );
-            try {
-              const content = await response.handle(tool.name, context);
-              return {
-                content,
-              };
-            } catch (error) {
-              const errorText =
-                error instanceof Error ? error.message : String(error);
+            const content = await response.handle(tool.name, context);
+            return {
+              content,
+            };
+          } catch (error) {
+            const errorText =
+              error instanceof Error ? error.message : String(error);
 
-              return {
-                content: [
-                  {
-                    type: 'text',
-                    text: errorText,
-                  },
-                ],
-                isError: true,
-              };
-            }
-          } finally {
-            guard.dispose();
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: errorText,
+                },
+              ],
+              isError: true,
+            };
           }
-        },
-      );
-    }
-
-    for (const tool of tools) {
-      registerTool(tool as unknown as ToolDefinition);
-    }
-
-    return server;
+        } finally {
+          guard.dispose();
+        }
+      },
+    );
   }
 
-  const server = http.createServer(async (req, res) => {
+  for (const tool of tools) {
+    registerTool(tool as unknown as ToolDefinition);
+  }
+
+  return server;
+}
+
+export function createMcpServer(config: McpServerConfig): http.Server {
+  const {port, logger} = config;
+
+  // Create the MCP server once - it will be reused across requests
+  const mcpServer = createServerWithTools(config);
+
+  const httpServer = http.createServer(async (req, res) => {
     const url = new URL(req.url!, `http://${req.headers.host}`);
 
+    // Health check endpoint
     if (url.pathname === '/health') {
       res.writeHead(200, {'Content-Type': 'text/plain'});
       res.end('OK');
       return;
     }
 
-    if (url.pathname !== '/mcp') {
-      res.writeHead(404, {'Content-Type': 'text/plain'});
-      res.end('Not Found');
-      return;
-    }
-
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-    if (req.method === 'OPTIONS') {
-      res.writeHead(204);
-      res.end();
-      return;
-    }
-
-    if (req.method === 'GET') {
+    // MCP endpoint
+    if (url.pathname === '/mcp') {
       try {
-        const transport = new SSEServerTransport('/mcp', res);
-        const mcpServer = createServerWithTools();
+        // Create a new transport for each request to prevent request ID collisions.
+        // Different clients may use the same JSON-RPC request IDs, which would cause
+        // responses to be routed to the wrong HTTP connections if transport state is shared.
+        const transport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: undefined, // Stateless mode - no session management
+          enableJsonResponse: true, // Return JSON responses (not SSE streams)
+        });
 
-        transport.onerror = (error: Error) => {
-          logger(
-            `Transport error (session ${transport.sessionId}): ${error.message}`,
-          );
-        };
+        // Clean up transport when response closes
+        res.on('close', () => {
+          transport.close();
+        });
 
-        transport.onclose = () => {
-          sessions.delete(transport.sessionId);
-          logger(`SSE connection closed: session ${transport.sessionId}`);
-        };
-
+        // Connect the server to this transport
         await mcpServer.connect(transport);
 
-        sessions.set(transport.sessionId, {transport, server: mcpServer});
-
-        logger(`SSE connection established: session ${transport.sessionId}`);
+        // Let the SDK handle the request (it will parse body, validate, and respond)
+        await transport.handleRequest(req, res);
       } catch (error) {
-        console.error('Error establishing SSE connection:', error);
+        logger(`Error handling MCP request: ${error}`);
         if (!res.headersSent) {
-          res.writeHead(500, {'Content-Type': 'text/plain'});
-          res.end('Failed to establish SSE connection');
+          res.writeHead(500, {'Content-Type': 'application/json'});
+          res.end(
+            JSON.stringify({
+              jsonrpc: '2.0',
+              error: {
+                code: -32603,
+                message: 'Internal server error',
+              },
+              id: null,
+            }),
+          );
         }
       }
       return;
     }
 
-    if (req.method === 'POST') {
-      const sessionId = url.searchParams.get('sessionId');
-      if (!sessionId) {
-        res.writeHead(400, {'Content-Type': 'text/plain'});
-        res.end('Missing sessionId query parameter');
-        return;
-      }
-
-      const session = sessions.get(sessionId);
-      if (!session) {
-        res.writeHead(404, {'Content-Type': 'text/plain'});
-        res.end('Session not found');
-        return;
-      }
-
-      let body = '';
-
-      req.on('error', (error) => {
-        console.error('Request stream error:', error);
-        if (!res.headersSent) {
-          res.writeHead(500, {'Content-Type': 'text/plain'});
-          res.end('Request error');
-        }
-      });
-
-      req.on('data', (chunk) => {
-        body += chunk.toString();
-      });
-
-      req.on('end', async () => {
-        try {
-          const parsedBody = JSON.parse(body);
-          await session.transport.handlePostMessage(req, res, parsedBody);
-        } catch (error) {
-          console.error('Error handling POST message:', error);
-          if (!res.headersSent) {
-            res.writeHead(500, {'Content-Type': 'text/plain'});
-            res.end('Internal Server Error');
-          }
-        }
-      });
-
-      return;
-    }
-
-    res.writeHead(405, {'Content-Type': 'text/plain'});
-    res.end('Method Not Allowed');
+    // 404 for other paths
+    res.writeHead(404, {'Content-Type': 'text/plain'});
+    res.end('Not Found');
   });
 
-  server.on('error', (error: NodeJS.ErrnoException) => {
+  httpServer.on('error', (error: NodeJS.ErrnoException) => {
     if (error.code === 'EADDRINUSE') {
       console.error(`Error: Port ${port} already in use`);
       process.exit(3);
@@ -217,11 +163,11 @@ export function createMcpServer(config: McpServerConfig): http.Server {
     process.exit(3);
   });
 
-  server.listen(port, '127.0.0.1', () => {
+  httpServer.listen(port, '127.0.0.1', () => {
     logger(`MCP Server ready at http://127.0.0.1:${port}/mcp`);
   });
 
-  return server;
+  return httpServer;
 }
 
 export async function shutdownMcpServer(
@@ -229,22 +175,10 @@ export async function shutdownMcpServer(
   logger: (message: string) => void,
 ): Promise<void> {
   return new Promise((resolve) => {
-    logger(`Closing ${sessions.size} active sessions`);
-
-    const closePromises: Array<Promise<void>> = [];
-    for (const [sessionId, session] of sessions.entries()) {
-      closePromises.push(
-        session.transport.close().catch(() => {
-          /* ignore */
-        }),
-      );
-      sessions.delete(sessionId);
-    }
-
-    Promise.all(closePromises).then(() => {
-      server.close(() => {
-        resolve();
-      });
+    logger('Closing HTTP server');
+    server.close(() => {
+      logger('HTTP server closed');
+      resolve();
     });
   });
 }
