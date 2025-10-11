@@ -4,8 +4,15 @@
  */
 import http from 'node:http';
 
-import type {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
+import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
+import type {CallToolResult} from '@modelcontextprotocol/sdk/types.js';
+import {SetLevelRequestSchema} from '@modelcontextprotocol/sdk/types.js';
 import {SSEServerTransport} from '@modelcontextprotocol/sdk/server/sse.js';
+
+import type {McpContext} from '../McpContext.js';
+import {McpResponse} from '../McpResponse.js';
+import type {Mutex} from '../Mutex.js';
+import type {ToolDefinition} from '../tools/ToolDefinition.js';
 
 interface Session {
   transport: SSEServerTransport;
@@ -14,15 +21,86 @@ interface Session {
 
 const sessions = new Map<string, Session>();
 
-export interface HTTPServerOptions {
+export interface McpServerConfig {
   port: number;
   version: string;
-  createServer: () => McpServer;
+  tools: unknown[];
+  context: McpContext;
+  toolMutex: Mutex;
   logger: (message: string) => void;
 }
 
-export function createHTTPServer(options: HTTPServerOptions): http.Server {
-  const {port, createServer, logger} = options;
+export function createMcpServer(config: McpServerConfig): http.Server {
+  const {port, version, tools, context, toolMutex, logger} = config;
+
+  function createServerWithTools(): McpServer {
+    const server = new McpServer(
+      {
+        name: 'browseros_mcp',
+        title: 'BrowserOS MCP server',
+        version,
+      },
+      {capabilities: {logging: {}}},
+    );
+
+    server.server.setRequestHandler(SetLevelRequestSchema, () => {
+      return {};
+    });
+
+    function registerTool(tool: ToolDefinition): void {
+      server.registerTool(
+        tool.name,
+        {
+          description: tool.description,
+          inputSchema: tool.schema,
+          annotations: tool.annotations,
+        },
+        async (params): Promise<CallToolResult> => {
+          const guard = await toolMutex.acquire();
+          try {
+            logger(
+              `${tool.name} request: ${JSON.stringify(params, null, '  ')}`,
+            );
+            const response = new McpResponse();
+            await tool.handler(
+              {
+                params,
+              },
+              response,
+              context,
+            );
+            try {
+              const content = await response.handle(tool.name, context);
+              return {
+                content,
+              };
+            } catch (error) {
+              const errorText =
+                error instanceof Error ? error.message : String(error);
+
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: errorText,
+                  },
+                ],
+                isError: true,
+              };
+            }
+          } finally {
+            guard.dispose();
+          }
+        },
+      );
+    }
+
+    for (const tool of tools) {
+      registerTool(tool as unknown as ToolDefinition);
+    }
+
+    return server;
+  }
 
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url!, `http://${req.headers.host}`);
@@ -46,7 +124,7 @@ export function createHTTPServer(options: HTTPServerOptions): http.Server {
     if (req.method === 'GET') {
       try {
         const transport = new SSEServerTransport('/mcp', res);
-        const mcpServer = createServer();
+        const mcpServer = createServerWithTools();
 
         transport.onerror = (error: Error) => {
           logger(
@@ -140,7 +218,7 @@ export function createHTTPServer(options: HTTPServerOptions): http.Server {
   return server;
 }
 
-export async function shutdownHTTPServer(
+export async function shutdownMcpServer(
   server: http.Server,
   logger: (message: string) => void,
 ): Promise<void> {
