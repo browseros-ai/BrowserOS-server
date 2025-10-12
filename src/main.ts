@@ -46,14 +46,15 @@ const ports = parseArguments();
     mcpServerEnabled: ports.mcpServerEnabled,
   });
 
-  if (ports.mcpServerEnabled) {
-    console.error(
-      `browseros-mcp exposes content of the BrowserOS instance to the MCP clients`,
-    );
-  } else {
+  if (!ports.mcpServerEnabled) {
     logger('MCP server disabled (--disable-mcp-server)');
-    logger(`Health check available at http://127.0.0.1:${ports.httpMcpPort}/health`);
+  } else {
+    logger(`MCP server listening on http://127.0.0.1:${ports.httpMcpPort}/mcp`);
   }
+  logger('Connected to cdp on port: ' + ports.cdpPort);
+  logger(
+    `Health check available at http://127.0.0.1:${ports.httpMcpPort}/health`,
+  );
 
   process.on('SIGINT', async () => {
     logger('Shutting down server...');
