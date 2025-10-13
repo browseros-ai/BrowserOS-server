@@ -37,6 +37,7 @@ packages/tools/
 ## Design Principles
 
 ### 1. **Clean Separation of Concerns**
+
 - **Types**: Pure interfaces and type definitions
 - **Definitions**: Tool implementations using those types
 - **Response**: Response building and formatting logic
@@ -44,33 +45,38 @@ packages/tools/
 - **Utils**: Shared utility functions
 
 ### 2. **Dependency Inversion**
+
 - Tools depend on abstract interfaces (`Context`, `Response`), not concrete implementations
 - The actual `McpContext` implementation lives in `@browseros/core`
 - Tools are unaware of transport layer (MCP, Agent, etc.)
 
 ### 3. **Simple, Elegant Exports**
+
 ```typescript
 // Import all tools
-import { allTools } from '@browseros/tools';
+import {allTools} from '@browseros/tools';
 
 // Import specific category
-import { pages } from '@browseros/tools';
+import {pages} from '@browseros/tools';
 
 // Import types
-import { ToolDefinition, Context, Response } from '@browseros/tools';
+import {ToolDefinition, Context, Response} from '@browseros/tools';
 
 // Import response handler
-import { McpResponse } from '@browseros/tools';
+import {McpResponse} from '@browseros/tools';
 ```
 
 ### 4. **Modular Tool Registration**
+
 Each tool is self-contained with:
+
 - Name and description
 - Category and metadata
 - Zod schema for validation
 - Handler implementation
 
 ### 5. **Type Safety Throughout**
+
 - Zod schemas validate input parameters
 - TypeScript interfaces ensure type safety
 - Generic types maintain type consistency
@@ -78,21 +84,23 @@ Each tool is self-contained with:
 ## Usage
 
 ### For MCP Server
+
 ```typescript
-import { allTools, McpResponse } from '@browseros/tools';
-import { McpContext } from '@browseros/core';
+import {allTools, McpResponse} from '@browseros/tools';
+import {McpContext} from '@browseros/core';
 
 // Register tools with MCP server
 for (const tool of allTools) {
-  server.registerTool(tool.name, tool.schema, async (params) => {
+  server.registerTool(tool.name, tool.schema, async params => {
     const response = new McpResponse();
-    await tool.handler({ params }, response, context);
+    await tool.handler({params}, response, context);
     return response.handle(tool.name, context);
   });
 }
 ```
 
 ### For Agent Server (Direct Usage)
+
 ```typescript
 import { allTools } from '@browseros/tools';
 import { McpContext } from '@browseros/core';
@@ -123,6 +131,7 @@ async executeTool(toolName: string, params: any) {
 4. Tool automatically included in `allTools`
 
 Example:
+
 ```typescript
 export const myTool = defineTool({
   name: 'my_tool',

@@ -8,5 +8,5 @@
 export {
   createHttpMcpServer,
   shutdownMcpServer,
-  type McpServerConfig
+  type McpServerConfig,
 } from './server.js';

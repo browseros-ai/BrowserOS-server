@@ -145,7 +145,9 @@ export class McpContext {
   }
   async closePage(pageIdx: number): Promise<void> {
     if (this.#pages.length === 1) {
-      throw new Error('The last open page cannot be closed. It is fine to keep it open.');
+      throw new Error(
+        'The last open page cannot be closed. It is fine to keep it open.',
+      );
     }
     const page = this.getPageByIdx(pageIdx);
     this.setSelectedPageIdx(0);
@@ -270,9 +272,7 @@ export class McpContext {
 
   async getElementByUid(uid: string): Promise<ElementHandle<Element>> {
     if (!this.#textSnapshot?.idToNode.size) {
-      throw new Error(
-        `No snapshot found. Use take_snapshot to capture one.`,
-      );
+      throw new Error(`No snapshot found. Use take_snapshot to capture one.`);
     }
     const [snapshotId] = uid.split('_');
 

@@ -138,6 +138,7 @@ browseros-server/                         # Root monorepo
 The monorepo structure compiles down to a **single binary** that contains all functionality. Here's how:
 
 #### 1. Entry Point Chain
+
 ```
 packages/server/src/index.ts (Bun entry)
     └── packages/server/src/main.ts (orchestrator)
@@ -149,6 +150,7 @@ packages/server/src/index.ts (Bun entry)
 #### 2. Build Process
 
 **Root `package.json` scripts:**
+
 ```json
 {
   "scripts": {
@@ -163,6 +165,7 @@ packages/server/src/index.ts (Bun entry)
 ```
 
 **Key Points:**
+
 - Single entry point: `packages/server/src/index.ts`
 - Bun's `--compile` flag bundles all dependencies from all workspace packages
 - Output: One binary per platform in `dist/`
@@ -171,6 +174,7 @@ packages/server/src/index.ts (Bun entry)
 #### 3. Runtime Behavior
 
 The single binary serves multiple endpoints:
+
 ```
 browseros-server --cdp-port=9222 --http-port=9223 --agent-port=9445
 
@@ -183,12 +187,14 @@ Endpoints:
 #### 4. Workspace Dependencies Resolution
 
 During compilation, Bun automatically:
+
 1. Resolves all `@browseros/*` workspace dependencies
 2. Bundles them into the final binary
 3. Tree-shakes unused code
 4. Applies minification
 
 Example dependency chain for compilation:
+
 ```
 @browseros/server
 ├── @browseros/mcp-server
@@ -207,34 +213,44 @@ All get bundled into one binary!
 ## Package Structure Details
 
 ### Core Package (`@browseros/core`)
+
 Shared utilities used by all other packages:
+
 - Browser/CDP connection management
 - Shared context and mutex
 - Logging infrastructure
 - Common types and utilities
 
 ### Tools Package (`@browseros/tools`)
+
 All browser automation tools:
+
 - Tool definitions and schemas
 - Tool handlers
 - Response formatters
 - No server logic (pure functions)
 
 ### MCP Server Package (`@browseros/mcp-server`)
+
 MCP protocol implementation:
+
 - HTTP server with SSE transport
 - MCP tool registration
 - Protocol handling
 
 ### Agent Server Package (`@browseros/agent-server`)
+
 Agent loop implementation:
+
 - WebSocket server
 - Claude SDK integration
 - Direct tool execution (no MCP overhead)
 - Session management
 
 ### Server Package (`@browseros/server`)
+
 Main application orchestrator:
+
 - CLI entry point
 - Starts both MCP and Agent servers
 - Manages shared resources
@@ -243,36 +259,43 @@ Main application orchestrator:
 ## Migration Path
 
 ### Phase 1: Create Workspace Structure
+
 1. Create `packages/` directory structure
 2. Set up root `package.json` with workspaces
 3. Configure TypeScript project references
 
 ### Phase 2: Extract Core Package
+
 1. Move shared utilities to `@browseros/core`
 2. Update imports in existing code
 3. Test core package independently
 
 ### Phase 3: Extract Tools Package
+
 1. Move all tools to `@browseros/tools`
 2. Move formatters and response handling
 3. Update tool imports
 
 ### Phase 4: Create MCP Server Package
+
 1. Move `server/mcp.ts` to new package
 2. Refactor to use extracted packages
 3. Test MCP functionality
 
 ### Phase 5: Add Agent Server Package
+
 1. Implement WebSocket server
 2. Add Claude SDK integration
 3. Wire up direct tool execution
 
 ### Phase 6: Unify in Server Package
+
 1. Create unified entry point
 2. Start both servers from main.ts
 3. Test unified binary
 
 ### Phase 7: Update Build Scripts
+
 1. Update binary compilation scripts
 2. Test multi-platform builds
 3. Update CI/CD pipelines

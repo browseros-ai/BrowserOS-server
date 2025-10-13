@@ -11,5 +11,6 @@ export interface TraceResult {
 }
 
 export const ERRORS = {
-  CLOSE_PAGE: 'The last open page cannot be closed. It is fine to keep it open.',
+  CLOSE_PAGE:
+    'The last open page cannot be closed. It is fine to keep it open.',
 } as const;

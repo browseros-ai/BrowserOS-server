@@ -53,11 +53,7 @@ export function parseArguments(argv = process.argv): ServerPorts {
     .name('browseros-mcp')
     .description('BrowserOS MCP Server')
     .requiredOption('--cdp-port <port>', 'CDP WebSocket port', parsePort)
-    .requiredOption(
-      '--http-mcp-port <port>',
-      'MCP HTTP server port',
-      parsePort,
-    )
+    .requiredOption('--http-mcp-port <port>', 'MCP HTTP server port', parsePort)
     .option('--disable-mcp-server', 'Disable MCP server', false)
     .parse(argv);
 

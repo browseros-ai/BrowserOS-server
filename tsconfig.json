@@ -25,16 +25,11 @@
     "declarationMap": true
   },
   "references": [
-    { "path": "./packages/core" },
-    { "path": "./packages/tools" },
-    { "path": "./packages/mcp-server" },
-    { "path": "./packages/server" }
+    {"path": "./packages/core"},
+    {"path": "./packages/tools"},
+    {"path": "./packages/mcp-server"},
+    {"path": "./packages/server"}
   ],
   "include": [],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "build",
-    "*.config.js"
-  ]
+  "exclude": ["node_modules", "dist", "build", "*.config.js"]
 }

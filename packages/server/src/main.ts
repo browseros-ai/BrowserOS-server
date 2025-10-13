@@ -4,15 +4,22 @@
  *
  * Main server orchestration
  */
-import { parseArguments } from './args.js';
-import { ensureBrowserConnected, McpContext, Mutex, logger, readVersion } from '@browseros/core';
-import { allTools } from '@browseros/tools';
-import { createHttpMcpServer, shutdownMcpServer } from '@browseros/mcp-server';
+import {
+  ensureBrowserConnected,
+  McpContext,
+  Mutex,
+  logger,
+  readVersion,
+} from '@browseros/core';
+import {createHttpMcpServer, shutdownMcpServer} from '@browseros/mcp-server';
+import {allTools} from '@browseros/tools';
+
+import {parseArguments} from './args.js';
 
 const version = readVersion();
 const ports = parseArguments();
 
-(async () => {
+void (async () => {
   logger(`Starting BrowserOS Server v${version}`);
 
   // Connect to Chrome DevTools Protocol
@@ -51,7 +58,9 @@ const ports = parseArguments();
     logger(`MCP server listening on http://127.0.0.1:${ports.httpMcpPort}/mcp`);
   }
 
-  logger(`Health check available at http://127.0.0.1:${ports.httpMcpPort}/health`);
+  logger(
+    `Health check available at http://127.0.0.1:${ports.httpMcpPort}/health`,
+  );
 
   // TODO: Start Agent server when implemented
   // if (ports.agentServerEnabled) {

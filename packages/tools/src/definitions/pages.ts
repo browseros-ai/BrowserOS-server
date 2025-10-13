@@ -2,12 +2,11 @@
  * @license
  * Copyright 2025 BrowserOS
  */
+import {logger} from '@browseros/core';
 import z from 'zod';
 
-import {logger} from '@browseros/core';
-
 import {ToolCategories} from '../types/ToolCategories.js';
-import { ERRORS, defineTool, commonSchemas } from '../types/ToolDefinition.js';
+import {ERRORS, defineTool, commonSchemas} from '../types/ToolDefinition.js';
 
 export const listPages = defineTool({
   name: 'list_pages',

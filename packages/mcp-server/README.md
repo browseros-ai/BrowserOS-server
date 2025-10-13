@@ -5,6 +5,7 @@ Model Context Protocol (MCP) server implementation for BrowserOS.
 ## Overview
 
 This package provides a thin, clean layer that:
+
 1. Imports tools from `@browseros/tools`
 2. Sets up HTTP/SSE transport for MCP protocol
 3. Handles tool registration with MCP SDK
@@ -22,12 +23,15 @@ packages/mcp-server/
 ## Design Principles (KISS)
 
 ### 1. **Single Responsibility**
+
 This package ONLY handles MCP protocol concerns:
+
 - Tool registration with MCP SDK
 - HTTP transport setup
 - Request/response handling
 
 ### 2. **Clean Dependencies**
+
 ```
 @browseros/mcp-server
     ├── @browseros/tools    # Tool definitions
@@ -36,6 +40,7 @@ This package ONLY handles MCP protocol concerns:
 ```
 
 ### 3. **No Business Logic**
+
 - Tools live in `@browseros/tools`
 - Context management in `@browseros/core`
 - This package is just protocol glue
@@ -43,9 +48,9 @@ This package ONLY handles MCP protocol concerns:
 ## Usage
 
 ```typescript
-import { createHttpMcpServer } from '@browseros/mcp-server';
-import { allTools } from '@browseros/tools';
-import { McpContext, Mutex } from '@browseros/core';
+import {createHttpMcpServer} from '@browseros/mcp-server';
+import {allTools} from '@browseros/tools';
+import {McpContext, Mutex} from '@browseros/core';
 
 const server = createHttpMcpServer({
   port: 9223,
@@ -54,16 +59,18 @@ const server = createHttpMcpServer({
   context,
   toolMutex: new Mutex(),
   logger: console.log,
-  mcpServerEnabled: true
+  mcpServerEnabled: true,
 });
 ```
 
 ## Key Functions
 
 ### `createHttpMcpServer(config)`
+
 Creates HTTP server with MCP endpoint at `/mcp` and health check at `/health`.
 
 ### `shutdownMcpServer(server, logger)`
+
 Gracefully shuts down the server.
 
 ## Protocol Details

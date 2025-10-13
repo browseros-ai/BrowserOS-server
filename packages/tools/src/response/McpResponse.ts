@@ -2,15 +2,14 @@
  * @license
  * Copyright 2025 BrowserOS
  */
+import type {McpContext} from '@browseros/core';
 import type {
   ImageContent,
   TextContent,
 } from '@modelcontextprotocol/sdk/types.js';
-import type { ResourceType } from 'puppeteer-core';
-import type { McpContext } from '@browseros/core';
+import type {ResourceType} from 'puppeteer-core';
 
-import type { Response, ImageContentData } from '../types/Response.js';
-import { formatConsoleEvent } from '../formatters/consoleFormatter.js';
+import {formatConsoleEvent} from '../formatters/consoleFormatter.js';
 import {
   getFormattedHeaderValue,
   getFormattedResponseBody,
@@ -18,8 +17,9 @@ import {
   getShortDescriptionForRequest,
   getStatusFromRequest,
 } from '../formatters/networkFormatter.js';
-import { formatA11ySnapshot } from '../formatters/snapshotFormatter.js';
-import { paginate, type PaginationOptions } from '../utils/pagination.js';
+import {formatA11ySnapshot} from '../formatters/snapshotFormatter.js';
+import type {Response, ImageContentData} from '../types/Response.js';
+import {paginate, type PaginationOptions} from '../utils/pagination.js';
 
 interface NetworkRequestData {
   networkRequestUrl: string;
@@ -348,7 +348,7 @@ Call handle_dialog to handle it before continuing.`);
       response.push('Invalid page number provided. Showing first page.');
     }
 
-    const { startIndex, endIndex, currentPage, totalPages } = paginationResult;
+    const {startIndex, endIndex, currentPage, totalPages} = paginationResult;
     response.push(
       `Showing ${startIndex + 1}-${endIndex} of ${data.length} (Page ${currentPage + 1} of ${totalPages}).`,
     );

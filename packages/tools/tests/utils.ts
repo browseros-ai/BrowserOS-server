@@ -2,12 +2,12 @@
  * @license
  * Copyright 2025 BrowserOS
  */
+import {McpContext} from '@browseros/core';
 import logger from 'debug';
 import type {Browser} from 'puppeteer';
 import puppeteer from 'puppeteer';
 import type {HTTPRequest, HTTPResponse} from 'puppeteer-core';
 
-import {McpContext} from '@browseros/core';
 import {McpResponse} from '../src/response/McpResponse.js';
 
 let browser: Browser | undefined;

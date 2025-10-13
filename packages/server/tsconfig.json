@@ -7,11 +7,11 @@
     "declaration": true,
     "declarationMap": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"],
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": ["node_modules", "dist/**/*"],
   "references": [
-    { "path": "../core" },
-    { "path": "../tools" },
-    { "path": "../mcp-server" }
+    {"path": "../core"},
+    {"path": "../tools"},
+    {"path": "../mcp-server"}
   ]
 }

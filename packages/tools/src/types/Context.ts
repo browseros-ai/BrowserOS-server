@@ -2,7 +2,7 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import type { Dialog, ElementHandle, Page } from 'puppeteer-core';
+import type {Dialog, ElementHandle, Page} from 'puppeteer-core';
 
 /**
  * Trace recording result structure
@@ -47,12 +47,12 @@ export interface Context {
   saveTemporaryFile(
     data: Uint8Array<ArrayBufferLike>,
     mimeType: 'image/png' | 'image/jpeg' | 'image/webp',
-  ): Promise<{ filename: string }>;
+  ): Promise<{filename: string}>;
 
   saveFile(
     data: Uint8Array<ArrayBufferLike>,
     filename: string,
-  ): Promise<{ filename: string }>;
+  ): Promise<{filename: string}>;
 
   // Event synchronization
   waitForEventsAfterAction(action: () => Promise<unknown>): Promise<void>;

@@ -2,8 +2,8 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import { ToolCategories } from '../types/ToolCategories.js';
-import { defineTool } from '../types/ToolDefinition.js';
+import {ToolCategories} from '../types/ToolCategories.js';
+import {defineTool} from '../types/ToolDefinition.js';
 
 export const consoleTool = defineTool({
   name: 'list_console_messages',

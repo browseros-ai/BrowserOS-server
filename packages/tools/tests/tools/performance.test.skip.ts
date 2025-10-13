@@ -2,6 +2,7 @@
  * @license
  * Copyright 2025 BrowserOS
  */
+/* eslint-disable @typescript-eslint/no-floating-promises */
 import assert from 'node:assert';
 import {describe, it, afterEach} from 'node:test';
 

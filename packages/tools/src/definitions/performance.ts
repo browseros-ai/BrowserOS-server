@@ -2,10 +2,11 @@
  * @license
  * Copyright 2025 BrowserOS
  */
+import {logger} from '@browseros/core';
+import type {McpContext} from '@browseros/core';
 import type {Page} from 'puppeteer-core';
 import z from 'zod';
 
-import {logger} from '@browseros/core';
 import type {InsightName} from '../trace-processing/parse.js';
 import {
   getInsightOutput,
@@ -13,11 +14,9 @@ import {
   parseRawTraceBuffer,
   traceResultIsSuccess,
 } from '../trace-processing/parse.js';
-
-import type {McpContext} from '@browseros/core';
+import type {Response} from '../types/Response.js';
 import {ToolCategories} from '../types/ToolCategories.js';
 import {defineTool} from '../types/ToolDefinition.js';
-import type {Response} from '../types/Response.js';
 
 // Type aliases for compatibility
 type Context = McpContext;
@@ -94,6 +93,7 @@ export const startTrace = defineTool({
 
     if (request.params.autoStop) {
       await new Promise(resolve => setTimeout(resolve, 5_000));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await stopTracingAndAppendOutput(page, response, context as any);
     } else {
       response.appendResponseLine(
@@ -117,6 +117,7 @@ export const stopTrace = defineTool({
       return;
     }
     const page = context.getSelectedPage();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await stopTracingAndAppendOutput(page, response, context as any);
   },
 });
@@ -173,7 +174,8 @@ async function stopTracingAndAppendOutput(
     response.appendResponseLine('The performance trace has been stopped.');
     if (traceResultIsSuccess(result)) {
       // Convert to core TraceResult type
-      const coreResult = { ...result, name: 'trace' } as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const coreResult = {...result, name: 'trace'} as any;
       context.storeTraceRecording(coreResult);
       response.appendResponseLine(
         'Here is a high level summary of the trace and the Insights that were found:',

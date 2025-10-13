@@ -2,10 +2,11 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import { z } from 'zod';
-import type { ToolCategories } from './ToolCategories.js';
-import type { Response } from './Response.js';
-import type { Context } from './Context.js';
+import {z} from 'zod';
+
+import type {Context} from './Context.js';
+import type {Response} from './Response.js';
+import type {ToolCategories} from './ToolCategories.js';
 
 /**
  * Structure for defining a browser automation tool
@@ -66,7 +67,7 @@ export const commonSchemas = {
       .describe(
         'Maximum wait time in milliseconds. If set to 0, the default timeout will be used.',
       )
-      .transform((value) => {
+      .transform(value => {
         return value && value <= 0 ? undefined : value;
       }),
   },
@@ -76,7 +77,8 @@ export const commonSchemas = {
  * Common error messages
  */
 export const ERRORS = {
-  CLOSE_PAGE: 'The last open page cannot be closed. It is fine to keep it open.',
+  CLOSE_PAGE:
+    'The last open page cannot be closed. It is fine to keep it open.',
   NO_DIALOG: 'No open dialog found',
   NAVIGATION_FAILED: 'Unable to navigate in currently selected page.',
 } as const;

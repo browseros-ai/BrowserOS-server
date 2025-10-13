@@ -3,15 +3,15 @@
  * Copyright 2025 BrowserOS
  */
 import http from 'node:http';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import { SetLevelRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { z } from 'zod';
 
-import type { McpContext, Mutex } from '@browseros/core';
-import type { ToolDefinition } from '@browseros/tools';
-import { McpResponse } from '@browseros/tools';
+import type {McpContext, Mutex} from '@browseros/core';
+import type {ToolDefinition} from '@browseros/tools';
+import {McpResponse} from '@browseros/tools';
+import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
+import {StreamableHTTPServerTransport} from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import type {CallToolResult} from '@modelcontextprotocol/sdk/types.js';
+import {SetLevelRequestSchema} from '@modelcontextprotocol/sdk/types.js';
+import {z} from 'zod';
 
 /**
  * Configuration for MCP server
@@ -31,7 +31,7 @@ export interface McpServerConfig {
  * This is the pure MCP logic, separated from HTTP transport
  */
 function createMcpServerWithTools(config: McpServerConfig): McpServer {
-  const { version, tools, context, toolMutex, logger } = config;
+  const {version, tools, context, toolMutex, logger} = config;
 
   const server = new McpServer(
     {
@@ -39,7 +39,7 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
       title: 'BrowserOS MCP server',
       version,
     },
-    { capabilities: { logging: {} } },
+    {capabilities: {logging: {}}},
   );
 
   // Handle logging level requests
@@ -50,15 +50,18 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
   // Register each tool with the MCP server
   for (const tool of tools) {
     // Convert ZodRawShape to ZodObject for MCP SDK
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const zodSchema = z.object(tool.schema as any);
 
     server.registerTool(
       tool.name,
       {
         description: tool.description,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         inputSchema: zodSchema as any,
         annotations: tool.annotations,
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       async (params: any): Promise<CallToolResult> => {
         // Serialize tool execution with mutex
         const guard = await toolMutex.acquire();
@@ -67,14 +70,15 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
 
           // Create response handler and execute tool
           const response = new McpResponse();
-          await tool.handler({ params }, response, context);
+          await tool.handler({params}, response, context);
 
           // Process and return response
           try {
             const content = await response.handle(tool.name, context);
-            return { content };
+            return {content};
           } catch (error) {
-            const errorText = error instanceof Error ? error.message : String(error);
+            const errorText =
+              error instanceof Error ? error.message : String(error);
             return {
               content: [
                 {
@@ -100,7 +104,7 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
  * Handles transport and protocol concerns
  */
 export function createHttpMcpServer(config: McpServerConfig): http.Server {
-  const { port, logger, mcpServerEnabled } = config;
+  const {port, logger, mcpServerEnabled} = config;
 
   // Only create MCP server if enabled
   const mcpServer = mcpServerEnabled ? createMcpServerWithTools(config) : null;
@@ -110,7 +114,7 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
 
     // Health check endpoint (always available)
     if (url.pathname === '/health') {
-      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.writeHead(200, {'Content-Type': 'text/plain'});
       res.end('OK');
       return;
     }
@@ -119,7 +123,7 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
     if (url.pathname === '/mcp') {
       // Return disabled status if MCP server is not enabled
       if (!mcpServerEnabled || !mcpServer) {
-        res.writeHead(503, { 'Content-Type': 'application/json' });
+        res.writeHead(503, {'Content-Type': 'application/json'});
         res.end(
           JSON.stringify({
             jsonrpc: '2.0',
@@ -144,18 +148,18 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
 
         // Clean up transport when response closes
         res.on('close', () => {
-          transport.close();
+          void transport.close();
         });
 
         // Connect the server to this transport
-        await mcpServer.connect(transport);
+        void mcpServer.connect(transport);
 
         // Let the SDK handle the request (it will parse body, validate, and respond)
         await transport.handleRequest(req, res);
       } catch (error) {
         logger(`Error handling MCP request: ${error}`);
         if (!res.headersSent) {
-          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.writeHead(500, {'Content-Type': 'application/json'});
           res.end(
             JSON.stringify({
               jsonrpc: '2.0',
@@ -172,7 +176,7 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
     }
 
     // 404 for other paths
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.writeHead(404, {'Content-Type': 'text/plain'});
     res.end('Not Found');
   });
 
@@ -202,7 +206,7 @@ export async function shutdownMcpServer(
   server: http.Server,
   logger: (message: string) => void,
 ): Promise<void> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     logger('Closing HTTP server');
     server.close(() => {
       logger('HTTP server closed');

@@ -1,2 +1,12 @@
 # Prettier-only ignores.
 CHANGELOG.md
+
+# Build outputs
+dist/
+packages/*/dist/
+*.tsbuildinfo
+
+# Compiled binaries
+browseros-server
+browseros-server.exe
+browseros-server-*

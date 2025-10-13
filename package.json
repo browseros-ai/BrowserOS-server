@@ -26,18 +26,16 @@
     "check-format": "eslint --cache . && prettier --check --cache .;",
     "docs": "npm run docs:generate && npm run format",
     "docs:generate": "node --experimental-strip-types scripts/generate-docs.ts",
-    "prepare": "node --experimental-strip-types scripts/prepare.ts",
-    "sync-server-json-version": "node --experimental-strip-types scripts/sync-server-json-version.ts && npm run format",
     "clean": "rimraf dist browseros-server browseros-server.exe && bun run clean:packages",
     "clean:packages": "rimraf packages/*/dist packages/*/tsconfig.tsbuildinfo"
   },
-  "repository": "ChromeDevTools/chrome-devtools-mcp",
+  "repository": "browseros-ai/BrowserOS-server",
   "author": "BrowserOS",
   "license": "AGPL-3.0-or-later",
   "bugs": {
-    "url": "https://github.com/ChromeDevTools/chrome-devtools-mcp/issues"
+    "url": "https://github.com/browseros-ai/BrowserOS/issues"
   },
-  "homepage": "https://github.com/ChromeDevTools/chrome-devtools-mcp#readme",
+  "homepage": "https://github.com/browseros-ai/BrowserOS#readme",
   "devDependencies": {
     "@modelcontextprotocol/sdk": "1.19.1",
     "commander": "^14.0.1",
