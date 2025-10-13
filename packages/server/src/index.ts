@@ -17,9 +17,14 @@ if (typeof Bun === 'undefined') {
 
 // Import polyfills first
 import '@browseros/common/polyfill';
+import {CommanderError} from 'commander';
 
 // Start the main server
 import('./main.js').catch(error => {
+  if (error instanceof CommanderError) {
+    // Commander already printed its message (help, validation error, etc)
+    process.exit(error.exitCode);
+  }
   console.error('Failed to start server:', error);
   process.exit(1);
 });
