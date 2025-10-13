@@ -1,0 +1,29 @@
+{
+  "name": "@browseros/tools",
+  "version": "0.0.1",
+  "description": "Browser automation tools for BrowserOS",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./definitions": "./src/definitions/index.ts",
+    "./response": "./src/response/index.ts",
+    "./formatters": "./src/formatters/index.ts",
+    "./types": "./src/types/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@browseros/core": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.19.1",
+    "puppeteer-core": "24.23.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^24.3.3",
+    "typescript": "^5.9.2"
+  }
+}
