@@ -11,6 +11,7 @@ export { logger } from './logger.js';
 
 // Utils exports
 export * from './utils/index.js';
+export { readVersion } from './utils/index.js';
 
 // Type exports
 export type { McpContext as McpContextType } from './McpContext.js';

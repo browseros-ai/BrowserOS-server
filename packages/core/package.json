@@ -10,6 +10,7 @@
     "./context": "./src/McpContext.ts",
     "./mutex": "./src/Mutex.ts",
     "./logger": "./src/logger.ts",
+    "./polyfill": "./src/polyfill.ts",
     "./utils": "./src/utils/index.ts"
   },
   "scripts": {

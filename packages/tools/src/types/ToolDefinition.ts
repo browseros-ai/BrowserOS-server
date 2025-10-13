@@ -2,7 +2,7 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import type z from 'zod';
+import { z } from 'zod';
 import type { ToolCategories } from './ToolCategories.js';
 import type { Response } from './Response.js';
 import type { Context } from './Context.js';

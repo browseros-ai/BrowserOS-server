@@ -19,11 +19,8 @@ import type {
 } from 'puppeteer-core';
 
 import {NetworkCollector, PageCollector} from './PageCollector.js';
-import {listPages} from './tools/pages.js';
-import {takeSnapshot} from './tools/snapshot.js';
-import {CLOSE_PAGE_ERROR} from './tools/ToolDefinition.js';
-import type {Context} from './tools/ToolDefinition.js';
-import type {TraceResult} from './trace-processing/parse.js';
+// These will be injected from tools package
+import type {TraceResult} from './types.js';
 import {WaitForHelper} from './WaitForHelper.js';
 
 export interface TextSnapshotNode extends SerializedAXNode {
@@ -148,7 +145,7 @@ export class McpContext implements Context {
   }
   async closePage(pageIdx: number): Promise<void> {
     if (this.#pages.length === 1) {
-      throw new Error(CLOSE_PAGE_ERROR);
+      throw new Error('The last open page cannot be closed. It is fine to keep it open.');
     }
     const page = this.getPageByIdx(pageIdx);
     this.setSelectedPageIdx(0);

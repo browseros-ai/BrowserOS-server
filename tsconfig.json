@@ -25,7 +25,10 @@
     "declarationMap": true
   },
   "references": [
-    { "path": "./packages/core" }
+    { "path": "./packages/core" },
+    { "path": "./packages/tools" },
+    { "path": "./packages/mcp-server" },
+    { "path": "./packages/server" }
   ],
   "include": [],
   "exclude": [

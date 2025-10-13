@@ -172,12 +172,12 @@ packages/server/src/index.ts (Bun entry)
 
 The single binary serves multiple endpoints:
 ```
-browseros-server --cdp-port=9222 --http-port=9223
+browseros-server --cdp-port=9222 --http-port=9223 --agent-port=9445
 
 Endpoints:
   http://127.0.0.1:9223/health  (health check)
   http://127.0.0.1:9223/mcp      (MCP via SSE/HTTP)
-  ws://127.0.0.1:9223/agent     (Agent via WebSocket)
+  ws://127.0.0.1:9445/agent     (Agent via WebSocket)
 ```
 
 #### 4. Workspace Dependencies Resolution
