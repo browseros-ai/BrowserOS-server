@@ -2,8 +2,8 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import {logger} from '@browseros/core';
-import type {McpContext} from '@browseros/core';
+import {logger} from '@browseros/common';
+import type {McpContext} from '@browseros/common';
 import type {Page} from 'puppeteer-core';
 import z from 'zod';
 

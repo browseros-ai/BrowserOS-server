@@ -47,7 +47,7 @@ packages/tools/
 ### 2. **Dependency Inversion**
 
 - Tools depend on abstract interfaces (`Context`, `Response`), not concrete implementations
-- The actual `McpContext` implementation lives in `@browseros/core`
+- The actual `McpContext` implementation lives in `@browseros/common`
 - Tools are unaware of transport layer (MCP, Agent, etc.)
 
 ### 3. **Simple, Elegant Exports**
@@ -87,7 +87,7 @@ Each tool is self-contained with:
 
 ```typescript
 import {allTools, McpResponse} from '@browseros/tools';
-import {McpContext} from '@browseros/core';
+import {McpContext} from '@browseros/common';
 
 // Register tools with MCP server
 for (const tool of allTools) {
@@ -103,7 +103,7 @@ for (const tool of allTools) {
 
 ```typescript
 import { allTools } from '@browseros/tools';
-import { McpContext } from '@browseros/core';
+import { McpContext } from '@browseros/common';
 
 // Direct tool execution without MCP protocol
 async executeTool(toolName: string, params: any) {

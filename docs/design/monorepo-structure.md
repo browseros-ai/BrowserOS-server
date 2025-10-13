@@ -19,11 +19,11 @@ browseros-server/                         # Root monorepo
 ├── CLAUDE.md
 │
 ├── packages/                           # Monorepo packages
-│   ├── core/                          # Shared core functionality
-│   │   ├── package.json               # { "name": "@browseros/core" }
+│   ├── common/                        # Shared common functionality
+│   │   ├── package.json               # { "name": "@browseros/common" }
 │   │   ├── tsconfig.json
 │   │   ├── src/
-│   │   │   ├── index.ts               # Re-exports all core modules
+│   │   │   ├── index.ts               # Re-exports all common modules
 │   │   │   ├── browser.ts             # CDP connection management
 │   │   │   ├── McpContext.ts          # Browser context wrapper
 │   │   │   ├── Mutex.ts               # Tool execution mutex
@@ -69,8 +69,8 @@ browseros-server/                         # Root monorepo
 │   │       └── formatters/
 │   │           └── *.test.ts
 │   │
-│   ├── mcp-server/                    # MCP server implementation
-│   │   ├── package.json               # { "name": "@browseros/mcp-server" }
+│   ├── mcp/                           # MCP server implementation
+│   │   ├── package.json               # { "name": "@browseros/mcp" }
 │   │   ├── tsconfig.json
 │   │   ├── src/
 │   │   │   ├── index.ts               # MCP server exports
@@ -79,8 +79,8 @@ browseros-server/                         # Root monorepo
 │   │   └── tests/
 │   │       └── server.test.ts
 │   │
-│   ├── agent-server/                  # Agent server implementation
-│   │   ├── package.json               # { "name": "@browseros/agent-server" }
+│   ├── agent/                         # Agent server implementation
+│   │   ├── package.json               # { "name": "@browseros/agent" }
 │   │   ├── tsconfig.json
 │   │   ├── src/
 │   │   │   ├── index.ts               # Agent server exports
@@ -142,9 +142,9 @@ The monorepo structure compiles down to a **single binary** that contains all fu
 ```
 packages/server/src/index.ts (Bun entry)
     └── packages/server/src/main.ts (orchestrator)
-        ├── @browseros/mcp-server
-        ├── @browseros/agent-server
-        └── @browseros/core
+        ├── @browseros/mcp
+        ├── @browseros/agent
+        └── @browseros/common
 ```
 
 #### 2. Build Process
@@ -197,22 +197,22 @@ Example dependency chain for compilation:
 
 ```
 @browseros/server
-├── @browseros/mcp-server
+├── @browseros/mcp
 │   ├── @browseros/tools
-│   │   └── @browseros/core
-│   └── @browseros/core
-├── @browseros/agent-server
+│   │   └── @browseros/common
+│   └── @browseros/common
+├── @browseros/agent
 │   ├── @browseros/tools
-│   │   └── @browseros/core
-│   └── @browseros/core
-└── @browseros/core
+│   │   └── @browseros/common
+│   └── @browseros/common
+└── @browseros/common
 ```
 
 All get bundled into one binary!
 
 ## Package Structure Details
 
-### Core Package (`@browseros/core`)
+### Common Package (`@browseros/common`)
 
 Shared utilities used by all other packages:
 
@@ -230,7 +230,7 @@ All browser automation tools:
 - Response formatters
 - No server logic (pure functions)
 
-### MCP Server Package (`@browseros/mcp-server`)
+### MCP Server Package (`@browseros/mcp`)
 
 MCP protocol implementation:
 
@@ -238,7 +238,7 @@ MCP protocol implementation:
 - MCP tool registration
 - Protocol handling
 
-### Agent Server Package (`@browseros/agent-server`)
+### Agent Server Package (`@browseros/agent`)
 
 Agent loop implementation:
 
@@ -264,11 +264,11 @@ Main application orchestrator:
 2. Set up root `package.json` with workspaces
 3. Configure TypeScript project references
 
-### Phase 2: Extract Core Package
+### Phase 2: Extract Common Package
 
-1. Move shared utilities to `@browseros/core`
+1. Move shared utilities to `@browseros/common`
 2. Update imports in existing code
-3. Test core package independently
+3. Test common package independently
 
 ### Phase 3: Extract Tools Package
 

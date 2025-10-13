@@ -25,9 +25,9 @@
     "declarationMap": true
   },
   "references": [
-    {"path": "./packages/core"},
+    {"path": "./packages/common"},
     {"path": "./packages/tools"},
-    {"path": "./packages/mcp-server"},
+    {"path": "./packages/mcp"},
     {"path": "./packages/server"}
   ],
   "include": [],

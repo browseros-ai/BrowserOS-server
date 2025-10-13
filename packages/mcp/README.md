@@ -1,4 +1,4 @@
-# @browseros/mcp-server
+# @browseros/mcp
 
 Model Context Protocol (MCP) server implementation for BrowserOS.
 
@@ -14,7 +14,7 @@ This package provides a thin, clean layer that:
 ## Architecture
 
 ```
-packages/mcp-server/
+packages/mcp/
 ├── src/
 │   ├── index.ts     # Package exports
 │   └── server.ts    # MCP server implementation
@@ -33,24 +33,24 @@ This package ONLY handles MCP protocol concerns:
 ### 2. **Clean Dependencies**
 
 ```
-@browseros/mcp-server
+@browseros/mcp
     ├── @browseros/tools    # Tool definitions
-    ├── @browseros/core     # Context and mutex
+    ├── @browseros/common   # Context and mutex
     └── @modelcontextprotocol/sdk  # MCP SDK
 ```
 
 ### 3. **No Business Logic**
 
 - Tools live in `@browseros/tools`
-- Context management in `@browseros/core`
+- Context management in `@browseros/common`
 - This package is just protocol glue
 
 ## Usage
 
 ```typescript
-import {createHttpMcpServer} from '@browseros/mcp-server';
+import {createHttpMcpServer} from '@browseros/mcp';
 import {allTools} from '@browseros/tools';
-import {McpContext, Mutex} from '@browseros/core';
+import {McpContext, Mutex} from '@browseros/common';
 
 const server = createHttpMcpServer({
   port: 9223,

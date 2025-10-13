@@ -2,7 +2,7 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import type {TextSnapshotNode} from '@browseros/core';
+import type {TextSnapshotNode} from '@browseros/common';
 
 export function formatA11ySnapshot(
   serializedAXNodeRoot: TextSnapshotNode,

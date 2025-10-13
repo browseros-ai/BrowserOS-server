@@ -10,8 +10,8 @@ import {
   Mutex,
   logger,
   readVersion,
-} from '@browseros/core';
-import {createHttpMcpServer, shutdownMcpServer} from '@browseros/mcp-server';
+} from '@browseros/common';
+import {createHttpMcpServer, shutdownMcpServer} from '@browseros/mcp';
 import {allTools} from '@browseros/tools';
 
 import {parseArguments} from './args.js';

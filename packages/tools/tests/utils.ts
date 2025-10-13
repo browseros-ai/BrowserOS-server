@@ -2,7 +2,7 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import {McpContext} from '@browseros/core';
+import {McpContext} from '@browseros/common';
 import logger from 'debug';
 import type {Browser} from 'puppeteer';
 import puppeteer from 'puppeteer';

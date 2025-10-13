@@ -31,8 +31,8 @@
         "typescript-eslint": "^8.43.0",
       },
     },
-    "packages/core": {
-      "name": "@browseros/core",
+    "packages/common": {
+      "name": "@browseros/common",
       "version": "0.0.1",
       "dependencies": {
         "core-js": "3.45.1",
@@ -45,11 +45,11 @@
         "typescript": "^5.9.2",
       },
     },
-    "packages/mcp-server": {
-      "name": "@browseros/mcp-server",
+    "packages/mcp": {
+      "name": "@browseros/mcp",
       "version": "0.0.1",
       "dependencies": {
-        "@browseros/core": "workspace:*",
+        "@browseros/common": "workspace:*",
         "@browseros/tools": "workspace:*",
         "@modelcontextprotocol/sdk": "1.19.1",
       },
@@ -65,8 +65,8 @@
         "browseros-server": "./src/index.ts",
       },
       "dependencies": {
-        "@browseros/core": "workspace:*",
-        "@browseros/mcp-server": "workspace:*",
+        "@browseros/common": "workspace:*",
+        "@browseros/mcp": "workspace:*",
         "@browseros/tools": "workspace:*",
         "commander": "^14.0.1",
       },
@@ -79,7 +79,7 @@
       "name": "@browseros/tools",
       "version": "0.0.1",
       "dependencies": {
-        "@browseros/core": "workspace:*",
+        "@browseros/common": "workspace:*",
         "@modelcontextprotocol/sdk": "1.19.1",
         "puppeteer-core": "24.23.0",
         "zod": "^4.1.12",
@@ -96,9 +96,9 @@
 
     "@babel/helper-validator-identifier": ["@babel/helper-validator-identifier@7.27.1", "", {}, "sha512-D2hP9eA+Sqx1kBZgzxZh0y1trbuU+JoDkiEwqhQ36nodYqJwyEIhPSdMNd7lOm/4io72luTPWH20Yda0xOuUow=="],
 
-    "@browseros/core": ["@browseros/core@workspace:packages/core"],
+    "@browseros/common": ["@browseros/common@workspace:packages/common"],
 
-    "@browseros/mcp-server": ["@browseros/mcp-server@workspace:packages/mcp-server"],
+    "@browseros/mcp": ["@browseros/mcp@workspace:packages/mcp"],
 
     "@browseros/server": ["@browseros/server@workspace:packages/server"],
 

@@ -16,7 +16,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@browseros/core": "workspace:*",
+    "@browseros/common": "workspace:*",
     "@modelcontextprotocol/sdk": "1.19.1",
     "puppeteer-core": "24.23.0",
     "zod": "^4.1.12"

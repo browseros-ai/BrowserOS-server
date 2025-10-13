@@ -2,7 +2,7 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import type {McpContext} from '@browseros/core';
+import type {McpContext} from '@browseros/common';
 import type {
   ImageContent,
   TextContent,

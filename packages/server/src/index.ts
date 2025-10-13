@@ -16,7 +16,7 @@ if (typeof Bun === 'undefined') {
 }
 
 // Import polyfills first
-import '@browseros/core/polyfill';
+import '@browseros/common/polyfill';
 
 // Start the main server
 import('./main.js').catch(error => {

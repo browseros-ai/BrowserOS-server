@@ -14,9 +14,9 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@browseros/core": "workspace:*",
+    "@browseros/common": "workspace:*",
     "@browseros/tools": "workspace:*",
-    "@browseros/mcp-server": "workspace:*",
+    "@browseros/mcp": "workspace:*",
     "commander": "^14.0.1"
   },
   "devDependencies": {

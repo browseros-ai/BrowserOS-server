@@ -2,7 +2,7 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import {logger} from '@browseros/core';
+import {logger} from '@browseros/common';
 import z from 'zod';
 
 import {ToolCategories} from '../types/ToolCategories.js';

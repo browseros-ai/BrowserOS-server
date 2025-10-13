@@ -4,7 +4,7 @@
  */
 import http from 'node:http';
 
-import type {McpContext, Mutex} from '@browseros/core';
+import type {McpContext, Mutex} from '@browseros/common';
 import type {ToolDefinition} from '@browseros/tools';
 import {McpResponse} from '@browseros/tools';
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';

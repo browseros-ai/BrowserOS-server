@@ -1,5 +1,5 @@
 {
-  "name": "@browseros/mcp-server",
+  "name": "@browseros/mcp",
   "version": "0.0.1",
   "description": "MCP protocol server for BrowserOS",
   "type": "module",
@@ -12,7 +12,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@browseros/core": "workspace:*",
+    "@browseros/common": "workspace:*",
     "@browseros/tools": "workspace:*",
     "@modelcontextprotocol/sdk": "1.19.1"
   },
