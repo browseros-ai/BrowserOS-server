@@ -90,6 +90,7 @@ out
 # Nuxt.js build / generate output
 .nuxt
 dist
+packages/*/dist
 
 # Gatsby files
 .cache/
@@ -144,8 +145,9 @@ dist
 build/
 
 # Compiled binaries
-browseros-mcp
-browseros-mcp.exe
+browseros-server
+browseros-server.exe
+browseros-server-*
 
 log.txt
 

@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **BrowserOS MCP Server** - A Model Context Protocol (MCP) server that exposes Chrome DevTools capabilities to AI coding assistants. This is a **BrowserOS-specific fork** with a different architecture than the upstream chrome-devtools-mcp.
 
 **Key Difference from Upstream:**
+
 - **Upstream**: CLI tool that spawns Chrome via STDIO transport (for Claude Desktop, etc.)
 - **This Fork**: HTTP server that connects to externally-managed Chrome via CDP for BrowserOS integration
 
@@ -123,6 +124,7 @@ bun run clean  # Remove build/ and binaries
 ### Tools Directory (src/tools/)
 
 Each file exports one or more `ToolDefinition` objects:
+
 - **console.ts** - Console logs retrieval (1 tool)
 - **emulation.ts** - Network/CPU throttling (2 tools)
 - **input.ts** - Click, hover, fill, drag, upload (6 tools)
@@ -136,6 +138,7 @@ Each file exports one or more `ToolDefinition` objects:
 ### Tool Registration Pattern
 
 Tools are registered in `main.ts` via:
+
 ```typescript
 function createServerWithTools(): McpServer {
   const server = new McpServer({...});
@@ -159,12 +162,12 @@ function createServerWithTools(): McpServer {
 
 ## Error Handling & Exit Codes
 
-| Exit Code | Meaning | Location |
-|-----------|---------|----------|
-| 0 | Clean shutdown (SIGINT/SIGTERM) | main.ts:163-175 |
-| 1 | Invalid arguments (missing/bad ports) | args.ts |
-| 2 | CDP connection failed | main.ts:62-66 |
-| 3 | HTTP port binding failed | http-server.ts:110-117 |
+| Exit Code | Meaning                               | Location               |
+| --------- | ------------------------------------- | ---------------------- |
+| 0         | Clean shutdown (SIGINT/SIGTERM)       | main.ts:163-175        |
+| 1         | Invalid arguments (missing/bad ports) | args.ts                |
+| 2         | CDP connection failed                 | main.ts:62-66          |
+| 3         | HTTP port binding failed              | http-server.ts:110-117 |
 
 **Fail-Fast Philosophy**: Server exits immediately on startup errors. BrowserOS C++ handles restarts.
 
@@ -175,6 +178,7 @@ function createServerWithTools(): McpServer {
 **Problem**: Package has broken imports (`locales.js`, `codemirror.next.js` missing)
 
 **Impact**:
+
 - Performance tools disabled (main.ts:27-28, 76-77)
 - 2 test files skipped (performance.test.skip.ts, parse.test.skip.ts)
 
@@ -183,6 +187,7 @@ function createServerWithTools(): McpServer {
 ## BrowserOS C++ Integration
 
 **Expected C++ Spawn Command:**
+
 ```cpp
 // Development
 spawn("bun", "src/index.ts", "--cdp-port=9347", "--mcp-port=9223");
@@ -192,6 +197,7 @@ spawn("./browseros-mcp", "--cdp-port=9347", "--mcp-port=9223");
 ```
 
 **Expected Server Output:**
+
 ```
 Starting BrowserOS MCP Server v0.0.1
 Connected to CDP at http://127.0.0.1:9347
@@ -207,6 +213,7 @@ MCP Server ready at http://127.0.0.1:9223/mcp
 5. Tool automatically registered in `createServerWithTools()`
 
 **Do NOT:**
+
 - Modify `registerTool()` logic (shared across all tools)
 - Remove `toolMutex` (prevents concurrent tool execution)
 - Change `context` from shared to per-session (intentionally global)
@@ -214,6 +221,7 @@ MCP Server ready at http://127.0.0.1:9223/mcp
 ## Scripts (Node-based, not Bun)
 
 These use Node because they may depend on Node-specific APIs:
+
 - `bun run prepare` - Pre-commit hooks setup (uses Node)
 - `bun run docs:generate` - Temporarily disabled (needs updating for Bun architecture)
 - `bun run sync-server-json-version` - Sync package.json version (uses Node)
@@ -244,6 +252,7 @@ curl http://localhost:9223/mcp  # Should establish SSE connection
 ## Bun Preferences
 
 Default to using Bun instead of Node.js:
+
 - Use `bun <file>` instead of `node <file>`
 - Use `bun test` instead of `jest` or `vitest`
 - Use `bun install` instead of `npm install`

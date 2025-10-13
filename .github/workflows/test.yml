@@ -1,0 +1,32 @@
+name: Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - main
+      - dev/folder_structure # Temporary for testing
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: macos-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🧰 Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.2.19'
+
+      - name: 📦 Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: 🧪 Run all tests
+        run: bun test:all
+        env:
+          PUPPETEER_EXECUTABLE_PATH: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
