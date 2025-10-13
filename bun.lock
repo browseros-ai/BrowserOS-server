@@ -3,15 +3,9 @@
   "workspaces": {
     "": {
       "name": "chrome-devtools-mcp",
-      "dependencies": {
-        "@modelcontextprotocol/sdk": "1.19.1",
-        "commander": "^14.0.1",
-        "core-js": "3.45.1",
-        "debug": "4.4.3",
-        "puppeteer-core": "24.23.0",
-      },
       "devDependencies": {
         "@eslint/js": "^9.35.0",
+        "@modelcontextprotocol/sdk": "1.19.1",
         "@stylistic/eslint-plugin": "^5.4.0",
         "@types/bun": "latest",
         "@types/debug": "^4.1.12",
@@ -21,16 +15,34 @@
         "@typescript-eslint/eslint-plugin": "^8.43.0",
         "@typescript-eslint/parser": "^8.43.0",
         "chrome-devtools-frontend": "1.0.1524741",
+        "commander": "^14.0.1",
+        "core-js": "3.45.1",
+        "debug": "4.4.3",
         "eslint": "^9.35.0",
         "eslint-import-resolver-typescript": "^4.4.4",
         "eslint-plugin-import": "^2.32.0",
         "globals": "^16.4.0",
         "prettier": "^3.6.2",
         "puppeteer": "24.23.0",
+        "puppeteer-core": "24.23.0",
         "rimraf": "^6.0.1",
         "sinon": "^21.0.0",
         "typescript": "^5.9.2",
         "typescript-eslint": "^8.43.0",
+      },
+    },
+    "packages/core": {
+      "name": "@browseros/core",
+      "version": "0.0.1",
+      "dependencies": {
+        "core-js": "3.45.1",
+        "debug": "4.4.3",
+        "puppeteer-core": "24.23.0",
+      },
+      "devDependencies": {
+        "@types/debug": "^4.1.12",
+        "@types/node": "^24.3.3",
+        "typescript": "^5.9.2",
       },
     },
   },
@@ -38,6 +50,8 @@
     "@babel/code-frame": ["@babel/code-frame@7.27.1", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.27.1", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg=="],
 
     "@babel/helper-validator-identifier": ["@babel/helper-validator-identifier@7.27.1", "", {}, "sha512-D2hP9eA+Sqx1kBZgzxZh0y1trbuU+JoDkiEwqhQ36nodYqJwyEIhPSdMNd7lOm/4io72luTPWH20Yda0xOuUow=="],
+
+    "@browseros/core": ["@browseros/core@workspace:packages/core"],
 
     "@emnapi/core": ["@emnapi/core@1.5.0", "", { "dependencies": { "@emnapi/wasi-threads": "1.1.0", "tslib": "^2.4.0" } }, "sha512-sbP8GzB1WDzacS8fgNPpHlp6C9VZe+SJP3F90W9rLemaQj2PzIuTEl1qDOYQf58YIpyjViI24y9aPWCjEzY2cg=="],
 

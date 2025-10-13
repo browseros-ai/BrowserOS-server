@@ -1,15 +1,18 @@
 {
-  "name": "browseros-mcp",
+  "name": "browseros-server",
   "version": "0.0.1",
-  "description": "MCP server for BrowserOS",
+  "description": "Unified BrowserOS server with MCP and Agent support",
+  "private": true,
   "type": "module",
-  "bin": "./src/index.ts",
-  "main": "src/index.ts",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "start": "bun src/index.ts",
     "start-debug": "DEBUG=mcp:* DEBUG_COLORS=false bun src/index.ts",
     "test": "bun test",
-    "typecheck": "tsc --noEmit",
+    "test:all": "bun test --workspace",
+    "typecheck": "tsc --build",
     "build:binary": "bun build --compile src/index.ts --outfile browseros-mcp --minify --bytecode --target bun-linux-x64",
     "build:binary:macos": "bun build --compile src/index.ts --outfile browseros-mcp --minify --bytecode --target bun-darwin-arm64",
     "build:binary:windows": "bun build --compile src/index.ts --outfile browseros-mcp.exe --minify --bytecode --target bun-windows-x64",
@@ -22,10 +25,6 @@
     "sync-server-json-version": "node --experimental-strip-types scripts/sync-server-json-version.ts && npm run format",
     "clean": "rimraf build dist browseros-mcp browseros-mcp.exe"
   },
-  "files": [
-    "src",
-    "LICENSE"
-  ],
   "repository": "ChromeDevTools/chrome-devtools-mcp",
   "author": "BrowserOS",
   "license": "AGPL-3.0-or-later",
@@ -33,15 +32,12 @@
     "url": "https://github.com/ChromeDevTools/chrome-devtools-mcp/issues"
   },
   "homepage": "https://github.com/ChromeDevTools/chrome-devtools-mcp#readme",
-  "mcpName": "io.github.ChromeDevTools/chrome-devtools-mcp",
-  "dependencies": {
+  "devDependencies": {
     "@modelcontextprotocol/sdk": "1.19.1",
     "commander": "^14.0.1",
     "core-js": "3.45.1",
     "debug": "4.4.3",
-    "puppeteer-core": "24.23.0"
-  },
-  "devDependencies": {
+    "puppeteer-core": "24.23.0",
     "@eslint/js": "^9.35.0",
     "@stylistic/eslint-plugin": "^5.4.0",
     "@types/bun": "latest",
