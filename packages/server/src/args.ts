@@ -7,6 +7,7 @@ import {Command, InvalidArgumentError} from 'commander';
 export interface ServerPorts {
   cdpPort: number;
   httpMcpPort: number;
+  agentPort: number;
   mcpServerEnabled: boolean;
   // Future: httpsMcpPort?: number;
 }
@@ -38,6 +39,7 @@ function parsePort(value: string): number {
  * Required:
  * - --cdp-port <number>: Port where CDP WebSocket is listening
  * - --http-mcp-port <number>: Port where MCP HTTP server should listen
+ * - --agent-port <number>: Port for agent communication
  *
  * Optional:
  * - --disable-mcp-server: Disable MCP server (default: server enabled)
@@ -54,7 +56,9 @@ export function parseArguments(argv = process.argv): ServerPorts {
     .description('BrowserOS MCP Server')
     .requiredOption('--cdp-port <port>', 'CDP WebSocket port', parsePort)
     .requiredOption('--http-mcp-port <port>', 'MCP HTTP server port', parsePort)
+    .requiredOption('--agent-port <port>', 'Agent communication port', parsePort)
     .option('--disable-mcp-server', 'Disable MCP server', false)
+    .exitOverride()
     .parse(argv);
 
   const options = program.opts();
@@ -62,6 +66,7 @@ export function parseArguments(argv = process.argv): ServerPorts {
   return {
     cdpPort: options.cdpPort,
     httpMcpPort: options.httpMcpPort,
+    agentPort: options.agentPort,
     mcpServerEnabled: !options.disableMcpServer,
   };
 }
