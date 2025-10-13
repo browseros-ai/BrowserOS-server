@@ -7,6 +7,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { SetLevelRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { z } from 'zod';
 
 import type { McpContext, Mutex } from '@browseros/core';
 import type { ToolDefinition } from '@browseros/tools';
@@ -48,14 +49,17 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
 
   // Register each tool with the MCP server
   for (const tool of tools) {
+    // Convert ZodRawShape to ZodObject for MCP SDK
+    const zodSchema = z.object(tool.schema as any);
+
     server.registerTool(
       tool.name,
       {
         description: tool.description,
-        inputSchema: tool.schema,
+        inputSchema: zodSchema as any,
         annotations: tool.annotations,
       },
-      async (params): Promise<CallToolResult> => {
+      async (params: any): Promise<CallToolResult> => {
         // Serialize tool execution with mutex
         const guard = await toolMutex.acquire();
         try {

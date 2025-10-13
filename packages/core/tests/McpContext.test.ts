@@ -7,7 +7,7 @@ import {describe, it} from 'node:test';
 
 import sinon from 'sinon';
 
-import type {TraceResult} from '../src/trace-processing/parse.js';
+import type {TraceResult} from '../src/types.js';
 
 import {withBrowser} from './utils.js';
 

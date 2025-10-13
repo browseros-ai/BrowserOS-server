@@ -14,4 +14,5 @@ export * from './utils/index.js';
 export { readVersion } from './utils/index.js';
 
 // Type exports
-export type { McpContext as McpContextType } from './McpContext.js';
+export type { McpContext as McpContextType, TextSnapshotNode, TextSnapshot } from './McpContext.js';
+export type { TraceResult } from './types.js';

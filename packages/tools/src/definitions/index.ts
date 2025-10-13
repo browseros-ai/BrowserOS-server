@@ -2,6 +2,7 @@
  * @license
  * Copyright 2025 BrowserOS
  */
+import type { ToolDefinition } from '../types/ToolDefinition.js';
 import * as consoleTools from './console.js';
 import * as emulationTools from './emulation.js';
 import * as inputTools from './input.js';
@@ -16,7 +17,7 @@ import * as snapshotTools from './snapshot.js';
 /**
  * All available browser automation tools
  */
-export const allTools = [
+export const allTools: ToolDefinition<any>[] = [
   ...Object.values(consoleTools),
   ...Object.values(emulationTools),
   ...Object.values(inputTools),

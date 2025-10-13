@@ -42,7 +42,7 @@ export interface ToolDefinition<Schema extends z.ZodRawShape = z.ZodRawShape> {
  * Request structure with validated parameters
  */
 export interface Request<Schema extends z.ZodRawShape> {
-  params: z.objectOutputType<Schema, z.ZodTypeAny>;
+  params: z.infer<z.ZodObject<Schema>>;
 }
 
 /**

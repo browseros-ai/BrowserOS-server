@@ -66,7 +66,7 @@ function getExtensionFromMimeType(mimeType: string) {
   throw new Error(`No mapping for Mime type ${mimeType}.`);
 }
 
-export class McpContext implements Context {
+export class McpContext {
   browser: Browser;
   logger: Debugger;
 
@@ -216,7 +216,7 @@ export class McpContext implements Context {
     }
     if (page.isClosed()) {
       throw new Error(
-        `The selected page has been closed. Call ${listPages.name} to see open pages.`,
+        `The selected page has been closed. Call list_pages to see open pages.`,
       );
     }
     return page;
@@ -271,7 +271,7 @@ export class McpContext implements Context {
   async getElementByUid(uid: string): Promise<ElementHandle<Element>> {
     if (!this.#textSnapshot?.idToNode.size) {
       throw new Error(
-        `No snapshot found. Use ${takeSnapshot.name} to capture one.`,
+        `No snapshot found. Use take_snapshot to capture one.`,
       );
     }
     const [snapshotId] = uid.split('_');

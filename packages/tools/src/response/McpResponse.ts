@@ -260,7 +260,7 @@ Call handle_dialog to handle it before continuing.`);
 
     const httpRequest = context.getNetworkRequestByUrl(url);
     response.push(`## Request ${httpRequest.url()}`);
-    response.push(`Status: ${getStatusFromRequest(httpRequest)}`);
+    response.push(`Status:  ${getStatusFromRequest(httpRequest)}`);
     response.push('### Request Headers');
     for (const line of getFormattedHeaderValue(httpRequest.headers())) {
       response.push(line);
@@ -321,7 +321,7 @@ Call handle_dialog to handle it before continuing.`);
     if (requests.length) {
       const data = this.#dataWithPagination(
         requests,
-        this.#networkRequestsOptions.pagination,
+        this.#networkRequestsOptions?.pagination,
       );
       response.push(...data.info);
       for (const request of data.items) {

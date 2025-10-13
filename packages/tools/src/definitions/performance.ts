@@ -14,9 +14,13 @@ import {
   traceResultIsSuccess,
 } from '../trace-processing/parse.js';
 
+import type {McpContext} from '@browseros/core';
 import {ToolCategories} from '../types/ToolCategories.js';
-import type {Context, Response} from '../types/ToolDefinition.js';
 import {defineTool} from '../types/ToolDefinition.js';
+import type {Response} from '../types/Response.js';
+
+// Type aliases for compatibility
+type Context = McpContext;
 
 export const startTrace = defineTool({
   name: 'performance_start_trace',
@@ -90,7 +94,7 @@ export const startTrace = defineTool({
 
     if (request.params.autoStop) {
       await new Promise(resolve => setTimeout(resolve, 5_000));
-      await stopTracingAndAppendOutput(page, response, context);
+      await stopTracingAndAppendOutput(page, response, context as any);
     } else {
       response.appendResponseLine(
         `The performance trace is being recorded. Use performance_stop_trace to stop it.`,
@@ -113,7 +117,7 @@ export const stopTrace = defineTool({
       return;
     }
     const page = context.getSelectedPage();
-    await stopTracingAndAppendOutput(page, response, context);
+    await stopTracingAndAppendOutput(page, response, context as any);
   },
 });
 
@@ -161,10 +165,16 @@ async function stopTracingAndAppendOutput(
 ): Promise<void> {
   try {
     const traceEventsBuffer = await page.tracing.stop();
-    const result = await parseRawTraceBuffer(traceEventsBuffer);
+    if (!traceEventsBuffer) {
+      response.appendResponseLine('No trace data available.');
+      return;
+    }
+    const result = await parseRawTraceBuffer(traceEventsBuffer as Buffer);
     response.appendResponseLine('The performance trace has been stopped.');
     if (traceResultIsSuccess(result)) {
-      context.storeTraceRecording(result);
+      // Convert to core TraceResult type
+      const coreResult = { ...result, name: 'trace' } as any;
+      context.storeTraceRecording(coreResult);
       response.appendResponseLine(
         'Here is a high level summary of the trace and the Insights that were found:',
       );
@@ -174,7 +184,7 @@ async function stopTracingAndAppendOutput(
       response.appendResponseLine(
         'There was an unexpected error parsing the trace:',
       );
-      response.appendResponseLine(result.error);
+      response.appendResponseLine(result.error || 'Unknown error');
     }
   } catch (e) {
     const errorText = e instanceof Error ? e.message : JSON.stringify(e);
