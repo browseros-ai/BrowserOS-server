@@ -37,18 +37,12 @@ async function isCdpAvailable(port: number): Promise<boolean> {
 /**
  * Wait for CDP to be ready by polling the version endpoint
  */
-async function waitForCdp(
-  cdpPort: number,
-  maxAttempts = 30,
-): Promise<void> {
+async function waitForCdp(cdpPort: number, maxAttempts = 30): Promise<void> {
   for (let i = 0; i < maxAttempts; i++) {
     try {
-      const response = await fetch(
-        `http://127.0.0.1:${cdpPort}/json/version`,
-        {
-          signal: AbortSignal.timeout(2000),
-        },
-      );
+      const response = await fetch(`http://127.0.0.1:${cdpPort}/json/version`, {
+        signal: AbortSignal.timeout(2000),
+      });
       if (response.ok) {
         return;
       }
@@ -119,6 +113,7 @@ export async function ensureBrowserOS(options?: {
       '--use-mock-keychain',
       '--show-component-extension-options',
       '--enable-logging=stderr',
+      '--headless=new',
       `--user-data-dir=${tempUserDataDir}`,
       `--remote-debugging-port=${cdpPort}`,
       '--disable-browseros-server',
