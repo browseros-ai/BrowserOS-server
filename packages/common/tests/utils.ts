@@ -3,6 +3,7 @@
  * Copyright 2025 BrowserOS
  */
 import {McpResponse} from '@browseros/tools';
+import {execSync} from 'node:child_process';
 import logger from 'debug';
 import type {Browser} from 'puppeteer';
 import puppeteer from 'puppeteer';
@@ -12,6 +13,33 @@ import {McpContext} from '../src/McpContext.js';
 import {ensureBrowserOS} from './browseros.js';
 
 let cachedBrowser: Browser | undefined;
+
+export async function killProcessOnPort(port: number): Promise<void> {
+  try {
+    console.log(`Finding process on port ${port}...`);
+
+    const pids = execSync(`lsof -ti :${port}`, {
+      encoding: 'utf-8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+
+    if (pids) {
+      const pidList = pids.replace(/\n/g, ', ');
+      console.log(`Killing process(es) ${pidList} on port ${port}...`);
+
+      execSync(`kill -9 ${pids.replace(/\n/g, ' ')}`, {
+        stdio: 'ignore',
+      });
+
+      console.log(`Killed process on port ${port}`);
+    }
+  } catch {
+    console.log(`No process found on port ${port}`);
+  }
+
+  console.log('Waiting 5 seconds for port to be released...');
+  await new Promise(resolve => setTimeout(resolve, 5000));
+}
 
 export async function withBrowser(
   cb: (response: McpResponse, context: McpContext) => Promise<void>,
