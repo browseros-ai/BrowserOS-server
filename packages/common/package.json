@@ -12,7 +12,8 @@
     "./logger": "./src/logger.ts",
     "./polyfill": "./src/polyfill.ts",
     "./utils": "./src/utils/index.ts",
-    "./tests/browseros": "./tests/browseros.ts"
+    "./tests/browseros": "./tests/browseros.ts",
+    "./tests/utils": "./tests/utils.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

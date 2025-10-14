@@ -6,7 +6,7 @@ import assert from 'node:assert';
 import {describe, it} from 'node:test';
 
 import {consoleTool} from '../../src/definitions/console.js';
-import {withBrowser} from '../utils.js';
+import {withBrowser} from '@browseros/common/tests/utils';
 
 describe('console', () => {
   describe('list_console_messages', () => {

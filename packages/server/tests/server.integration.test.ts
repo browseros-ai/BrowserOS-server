@@ -18,9 +18,9 @@ import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StreamableHTTPClientTransport} from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
 // Test configuration
-const CDP_PORT = parseInt(process.env.CDP_PORT || '9222');
-const HTTP_MCP_PORT = parseInt(process.env.HTTP_MCP_PORT || '9223');
-const AGENT_PORT = parseInt(process.env.AGENT_PORT || '9224');
+const CDP_PORT = parseInt(process.env.CDP_PORT || '9001');
+const HTTP_MCP_PORT = parseInt(process.env.HTTP_MCP_PORT || '9002');
+const AGENT_PORT = parseInt(process.env.AGENT_PORT || '9003');
 const BASE_URL = `http://127.0.0.1:${HTTP_MCP_PORT}`;
 
 let serverProcess: ReturnType<typeof spawn> | null = null;

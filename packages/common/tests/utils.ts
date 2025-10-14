@@ -9,32 +9,35 @@ import puppeteer from 'puppeteer';
 import type {HTTPRequest, HTTPResponse} from 'puppeteer-core';
 
 import {McpContext} from '../src/McpContext.js';
+import {ensureBrowserOS} from './browseros.js';
 
-let browser: Browser | undefined;
+let cachedBrowser: Browser | undefined;
 
 export async function withBrowser(
   cb: (response: McpResponse, context: McpContext) => Promise<void>,
   options: {debug?: boolean} = {},
-) {
-  const {debug = false} = options;
-  if (!browser) {
-    browser = await puppeteer.launch({
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
-      headless: !debug,
-      defaultViewport: null,
+): Promise<void> {
+  const {cdpPort} = await ensureBrowserOS();
+
+  if (!cachedBrowser || !cachedBrowser.connected) {
+    cachedBrowser = await puppeteer.connect({
+      browserURL: `http://127.0.0.1:${cdpPort}`,
     });
   }
-  const newPage = await browser.newPage();
-  // Close other pages.
+
+  const newPage = await cachedBrowser.newPage();
+
+  const pages = await cachedBrowser.pages();
   await Promise.all(
-    (await browser.pages()).map(async page => {
+    pages.map(async page => {
       if (page !== newPage) {
         await page.close();
       }
     }),
   );
+
   const response = new McpResponse();
-  const context = await McpContext.from(browser, logger('test'));
+  const context = await McpContext.from(cachedBrowser, logger('test'));
 
   await cb(response, context);
 }

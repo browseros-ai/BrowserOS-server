@@ -64,19 +64,20 @@ async function waitForCdp(
  * Ensure BrowserOS is running with the specified configuration.
  * If already running with the same config, reuses the existing process.
  * If port conflicts with external process, throws an error.
+ * Reads configuration from ENV variables (CDP_PORT, BROWSEROS_BINARY) by default.
  */
-export async function ensureBrowserOS(options: {
-  cdpPort: number;
+export async function ensureBrowserOS(options?: {
+  cdpPort?: number;
   binaryPath?: string;
 }): Promise<{
   cdpPort: number;
   tempUserDataDir: string;
 }> {
-  const {
-    cdpPort,
-    binaryPath = process.env.BROWSEROS_BINARY ||
-      '/Applications/BrowserOS.app/Contents/MacOS/BrowserOS',
-  } = options;
+  const cdpPort = options?.cdpPort ?? parseInt(process.env.CDP_PORT || '9001');
+  const binaryPath =
+    options?.binaryPath ??
+    process.env.BROWSEROS_BINARY ??
+    '/Applications/BrowserOS.app/Contents/MacOS/BrowserOS';
 
   // Fast path: already running with same config
   if (
@@ -92,18 +93,18 @@ export async function ensureBrowserOS(options: {
     };
   }
 
-  // Check for port conflicts
-  const portInUse = await isCdpAvailable(cdpPort);
-  if (portInUse) {
-    throw new Error(
-      `CDP port ${cdpPort} is already in use. Please kill the existing process and try again.`,
-    );
-  }
-
   // Clean up any existing process if config changed
   if (browserosProcess) {
     console.log('Config changed, cleaning up existing BrowserOS...');
     await cleanupBrowserOS();
+  }
+
+  // Check for port conflicts (only after we've checked our own process)
+  const portInUse = await isCdpAvailable(cdpPort);
+  if (portInUse && !browserosProcess) {
+    throw new Error(
+      `CDP port ${cdpPort} is already in use by external process. Please kill it and try again.`,
+    );
   }
 
   // Create temp user data directory

@@ -16,7 +16,7 @@ import {
   uploadFile,
 } from '../../src/definitions/input.js';
 import {serverHooks} from '../server.js';
-import {html, withBrowser} from '../utils.js';
+import {html, withBrowser} from '@browseros/common/tests/utils';
 
 describe('input', () => {
   const server = serverHooks();
