@@ -181,12 +181,12 @@ export async function ensureBrowserOS(options?: {
 
   browserosProcess.stdout?.on('data', data => {
     const output = data.toString().trim();
-    if (output) console.log(`[BROWSEROS] ${output}`);
+    // if (output) console.log(`[BROWSEROS] ${output}`);
   });
 
   browserosProcess.stderr?.on('data', data => {
     const output = data.toString().trim();
-    if (output) console.log(`[BROWSEROS] ${output}`);
+    // if (output) console.log(`[BROWSEROS] ${output}`);
   });
 
   browserosProcess.on('error', error => {
