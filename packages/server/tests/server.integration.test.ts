@@ -14,6 +14,7 @@ import {
   ensureBrowserOS,
   cleanupBrowserOS,
 } from '@browseros/common/tests/browseros';
+import {killProcessOnPort} from '@browseros/common/tests/utils.js';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StreamableHTTPClientTransport} from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
@@ -61,14 +62,14 @@ async function waitForServer(maxAttempts = 30): Promise<void> {
   throw new Error('Server failed to start within timeout');
 }
 
-
-
 describe('MCP Server Integration Tests', () => {
   before(async () => {
     // Start BrowserOS (or reuse if already running)
     await ensureBrowserOS({cdpPort: CDP_PORT});
 
     // Check if MCP server port is already in use
+    await killProcessOnPort(HTTP_MCP_PORT);
+
     const portAvailable = await isPortAvailable(HTTP_MCP_PORT);
     if (!portAvailable) {
       console.log(
@@ -195,9 +196,16 @@ describe('MCP Server Integration Tests', () => {
       assert.ok(Array.isArray(result.content), 'Content should be an array');
 
       if (result.isError) {
-        console.log('list_pages returned error (might be expected):', result.content);
+        console.log(
+          'list_pages returned error (might be expected):',
+          result.content,
+        );
       } else {
-        console.log('list_pages returned:', result.content.length, 'content items');
+        console.log(
+          'list_pages returned:',
+          result.content.length,
+          'content items',
+        );
       }
     });
 

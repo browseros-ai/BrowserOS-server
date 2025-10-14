@@ -145,21 +145,16 @@ export async function ensureBrowserOS(options?: {
     await cleanupBrowserOS();
   }
 
-  // Check for port conflicts (only after we've checked our own process)
+  // kill the process on the port if an
+  await killProcessOnPort(cdpPort);
+
   const portInUse = await isCdpAvailable(cdpPort);
   if (portInUse && !browserosProcess) {
-    console.log(
-      `CDP port ${cdpPort} is in use by external process. Killing and retrying...`,
-    );
-    await killProcessOnPort(cdpPort);
+    console.log(`CDP port ${cdpPort} is in use by external process...`);
 
-    // Verify port is now free
-    const stillInUse = await isCdpAvailable(cdpPort);
-    if (stillInUse) {
-      throw new Error(
-        `CDP port ${cdpPort} is still in use after attempting to kill process. Please investigate manually.`,
-      );
-    }
+    throw new Error(
+      `CDP port ${cdpPort} is still in use after attempting to kill process. Please investigate manually.`,
+    );
   }
 
   // Create temp user data directory
