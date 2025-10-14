@@ -17,7 +17,7 @@ import {
   resizePage,
   handleDialog,
 } from '../../src/definitions/pages.js';
-import {withBrowser} from '../utils.js';
+import {withBrowser} from '@browseros/common/tests/utils';
 
 describe('pages', () => {
   describe('list_pages', () => {

@@ -6,7 +6,7 @@ import assert from 'node:assert';
 import {describe, it} from 'node:test';
 
 import {evaluateScript} from '../../src/definitions/script.js';
-import {html, withBrowser} from '../utils.js';
+import {html, withBrowser} from '@browseros/common/tests/utils';
 
 describe('script', () => {
   describe('browser_evaluate_script', () => {

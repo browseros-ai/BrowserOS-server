@@ -9,7 +9,7 @@ import {
   getNetworkRequest,
   listNetworkRequests,
 } from '../../src/definitions/network.js';
-import {withBrowser} from '../utils.js';
+import {withBrowser} from '@browseros/common/tests/utils';
 
 describe('network', () => {
   describe('network_list_requests', () => {

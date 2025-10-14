@@ -11,7 +11,6 @@ import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import {StreamableHTTPServerTransport} from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import type {CallToolResult} from '@modelcontextprotocol/sdk/types.js';
 import {SetLevelRequestSchema} from '@modelcontextprotocol/sdk/types.js';
-import {z} from 'zod';
 
 /**
  * Configuration for MCP server
@@ -49,16 +48,11 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
 
   // Register each tool with the MCP server
   for (const tool of tools) {
-    // Convert ZodRawShape to ZodObject for MCP SDK
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const zodSchema = z.object(tool.schema as any);
-
     server.registerTool(
       tool.name,
       {
         description: tool.description,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        inputSchema: zodSchema as any,
+        inputSchema: tool.schema,
         annotations: tool.annotations,
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

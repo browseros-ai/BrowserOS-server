@@ -13,7 +13,7 @@ import {
   getFormattedResponseBody,
   getShortDescriptionForRequest,
 } from '../../src/formatters/networkFormatter.js';
-import {getMockRequest, getMockResponse} from '../utils.js';
+import {getMockRequest, getMockResponse} from '@browseros/common/tests/utils';
 
 describe('networkFormatter', () => {
   describe('getShortDescriptionForRequest', () => {

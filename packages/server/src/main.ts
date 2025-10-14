@@ -62,6 +62,8 @@ void (async () => {
     `Health check available at http://127.0.0.1:${ports.httpMcpPort}/health`,
   );
 
+  logger(`Agent port reserved: ${ports.agentPort} (not yet implemented)`);
+
   // TODO: Start Agent server when implemented
   // if (ports.agentServerEnabled) {
   //   const agentServer = createAgentServer({
