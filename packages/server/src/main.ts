@@ -124,7 +124,6 @@ void (async () => {
       logger('Warning: ANTHROPIC_API_KEY not set. Agent server will be disabled.');
       logger('Set ANTHROPIC_API_KEY environment variable to enable agent functionality.');
     } else {
-      console.log('[DEBUG] API key found, creating agent config...');
       try {
         const agentConfig: AgentServerConfig = {
           port: ports.agentPort,
@@ -134,11 +133,17 @@ void (async () => {
           idleTimeoutMs: parseInt(process.env.SESSION_IDLE_TIMEOUT_MS || '90000'),
           eventGapTimeoutMs: parseInt(process.env.EVENT_GAP_TIMEOUT_MS || '60000')
         };
+
         // Create agent server with shared WebSocketManager
         agentServer = createAgentServer(agentConfig, wsManager);
+
+        logger(`✅ Agent server started on ws://127.0.0.1:${ports.agentPort}`);
+        logger(`   - Using shared WebSocketManager (port ${ports.wsPort})`);
+        logger(`   - Max sessions: ${agentConfig.maxSessions}`);
+        logger(`   - Idle timeout: ${agentConfig.idleTimeoutMs}ms`);
       } catch (error) {
-        logger(`Agent server creation failed: ${error}`);
-        logger('Agent server will be disabled.');
+        logger(`❌ Failed to start agent server: ${error instanceof Error ? error.message : String(error)}`);
+        logger('Agent functionality will not be available.');
       }
     }
   } else {
