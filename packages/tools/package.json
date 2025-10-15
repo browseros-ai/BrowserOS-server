@@ -9,7 +9,9 @@
     "./definitions": "./src/definitions/index.ts",
     "./response": "./src/response/index.ts",
     "./formatters": "./src/formatters/index.ts",
-    "./types": "./src/types/index.ts"
+    "./types": "./src/types/index.ts",
+    "./controller-definitions": "./src/controller-definitions/index.ts",
+    "./controller-definitions/index.js": "./src/controller-definitions/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

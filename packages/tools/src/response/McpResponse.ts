@@ -112,15 +112,15 @@ export class McpResponse implements Response {
     context: McpContext,
   ): Promise<Array<TextContent | ImageContent>> {
     // Gather additional data based on flags
-    if (this.#includePages) {
+    if (this.#includePages && typeof context.createPagesSnapshot === 'function') {
       await context.createPagesSnapshot();
     }
-    if (this.#includeSnapshot) {
+    if (this.#includeSnapshot && typeof context.createTextSnapshot === 'function') {
       await context.createTextSnapshot();
     }
 
     // Process network request details
-    if (this.#attachedNetworkRequestData?.networkRequestUrl) {
+    if (this.#attachedNetworkRequestData?.networkRequestUrl && typeof context.getNetworkRequestByUrl === 'function') {
       const request = context.getNetworkRequestByUrl(
         this.#attachedNetworkRequestData.networkRequestUrl,
       );
@@ -136,7 +136,7 @@ export class McpResponse implements Response {
     }
 
     // Process console messages
-    if (this.#includeConsoleData) {
+    if (this.#includeConsoleData && typeof context.getConsoleData === 'function') {
       const consoleMessages = context.getConsoleData();
       if (consoleMessages) {
         this.#formattedConsoleData = await Promise.all(
@@ -206,55 +206,65 @@ export class McpResponse implements Response {
   }
 
   #appendEmulationStatus(response: string[], context: McpContext): void {
-    const networkConditions = context.getNetworkConditions();
-    if (networkConditions) {
-      response.push('## Network emulation');
-      response.push(`Emulating: ${networkConditions}`);
-      response.push(
-        `Default navigation timeout set to ${context.getNavigationTimeout()} ms`,
-      );
+    if (typeof context.getNetworkConditions === 'function') {
+      const networkConditions = context.getNetworkConditions();
+      if (networkConditions && typeof context.getNavigationTimeout === 'function') {
+        response.push('## Network emulation');
+        response.push(`Emulating: ${networkConditions}`);
+        response.push(
+          `Default navigation timeout set to ${context.getNavigationTimeout()} ms`,
+        );
+      }
     }
 
-    const cpuThrottlingRate = context.getCpuThrottlingRate();
-    if (cpuThrottlingRate > 1) {
-      response.push('## CPU emulation');
-      response.push(`Emulating: ${cpuThrottlingRate}x slowdown`);
+    if (typeof context.getCpuThrottlingRate === 'function') {
+      const cpuThrottlingRate = context.getCpuThrottlingRate();
+      if (cpuThrottlingRate > 1) {
+        response.push('## CPU emulation');
+        response.push(`Emulating: ${cpuThrottlingRate}x slowdown`);
+      }
     }
   }
 
   #appendDialogStatus(response: string[], context: McpContext): void {
-    const dialog = context.getDialog();
-    if (dialog) {
-      response.push(`# Open dialog
+    if (typeof context.getDialog === 'function') {
+      const dialog = context.getDialog();
+      if (dialog) {
+        response.push(`# Open dialog
 ${dialog.type()}: ${dialog.message()} (default value: ${dialog.defaultValue()}).
 Call handle_dialog to handle it before continuing.`);
+      }
     }
   }
 
   #appendPagesInfo(response: string[], context: McpContext): void {
-    const parts = ['## Pages'];
-    let idx = 0;
-    for (const page of context.getPages()) {
-      parts.push(
-        `${idx}: ${page.url()}${idx === context.getSelectedPageIdx() ? ' [selected]' : ''}`,
-      );
-      idx++;
+    if (typeof context.getPages === 'function' && typeof context.getSelectedPageIdx === 'function') {
+      const parts = ['## Pages'];
+      let idx = 0;
+      for (const page of context.getPages()) {
+        parts.push(
+          `${idx}: ${page.url()}${idx === context.getSelectedPageIdx() ? ' [selected]' : ''}`,
+        );
+        idx++;
+      }
+      response.push(...parts);
     }
-    response.push(...parts);
   }
 
   #appendSnapshot(response: string[], context: McpContext): void {
-    const snapshot = context.getTextSnapshot();
-    if (snapshot) {
-      const formattedSnapshot = formatA11ySnapshot(snapshot.root);
-      response.push('## Page content');
-      response.push(formattedSnapshot);
+    if (typeof context.getTextSnapshot === 'function') {
+      const snapshot = context.getTextSnapshot();
+      if (snapshot) {
+        const formattedSnapshot = formatA11ySnapshot(snapshot.root);
+        response.push('## Page content');
+        response.push(formattedSnapshot);
+      }
     }
   }
 
   #appendNetworkRequestDetails(response: string[], context: McpContext): void {
     const url = this.#attachedNetworkRequestData?.networkRequestUrl;
-    if (!url) {
+    if (!url || typeof context.getNetworkRequestByUrl !== 'function') {
       return;
     }
 
@@ -304,6 +314,10 @@ Call handle_dialog to handle it before continuing.`);
   }
 
   #appendNetworkRequestsList(response: string[], context: McpContext): void {
+    if (typeof context.getNetworkRequests !== 'function') {
+      return;
+    }
+
     let requests = context.getNetworkRequests();
 
     // Apply resource type filtering

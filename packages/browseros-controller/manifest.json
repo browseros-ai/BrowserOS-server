@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "BrowserOS Controller",
+  "version": "1.0.0",
+  "description": "Chrome Extension API bridge for BrowserOS Server",
+
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "bookmarks",
+    "history",
+    "scripting",
+    "browserOS"
+  ],
+
+  "host_permissions": [
+    "<all_urls>"
+  ],
+
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  }
+}
