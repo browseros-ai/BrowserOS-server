@@ -110,14 +110,14 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
    * Validates that request originates from localhost
    */
   const isLocalhostRequest = (req: http.IncomingMessage): boolean => {
-    // Check 1: Remote address must be localhost
+    // Remote address must be localhost
     const remoteAddr = req.socket.remoteAddress;
     const validAddrs = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
     if (!remoteAddr || !validAddrs.includes(remoteAddr)) {
       return false;
     }
 
-    // Check 2: Host header must be localhost
+    // Host header must be localhost
     const host = req.headers.host;
     if (!host) return false;
 
@@ -126,23 +126,7 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
       return false;
     }
 
-    // Check 3: Origin header (if present) must be localhost
-    const origin = req.headers.origin;
-    if (origin) {
-      try {
-        const originUrl = new URL(origin);
-        if (
-          originUrl.hostname !== '127.0.0.1' &&
-          originUrl.hostname !== 'localhost'
-        ) {
-          return false;
-        }
-      } catch {
-        return false;
-      }
-    }
-
-    // Check 4: Referer header (if present) must be localhost
+    // Referer header (if present) must be localhost
     const referer = req.headers.referer;
     if (referer) {
       try {
@@ -220,7 +204,9 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
     if (!isLocalhostRequest(req)) {
       logger(`Rejected non-localhost request from ${req.socket.remoteAddress}`);
       res.writeHead(403, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({error: 'Forbidden: Only localhost access allowed'}));
+      res.end(
+        JSON.stringify({error: 'Forbidden: Only localhost access allowed'}),
+      );
       return;
     }
 
