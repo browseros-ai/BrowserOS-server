@@ -1,9 +1,9 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
-  "name": "io.github.ChromeDevTools/chrome-devtools-mcp",
-  "description": "MCP server for Chrome DevTools",
+  "name": "BrowserOS MCP Server",
+  "description": "Model Context Protocol server exposing Chromium browser automation capabilities through BrowserOS",
   "repository": {
-    "url": "https://github.com/ChromeDevTools/chrome-devtools-mcp",
+    "url": "https://github.com/browseros/browseros-server",
     "source": "github"
   },
   "version": "0.0.1",
@@ -11,7 +11,7 @@
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
-      "identifier": "chrome-devtools-mcp",
+      "identifier": "browseros-mcp-server",
       "version": "0.0.1",
       "transport": {
         "type": "stdio"

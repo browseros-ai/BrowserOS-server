@@ -20,6 +20,7 @@ export interface McpServerConfig {
   version: string;
   tools: ToolDefinition[];
   context: McpContext;
+  controllerContext?: any;
   toolMutex: Mutex;
   logger: (message: string) => void;
   mcpServerEnabled: boolean;
@@ -30,7 +31,7 @@ export interface McpServerConfig {
  * This is the pure MCP logic, separated from HTTP transport
  */
 function createMcpServerWithTools(config: McpServerConfig): McpServer {
-  const {version, tools, context, toolMutex, logger} = config;
+  const {version, tools, context, controllerContext, toolMutex, logger} = config;
 
   const server = new McpServer(
     {
@@ -62,13 +63,17 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
         try {
           logger(`${tool.name} request: ${JSON.stringify(params, null, '  ')}`);
 
+          // Detect if this is a controller tool (browser_* tools)
+          const isControllerTool = tool.name.startsWith('browser_');
+          const contextForResponse = isControllerTool && controllerContext ? controllerContext : context;
+
           // Create response handler and execute tool
           const response = new McpResponse();
           await tool.handler({params}, response, context);
 
           // Process and return response
           try {
-            const content = await response.handle(tool.name, context);
+            const content = await response.handle(tool.name, contextForResponse);
             return {content};
           } catch (error) {
             const errorText =

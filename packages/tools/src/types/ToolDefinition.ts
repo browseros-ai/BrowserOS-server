@@ -10,8 +10,13 @@ import type {ToolCategories} from './ToolCategories.js';
 
 /**
  * Structure for defining a browser automation tool
+ * Now generic to support both CDP and Controller contexts/responses
  */
-export interface ToolDefinition<Schema extends z.ZodRawShape = z.ZodRawShape> {
+export interface ToolDefinition<
+  Schema extends z.ZodRawShape = z.ZodRawShape,
+  TContext = any,
+  TResponse = any
+> {
   /** Unique identifier for the tool */
   name: string;
 
@@ -23,7 +28,7 @@ export interface ToolDefinition<Schema extends z.ZodRawShape = z.ZodRawShape> {
     /** Optional display title */
     title?: string;
     /** Category for grouping */
-    category: ToolCategories;
+    category: ToolCategories | string;
     /** If true, the tool does not modify its environment */
     readOnlyHint: boolean;
   };
@@ -34,8 +39,8 @@ export interface ToolDefinition<Schema extends z.ZodRawShape = z.ZodRawShape> {
   /** Implementation handler */
   handler: (
     request: Request<Schema>,
-    response: Response,
-    context: Context,
+    response: TResponse,
+    context: TContext,
   ) => Promise<void>;
 }
 
@@ -48,10 +53,15 @@ export interface Request<Schema extends z.ZodRawShape> {
 
 /**
  * Helper function for defining tools with type safety
+ * Now generic to support both CDP and Controller contexts/responses
  */
-export function defineTool<Schema extends z.ZodRawShape>(
-  definition: ToolDefinition<Schema>,
-): ToolDefinition<Schema> {
+export function defineTool<
+  Schema extends z.ZodRawShape,
+  TContext = any,
+  TResponse = any
+>(
+  definition: ToolDefinition<Schema, TContext, TResponse>,
+): ToolDefinition<Schema, TContext, TResponse> {
   return definition;
 }
 
@@ -67,7 +77,7 @@ export const commonSchemas = {
       .describe(
         'Maximum wait time in milliseconds. If set to 0, the default timeout will be used.',
       )
-      .transform(value => {
+      .transform((value: number | undefined) => {
         return value && value <= 0 ? undefined : value;
       }),
   },
