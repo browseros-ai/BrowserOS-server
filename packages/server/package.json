@@ -8,12 +8,13 @@
     "browseros-server": "./src/index.ts"
   },
   "scripts": {
-    "start": "bun src/index.ts --http-mcp-port=9223 --agent-port=9224 --ws-port=9224",
-    "start:with-cdp": "echo '⚠️  Ensure browserOS CDP is running on port 9222' && bun src/index.ts --cdp-port=9222 --http-mcp-port=9223 --agent-port=9224 --ws-port=9224",
+    "start": "bun src/index.ts --http-mcp-port=9223 --agent-port=3000 --ws-port=9224",
+    "start:with-cdp": "echo '⚠️  Ensure browserOS CDP is running on port 9222' && bun src/index.ts --cdp-port=9222 --http-mcp-port=9223 --agent-port=3000 --ws-port=9224",
     "typecheck": "tsc --noEmit",
     "test": "bun test"
   },
   "dependencies": {
+    "@browseros/agent": "workspace:*",
     "@browseros/common": "workspace:*",
     "@browseros/tools": "workspace:*",
     "@browseros/mcp": "workspace:*",

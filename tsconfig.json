@@ -28,7 +28,8 @@
     {"path": "./packages/common"},
     {"path": "./packages/tools"},
     {"path": "./packages/mcp"},
-    {"path": "./packages/server"}
+    {"path": "./packages/server"},
+    {"path": "./packages/agent"}
   ],
   "include": [],
   "exclude": ["node_modules", "dist", "build", "*.config.js"]

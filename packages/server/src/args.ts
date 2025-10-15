@@ -10,6 +10,7 @@ export interface ServerPorts {
   agentPort: number;
   wsPort: number;
   mcpServerEnabled: boolean;
+  agentServerEnabled: boolean;
   // Future: httpsMcpPort?: number;
 }
 
@@ -35,15 +36,17 @@ function parsePort(value: string): number {
 }
 
 /**
- * Parse command-line arguments for BrowserOS MCP server.
+ * Parse command-line arguments for BrowserOS unified server.
  *
  * Required:
- * - --cdp-port <number>: Port where CDP WebSocket is listening
  * - --http-mcp-port <number>: Port where MCP HTTP server should listen
- * - --agent-port <number>: Port for agent communication
+ * - --agent-port <number>: Port for agent WebSocket server
  *
  * Optional:
- * - --disable-mcp-server: Disable MCP server (default: server enabled)
+ * - --cdp-port <number>: Port where CDP WebSocket is listening (for direct CDP connection)
+ * - --ws-port <number>: WebSocket port for extension connection (default: 9224)
+ * - --disable-mcp-server: Disable MCP HTTP server (default: enabled)
+ * - --disable-agent-server: Disable agent WebSocket server (default: enabled)
  *
  * Exits with code 1 if arguments are invalid or missing.
  *
@@ -53,13 +56,14 @@ export function parseArguments(argv = process.argv): ServerPorts {
   const program = new Command();
 
   program
-    .name('browseros-mcp')
-    .description('BrowserOS MCP Server')
+    .name('browseros-server')
+    .description('BrowserOS Unified Server - MCP + Agent')
     .option('--cdp-port <port>', 'CDP WebSocket port (optional)', parsePort)
     .requiredOption('--http-mcp-port <port>', 'MCP HTTP server port', parsePort)
-    .requiredOption('--agent-port <port>', 'Agent communication port', parsePort)
+    .requiredOption('--agent-port <port>', 'Agent WebSocket server port', parsePort)
     .option('--ws-port <port>', 'WebSocket port for extension connection', parsePort, 9224)
-    .option('--disable-mcp-server', 'Disable MCP server', false)
+    .option('--disable-mcp-server', 'Disable MCP HTTP server', false)
+    .option('--disable-agent-server', 'Disable agent WebSocket server', false)
     .exitOverride()
     .parse(argv);
 
@@ -71,5 +75,6 @@ export function parseArguments(argv = process.argv): ServerPorts {
     agentPort: options.agentPort,
     wsPort: options.wsPort,
     mcpServerEnabled: !options.disableMcpServer,
+    agentServerEnabled: !options.disableAgentServer,
   };
 }
