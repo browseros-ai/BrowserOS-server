@@ -45,8 +45,19 @@ jspm_packages/
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
 
+# Claude
+.claude
+
+# Build unpublished docs
+docs/
+
 # TypeScript cache
 *.tsbuildinfo
+
+# TypeScript compiled output in tests (source files are .ts)
+**/tests/**/*.js
+**/tests/**/*.d.ts
+**/tests/**/*.d.ts.map
 
 # Optional npm cache directory
 .npm

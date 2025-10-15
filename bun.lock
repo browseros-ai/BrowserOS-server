@@ -70,6 +70,7 @@
         "@browseros/mcp": "workspace:*",
         "@browseros/tools": "workspace:*",
         "commander": "^14.0.1",
+        "ws": "^8.18.0",
       },
       "devDependencies": {
         "@types/node": "^24.3.3",

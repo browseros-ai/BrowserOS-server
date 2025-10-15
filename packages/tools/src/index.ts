@@ -27,3 +27,6 @@ export {pages} from './definitions/index.js';
 export {screenshot} from './definitions/index.js';
 export {script} from './definitions/index.js';
 export {snapshot} from './definitions/index.js';
+
+// Export controller definitions
+export * as controller from './controller-definitions/index.js';
