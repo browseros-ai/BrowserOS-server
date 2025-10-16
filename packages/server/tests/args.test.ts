@@ -20,6 +20,7 @@ describe('args parsing', () => {
       cdpPort: 9222,
       httpMcpPort: 9223,
       agentPort: 9224,
+      extensionPort: 9224,
       mcpServerEnabled: true,
     });
   });
@@ -37,6 +38,7 @@ describe('args parsing', () => {
       cdpPort: 9222,
       httpMcpPort: 9223,
       agentPort: 9224,
+      extensionPort: 9224,
       mcpServerEnabled: false,
     });
   });

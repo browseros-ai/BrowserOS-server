@@ -45,8 +45,8 @@ void (async () => {
   logger(`Starting BrowserOS Server v${version}`);
 
   // Start WebSocket server for extension
-  logger(`Starting WebSocket server on port ${ports.wsPort}...`);
-  const wsManager = new WebSocketManager(ports.wsPort, logger);
+  logger(`Starting WebSocket server on port ${ports.extensionPort}...`);
+  const wsManager = new WebSocketManager(ports.extensionPort, logger);
   const controllerContext = new ControllerContext(wsManager);
 
   // Connect to Chrome DevTools Protocol (optional)
