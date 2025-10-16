@@ -5,6 +5,7 @@
 import assert from 'node:assert';
 import {describe, it} from 'node:test';
 
+import {getMockRequest, getMockResponse} from '@browseros/common/tests/utils';
 import {ProtocolError} from 'puppeteer-core';
 
 import {
@@ -13,7 +14,6 @@ import {
   getFormattedResponseBody,
   getShortDescriptionForRequest,
 } from '../../src/formatters/networkFormatter.js';
-import {getMockRequest, getMockResponse} from '@browseros/common/tests/utils';
 
 describe('networkFormatter', () => {
   describe('getShortDescriptionForRequest', () => {

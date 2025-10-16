@@ -21,7 +21,7 @@ interface BrowserOSConfig {
 
 let browserosProcess: ChildProcess | null = null;
 let browserosConfig: BrowserOSConfig | null = null;
-let cleanupScheduled = false;
+const cleanupScheduled = false;
 
 /**
  * Check if CDP is available on the specified port
@@ -58,52 +58,6 @@ async function waitForCdp(cdpPort: number, maxAttempts = 30): Promise<void> {
 }
 
 /**
- * Schedule automatic cleanup of BrowserOS when the process exits.
- * Called once from ensureBrowserOS() to register lifecycle hooks.
- */
-function scheduleCleanup(): void {
-  if (cleanupScheduled) return;
-  cleanupScheduled = true;
-
-  // Graceful cleanup when tests complete normally
-  process.once('beforeExit', () => {
-    if (browserosProcess || browserosConfig) {
-      cleanupBrowserOS().catch(err => {
-        console.error('Cleanup failed:', err);
-      });
-    }
-  });
-
-  // Immediate cleanup on Ctrl+C or kill signals
-  const forceCleanup = () => {
-    if (browserosProcess) {
-      console.log('\nForce killing BrowserOS...');
-      browserosProcess.kill('SIGKILL');
-      browserosProcess = null;
-    }
-    if (browserosConfig?.tempUserDataDir) {
-      try {
-        rmSync(browserosConfig.tempUserDataDir, {recursive: true, force: true});
-        console.log('Force cleaned temp directory');
-      } catch (err) {
-        console.error('Failed to cleanup temp directory:', err);
-      }
-      browserosConfig = null;
-    }
-  };
-
-  process.once('SIGINT', () => {
-    forceCleanup();
-    process.exit(130);
-  });
-
-  process.once('SIGTERM', () => {
-    forceCleanup();
-    process.exit(143);
-  });
-}
-
-/**
  * Ensure BrowserOS is running with the specified configuration.
  * If already running with the same config, reuses the existing process.
  * If port conflicts with external process, kills it and retries.
@@ -116,9 +70,6 @@ export async function ensureBrowserOS(options?: {
   cdpPort: number;
   tempUserDataDir: string;
 }> {
-  // Schedule cleanup hooks on first call
-  scheduleCleanup();
-
   const cdpPort = options?.cdpPort ?? parseInt(process.env.CDP_PORT || '9001');
   const binaryPath =
     options?.binaryPath ??
@@ -145,21 +96,16 @@ export async function ensureBrowserOS(options?: {
     await cleanupBrowserOS();
   }
 
-  // Check for port conflicts (only after we've checked our own process)
+  // kill the process on the port if an
+  await killProcessOnPort(cdpPort);
+
   const portInUse = await isCdpAvailable(cdpPort);
   if (portInUse && !browserosProcess) {
-    console.log(
-      `CDP port ${cdpPort} is in use by external process. Killing and retrying...`,
-    );
-    await killProcessOnPort(cdpPort);
+    console.log(`CDP port ${cdpPort} is in use by external process...`);
 
-    // Verify port is now free
-    const stillInUse = await isCdpAvailable(cdpPort);
-    if (stillInUse) {
-      throw new Error(
-        `CDP port ${cdpPort} is still in use after attempting to kill process. Please investigate manually.`,
-      );
-    }
+    throw new Error(
+      `CDP port ${cdpPort} is still in use after attempting to kill process. Please investigate manually.`,
+    );
   }
 
   // Create temp user data directory
@@ -186,12 +132,12 @@ export async function ensureBrowserOS(options?: {
 
   browserosProcess.stdout?.on('data', data => {
     const output = data.toString().trim();
-    if (output) console.log(`[BROWSEROS] ${output}`);
+    // if (output) console.log(`[BROWSEROS] ${output}`);
   });
 
   browserosProcess.stderr?.on('data', data => {
     const output = data.toString().trim();
-    if (output) console.log(`[BROWSEROS] ${output}`);
+    // if (output) console.log(`[BROWSEROS] ${output}`);
   });
 
   browserosProcess.on('error', error => {

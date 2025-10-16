@@ -5,8 +5,9 @@
 import assert from 'node:assert';
 import {describe, it} from 'node:test';
 
-import {emulateCpu, emulateNetwork} from '../../src/definitions/emulation.js';
 import {withBrowser} from '@browseros/common/tests/utils';
+
+import {emulateCpu, emulateNetwork} from '../../src/definitions/emulation.js';
 
 describe('emulation', () => {
   describe('network', () => {

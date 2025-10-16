@@ -105,23 +105,125 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
 export function createHttpMcpServer(config: McpServerConfig): http.Server {
   const {port, logger, mcpServerEnabled} = config;
 
-  // Only create MCP server if enabled
-  const mcpServer = mcpServerEnabled ? createMcpServerWithTools(config) : null;
+  // Runtime state - can be toggled via control endpoint
+  let mcpEnabled = mcpServerEnabled;
+
+  // Always create MCP server (access controlled via mcpEnabled flag)
+  const mcpServer = createMcpServerWithTools(config);
+
+  /**
+   * Validates that request originates from localhost
+   */
+  const isLocalhostRequest = (req: http.IncomingMessage): boolean => {
+    // Remote address must be localhost
+    const remoteAddr = req.socket.remoteAddress;
+    const validAddrs = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
+    if (!remoteAddr || !validAddrs.includes(remoteAddr)) {
+      return false;
+    }
+
+    // Host header must be localhost
+    const host = req.headers.host;
+    if (!host) return false;
+
+    const hostname = host.split(':')[0];
+    if (hostname !== '127.0.0.1' && hostname !== 'localhost') {
+      return false;
+    }
+
+    // Referer header (if present) must be localhost
+    const referer = req.headers.referer;
+    if (referer) {
+      try {
+        const refererUrl = new URL(referer);
+        if (
+          refererUrl.hostname !== '127.0.0.1' &&
+          refererUrl.hostname !== 'localhost'
+        ) {
+          return false;
+        }
+      } catch {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  /**
+   * Handles MCP control endpoint for enabling/disabling
+   */
+  const handleControlEndpoint = async (
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+  ): Promise<void> => {
+    if (req.method !== 'POST') {
+      res.writeHead(405, {'Content-Type': 'application/json'});
+      res.end(JSON.stringify({error: 'Method not allowed'}));
+      return;
+    }
+
+    try {
+      // Read request body
+      const chunks: Buffer[] = [];
+      for await (const chunk of req) {
+        chunks.push(chunk);
+      }
+      const body = Buffer.concat(chunks).toString();
+
+      // Parse and validate
+      const data = JSON.parse(body);
+      if (typeof data.enabled !== 'boolean') {
+        res.writeHead(400, {'Content-Type': 'application/json'});
+        res.end(
+          JSON.stringify({error: 'Invalid request: enabled must be boolean'}),
+        );
+        return;
+      }
+
+      // Update state
+      mcpEnabled = data.enabled;
+      logger(
+        `MCP server ${mcpEnabled ? 'enabled' : 'disabled'} via control endpoint`,
+      );
+
+      res.writeHead(200, {'Content-Type': 'application/json'});
+      res.end(JSON.stringify({success: true, enabled: mcpEnabled}));
+    } catch (error) {
+      res.writeHead(400, {'Content-Type': 'application/json'});
+      res.end(JSON.stringify({error: 'Invalid JSON'}));
+    }
+  };
 
   const httpServer = http.createServer(async (req, res) => {
     const url = new URL(req.url!, `http://${req.headers.host}`);
 
-    // Health check endpoint (always available)
+    // Health check endpoint (always available, no security checks)
     if (url.pathname === '/health') {
       res.writeHead(200, {'Content-Type': 'text/plain'});
       res.end('OK');
       return;
     }
 
+    // Security check for all other endpoints
+    if (!isLocalhostRequest(req)) {
+      logger(`Rejected non-localhost request from ${req.socket.remoteAddress}`);
+      res.writeHead(403, {'Content-Type': 'application/json'});
+      res.end(
+        JSON.stringify({error: 'Forbidden: Only localhost access allowed'}),
+      );
+      return;
+    }
+
+    // Control endpoint
+    if (url.pathname === '/mcp/control') {
+      await handleControlEndpoint(req, res);
+      return;
+    }
+
     // MCP endpoint
     if (url.pathname === '/mcp') {
-      // Return disabled status if MCP server is not enabled
-      if (!mcpServerEnabled || !mcpServer) {
+      if (!mcpEnabled) {
         res.writeHead(503, {'Content-Type': 'application/json'});
         res.end(
           JSON.stringify({

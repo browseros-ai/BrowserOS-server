@@ -2,7 +2,8 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import {WebSocketServer, WebSocket} from 'ws';
+import type { WebSocket} from 'ws';
+import {WebSocketServer} from 'ws';
 
 interface ControllerRequest {
   id: string;
