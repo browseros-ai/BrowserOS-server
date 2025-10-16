@@ -97,7 +97,7 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
   handler: async (request, response, context) => {
     const params = request.params as {
       tabId: number;
-      type: 'text' | 'links' | 'text-with-links';
+      type: 'text' | 'text-with-links';
       options?: {context?: 'visible' | 'full'; includeSections?: string[]};
       // TODO: Add these when implementing LLM extraction
       // format?: any;
