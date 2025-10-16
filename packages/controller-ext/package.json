@@ -6,10 +6,9 @@
     "doc": "docs"
   },
   "scripts": {
-    "build": "webpack --mode production && npm run copy-manifest",
-    "build:dev": "webpack --mode development && npm run copy-manifest",
+    "build": "webpack --mode production",
+    "build:dev": "webpack --mode development",
     "watch": "webpack --mode development --watch",
-    "copy-manifest": "cp manifest.json dist/",
     "test": "node tests/test-simple.js",
     "test:auto": "node tests/test-auto.js"
   },
@@ -27,8 +26,8 @@
   "devDependencies": {
     "@types/chrome": "^0.1.24",
     "@types/node": "^24.7.1",
-    "dotenv": "^17.2.3",
-    "dotenv-webpack": "^8.1.1",
+    "copy-webpack-plugin": "^12.0.2",
+    "terser-webpack-plugin": "^5.3.11",
     "ts-loader": "^9.5.4",
     "typescript": "^5.9.3",
     "webpack": "^5.102.1",
