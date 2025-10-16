@@ -5,15 +5,14 @@
  */
 /// <reference path="../types/chrome-browser-os.d.ts" />
 
-import { getBrowserOSAdapter } from '@/adapters/BrowserOSAdapter';
-import { logger } from '@/utils/Logger';
-
-const DEFAULT_PORT = 9255;
+import {getBrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
+import {WEBSOCKET_CONFIG} from '@/config/constants';
+import {logger} from '@/utils/Logger';
 
 /**
  * Get the WebSocket port from BrowserOS preferences
  * Returns browseros.server.extension_port preference value
- * Falls back to 9255 if preference cannot be retrieved
+ * Falls back to port from constants if preference cannot be retrieved
  */
 export async function getWebSocketPort(): Promise<number> {
   try {
@@ -25,10 +24,12 @@ export async function getWebSocketPort(): Promise<number> {
       return pref.value;
     }
 
-    logger.warn(`Port preference not found, using default: ${DEFAULT_PORT}`);
-    return DEFAULT_PORT;
+    logger.warn(`Port preference not found, using default: ${WEBSOCKET_CONFIG.port}`);
+    return WEBSOCKET_CONFIG.port;
   } catch (error) {
-    logger.error(`Failed to get port from BrowserOS preferences: ${error}, using default: ${DEFAULT_PORT}`);
-    return DEFAULT_PORT;
+    logger.error(
+      `Failed to get port from BrowserOS preferences: ${error}, using default: ${WEBSOCKET_CONFIG.port}`,
+    );
+    return WEBSOCKET_CONFIG.port;
   }
 }

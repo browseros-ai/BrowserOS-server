@@ -13,6 +13,9 @@ const namespacesToEnable = [
   ...(process.env['DEBUG'] ? [process.env['DEBUG']] : []),
 ];
 
+// Always enable mcp:log namespace by default
+debug.enable(namespacesToEnable.join(','));
+
 export function saveLogsToFile(fileName: string): fs.WriteStream {
   // Enable overrides everything so we need to add them
   debug.enable(namespacesToEnable.join(','));

@@ -7,12 +7,9 @@
     "declaration": true,
     "declarationMap": true
   },
-  "include": ["src/**/*", "tests/**/*"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist/**/*"],
   "references": [
-    {"path": "../common"},
-    {"path": "../tools"},
-    {"path": "../mcp"},
-    {"path": "../controller-server"}
+    {"path": "../tools"}
   ]
 }

@@ -5,7 +5,7 @@
 import {Command, InvalidArgumentError} from 'commander';
 
 export interface ServerPorts {
-  cdpPort?: number;
+  cdpPort: number;
   httpMcpPort: number;
   agentPort: number;
   extensionPort: number;
@@ -38,11 +38,11 @@ function parsePort(value: string): number {
  * Parse command-line arguments for BrowserOS MCP server.
  *
  * Required:
- * - --cdp-port <number>: Port where CDP WebSocket is listening
  * - --http-mcp-port <number>: Port where MCP HTTP server should listen
  * - --agent-port <number>: Port for agent communication
  *
  * Optional:
+ * - --cdp-port <number>: Port where CDP WebSocket is listening
  * - --disable-mcp-server: Disable MCP server (default: server enabled)
  *
  * Exits with code 1 if arguments are invalid or missing.
@@ -55,10 +55,19 @@ export function parseArguments(argv = process.argv): ServerPorts {
   program
     .name('browseros-mcp')
     .description('BrowserOS MCP Server')
-    .option('--cdp-port <port>', 'CDP WebSocket port (optional)', parsePort)
+    .option('--cdp-port <port>', 'CDP WebSocket port', parsePort)
     .requiredOption('--http-mcp-port <port>', 'MCP HTTP server port', parsePort)
-    .requiredOption('--agent-port <port>', 'Agent communication port', parsePort)
-    .option('--extension-port <port>', 'WebSocket port for extension connection', parsePort, 9224)
+    .requiredOption(
+      '--agent-port <port>',
+      'Agent communication port',
+      parsePort,
+    )
+    .option(
+      '--extension-port <port>',
+      'WebSocket port for extension connection',
+      parsePort,
+      9224,
+    )
     .option('--disable-mcp-server', 'Disable MCP server', false)
     .exitOverride()
     .parse(argv);

@@ -69,34 +69,18 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
       // task?: string;
     };
 
-    // Determine what content to extract
-    const extractText = params.type === 'text' || params.type === 'text-with-links';
-    const extractLinks = params.type === 'links' || params.type === 'text-with-links';
+    // Get interactive snapshot which contains hierarchicalStructure
+    const interactiveSnapshot = await context.executeAction('getInteractiveSnapshot', {
+      tabId: params.tabId,
+    }) as {hierarchicalStructure?: string};
 
-    // Build up content similar to Extract.ts
-    let hierarchicalContent = '';
+    // Get hierarchical text content (with tab indentation)
+    const hierarchicalContent = interactiveSnapshot.hierarchicalStructure || '';
+
+    // Get links only if extraction mode includes links
+    const extractLinks = params.type === 'text-with-links';
     let linksContent = '';
 
-    // Get text content if needed
-    if (extractText) {
-      const textSnapshot = await context.executeAction('getSnapshot', {
-        tabId: params.tabId,
-        type: 'text',
-        options: params.options,
-      });
-      const snapshot = textSnapshot as Snapshot;
-
-      // Extract text from all sections (similar to getTextSnapshotString)
-      const textParts: string[] = [];
-      for (const section of snapshot.sections) {
-        if (section.textResult?.text) {
-          textParts.push(section.textResult.text);
-        }
-      }
-      hierarchicalContent = textParts.join('\n\n').trim();
-    }
-
-    // Get links if needed
     if (extractLinks) {
       const linksSnapshot = await context.executeAction('getSnapshot', {
         tabId: params.tabId,
