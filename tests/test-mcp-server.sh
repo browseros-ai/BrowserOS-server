@@ -11,16 +11,16 @@ echo "Testing MCP server at http://127.0.0.1:${MCP_PORT}"
 echo ""
 
 # 1. List tools
-# echo "1. List tools:"
-# curl -s -X POST http://127.0.0.1:${MCP_PORT}/mcp \
-#   -H "Content-Type: application/json" \
-#   -H "Accept: application/json, text/event-stream" \
-#   -d '{
-#     "jsonrpc": "2.0",
-#     "id": 1,
-#     "method": "tools/list"
-#   }' | jq
-# echo ""
+echo "1. List tools:"
+curl -s -X POST http://127.0.0.1:${MCP_PORT}/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/list"
+  }' | jq -r '.result.tools[] | "  - \(.name)"'
+echo ""
 
 # # 2. Navigate to amazon.com (old tool name)
 # echo "2. Navigate to amazon.com (old tool name):"
