@@ -62,7 +62,8 @@ module.exports = (env, argv) => {
                   comments: false,
                 },
                 compress: {
-                  drop_console: true,
+                  // FIXME: nikhil - remove this later after few releases
+                  drop_console: false,
                   drop_debugger: true,
                 },
               },
