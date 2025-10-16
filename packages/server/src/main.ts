@@ -15,7 +15,6 @@ import {createHttpMcpServer, shutdownMcpServer} from '@browseros/mcp';
 import {allTools} from '@browseros/tools';
 import type {ToolDefinition} from '@browseros/tools';
 import * as controllerTools from '@browseros/tools/controller-definitions';
-import type {ToolDefinition} from '@browseros/tools';
 import {createAgentServer, type AgentServerConfig} from '@browseros/agent';
 
 import {parseArguments} from './args.js';

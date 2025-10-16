@@ -81,9 +81,6 @@ export function createServer(config: ServerConfig, wsManager: WebSocketManager) 
   // Track WebSocket connections (needed to close idle sessions)
   const wsConnections = new Map<string, ServerWebSocket<WebSocketData>>()
 
-  // Start periodic cleanup
-  const stopCleanup = sessionManager.startCleanup(60000) // Every 60 seconds
-
   // Cleanup idle sessions callback (now async)
   const cleanupIdle = async () => {
     const idleSessionIds = sessionManager.findIdleSessions()
@@ -276,13 +273,6 @@ export function createServer(config: ServerConfig, wsManager: WebSocketManager) 
 
               // Send error to client
               sendError(ws, `⏱️ Agent timeout: No activity for ${config.eventGapTimeoutMs / 1000}s`)
-
-              // Send completion event
-              const completionEvent = {
-                type: 'error',
-                content: `⏱️ Agent timeout: No activity for ${config.eventGapTimeoutMs / 1000}s - task abandoned`
-              }
-              ws.send(JSON.stringify(completionEvent))
 
               // Immediately delete session and close connection (now async)
               await sessionManager.deleteSession(sessionId)

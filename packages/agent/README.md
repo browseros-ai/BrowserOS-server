@@ -24,8 +24,7 @@ Multi-agent server that handles concurrent Claude AI sessions with full Chrome D
 
 ```bash
 # Clone and install
-git clone <your-repo-url>
-cd browseros-agent-server
+cd browseros-server/packages/agent
 bun install
 
 # Configure environment
