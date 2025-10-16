@@ -5,6 +5,7 @@
 import http from 'node:http';
 
 import type {McpContext, Mutex} from '@browseros/common';
+import {metrics} from '@browseros/common';
 import type {ToolDefinition} from '@browseros/tools';
 import {McpResponse} from '@browseros/tools';
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -58,6 +59,8 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       async (params: any): Promise<CallToolResult> => {
+        const startTime = performance.now();
+
         // Serialize tool execution with mutex
         const guard = await toolMutex.acquire();
         try {
@@ -74,10 +77,27 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
           // Process and return response
           try {
             const content = await response.handle(tool.name, contextForResponse);
+
+            // Log successful tool execution (non-blocking)
+            metrics.log('tool_executed', {
+              tool_name: tool.name,
+              duration_ms: Math.round(performance.now() - startTime),
+              success: true,
+            });
+
             return {content};
           } catch (error) {
             const errorText =
               error instanceof Error ? error.message : String(error);
+
+            // Log failed tool execution (non-blocking)
+            metrics.log('tool_executed', {
+              tool_name: tool.name,
+              duration_ms: Math.round(performance.now() - startTime),
+              success: false,
+              error_message: error instanceof Error ? error.message : 'Unknown error',
+            });
+
             return {
               content: [
                 {
@@ -195,6 +215,46 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
     }
   };
 
+  /**
+   * Handles /init endpoint for metrics initialization
+   */
+  const handleInitEndpoint = async (
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+  ): Promise<void> => {
+    if (req.method !== 'POST') {
+      res.writeHead(405, {'Content-Type': 'application/json'});
+      res.end(JSON.stringify({error: 'Method not allowed'}));
+      return;
+    }
+
+    try {
+      const chunks: Buffer[] = [];
+      for await (const chunk of req) {
+        chunks.push(chunk);
+      }
+      const body = Buffer.concat(chunks).toString();
+
+      const data = JSON.parse(body);
+      if (!data.client_id) {
+        res.writeHead(400, {'Content-Type': 'application/json'});
+        res.end(JSON.stringify({error: 'client_id is required'}));
+        return;
+      }
+
+      metrics.initialize(data);
+      logger(`Metrics initialized with client_id: ${data.client_id}`);
+
+      res.writeHead(200, {'Content-Type': 'application/json'});
+      res.end(JSON.stringify({success: true}));
+    } catch (error) {
+      const errorMsg =
+        error instanceof Error ? error.message : 'Invalid JSON';
+      res.writeHead(400, {'Content-Type': 'application/json'});
+      res.end(JSON.stringify({error: errorMsg}));
+    }
+  };
+
   const httpServer = http.createServer(async (req, res) => {
     const url = new URL(req.url!, `http://${req.headers.host}`);
 
@@ -218,6 +278,12 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
     // Control endpoint
     if (url.pathname === '/mcp/control') {
       await handleControlEndpoint(req, res);
+      return;
+    }
+
+    // Init endpoint
+    if (url.pathname === '/init') {
+      await handleInitEndpoint(req, res);
       return;
     }
 
