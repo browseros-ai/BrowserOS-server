@@ -1,4 +1,3 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
@@ -37,7 +36,7 @@ export interface LoggingConfig {
 export const WEBSOCKET_CONFIG: WebSocketConfig = {
   protocol: 'ws',
   host: 'localhost',
-  port: 9224,
+  port: 9225,
   path: '/controller',
 
   reconnectDelay: 1000,

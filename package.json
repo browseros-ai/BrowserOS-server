@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "start": "bun run --filter @browseros/server start",
-    "start:debug": "bun run --filter @browseros/server start:debug",
+    "start:with-cdp": "bun run --filter @browseros/server start:with-cdp",
     "test": "bun test",
     "test:all": "bun test --workspace",
     "test:common": "bun run --filter @browseros/common test",
