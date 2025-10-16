@@ -3,7 +3,7 @@
  * Copyright 2025 BrowserOS
  */
 
-const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY || '';
+const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY!;
 const POSTHOG_ENDPOINT = process.env.POSTHOG_ENDPOINT || 'https://us.i.posthog.com/i/v0/e/';
 const EVENT_PREFIX = 'browseros.server.';
 
