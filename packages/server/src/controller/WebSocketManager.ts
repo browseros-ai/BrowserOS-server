@@ -52,8 +52,17 @@ export class WebSocketManager {
       ws.on('message', (data: Buffer) => {
         try {
           const message = data.toString();
+          const parsed = JSON.parse(message);
+
+          // Handle ping/pong for heartbeat
+          if (parsed.type === 'ping') {
+            this.logger('Received ping, sending pong');
+            ws.send(JSON.stringify({ type: 'pong' }));
+            return;
+          }
+
           this.logger(`Received message: ${message}`);
-          const response = JSON.parse(message) as ControllerResponse;
+          const response = parsed as ControllerResponse;
           this.handleResponse(response);
         } catch (error) {
           this.logger(`Error parsing message: ${error}`);

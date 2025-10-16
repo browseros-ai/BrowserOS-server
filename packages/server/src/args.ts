@@ -8,7 +8,7 @@ export interface ServerPorts {
   cdpPort?: number;
   httpMcpPort: number;
   agentPort: number;
-  wsPort: number;
+  extensionPort: number;
   mcpServerEnabled: boolean;
   // Future: httpsMcpPort?: number;
 }
@@ -58,7 +58,7 @@ export function parseArguments(argv = process.argv): ServerPorts {
     .option('--cdp-port <port>', 'CDP WebSocket port (optional)', parsePort)
     .requiredOption('--http-mcp-port <port>', 'MCP HTTP server port', parsePort)
     .requiredOption('--agent-port <port>', 'Agent communication port', parsePort)
-    .option('--ws-port <port>', 'WebSocket port for extension connection', parsePort, 9224)
+    .option('--extension-port <port>', 'WebSocket port for extension connection', parsePort, 9224)
     .option('--disable-mcp-server', 'Disable MCP server', false)
     .exitOverride()
     .parse(argv);
@@ -69,7 +69,7 @@ export function parseArguments(argv = process.argv): ServerPorts {
     cdpPort: options.cdpPort,
     httpMcpPort: options.httpMcpPort,
     agentPort: options.agentPort,
-    wsPort: options.wsPort,
+    extensionPort: options.extensionPort,
     mcpServerEnabled: !options.disableMcpServer,
   };
 }

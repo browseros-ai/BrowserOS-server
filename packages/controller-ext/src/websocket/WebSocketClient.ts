@@ -19,13 +19,18 @@ export class WebSocketClient {
   private reconnectAttempts = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  private heartbeatTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
+  private port: number;
+  private lastPongReceived: number = Date.now();
+  private pendingPing: boolean = false;
 
   // Event handlers
   private messageHandlers = new Set<(msg: ProtocolResponse) => void>();
   private statusHandlers = new Set<(status: ConnectionStatus) => void>();
 
-  constructor() {
-    logger.info('WebSocketClient initialized');
+  constructor(port: number) {
+    this.port = port;
+    logger.info(`WebSocketClient initialized with port: ${port}`);
   }
 
   // Public API
@@ -103,8 +108,8 @@ export class WebSocketClient {
   // Private methods
 
   private _buildUrl(): string {
-    const { protocol, host, port, path } = WEBSOCKET_CONFIG;
-    return `${protocol}://${host}:${port}${path}`;
+    const { protocol, host, path } = WEBSOCKET_CONFIG;
+    return `${protocol}://${host}:${this.port}${path}`;
   }
 
   private async _waitForConnection(): Promise<void> {
@@ -132,17 +137,28 @@ export class WebSocketClient {
   private _handleOpen(): void {
     logger.info('WebSocket connected');
     this.reconnectAttempts = 0;
+    this.lastPongReceived = Date.now();
+    this.pendingPing = false;
     this._setStatus(ConnectionStatus.CONNECTED);
     this._startHeartbeat();
   }
 
   private _handleMessage(event: MessageEvent): void {
     try {
-      const message = JSON.parse(event.data) as ProtocolResponse;
+      const message = JSON.parse(event.data);
+
+      // Handle pong response for heartbeat
+      if (message.type === 'pong') {
+        this.lastPongReceived = Date.now();
+        this.pendingPing = false;
+        logger.debug('Received pong from server');
+        return;
+      }
+
       logger.debug(`Received: ${JSON.stringify(message).substring(0, 100)}...`);
 
       // Emit to all message handlers
-      this.messageHandlers.forEach(handler => handler(message));
+      this.messageHandlers.forEach(handler => handler(message as ProtocolResponse));
 
     } catch (error) {
       logger.error(`Failed to parse message: ${error}`);
@@ -178,14 +194,18 @@ export class WebSocketClient {
     this._setStatus(ConnectionStatus.RECONNECTING);
 
     // Calculate delay with exponential backoff
-    const delay = Math.min(
+    const baseDelay = Math.min(
       WEBSOCKET_CONFIG.reconnectDelay *
         Math.pow(WEBSOCKET_CONFIG.reconnectMultiplier, this.reconnectAttempts),
       WEBSOCKET_CONFIG.maxReconnectDelay
     );
 
+    // Add jitter: ±20% random variation to prevent thundering herd
+    const jitter = baseDelay * 0.2 * (Math.random() * 2 - 1);
+    const delay = Math.max(0, baseDelay + jitter);
+
     this.reconnectAttempts++;
-    logger.warn(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
+    logger.warn(`Reconnecting in ${Math.round(delay)}ms (attempt ${this.reconnectAttempts})`);
 
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
@@ -199,18 +219,59 @@ export class WebSocketClient {
     this._clearHeartbeat();
 
     this.heartbeatTimer = setInterval(() => {
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        logger.debug('Sending heartbeat ping');
-        // Note: Actual ping/pong implementation depends on server protocol
-        // For now, we just check connection state
+      if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+        return;
+      }
+
+      // Check if previous ping timed out
+      const timeSinceLastPong = Date.now() - this.lastPongReceived;
+      if (timeSinceLastPong > WEBSOCKET_CONFIG.heartbeatInterval + WEBSOCKET_CONFIG.heartbeatTimeout) {
+        logger.error(`Heartbeat timeout: no pong received for ${timeSinceLastPong}ms`);
+        this._handleHeartbeatTimeout();
+        return;
+      }
+
+      // Send ping
+      try {
+        const pingMessage = JSON.stringify({ type: 'ping' });
+        this.ws.send(pingMessage);
+        this.pendingPing = true;
+        logger.debug('Sent heartbeat ping');
+
+        // Set timeout for this specific ping
+        this._clearHeartbeatTimeout();
+        this.heartbeatTimeoutTimer = setTimeout(() => {
+          if (this.pendingPing) {
+            logger.error(`Ping timeout: no pong received within ${WEBSOCKET_CONFIG.heartbeatTimeout}ms`);
+            this._handleHeartbeatTimeout();
+          }
+        }, WEBSOCKET_CONFIG.heartbeatTimeout);
+      } catch (error) {
+        logger.error(`Failed to send ping: ${error}`);
+        this._handleHeartbeatTimeout();
       }
     }, WEBSOCKET_CONFIG.heartbeatInterval);
+  }
+
+  private _handleHeartbeatTimeout(): void {
+    logger.warn('Heartbeat failed, forcing reconnection');
+    if (this.ws) {
+      this.ws.close();
+    }
   }
 
   private _clearHeartbeat(): void {
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
+    }
+    this._clearHeartbeatTimeout();
+  }
+
+  private _clearHeartbeatTimeout(): void {
+    if (this.heartbeatTimeoutTimer) {
+      clearTimeout(this.heartbeatTimeoutTimer);
+      this.heartbeatTimeoutTimer = null;
     }
   }
 
