@@ -12,6 +12,7 @@ import { CaptureScreenshotAction } from '@/actions/browser/CaptureScreenshotActi
 import { ClearAction } from '@/actions/browser/ClearAction';
 import { ClickAction } from '@/actions/browser/ClickAction';
 import { ClickCoordinatesAction } from '@/actions/browser/ClickCoordinatesAction';
+import { GetAccessibilityTreeAction } from '@/actions/browser/GetAccessibilityTreeAction';
 import { GetInteractiveSnapshotAction } from '@/actions/browser/GetInteractiveSnapshotAction';
 import { GetPageLoadStatusAction } from '@/actions/browser/GetPageLoadStatusAction';
 import { SendKeysAction } from '@/actions/browser/SendKeysAction';
@@ -119,6 +120,7 @@ class BrowserOSController {
     this.actionRegistry.register('sendKeys', new SendKeysAction());
     this.actionRegistry.register('getPageLoadStatus', new GetPageLoadStatusAction());
     this.actionRegistry.register('getSnapshot', new GetSnapshotAction());
+    this.actionRegistry.register('getAccessibilityTree', new GetAccessibilityTreeAction());
     this.actionRegistry.register('clickCoordinates', new ClickCoordinatesAction());
     this.actionRegistry.register('typeAtCoordinates', new TypeAtCoordinatesAction());
 

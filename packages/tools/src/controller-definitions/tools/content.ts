@@ -9,6 +9,41 @@ import {defineTool} from '../../types/ToolDefinition.js';
 import type {Context} from '../types/Context.js';
 import type {Response} from '../types/Response.js';
 
+// Accessibility tree types (from chrome.browserOS)
+interface AccessibilityNode {
+  nodeId: number;
+  role: string;
+  name?: string;
+  childIds?: number[];
+  [key: string]: any;
+}
+
+interface AccessibilityTree {
+  rootId: number;
+  nodes: Record<string, AccessibilityNode>;
+}
+
+// Roles that contain meaningful content for extraction
+const EXTRACTABLE_ROLES = new Set([
+  'staticText',
+  'heading',
+  'paragraph',
+  'link',
+  'button',
+  'textField',
+  'checkBox',
+  'comboBoxSelect',
+  'labelText',
+  'menuListOption',
+  'toggleButton',
+  'status',
+  'alert',
+  'image',
+  'rootWebArea',
+  'navigation',
+  'main'
+]);
+
 interface Snapshot {
   type: 'text' | 'links';
   context: 'visible' | 'full';
@@ -45,7 +80,7 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
   },
   schema: {
     tabId: z.coerce.number().describe('Tab ID to extract content from'),
-    type: z.enum(['text', 'links', 'text-with-links']).describe('Type of content to extract: text, links, or text-with-links'),
+    type: z.enum(['text', 'text-with-links']).describe('Type of content to extract: text or text-with-links'),
     options: z
       .object({
         context: z.enum(['visible', 'full']).optional().describe('Extract from visible viewport or full page (default: visible)'),
@@ -69,13 +104,46 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
       // task?: string;
     };
 
-    // Get interactive snapshot which contains hierarchicalStructure
-    const interactiveSnapshot = await context.executeAction('getInteractiveSnapshot', {
+    // Get accessibility tree
+    const tree = await context.executeAction('getAccessibilityTree', {
       tabId: params.tabId,
-    }) as {hierarchicalStructure?: string};
+    }) as AccessibilityTree;
 
-    // Get hierarchical text content (with tab indentation)
-    const hierarchicalContent = interactiveSnapshot.hierarchicalStructure || '';
+    // Extract hierarchical text using DFS stack operations
+    let hierarchicalContent = '';
+
+    if (tree && tree.nodes && tree.rootId) {
+      const lines: string[] = [];
+      const stack: Array<{ nodeId: number; depth: number }> = [];
+      stack.push({ nodeId: tree.rootId, depth: 0 });
+
+      while (stack.length > 0) {
+        const { nodeId, depth } = stack.pop()!;
+
+        // Get node (keys are strings)
+        const node = tree.nodes[String(nodeId)];
+        if (!node) continue;
+
+        // Add text line if node has extractable role and name
+        if (EXTRACTABLE_ROLES.has(node.role) && node.name) {
+          const indentation = '\t'.repeat(depth);
+          lines.push(`${indentation}${node.name}`);
+        }
+
+        // Always traverse children to maintain hierarchy
+        // Add in reverse order for correct DFS traversal
+        if (node.childIds && Array.isArray(node.childIds)) {
+          for (let i = node.childIds.length - 1; i >= 0; i--) {
+            stack.push({
+              nodeId: node.childIds[i],
+              depth: depth + 1
+            });
+          }
+        }
+      }
+
+      hierarchicalContent = lines.join('\n');
+    }
 
     // Get links only if extraction mode includes links
     const extractLinks = params.type === 'text-with-links';
