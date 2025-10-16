@@ -7,8 +7,8 @@
  */
 import assert from 'node:assert';
 import {spawn} from 'node:child_process';
-import {URL} from 'node:url';
 import {describe, it, before, after} from 'node:test';
+import {URL} from 'node:url';
 
 import {
   ensureBrowserOS,

@@ -7,6 +7,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {describe, it} from 'node:test';
 
+import {html, withBrowser} from '@browseros/common/tests/utils';
+
 import {
   click,
   hover,
@@ -16,7 +18,6 @@ import {
   uploadFile,
 } from '../../src/definitions/input.js';
 import {serverHooks} from '../server.js';
-import {html, withBrowser} from '@browseros/common/tests/utils';
 
 describe('input', () => {
   const server = serverHooks();
