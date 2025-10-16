@@ -59,6 +59,8 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
       },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       async (params: any): Promise<CallToolResult> => {
+        const startTime = performance.now();
+
         // Serialize tool execution with mutex
         const guard = await toolMutex.acquire();
         try {
@@ -75,10 +77,27 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
           // Process and return response
           try {
             const content = await response.handle(tool.name, contextForResponse);
+
+            // Log successful tool execution (non-blocking)
+            metrics.log('tool_executed', {
+              tool_name: tool.name,
+              duration_ms: Math.round(performance.now() - startTime),
+              success: true,
+            });
+
             return {content};
           } catch (error) {
             const errorText =
               error instanceof Error ? error.message : String(error);
+
+            // Log failed tool execution (non-blocking)
+            metrics.log('tool_executed', {
+              tool_name: tool.name,
+              duration_ms: Math.round(performance.now() - startTime),
+              success: false,
+              error_message: error instanceof Error ? error.message : 'Unknown error',
+            });
+
             return {
               content: [
                 {
