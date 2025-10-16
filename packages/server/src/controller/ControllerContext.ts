@@ -3,6 +3,7 @@
  * Copyright 2025 BrowserOS
  */
 import type {Context} from '@browseros/tools/controller-definitions';
+
 import type {WebSocketManager} from './WebSocketManager.js';
 
 const ACTION_TIMEOUTS: Record<string, number> = {

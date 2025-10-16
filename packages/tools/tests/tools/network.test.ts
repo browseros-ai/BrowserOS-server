@@ -5,11 +5,12 @@
 import assert from 'node:assert';
 import {describe, it} from 'node:test';
 
+import {withBrowser} from '@browseros/common/tests/utils';
+
 import {
   getNetworkRequest,
   listNetworkRequests,
 } from '../../src/definitions/network.js';
-import {withBrowser} from '@browseros/common/tests/utils';
 
 describe('network', () => {
   describe('network_list_requests', () => {

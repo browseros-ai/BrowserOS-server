@@ -8,9 +8,10 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {describe, it} from 'node:test';
 
+import {withBrowser} from '@browseros/common/tests/utils';
+
 import {screenshot} from '../../src/definitions/screenshot.js';
 import {screenshots} from '../snapshot.js';
-import {withBrowser} from '@browseros/common/tests/utils';
 
 describe('screenshot', () => {
   describe('browser_take_screenshot', () => {

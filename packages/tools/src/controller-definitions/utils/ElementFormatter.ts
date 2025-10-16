@@ -40,14 +40,14 @@ export interface InteractiveNode {
 export class ElementFormatter {
   private simplified: boolean;
 
-  constructor(simplified: boolean = false) {
+  constructor(simplified = false) {
     this.simplified = simplified;
   }
 
   /**
    * Format an array of elements
    */
-  formatElements(elements: InteractiveNode[], hideHiddenElements: boolean = false): string {
+  formatElements(elements: InteractiveNode[], hideHiddenElements = false): string {
     const SKIP_OUT_OF_VIEWPORT = hideHiddenElements;
     const SORT_BY_NODEID = true;
     const MAX_ELEMENTS = 0; // 0 means no limit
