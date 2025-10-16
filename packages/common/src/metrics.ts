@@ -17,7 +17,8 @@ class MetricsService {
 
   initialize(config: MetricsConfig): void {
     if (!config.client_id) {
-      throw new Error('client_id is required for metrics initialization');
+      console.warn('client_id is required for metrics initialization. Metrics will be disabled.');
+      return;
     }
     this.config = config;
   }
