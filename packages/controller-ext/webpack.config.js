@@ -45,7 +45,10 @@ module.exports = (env, argv) => {
         maxChunks: 1,
       }),
       new CopyPlugin({
-        patterns: [{from: 'manifest.json', to: '.'}],
+        patterns: [
+          {from: 'manifest.json', to: '.'},
+          {from: 'assets', to: 'assets'},
+        ],
       }),
     ],
     devtool: isProduction ? false : 'source-map',
