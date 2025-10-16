@@ -1,5 +1,4 @@
 const path = require('path');
-const Dotenv = require('dotenv-webpack');
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
@@ -29,15 +28,7 @@ module.exports = (env, argv) => {
         }
       ]
     },
-    plugins: [
-      new Dotenv({
-        path: './.env',
-        safe: false,
-        systemvars: true,
-        silent: true,
-        defaults: './.env.example'
-      })
-    ],
+    plugins: [],
     devtool: isProduction ? false : 'source-map',
     optimization: {
       minimize: isProduction,
