@@ -17,8 +17,7 @@ import type {ToolDefinition} from '@browseros/tools';
 import * as controllerTools from '@browseros/tools/controller-definitions';
 
 import {parseArguments} from './args.js';
-import {ControllerContext} from './controller/ControllerContext.js';
-import {WebSocketManager} from './controller/WebSocketManager.js';
+import {ControllerContext, WebSocketManager} from '@browseros/controller-server';
 
 const version = readVersion();
 const ports = parseArguments();

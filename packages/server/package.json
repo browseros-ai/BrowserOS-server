@@ -17,6 +17,7 @@
     "@browseros/common": "workspace:*",
     "@browseros/tools": "workspace:*",
     "@browseros/mcp": "workspace:*",
+    "@browseros/controller-server": "workspace:*",
     "commander": "^14.0.1",
     "ws": "^8.18.0"
   },

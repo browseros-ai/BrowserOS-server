@@ -36,7 +36,7 @@ export interface LoggingConfig {
 export const WEBSOCKET_CONFIG: WebSocketConfig = {
   protocol: 'ws',
   host: 'localhost',
-  port: 9225,
+  port: 9255,
   path: '/controller',
 
   reconnectDelay: 1000,

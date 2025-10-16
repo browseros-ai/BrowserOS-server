@@ -9,6 +9,41 @@ import {defineTool} from '../../types/ToolDefinition.js';
 import type {Context} from '../types/Context.js';
 import type {Response} from '../types/Response.js';
 
+// Accessibility tree types (from chrome.browserOS)
+interface AccessibilityNode {
+  nodeId: number;
+  role: string;
+  name?: string;
+  childIds?: number[];
+  [key: string]: any;
+}
+
+interface AccessibilityTree {
+  rootId: number;
+  nodes: Record<string, AccessibilityNode>;
+}
+
+// Roles that contain meaningful content for extraction
+const EXTRACTABLE_ROLES = new Set([
+  'staticText',
+  'heading',
+  'paragraph',
+  'link',
+  'button',
+  'textField',
+  'checkBox',
+  'comboBoxSelect',
+  'labelText',
+  'menuListOption',
+  'toggleButton',
+  'status',
+  'alert',
+  'image',
+  'rootWebArea',
+  'navigation',
+  'main'
+]);
+
 interface Snapshot {
   type: 'text' | 'links';
   context: 'visible' | 'full';
@@ -38,14 +73,14 @@ interface LinkInfo {
 
 export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
   name: 'browser_get_page_content',
-  description: 'Extract text or links from the page. Can optionally use AI to extract structured data (TODO: add format/task params)',
+  description: 'Extract text or text with links from the page.',
   annotations: {
     category: ToolCategories.CONTENT_EXTRACTION,
     readOnlyHint: true,
   },
   schema: {
     tabId: z.coerce.number().describe('Tab ID to extract content from'),
-    type: z.enum(['text', 'links', 'text-with-links']).describe('Type of content to extract: text, links, or text-with-links'),
+    type: z.enum(['text', 'text-with-links']).describe('Type of content to extract: text or text-with-links'),
     options: z
       .object({
         context: z.enum(['visible', 'full']).optional().describe('Extract from visible viewport or full page (default: visible)'),
@@ -62,41 +97,58 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
   handler: async (request, response, context) => {
     const params = request.params as {
       tabId: number;
-      type: 'text' | 'links' | 'text-with-links';
+      type: 'text' | 'text-with-links';
       options?: {context?: 'visible' | 'full'; includeSections?: string[]};
       // TODO: Add these when implementing LLM extraction
       // format?: any;
       // task?: string;
     };
 
-    // Determine what content to extract
-    const extractText = params.type === 'text' || params.type === 'text-with-links';
-    const extractLinks = params.type === 'links' || params.type === 'text-with-links';
+    // Get accessibility tree
+    const tree = await context.executeAction('getAccessibilityTree', {
+      tabId: params.tabId,
+    }) as AccessibilityTree;
 
-    // Build up content similar to Extract.ts
+    // Extract hierarchical text using DFS stack operations
     let hierarchicalContent = '';
-    let linksContent = '';
 
-    // Get text content if needed
-    if (extractText) {
-      const textSnapshot = await context.executeAction('getSnapshot', {
-        tabId: params.tabId,
-        type: 'text',
-        options: params.options,
-      });
-      const snapshot = textSnapshot as Snapshot;
+    if (tree && tree.nodes && tree.rootId) {
+      const lines: string[] = [];
+      const stack: Array<{ nodeId: number; depth: number }> = [];
+      stack.push({ nodeId: tree.rootId, depth: 0 });
 
-      // Extract text from all sections (similar to getTextSnapshotString)
-      const textParts: string[] = [];
-      for (const section of snapshot.sections) {
-        if (section.textResult?.text) {
-          textParts.push(section.textResult.text);
+      while (stack.length > 0) {
+        const { nodeId, depth } = stack.pop()!;
+
+        // Get node (keys are strings)
+        const node = tree.nodes[String(nodeId)];
+        if (!node) continue;
+
+        // Add text line if node has extractable role and name
+        if (EXTRACTABLE_ROLES.has(node.role) && node.name) {
+          const indentation = '\t'.repeat(depth);
+          lines.push(`${indentation}${node.name}`);
+        }
+
+        // Always traverse children to maintain hierarchy
+        // Add in reverse order for correct DFS traversal
+        if (node.childIds && Array.isArray(node.childIds)) {
+          for (let i = node.childIds.length - 1; i >= 0; i--) {
+            stack.push({
+              nodeId: node.childIds[i],
+              depth: depth + 1
+            });
+          }
         }
       }
-      hierarchicalContent = textParts.join('\n\n').trim();
+
+      hierarchicalContent = lines.join('\n');
     }
 
-    // Get links if needed
+    // Get links only if extraction mode includes links
+    const extractLinks = params.type === 'text-with-links';
+    let linksContent = '';
+
     if (extractLinks) {
       const linksSnapshot = await context.executeAction('getSnapshot', {
         tabId: params.tabId,
@@ -117,36 +169,6 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
       }
       linksContent = [...new Set(linkStrings)].join('\n').trim();
     }
-
-    // TODO: If format and task are provided, use LLM extraction
-    // if (params.format && params.task) {
-    //   const contentCharLimit = 16000; // Adjust based on token limits
-    //   const preparedContent =
-    //     hierarchicalContent.length <= contentCharLimit
-    //       ? hierarchicalContent
-    //       : hierarchicalContent.substring(0, contentCharLimit) + '\n...[truncated]';
-    //
-    //   const userPrompt = `Task: ${params.task}
-    //
-    // Desired output format:
-    // ${JSON.stringify(params.format, null, 2)}
-    //
-    // Page content:
-    // URL: ${pageDetails.url}
-    // Title: ${pageDetails.title}
-    //
-    // Content (hierarchical structure):
-    // ${preparedContent}`;
-    //
-    //   if (extractLinks && linksContent) {
-    //     userPrompt += `\n\nLinks found:\n${linksContent.substring(0, 2000)}${linksContent.length > 2000 ? '\n...[more links]' : ''}`;
-    //   }
-    //
-    //   // Call LLM here and return structured output
-    //   // For now, fall through to display raw content
-    // }
-
-    // Display extracted content (similar to Extract.ts prompt format)
 
     if (hierarchicalContent) {
       response.appendResponseLine('Content (hierarchical structure):');
