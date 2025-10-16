@@ -73,7 +73,7 @@ interface LinkInfo {
 
 export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
   name: 'browser_get_page_content',
-  description: 'Extract text or links from the page. Can optionally use AI to extract structured data (TODO: add format/task params)',
+  description: 'Extract text or text with links from the page.',
   annotations: {
     category: ToolCategories.CONTENT_EXTRACTION,
     readOnlyHint: true,
@@ -169,36 +169,6 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
       }
       linksContent = [...new Set(linkStrings)].join('\n').trim();
     }
-
-    // TODO: If format and task are provided, use LLM extraction
-    // if (params.format && params.task) {
-    //   const contentCharLimit = 16000; // Adjust based on token limits
-    //   const preparedContent =
-    //     hierarchicalContent.length <= contentCharLimit
-    //       ? hierarchicalContent
-    //       : hierarchicalContent.substring(0, contentCharLimit) + '\n...[truncated]';
-    //
-    //   const userPrompt = `Task: ${params.task}
-    //
-    // Desired output format:
-    // ${JSON.stringify(params.format, null, 2)}
-    //
-    // Page content:
-    // URL: ${pageDetails.url}
-    // Title: ${pageDetails.title}
-    //
-    // Content (hierarchical structure):
-    // ${preparedContent}`;
-    //
-    //   if (extractLinks && linksContent) {
-    //     userPrompt += `\n\nLinks found:\n${linksContent.substring(0, 2000)}${linksContent.length > 2000 ? '\n...[more links]' : ''}`;
-    //   }
-    //
-    //   // Call LLM here and return structured output
-    //   // For now, fall through to display raw content
-    // }
-
-    // Display extracted content (similar to Extract.ts prompt format)
 
     if (hierarchicalContent) {
       response.appendResponseLine('Content (hierarchical structure):');
