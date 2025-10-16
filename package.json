@@ -21,6 +21,8 @@
     "build:binary:linux": "mkdir -p dist && bun build --compile packages/server/src/index.ts --outfile dist/browseros-server --minify --target bun-linux-x64",
     "build:binary:macos": "mkdir -p dist && bun build --compile packages/server/src/index.ts --outfile dist/browseros-server --minify --target bun-darwin-arm64",
     "build:binary:windows": "mkdir -p dist && bun build --compile packages/server/src/index.ts --outfile dist/browseros-server.exe --minify --target bun-windows-x64",
+    "build:ext": "bun run --filter browseros-controller build && mkdir -p dist/ext && cp -r packages/controller-ext/dist/* dist/ext/",
+    "dist:ext": "rimraf dist/ext && mkdir -p dist/ext && bun run --filter browseros-controller build && cp -r packages/controller-ext/dist/* dist/ext/",
     "dist": "rimraf dist && mkdir -p dist && bun build --compile packages/server/src/index.ts --outfile dist/browseros-server-linux-x64 --minify --sourcemap --target=bun-linux-x64-modern && bun build --compile packages/server/src/index.ts --outfile dist/browseros-server-linux-arm64 --minify --sourcemap --target=bun-linux-arm64 && bun build --compile packages/server/src/index.ts --outfile dist/browseros-server-windows-x64.exe --minify --sourcemap --target=bun-windows-x64-modern && bun build --compile packages/server/src/index.ts --outfile dist/browseros-server-darwin-arm64 --minify --sourcemap --target=bun-darwin-arm64 && bun build --compile packages/server/src/index.ts --outfile dist/browseros-server-darwin-x64 --minify --sourcemap --target=bun-darwin-x64",
     "format": "eslint --cache --fix . && prettier --write --cache .",
     "check-format": "eslint --cache . && prettier --check --cache .;",
