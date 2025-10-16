@@ -30,6 +30,10 @@ module.exports = (env, argv) => {
             loader: 'ts-loader',
             options: {
               onlyCompileBundledFiles: true,
+              compilerOptions: {
+                declaration: false,
+                declarationMap: false,
+              },
             },
           },
           exclude: [/node_modules/, /\.(test|spec)\.(ts|tsx)$/],
