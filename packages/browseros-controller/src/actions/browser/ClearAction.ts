@@ -1,5 +1,13 @@
+
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 import { z } from 'zod';
+
 import { ActionHandler } from '../ActionHandler';
+
 import { BrowserOSAdapter } from '@/adapters/BrowserOSAdapter';
 
 const ClearInputSchema = z.object({
@@ -8,7 +16,7 @@ const ClearInputSchema = z.object({
 });
 
 type ClearInput = z.infer<typeof ClearInputSchema>;
-type ClearOutput = { success: boolean };
+interface ClearOutput { success: boolean }
 
 /**
  * ClearAction - Clear text from an input element

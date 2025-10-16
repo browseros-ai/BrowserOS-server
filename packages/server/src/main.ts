@@ -13,19 +13,19 @@ import {
 } from '@browseros/common';
 import {createHttpMcpServer, shutdownMcpServer} from '@browseros/mcp';
 import {allTools} from '@browseros/tools';
-import * as controllerTools from '@browseros/tools/controller-definitions';
 import type {ToolDefinition} from '@browseros/tools';
+import * as controllerTools from '@browseros/tools/controller-definitions';
 
 import {parseArguments} from './args.js';
-import {WebSocketManager} from './controller/WebSocketManager.js';
 import {ControllerContext} from './controller/ControllerContext.js';
+import {WebSocketManager} from './controller/WebSocketManager.js';
 
 const version = readVersion();
 const ports = parseArguments();
 
 // Collect all controller tools
-function getAllControllerTools(): ToolDefinition<any, any, any>[] {
-  const tools: ToolDefinition<any, any, any>[] = [];
+function getAllControllerTools(): Array<ToolDefinition<any, any, any>> {
+  const tools: Array<ToolDefinition<any, any, any>> = [];
 
   for (const [key, value] of Object.entries(controllerTools)) {
     if (
@@ -51,7 +51,7 @@ void (async () => {
 
   // Connect to Chrome DevTools Protocol (optional)
   let cdpContext: McpContext | null = null;
-  let cdpTools: ToolDefinition<any, any, any>[] = [];
+  let cdpTools: Array<ToolDefinition<any, any, any>> = [];
 
   if (ports.cdpPort) {
     try {

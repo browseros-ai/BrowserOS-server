@@ -1,3 +1,9 @@
+
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 import { LOGGING_CONFIG } from '@/config/constants';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';

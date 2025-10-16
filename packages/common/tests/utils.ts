@@ -2,14 +2,16 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import {McpResponse} from '@browseros/tools';
 import {execSync} from 'node:child_process';
+
+import {McpResponse} from '@browseros/tools';
 import logger from 'debug';
 import type {Browser} from 'puppeteer';
 import puppeteer from 'puppeteer';
 import type {HTTPRequest, HTTPResponse} from 'puppeteer-core';
 
 import {McpContext} from '../src/McpContext.js';
+
 import {ensureBrowserOS} from './browseros.js';
 
 let cachedBrowser: Browser | undefined;

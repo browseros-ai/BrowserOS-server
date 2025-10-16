@@ -1,38 +1,45 @@
-import { logger } from '@/utils/Logger';
-import { WebSocketClient } from '@/websocket/WebSocketClient';
-import { RequestTracker } from '@/utils/RequestTracker';
-import { ConcurrencyLimiter } from '@/utils/ConcurrencyLimiter';
-import { RequestValidator } from '@/utils/RequestValidator';
-import { ResponseQueue } from '@/utils/ResponseQueue';
+
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 import { ActionRegistry } from '@/actions/ActionRegistry';
-import { GetActiveTabAction } from '@/actions/tab/GetActiveTabAction';
-import { GetTabsAction } from '@/actions/tab/GetTabsAction';
-import { OpenTabAction } from '@/actions/tab/OpenTabAction';
-import { CloseTabAction } from '@/actions/tab/CloseTabAction';
-import { SwitchTabAction } from '@/actions/tab/SwitchTabAction';
-import { NavigateAction } from '@/actions/tab/NavigateAction';
-import { GetBookmarksAction } from '@/actions/bookmark/GetBookmarksAction';
 import { CreateBookmarkAction } from '@/actions/bookmark/CreateBookmarkAction';
+import { GetBookmarksAction } from '@/actions/bookmark/GetBookmarksAction';
 import { RemoveBookmarkAction } from '@/actions/bookmark/RemoveBookmarkAction';
-import { SearchHistoryAction } from '@/actions/history/SearchHistoryAction';
-import { GetRecentHistoryAction } from '@/actions/history/GetRecentHistoryAction';
-import { SendKeysAction } from '@/actions/browser/SendKeysAction';
-import { GetPageLoadStatusAction } from '@/actions/browser/GetPageLoadStatusAction';
-import { GetSnapshotAction } from '@/actions/browser/GetSnapshotAction';
-import { ClickCoordinatesAction } from '@/actions/browser/ClickCoordinatesAction';
-import { TypeAtCoordinatesAction } from '@/actions/browser/TypeAtCoordinatesAction';
-import { GetInteractiveSnapshotAction } from '@/actions/browser/GetInteractiveSnapshotAction';
-import { ClickAction } from '@/actions/browser/ClickAction';
-import { InputTextAction } from '@/actions/browser/InputTextAction';
-import { ClearAction } from '@/actions/browser/ClearAction';
-import { ScrollToNodeAction } from '@/actions/browser/ScrollToNodeAction';
 import { CaptureScreenshotAction } from '@/actions/browser/CaptureScreenshotAction';
+import { ClearAction } from '@/actions/browser/ClearAction';
+import { ClickAction } from '@/actions/browser/ClickAction';
+import { ClickCoordinatesAction } from '@/actions/browser/ClickCoordinatesAction';
+import { GetInteractiveSnapshotAction } from '@/actions/browser/GetInteractiveSnapshotAction';
+import { GetPageLoadStatusAction } from '@/actions/browser/GetPageLoadStatusAction';
+import { SendKeysAction } from '@/actions/browser/SendKeysAction';
+import { GetSnapshotAction } from '@/actions/browser/GetSnapshotAction';
+import { TypeAtCoordinatesAction } from '@/actions/browser/TypeAtCoordinatesAction';
+import { InputTextAction } from '@/actions/browser/InputTextAction';
+import { ScrollToNodeAction } from '@/actions/browser/ScrollToNodeAction';
 import { ScrollDownAction } from '@/actions/browser/ScrollDownAction';
 import { ScrollUpAction } from '@/actions/browser/ScrollUpAction';
 import { ExecuteJavaScriptAction } from '@/actions/browser/ExecuteJavaScriptAction';
 import { CheckBrowserOSAction } from '@/actions/diagnostics/CheckBrowserOSAction';
-import { ProtocolRequest, ProtocolResponse, ConnectionStatus } from '@/protocol/types';
+import { GetRecentHistoryAction } from '@/actions/history/GetRecentHistoryAction';
+import { SearchHistoryAction } from '@/actions/history/SearchHistoryAction';
+import { CloseTabAction } from '@/actions/tab/CloseTabAction';
+import { GetActiveTabAction } from '@/actions/tab/GetActiveTabAction';
+import { GetTabsAction } from '@/actions/tab/GetTabsAction';
+import { NavigateAction } from '@/actions/tab/NavigateAction';
+import { OpenTabAction } from '@/actions/tab/OpenTabAction';
+import { SwitchTabAction } from '@/actions/tab/SwitchTabAction';
 import { CONCURRENCY_CONFIG } from '@/config/constants';
+import type { ProtocolRequest, ProtocolResponse} from '@/protocol/types';
+import { ConnectionStatus } from '@/protocol/types';
+import { ConcurrencyLimiter } from '@/utils/ConcurrencyLimiter';
+import { logger } from '@/utils/Logger';
+import { RequestTracker } from '@/utils/RequestTracker';
+import { RequestValidator } from '@/utils/RequestValidator';
+import { ResponseQueue } from '@/utils/ResponseQueue';
+import { WebSocketClient } from '@/websocket/WebSocketClient';
 
 /**
  * BrowserOS Controller

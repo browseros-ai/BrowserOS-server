@@ -3,8 +3,9 @@
  * Copyright 2025 BrowserOS
  */
 import {z} from 'zod';
-import {defineTool} from '../../types/ToolDefinition.js';
+
 import {ToolCategories} from '../../types/ToolCategories.js';
+import {defineTool} from '../../types/ToolDefinition.js';
 import type {Context} from '../types/Context.js';
 import type {Response} from '../types/Response.js';
 import {parseDataUrl} from '../utils/parseDataUrl.js';

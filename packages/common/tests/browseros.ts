@@ -21,7 +21,7 @@ interface BrowserOSConfig {
 
 let browserosProcess: ChildProcess | null = null;
 let browserosConfig: BrowserOSConfig | null = null;
-let cleanupScheduled = false;
+const cleanupScheduled = false;
 
 /**
  * Check if CDP is available on the specified port

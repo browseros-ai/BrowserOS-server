@@ -5,6 +5,7 @@
 import assert from 'node:assert';
 import {describe, it} from 'node:test';
 
+import {withBrowser} from '@browseros/common/tests/utils';
 import type {Dialog} from 'puppeteer-core';
 
 import {
@@ -17,7 +18,6 @@ import {
   resizePage,
   handleDialog,
 } from '../../src/definitions/pages.js';
-import {withBrowser} from '@browseros/common/tests/utils';
 
 describe('pages', () => {
   describe('list_pages', () => {

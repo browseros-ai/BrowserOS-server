@@ -1,3 +1,9 @@
+
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 import { logger } from './Logger';
 
 export interface TrackedRequest {
@@ -17,7 +23,7 @@ export interface RequestStats {
 }
 
 export class RequestTracker {
-  private requests: Map<string, TrackedRequest> = new Map();
+  private requests = new Map<string, TrackedRequest>();
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
@@ -82,7 +88,7 @@ export class RequestTracker {
     };
   }
 
-  getHungRequests(timeoutMs: number = 30000): TrackedRequest[] {
+  getHungRequests(timeoutMs = 30000): TrackedRequest[] {
     const now = Date.now();
     return Array.from(this.requests.values())
       .filter(r =>

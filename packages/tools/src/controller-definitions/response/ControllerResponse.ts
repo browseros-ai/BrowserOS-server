@@ -3,6 +3,7 @@
  * Copyright 2025 BrowserOS
  */
 import type {TextContent, ImageContent} from '@modelcontextprotocol/sdk/types.js';
+
 import type {Response, ImageContentData} from '../types/Response.js';
 
 /**

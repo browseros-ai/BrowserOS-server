@@ -1,3 +1,9 @@
+
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 /// <reference path="../types/chrome-browser-os.d.ts" />
 
 import { logger } from '@/utils/Logger';

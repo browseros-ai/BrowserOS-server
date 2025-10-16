@@ -1,3 +1,9 @@
+
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 import { logger } from './Logger';
 
 interface QueuedTask<T> {
@@ -14,11 +20,11 @@ export interface ConcurrencyStats {
 
 export class ConcurrencyLimiter {
   private inFlight = 0;
-  private queue: QueuedTask<any>[] = [];
+  private queue: Array<QueuedTask<any>> = [];
 
   constructor(
     private maxConcurrent: number,
-    private maxQueueSize: number = 1000
+    private maxQueueSize = 1000
   ) {
     logger.info(`ConcurrencyLimiter initialized: max=${maxConcurrent}, queueSize=${maxQueueSize}`);
   }

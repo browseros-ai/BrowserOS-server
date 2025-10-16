@@ -1,3 +1,9 @@
+
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 import { logger } from '@/utils/Logger';
 
 /**
@@ -145,7 +151,7 @@ export class BookmarkAdapter {
    * @param limit - Maximum number of bookmarks to return
    * @returns Array of recent bookmarks
    */
-  async getRecentBookmarks(limit: number = 20): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
+  async getRecentBookmarks(limit = 20): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
     logger.debug(`[BookmarkAdapter] Getting ${limit} recent bookmarks`);
 
     try {

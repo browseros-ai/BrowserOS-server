@@ -1,9 +1,18 @@
+
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 import { z } from 'zod';
+
+import type { ActionResponse} from '@/protocol/types';
+import { ActionResponseSchema } from '@/protocol/types';
 import { logger } from '@/utils/Logger';
-import { ActionResponse, ActionResponseSchema } from '@/protocol/types';
 
 // Re-export for convenience
-export { ActionResponse, ActionResponseSchema };
+export type { ActionResponse };
+export { ActionResponseSchema };
 
 /**
  * ActionHandler - Abstract base class for all actions

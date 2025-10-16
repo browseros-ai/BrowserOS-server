@@ -1,7 +1,14 @@
+
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 import { WEBSOCKET_CONFIG } from '@/config/constants';
-import {
+import type {
   ProtocolRequest,
-  ProtocolResponse,
+  ProtocolResponse} from '@/protocol/types';
+import {
   ConnectionStatus
 } from '@/protocol/types';
 import { logger } from '@/utils/Logger';
@@ -14,8 +21,8 @@ export class WebSocketClient {
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
   // Event handlers
-  private messageHandlers: Set<(msg: ProtocolResponse) => void> = new Set();
-  private statusHandlers: Set<(status: ConnectionStatus) => void> = new Set();
+  private messageHandlers = new Set<(msg: ProtocolResponse) => void>();
+  private statusHandlers = new Set<(status: ConnectionStatus) => void>();
 
   constructor() {
     logger.info('WebSocketClient initialized');

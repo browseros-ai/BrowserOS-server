@@ -1,3 +1,9 @@
+
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 import { logger } from '@/utils/Logger';
 
 /**
@@ -152,7 +158,7 @@ export class TabAdapter {
    * @param active - Whether to make the new tab active (default: true)
    * @returns Newly created tab
    */
-  async openTab(url?: string, active: boolean = true): Promise<chrome.tabs.Tab> {
+  async openTab(url?: string, active = true): Promise<chrome.tabs.Tab> {
     const targetUrl = url || 'chrome://newtab/';
     logger.debug(`[TabAdapter] Opening new tab: ${targetUrl} (active: ${active})`);
 

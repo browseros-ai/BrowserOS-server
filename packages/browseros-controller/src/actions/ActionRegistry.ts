@@ -1,4 +1,11 @@
-import { ActionHandler, ActionResponse } from './ActionHandler';
+
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+import type { ActionHandler, ActionResponse } from './ActionHandler';
+
 import { logger } from '@/utils/Logger';
 
 /**
@@ -16,7 +23,7 @@ import { logger } from '@/utils/Logger';
  * const response = await registry.dispatch('getActiveTab', {});
  */
 export class ActionRegistry {
-  private handlers: Map<string, ActionHandler> = new Map();
+  private handlers = new Map<string, ActionHandler>();
 
   /**
    * Register an action handler

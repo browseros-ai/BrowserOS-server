@@ -1,3 +1,9 @@
+
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 import { logger } from '@/utils/Logger';
 
 /**
@@ -20,7 +26,7 @@ export class HistoryAdapter {
    */
   async searchHistory(
     query: string,
-    maxResults: number = 100,
+    maxResults = 100,
     startTime?: number,
     endTime?: number
   ): Promise<chrome.history.HistoryItem[]> {
@@ -51,7 +57,7 @@ export class HistoryAdapter {
    * @param hoursBack - How many hours back to search (default: 24)
    * @returns Array of recent history items
    */
-  async getRecentHistory(maxResults: number = 20, hoursBack: number = 24): Promise<chrome.history.HistoryItem[]> {
+  async getRecentHistory(maxResults = 20, hoursBack = 24): Promise<chrome.history.HistoryItem[]> {
     logger.debug(`[HistoryAdapter] Getting ${maxResults} recent history items (last ${hoursBack}h)`);
 
     try {
@@ -177,7 +183,7 @@ export class HistoryAdapter {
    * @param maxResults - Maximum number of results (default: 10)
    * @returns Array of most visited history items
    */
-  async getMostVisited(maxResults: number = 10): Promise<chrome.history.HistoryItem[]> {
+  async getMostVisited(maxResults = 10): Promise<chrome.history.HistoryItem[]> {
     logger.debug(`[HistoryAdapter] Getting ${maxResults} most visited URLs`);
 
     try {

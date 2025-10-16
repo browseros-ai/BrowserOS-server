@@ -1,11 +1,19 @@
-import { ProtocolResponse } from '@/protocol/types';
+
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 import { logger } from './Logger';
+
+import type { ProtocolResponse } from '@/protocol/types';
+
 
 export class ResponseQueue {
   private queue: ProtocolResponse[] = [];
   private maxSize: number;
 
-  constructor(maxSize: number = 1000) {
+  constructor(maxSize = 1000) {
     this.maxSize = maxSize;
     logger.info(`ResponseQueue initialized: maxSize=${maxSize}`);
   }

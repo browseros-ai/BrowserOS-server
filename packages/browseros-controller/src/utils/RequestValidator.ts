@@ -1,5 +1,14 @@
-import { ProtocolRequest, ProtocolRequestSchema } from '@/protocol/types';
+
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 import { logger } from './Logger';
+
+import type { ProtocolRequest} from '@/protocol/types';
+import { ProtocolRequestSchema } from '@/protocol/types';
+
 
 export class RequestValidator {
   private activeIds = new Set<string>();

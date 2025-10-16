@@ -1,5 +1,13 @@
+
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 import { z } from 'zod';
+
 import { ActionHandler } from '../ActionHandler';
+
 import { BrowserOSAdapter, type PageLoadStatus } from '@/adapters/BrowserOSAdapter';
 
 // Input schema for getPageLoadStatus action
