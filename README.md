@@ -247,7 +247,7 @@ bun start
 bun start --cdp-port=9222
 
 # Specify server ports
-bun start --http-mcp-port=9223 --agent-port=3000 --ws-port=9224
+bun start --http-mcp-port=9223 --agent-port=3000 --extension-port=9224
 
 # Disable MCP HTTP server (Agent-only mode)
 bun start --disable-mcp-server
@@ -256,7 +256,12 @@ bun start --disable-mcp-server
 bun start --disable-agent-server
 
 # Full example
-bun start --cdp-port=9222 --http-mcp-port=9223 --agent-port=3000 --ws-port=9224
+bun start --cdp-port=9222 --http-mcp-port=9223 --agent-port=3000 --extension-port=9224
+```
+
+### Agent Testing
+```
+node packages/agent/scripts/tests/test-client.ts
 ```
 
 ### Environment Variables
