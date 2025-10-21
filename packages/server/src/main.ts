@@ -15,6 +15,7 @@ import {createHttpMcpServer, shutdownMcpServer} from '@browseros/mcp';
 import {allTools} from '@browseros/tools';
 import type {ToolDefinition} from '@browseros/tools';
 import * as controllerTools from '@browseros/tools/controller-definitions';
+import {createAgentServer, type AgentServerConfig} from '@browseros/agent';
 
 import {parseArguments} from './args.js';
 import {ControllerContext, WebSocketManager} from '@browseros/controller-server';
@@ -113,25 +114,58 @@ void (async () => {
     `Health check available at http://127.0.0.1:${ports.httpMcpPort}/health`,
   );
 
-  logger(`Agent port reserved: ${ports.agentPort} (not yet implemented)`);
+  // Start Agent WebSocket server with shared WebSocketManager
+  let agentServer: any = null;
+  if (ports.agentServerEnabled) {
+    // Check for required environment variables
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      logger('Warning: ANTHROPIC_API_KEY not set. Agent server will be disabled.');
+      logger('Set ANTHROPIC_API_KEY environment variable to enable agent functionality.');
+    } else {
+      try {
+        const agentConfig: AgentServerConfig = {
+          port: ports.agentPort,
+          apiKey,
+          cwd: process.cwd(),
+          maxSessions: parseInt(process.env.MAX_SESSIONS || '5'),
+          idleTimeoutMs: parseInt(process.env.SESSION_IDLE_TIMEOUT_MS || '90000'),
+          eventGapTimeoutMs: parseInt(process.env.EVENT_GAP_TIMEOUT_MS || '60000')
+        };
 
-  // TODO: Start Agent server when implemented
-  // if (ports.agentServerEnabled) {
-  //   const agentServer = createAgentServer({
-  //     port: ports.agentPort,
-  //     tools: allTools,
-  //     context,
-  //     toolMutex,
-  //     logger,
-  //   });
-  //   logger(`Agent server listening on ws://127.0.0.1:${ports.agentPort}/agent`);
-  // }
+        // Create agent server with shared WebSocketManager
+        agentServer = createAgentServer(agentConfig, wsManager);
+
+        logger(`✅ Agent server started on ws://127.0.0.1:${ports.agentPort}`);
+        logger(`   - Using shared WebSocketManager (port ${ports.extensionPort})`);
+        logger(`   - Max sessions: ${agentConfig.maxSessions}`);
+        logger(`   - Idle timeout: ${agentConfig.idleTimeoutMs}ms`);
+      } catch (error) {
+        logger(`❌ Failed to start agent server: ${error instanceof Error ? error.message : String(error)}`);
+        logger('Agent functionality will not be available.');
+      }
+    }
+  } else {
+    logger('Agent server disabled (--disable-agent-server)');
+  }
 
   // Graceful shutdown handlers
   const shutdown = async () => {
     logger('Shutting down server...');
+
+    // Shutdown MCP server first
     await shutdownMcpServer(mcpServer, logger);
+
+    // Shutdown agent server if it's running
+    if (agentServer) {
+      logger('Stopping agent server...');
+      agentServer.stop();
+    }
+
+    // Close WebSocketManager LAST (after both MCP and Agent are stopped)
+    logger('Closing WebSocketManager...');
     await wsManager.close();
+
     logger('Server shutdown complete');
     process.exit(0);
   };

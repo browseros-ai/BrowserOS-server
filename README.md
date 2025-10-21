@@ -8,10 +8,35 @@ A unified server that provides browser automation tools via Model Context Protoc
 browseros-server/
 ├── packages/
 │   ├── common/     # Shared utilities (context, mutex, browser connection)
-│   ├── tools/      # 26 browser automation tools (CDP-based)
-│   ├── mcp/        # MCP protocol server implementation
-│   ├── agent/      # Agent server (WebSocket, to be implemented)
-│   └── server/     # Main entry point (orchestrates MCP + Agent)
+│   ├── tools/      # Browser automation tools (CDP + controller-based)
+│   ├── mcp/        # MCP HTTP server implementation
+│   ├── agent/      # Agent WebSocket server with Claude SDK
+│   └── server/     # Unified entry point with shared WebSocketManager
+```
+
+### Unified Server Architecture
+
+```
+┌─────────────────────────────────────────┐
+│         Unified Server Process          │
+│                                         │
+│  ┌───────────────────────────────────┐ │
+│  │   WebSocketManager (Port 9224)    │ │  ← Shared by all
+│  │   Browser Extension Connection    │ │
+│  └───────────────┬───────────────────┘ │
+│                  │                      │
+│        ┌─────────┴─────────┐           │
+│        │                   │           │
+│  ┌─────▼──────┐    ┌──────▼──────┐    │
+│  │ HTTP MCP   │    │   Agent     │    │
+│  │ (Port 9223)│    │ (Port 3000) │    │
+│  │            │    │             │    │
+│  │ External   │    │ Claude SDK  │    │
+│  │ MCP        │    │ In-process  │    │
+│  │ Clients    │    │ SDK MCP     │    │
+│  └────────────┘    └─────────────┘    │
+│                                         │
+└─────────────────────────────────────────┘
 ```
 
 ## Quick Start
@@ -134,16 +159,18 @@ MCP protocol implementation:
 - Handles JSON-RPC protocol
 
 ### `@browseros/agent`
-Agent server (to be implemented):
-- WebSocket server for Agent UI
-- Direct tool execution (no HTTP overhead)
-- Claude SDK integration
+Agent WebSocket server with Claude SDK integration:
+- Multi-session WebSocket server for concurrent agents
+- Direct tool execution via shared WebSocketManager (no HTTP overhead)
+- Claude SDK integration with in-process MCP
+- Automatic session management and cleanup
 
 ### `@browseros/server`
-Main application entry point:
-- Starts both MCP and Agent servers
-- CLI argument parsing
-- Shared resource management
+Unified server orchestrating all components:
+- Starts HTTP MCP server and Agent WebSocket server
+- Single WebSocketManager shared by both MCP and Agent
+- CLI argument parsing with enable/disable flags
+- Graceful shutdown and resource cleanup
 
 ## Testing
 
@@ -213,30 +240,54 @@ The server provides 26 browser automation tools:
 ### Command Line Arguments
 
 ```bash
-# Connect to existing Chrome instance
+# Default startup (MCP + Agent on default ports)
+bun start
+
+# Connect to existing Chrome instance (optional)
 bun start --cdp-port=9222
 
-# Specify MCP server port
-bun start --http-mcp-port=9223
+# Specify server ports
+bun start --http-mcp-port=9223 --agent-port=3000 --extension-port=9224
 
-# Disable MCP server (Agent-only mode)
+# Disable MCP HTTP server (Agent-only mode)
 bun start --disable-mcp-server
 
+# Disable Agent server (MCP-only mode)
+bun start --disable-agent-server
+
 # Full example
-bun start --cdp-port=9222 --http-mcp-port=9223
+bun start --cdp-port=9222 --http-mcp-port=9223 --agent-port=3000 --extension-port=9224
+```
+
+### Agent Testing
+```
+node packages/agent/scripts/tests/test-client.ts
 ```
 
 ### Environment Variables
 
+**Required for Agent:**
+- `ANTHROPIC_API_KEY` - Anthropic API key for Claude SDK (required for agent functionality)
+
+**Agent Configuration:**
+- `MAX_SESSIONS` - Maximum concurrent agent sessions (default: 5)
+- `SESSION_IDLE_TIMEOUT_MS` - Session idle timeout in milliseconds (default: 90000)
+- `EVENT_GAP_TIMEOUT_MS` - Max time between agent events in milliseconds (default: 60000)
+
+**Optional:**
 - `PUPPETEER_EXECUTABLE_PATH` - Path to Chrome executable
 - `DEBUG=mcp:*` - Enable debug logging
+- `LOG_LEVEL` - Logging level (debug, info, warn, error)
+- `NODE_ENV` - Environment (development, production)
 
 ## Architecture Benefits
 
+- **Unified Process**: MCP and Agent run in single server process
+- **Shared WebSocket**: Single WebSocketManager for extension connection
+- **Zero Overhead**: Agent uses in-process SDK MCP (direct function calls)
 - **Single Binary**: Everything compiles to one executable
 - **Shared Tools**: Both MCP and Agent use same tool implementations
 - **No Duplication**: One source of truth for browser automation
-- **Performance**: Agent gets direct function calls, no HTTP overhead
 - **Type Safety**: Full TypeScript with Zod validation
 - **Modular**: Each package has single responsibility
 

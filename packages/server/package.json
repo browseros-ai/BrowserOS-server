@@ -14,6 +14,7 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@browseros/agent": "workspace:*",
     "@browseros/common": "workspace:*",
     "@browseros/tools": "workspace:*",
     "@browseros/mcp": "workspace:*",

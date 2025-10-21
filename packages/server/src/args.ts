@@ -10,6 +10,7 @@ export interface ServerPorts {
   agentPort: number;
   extensionPort: number;
   mcpServerEnabled: boolean;
+  agentServerEnabled: boolean;
   // Future: httpsMcpPort?: number;
 }
 
@@ -35,11 +36,11 @@ function parsePort(value: string): number {
 }
 
 /**
- * Parse command-line arguments for BrowserOS MCP server.
+ * Parse command-line arguments for BrowserOS unified server.
  *
  * Required:
  * - --http-mcp-port <number>: Port where MCP HTTP server should listen
- * - --agent-port <number>: Port for agent communication
+ * - --agent-port <number>: Port for agent WebSocket server
  *
  * Optional:
  * - --cdp-port <number>: Port where CDP WebSocket is listening
@@ -53,9 +54,9 @@ export function parseArguments(argv = process.argv): ServerPorts {
   const program = new Command();
 
   program
-    .name('browseros-mcp')
-    .description('BrowserOS MCP Server')
-    .option('--cdp-port <port>', 'CDP WebSocket port', parsePort)
+    .name('browseros-server')
+    .description('BrowserOS Unified Server - MCP + Agent')
+    .option('--cdp-port <port>', 'CDP WebSocket port (optional)', parsePort)
     .requiredOption('--http-mcp-port <port>', 'MCP HTTP server port', parsePort)
     .requiredOption(
       '--agent-port <port>',
@@ -69,6 +70,7 @@ export function parseArguments(argv = process.argv): ServerPorts {
       9224,
     )
     .option('--disable-mcp-server', 'Disable MCP server', false)
+    .option('--disable-agent-server', 'Disable Agent server', false)
     .exitOverride()
     .parse(argv);
 
@@ -80,5 +82,6 @@ export function parseArguments(argv = process.argv): ServerPorts {
     agentPort: options.agentPort,
     extensionPort: options.extensionPort,
     mcpServerEnabled: !options.disableMcpServer,
+    agentServerEnabled: !options.disableAgentServer,
   };
 }
