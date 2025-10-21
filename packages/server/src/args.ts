@@ -57,9 +57,6 @@ export function parseArguments(argv = process.argv): ServerPorts {
     .name('browseros-server')
     .description('BrowserOS Unified Server - MCP + Agent')
     .option('--cdp-port <port>', 'CDP WebSocket port (optional)', parsePort)
-    .name('browseros-mcp')
-    .description('BrowserOS MCP Server')
-    .option('--cdp-port <port>', 'CDP WebSocket port', parsePort)
     .requiredOption('--http-mcp-port <port>', 'MCP HTTP server port', parsePort)
     .requiredOption(
       '--agent-port <port>',
@@ -73,6 +70,7 @@ export function parseArguments(argv = process.argv): ServerPorts {
       9224,
     )
     .option('--disable-mcp-server', 'Disable MCP server', false)
+    .option('--disable-agent-server', 'Disable Agent server', false)
     .exitOverride()
     .parse(argv);
 

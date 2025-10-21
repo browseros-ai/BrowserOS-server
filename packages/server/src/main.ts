@@ -137,7 +137,7 @@ void (async () => {
         agentServer = createAgentServer(agentConfig, wsManager);
 
         logger(`✅ Agent server started on ws://127.0.0.1:${ports.agentPort}`);
-        logger(`   - Using shared WebSocketManager (port ${ports.wsPort})`);
+        logger(`   - Using shared WebSocketManager (port ${ports.extensionPort})`);
         logger(`   - Max sessions: ${agentConfig.maxSessions}`);
         logger(`   - Idle timeout: ${agentConfig.idleTimeoutMs}ms`);
       } catch (error) {

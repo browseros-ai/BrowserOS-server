@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { Logger } from '../utils/Logger.js'
 import type { AgentConfig } from '../agent/types.js'
 import { ClaudeSDKAgent } from '../agent/ClaudeSDKAgent.js'
-import { WebSocketManager } from '@browseros/server/src/controller/WebSocketManager.js'
+import { WebSocketManager } from '@browseros/controller-server'
 
 /**
  * Session state enum

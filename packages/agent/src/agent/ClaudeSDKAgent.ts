@@ -11,8 +11,7 @@ import { BaseAgent } from './BaseAgent.js'
 import { CLAUDE_SDK_SYSTEM_PROMPT } from './ClaudeSDKAgent.prompt.js'
 import * as controllerTools from '@browseros/tools/controller-definitions'
 import type { ToolDefinition } from '@browseros/tools'
-import { WebSocketManager } from '@browseros/server/src/controller/WebSocketManager.js'
-import { ControllerContext } from '@browseros/server/src/controller/ControllerContext.js'
+import { WebSocketManager, ControllerContext } from '@browseros/controller-server'
 import { createControllerMcpServer } from './ControllerToolsAdapter.js'
 
 /**

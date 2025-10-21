@@ -7,7 +7,7 @@ import { z } from 'zod'
 import type { ServerWebSocket } from 'bun'
 import { Logger } from '../utils/Logger.js'
 import { SessionManager } from '../session/SessionManager.js'
-import { WebSocketManager } from '@browseros/server/src/controller/WebSocketManager.js'
+import { WebSocketManager } from '@browseros/controller-server'
 import {
   tryParseClientMessage,
   type ServerEvent,
@@ -99,7 +99,6 @@ export function createServer(config: ServerConfig, wsManager: WebSocketManager) 
   // Run cleanup check with the timer
   setInterval(cleanupIdle, 60000)
 
-  // @ts-expect-error - Bun's type signature expects 2 args but works fine with 1
   const server = Bun.serve<WebSocketData>({
     port: config.port,
 
@@ -317,18 +316,6 @@ export function createServer(config: ServerConfig, wsManager: WebSocketManager) 
           code,
           reason: reason || 'No reason provided',
           remainingSessions: sessionManager.getMetrics().activeSessions
-        })
-      },
-
-      /**
-       * Handle WebSocket error
-       */
-      error(ws: ServerWebSocket<WebSocketData>, error: Error) {
-        const { sessionId } = ws.data
-
-        Logger.error('❌ WebSocket error', {
-          sessionId,
-          error: error.message
         })
       }
     }

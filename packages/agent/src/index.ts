@@ -9,10 +9,10 @@
 export { createServer as createAgentServer } from './websocket/server.js'
 export { ServerConfigSchema as AgentServerConfigSchema } from './websocket/server.js'
 export type { ServerConfig as AgentServerConfig } from './websocket/server.js'
-export type { WebSocketManager } from '@browseros/server/src/controller/WebSocketManager.js'
+export type { WebSocketManager } from '@browseros/controller-server'
 
 import { createServer, ServerConfigSchema, type ServerConfig } from './websocket/server.js'
-import { WebSocketManager } from '@browseros/server/src/controller/WebSocketManager.js'
+import { WebSocketManager } from '@browseros/controller-server'
 import { Logger } from './utils/Logger.js'
 
 /**
