@@ -89,20 +89,51 @@ The server needs Chrome to run. Set the executable path if Chrome is not in the 
 PUPPETEER_EXECUTABLE_PATH="/path/to/chrome" bun start
 ```
 
-### Building Binary
+### Building
 
-Create a single executable binary:
+#### Server Binary
 
+Development builds (single platform):
 ```bash
-# For current platform
-bun run build:binary
+bun run dev:server           # Current platform
+bun run dev:server:linux     # Linux x64
+bun run dev:server:macos     # macOS ARM64
+bun run dev:server:windows   # Windows x64
 
-# For specific platforms
-bun run build:binary:linux
-bun run build:binary:macos
-bun run build:binary:windows
+# Output: dist/server/browseros-server
+```
 
-# Output: dist/browseros-server
+Production builds (all platforms):
+```bash
+bun run dist:server
+
+# Output: dist/server/
+#   - browseros-server-linux-x64
+#   - browseros-server-linux-arm64
+#   - browseros-server-darwin-x64
+#   - browseros-server-darwin-arm64
+#   - browseros-server-windows-x64.exe
+```
+
+#### Extension
+
+Development build (with source maps):
+```bash
+bun run dev:ext
+
+# Output: dist/ext/
+#   - background.js (unminified)
+#   - background.js.map
+#   - manifest.json
+```
+
+Production build (minified):
+```bash
+bun run dist:ext
+
+# Output: dist/ext/
+#   - background.js (minified)
+#   - manifest.json
 ```
 
 ## Package Structure

@@ -20,16 +20,17 @@ import * as snapshotTools from './snapshot.js';
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const allTools: Array<ToolDefinition<any>> = [
+  //FIXME: nikhil - figure out the better wway to enable/disable tools
   ...Object.values(consoleTools),
-  ...Object.values(emulationTools),
-  ...Object.values(inputTools),
+  // ...Object.values(emulationTools),
+  // ...Object.values(inputTools),
   ...Object.values(networkTools),
-  ...Object.values(pagesTools),
+  // ...Object.values(pagesTools),
   // Performance tools disabled due to chrome-devtools-frontend dependency issues
   // ...Object.values(performanceTools),
-  ...Object.values(screenshotTools),
-  ...Object.values(scriptTools),
-  ...Object.values(snapshotTools),
+  // ...Object.values(screenshotTools),
+  // ...Object.values(scriptTools),
+  // ...Object.values(snapshotTools),
 ];
 
 // Re-export individual tool modules for selective imports

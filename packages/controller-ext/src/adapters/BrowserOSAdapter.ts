@@ -28,6 +28,8 @@ export type SnapshotSection = chrome.browserOS.SnapshotSection;
 export type Snapshot = chrome.browserOS.Snapshot;
 export type SnapshotOptions = chrome.browserOS.SnapshotOptions;
 
+export type PrefObject = chrome.browserOS.PrefObject;
+
 // ============= BrowserOS Adapter =============
 
 // Screenshot size constants
@@ -655,6 +657,119 @@ export class BrowserOSAdapter {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`[BrowserOSAdapter] Failed to type at coordinates: ${errorMessage}`);
       throw new Error(`Failed to type at coordinates (${x}, ${y}): ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Get a specific preference value
+   * @param name - The preference name (e.g., "browseros.server.mcp_port")
+   * @returns Promise resolving to the preference object containing key, type, and value
+   */
+  async getPref(name: string): Promise<PrefObject> {
+    try {
+      console.log(`[BrowserOSAdapter] Getting preference: ${name}`);
+
+      return new Promise<PrefObject>((resolve, reject) => {
+        chrome.browserOS.getPref(name, (pref: PrefObject) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else {
+            console.log(
+              `[BrowserOSAdapter] Retrieved preference ${name}: ${JSON.stringify(pref)}`,
+            );
+            resolve(pref);
+          }
+        });
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error(
+        `[BrowserOSAdapter] Failed to get preference: ${errorMessage}`,
+      );
+      throw new Error(`Failed to get preference ${name}: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Set a specific preference value
+   * @param name - The preference name (e.g., "browseros.server.mcp_enabled")
+   * @param value - The value to set
+   * @param pageId - Optional page ID for settings tracking
+   * @returns Promise resolving to true if successful
+   */
+  async setPref(
+    name: string,
+    value: any,
+    pageId?: string,
+  ): Promise<boolean> {
+    try {
+      console.log(
+        `[BrowserOSAdapter] Setting preference ${name} to ${JSON.stringify(value)}`,
+      );
+
+      return new Promise<boolean>((resolve, reject) => {
+        if (pageId !== undefined) {
+          chrome.browserOS.setPref(name, value, pageId, (success: boolean) => {
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+            } else {
+              console.log(
+                `[BrowserOSAdapter] Successfully set preference ${name}`,
+              );
+              resolve(success);
+            }
+          });
+        } else {
+          chrome.browserOS.setPref(name, value, (success: boolean) => {
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+            } else {
+              console.log(
+                `[BrowserOSAdapter] Successfully set preference ${name}`,
+              );
+              resolve(success);
+            }
+          });
+        }
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error(
+        `[BrowserOSAdapter] Failed to set preference: ${errorMessage}`,
+      );
+      throw new Error(`Failed to set preference ${name}: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Get all preferences (filtered to browseros.* prefs)
+   * @returns Promise resolving to array of preference objects
+   */
+  async getAllPrefs(): Promise<PrefObject[]> {
+    try {
+      console.log("[BrowserOSAdapter] Getting all preferences");
+
+      return new Promise<PrefObject[]>((resolve, reject) => {
+        chrome.browserOS.getAllPrefs((prefs: PrefObject[]) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else {
+            console.log(
+              `[BrowserOSAdapter] Retrieved ${prefs.length} preferences`,
+            );
+            resolve(prefs);
+          }
+        });
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error(
+        `[BrowserOSAdapter] Failed to get all preferences: ${errorMessage}`,
+      );
+      throw new Error(`Failed to get all preferences: ${errorMessage}`);
     }
   }
 

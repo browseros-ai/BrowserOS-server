@@ -374,6 +374,33 @@ declare namespace chrome.browserOS {
     text: string,
     callback: () => void,
   ): void;
+
+  // Preference object
+  interface PrefObject {
+    key: string;
+    type: string;
+    value: any;
+  }
+
+  // Get a specific preference value
+  function getPref(name: string, callback: (pref: PrefObject) => void): void;
+
+  // Set a specific preference value
+  function setPref(
+    name: string,
+    value: any,
+    pageId: string,
+    callback: (success: boolean) => void,
+  ): void;
+
+  function setPref(
+    name: string,
+    value: any,
+    callback: (success: boolean) => void,
+  ): void;
+
+  // Get all preferences (filtered to browseros.* prefs)
+  function getAllPrefs(callback: (prefs: PrefObject[]) => void): void;
 }
 declare namespace chrome {
   namespace BrowserOS {

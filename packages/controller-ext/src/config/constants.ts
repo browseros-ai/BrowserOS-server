@@ -1,79 +1,63 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
 
-import {
-  env,
-  WebSocketConfigSchema,
-  ConcurrencyConfigSchema,
-  LoggingConfigSchema
-} from './environment';
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type WebSocketProtocol = 'ws' | 'wss';
 
-/**
- * Configuration constants for the BrowserOS Controller
- *
- * All values are sourced from environment variables via the env object.
- * This file provides backwards compatibility with the existing codebase
- * while centralizing configuration management.
- * All configurations are validated using Zod schemas.
- */
+export interface WebSocketConfig {
+  readonly protocol: WebSocketProtocol;
+  readonly host: string;
+  readonly port: number;
+  readonly path: string;
+  readonly reconnectDelay: number;
+  readonly maxReconnectDelay: number;
+  readonly reconnectMultiplier: number;
+  readonly maxReconnectAttempts: number;
+  readonly heartbeatInterval: number;
+  readonly heartbeatTimeout: number;
+  readonly connectionTimeout: number;
+  readonly requestTimeout: number;
+}
 
-/**
- * Extended WebSocket configuration schema (includes runtime transformations)
- */
-export const WebSocketRuntimeConfigSchema = WebSocketConfigSchema.extend({
-  maxReconnectAttempts: z.union([z.number().min(0), z.literal(Infinity)]).describe('Max reconnection attempts (0/Infinity = infinite)')
-});
+export interface ConcurrencyConfig {
+  readonly maxConcurrent: number;
+  readonly maxQueueSize: number;
+}
 
-/**
- * WebSocket configuration with runtime values
- * Includes all environment settings plus runtime transformations
- */
-export const WEBSOCKET_CONFIG = WebSocketRuntimeConfigSchema.parse({
-  host: env.websocket.host,
-  port: env.websocket.port,
-  path: env.websocket.path,
-  protocol: env.websocket.protocol,
+export interface LoggingConfig {
+  readonly enabled: boolean;
+  readonly level: LogLevel;
+  readonly prefix: string;
+}
 
-  // Reconnection
-  reconnectDelay: env.websocket.reconnectDelay,
-  maxReconnectDelay: env.websocket.maxReconnectDelay,
-  reconnectMultiplier: env.websocket.reconnectMultiplier,
-  maxReconnectAttempts: env.websocket.maxReconnectAttempts === 0 ? Infinity : env.websocket.maxReconnectAttempts,
+export const WEBSOCKET_CONFIG: WebSocketConfig = {
+  protocol: 'ws',
+  host: 'localhost',
+  port: 9225,
+  path: '/controller',
 
-  // Heartbeat
-  heartbeatInterval: env.websocket.heartbeatInterval,
-  heartbeatTimeout: env.websocket.heartbeatTimeout,
+  reconnectDelay: 1000,
+  maxReconnectDelay: 30000,
+  reconnectMultiplier: 1.5,
+  maxReconnectAttempts: Infinity,
 
-  // Timeouts
-  connectionTimeout: env.websocket.connectionTimeout,
-  requestTimeout: env.websocket.requestTimeout,
-});
+  heartbeatInterval: 30000,
+  heartbeatTimeout: 5000,
 
-/**
- * Concurrency configuration
- * Validated using Zod schema
- */
-export const CONCURRENCY_CONFIG = ConcurrencyConfigSchema.parse({
-  maxConcurrent: env.concurrency.maxConcurrent,
-  maxQueueSize: env.concurrency.maxQueueSize,
-});
+  connectionTimeout: 10000,
+  requestTimeout: 30000,
+};
 
-/**
- * Logging configuration
- * Validated using Zod schema
- */
-export const LOGGING_CONFIG = LoggingConfigSchema.parse({
-  enabled: env.logging.enabled,
-  level: env.logging.level,
-  prefix: env.logging.prefix,
-});
+export const CONCURRENCY_CONFIG: ConcurrencyConfig = {
+  maxConcurrent: 100,
+  maxQueueSize: 1000,
+};
 
-// Type exports
-export type WebSocketRuntimeConfig = z.infer<typeof WebSocketRuntimeConfigSchema>;
-export type ConcurrencyConfig = z.infer<typeof ConcurrencyConfigSchema>;
-export type LoggingConfig = z.infer<typeof LoggingConfigSchema>;
+export const LOGGING_CONFIG: LoggingConfig = {
+  enabled: true,
+  level: 'info',
+  prefix: '[BrowserOS Controller]',
+};

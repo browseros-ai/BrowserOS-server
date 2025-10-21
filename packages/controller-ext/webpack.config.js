@@ -1,5 +1,7 @@
 const path = require('path');
-const Dotenv = require('dotenv-webpack');
+const webpack = require('webpack');
+const TerserPlugin = require('terser-webpack-plugin');
+const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
@@ -7,46 +9,75 @@ module.exports = (env, argv) => {
   return {
     mode: isProduction ? 'production' : 'development',
     entry: {
-      background: './src/background/index.ts'
+      background: './src/background/index.ts',
     },
     output: {
       path: path.resolve(__dirname, 'dist'),
       filename: '[name].js',
-      clean: true
+      clean: true,
     },
     resolve: {
       extensions: ['.ts', '.js'],
       alias: {
-        '@': path.resolve(__dirname, 'src')
-      }
+        '@': path.resolve(__dirname, 'src'),
+      },
     },
     module: {
       rules: [
         {
           test: /\.ts$/,
-          use: 'ts-loader',
-          exclude: /node_modules/
-        }
-      ]
+          use: {
+            loader: 'ts-loader',
+            options: {
+              onlyCompileBundledFiles: true,
+              compilerOptions: {
+                declaration: false,
+                declarationMap: false,
+              },
+            },
+          },
+          exclude: [/node_modules/, /\.(test|spec)\.(ts|tsx)$/],
+        },
+      ],
     },
     plugins: [
-      new Dotenv({
-        path: './.env',
-        safe: false,
-        systemvars: true,
-        silent: true,
-        defaults: './.env.example'
-      })
+      new webpack.optimize.LimitChunkCountPlugin({
+        maxChunks: 1,
+      }),
+      new CopyPlugin({
+        patterns: [
+          {from: 'manifest.json', to: '.'},
+          {from: 'assets', to: 'assets'},
+        ],
+      }),
     ],
     devtool: isProduction ? false : 'source-map',
     optimization: {
+      splitChunks: false,
+      runtimeChunk: false,
       minimize: isProduction,
-      usedExports: true
+      minimizer: isProduction
+        ? [
+            new TerserPlugin({
+              extractComments: false,
+              terserOptions: {
+                format: {
+                  comments: false,
+                },
+                compress: {
+                  // FIXME: nikhil - remove this later after few releases
+                  drop_console: false,
+                  drop_debugger: true,
+                },
+              },
+            }),
+          ]
+        : [],
     },
     performance: {
       hints: isProduction ? 'warning' : false,
       maxEntrypointSize: 512000,
-      maxAssetSize: 512000
-    }
+      maxAssetSize: 512000,
+    },
   };
 };

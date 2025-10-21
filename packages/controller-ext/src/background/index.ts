@@ -12,6 +12,7 @@ import { CaptureScreenshotAction } from '@/actions/browser/CaptureScreenshotActi
 import { ClearAction } from '@/actions/browser/ClearAction';
 import { ClickAction } from '@/actions/browser/ClickAction';
 import { ClickCoordinatesAction } from '@/actions/browser/ClickCoordinatesAction';
+import { GetAccessibilityTreeAction } from '@/actions/browser/GetAccessibilityTreeAction';
 import { GetInteractiveSnapshotAction } from '@/actions/browser/GetInteractiveSnapshotAction';
 import { GetPageLoadStatusAction } from '@/actions/browser/GetPageLoadStatusAction';
 import { SendKeysAction } from '@/actions/browser/SendKeysAction';
@@ -35,6 +36,7 @@ import { CONCURRENCY_CONFIG } from '@/config/constants';
 import type { ProtocolRequest, ProtocolResponse} from '@/protocol/types';
 import { ConnectionStatus } from '@/protocol/types';
 import { ConcurrencyLimiter } from '@/utils/ConcurrencyLimiter';
+import { getWebSocketPort } from '@/utils/ConfigHelper';
 import { logger } from '@/utils/Logger';
 import { RequestTracker } from '@/utils/RequestTracker';
 import { RequestValidator } from '@/utils/RequestValidator';
@@ -55,7 +57,7 @@ class BrowserOSController {
   private responseQueue: ResponseQueue;
   private actionRegistry: ActionRegistry;
 
-  constructor() {
+  constructor(port: number) {
     logger.info('Initializing BrowserOS Controller...');
 
     // Initialize all components
@@ -66,7 +68,7 @@ class BrowserOSController {
     );
     this.requestValidator = new RequestValidator();
     this.responseQueue = new ResponseQueue();
-    this.wsClient = new WebSocketClient();
+    this.wsClient = new WebSocketClient(port);
     this.actionRegistry = new ActionRegistry();
 
     // Register actions
@@ -118,6 +120,7 @@ class BrowserOSController {
     this.actionRegistry.register('sendKeys', new SendKeysAction());
     this.actionRegistry.register('getPageLoadStatus', new GetPageLoadStatusAction());
     this.actionRegistry.register('getSnapshot', new GetSnapshotAction());
+    this.actionRegistry.register('getAccessibilityTree', new GetAccessibilityTreeAction());
     this.actionRegistry.register('clickCoordinates', new ClickCoordinatesAction());
     this.actionRegistry.register('typeAtCoordinates', new TypeAtCoordinatesAction());
 
@@ -300,7 +303,8 @@ chrome.runtime.onStartup.addListener(async () => {
   logger.info('[BrowserOS Controller] Browser started');
 
   if (!controller) {
-    controller = new BrowserOSController();
+    const port = await getWebSocketPort();
+    controller = new BrowserOSController(port);
     await controller.start();
   }
 });
@@ -308,7 +312,8 @@ chrome.runtime.onStartup.addListener(async () => {
 // Start immediately (service worker context)
 (async () => {
   if (!controller) {
-    controller = new BrowserOSController();
+    const port = await getWebSocketPort();
+    controller = new BrowserOSController(port);
     await controller.start();
 
     // Log stats every 30 seconds

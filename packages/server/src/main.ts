@@ -18,8 +18,7 @@ import * as controllerTools from '@browseros/tools/controller-definitions';
 import {createAgentServer, type AgentServerConfig} from '@browseros/agent';
 
 import {parseArguments} from './args.js';
-import {ControllerContext} from './controller/ControllerContext.js';
-import {WebSocketManager} from './controller/WebSocketManager.js';
+import {ControllerContext, WebSocketManager} from '@browseros/controller-server';
 
 const version = readVersion();
 const ports = parseArguments();
@@ -46,8 +45,8 @@ void (async () => {
   logger(`Starting BrowserOS Server v${version}`);
 
   // Start WebSocket server for extension
-  logger(`Starting WebSocket server on port ${ports.wsPort}...`);
-  const wsManager = new WebSocketManager(ports.wsPort, logger);
+  logger(`Starting WebSocket server on port ${ports.extensionPort}...`);
+  const wsManager = new WebSocketManager(ports.extensionPort, logger);
   const controllerContext = new ControllerContext(wsManager);
 
   // Connect to Chrome DevTools Protocol (optional)
