@@ -17,7 +17,7 @@ import { Logger } from './utils/Logger.js'
 
 /**
  * Utility function to start agent server in standalone mode
- * Creates its own WebSocketManager for extension connection
+ * Creates its own ControllerBridge for extension connection
  *
  * @returns Server instance and cleanup function
  */
@@ -56,13 +56,13 @@ export async function startStandaloneAgentServer() {
     eventGapTimeoutMs: config.eventGapTimeoutMs
   })
 
-  // Create WebSocketManager for standalone mode
+  // Create ControllerBridge for standalone mode
   const controllerPort = parseInt(process.env.WS_PORT || '9224')
-  Logger.info('🔧 Creating WebSocketManager for extension connection', { port: controllerPort })
-  const wsManager = new ControllerBridge(controllerPort, (msg) => Logger.debug(msg))
+  Logger.info('🔧 Creating ControllerBridge for extension connection', { port: controllerPort })
+  const controllerBridge = new ControllerBridge(controllerPort, (msg) => Logger.debug(msg))
 
   // Create and start agent server
-  const server = createServer(config, wsManager)
+  const server = createServer(config, controllerBridge)
 
   Logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   Logger.info('✅ Server is ready to accept connections')
@@ -70,12 +70,12 @@ export async function startStandaloneAgentServer() {
   // Return server instance and cleanup function
   return {
     server,
-    wsManager,
+    controllerBridge,
     async shutdown() {
       Logger.info('🛑 Shutting down server...')
       server.stop()
-      Logger.info('🔌 Closing WebSocketManager...')
-      await wsManager.close()
+      Logger.info('🔌 Closing ControllerBridge...')
+      await controllerBridge.close()
       Logger.info('✅ Server stopped')
     }
   }

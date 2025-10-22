@@ -48,20 +48,20 @@ const CLAUDE_SDK_DEFAULTS = {
  *
  * Wraps @anthropic-ai/claude-agent-sdk with:
  * - In-process SDK MCP server with controller tools
- * - Shared WebSocketManager for browseros-controller connection
+ * - Shared ControllerBridge for browseros-controller connection
  * - Event formatting via EventFormatter
  * - AbortController for cleanup
  * - Metadata tracking
  *
- * Note: Requires external WebSocketManager (provided by main server)
+ * Note: Requires external ControllerBridge (provided by main server)
  */
 export class ClaudeSDKAgent extends BaseAgent {
   private abortController: AbortController | null = null
 
-  constructor(config: AgentConfig, wsManager: ControllerBridge) {
-    Logger.info('🔧 Using shared WebSocketManager for controller connection')
+  constructor(config: AgentConfig, controllerBridge: ControllerBridge) {
+    Logger.info('🔧 Using shared ControllerBridge for controller connection')
 
-    const controllerContext = new ControllerContext(wsManager)
+    const controllerContext = new ControllerContext(controllerBridge)
 
     // Get all controller tools and create SDK MCP server
     const tools = getAllControllerTools()
@@ -78,7 +78,7 @@ export class ClaudeSDKAgent extends BaseAgent {
       permissionMode: CLAUDE_SDK_DEFAULTS.permissionMode
     })
 
-    Logger.info('✅ ClaudeSDKAgent initialized with shared WebSocketManager')
+    Logger.info('✅ ClaudeSDKAgent initialized with shared ControllerBridge')
   }
 
   /**
@@ -188,7 +188,7 @@ export class ClaudeSDKAgent extends BaseAgent {
   /**
    * Cleanup agent resources
    *
-   * Aborts the running SDK query. Does NOT close shared WebSocketManager.
+   * Aborts the running SDK query. Does NOT close shared ControllerBridge.
    */
   async destroy(): Promise<void> {
     if (this.isDestroyed()) {
@@ -205,7 +205,7 @@ export class ClaudeSDKAgent extends BaseAgent {
       await new Promise(resolve => setTimeout(resolve, 500))
     }
 
-    // DO NOT close WebSocketManager - it's shared and owned by main server
+    // DO NOT close ControllerBridge - it's shared and owned by main server
 
     Logger.debug('🗑️  ClaudeSDKAgent destroyed', {
       totalDuration: this.metadata.totalDuration,

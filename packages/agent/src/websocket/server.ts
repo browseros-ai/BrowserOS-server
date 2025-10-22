@@ -61,22 +61,22 @@ const stats: ServerStats = {
  * Create and start the WebSocket server
  *
  * @param config - Server configuration
- * @param wsManager - Shared WebSocketManager for browser extension connection
+ * @param controllerBridge - Shared ControllerBridge for browser extension connection
  */
-export function createServer(config: ServerConfig, wsManager: ControllerBridge) {
+export function createServer(config: ServerConfig, controllerBridge: ControllerBridge) {
   Logger.info('🚀 Starting WebSocket server...', {
     port: config.port,
     maxSessions: config.maxSessions,
     idleTimeoutMs: config.idleTimeoutMs,
     eventGapTimeoutMs: config.eventGapTimeoutMs,
-    sharedWebSocketManager: true
+    sharedControllerBridge: true
   })
 
-  // Create SessionManager with shared WebSocketManager
+  // Create SessionManager with shared ControllerBridge
   const sessionManager = new SessionManager({
     maxSessions: config.maxSessions,
     idleTimeoutMs: config.idleTimeoutMs
-  }, wsManager)
+  }, controllerBridge)
 
   // Track WebSocket connections (needed to close idle sessions)
   const wsConnections = new Map<string, ServerWebSocket<WebSocketData>>()

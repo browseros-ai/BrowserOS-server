@@ -18,7 +18,10 @@ import * as controllerTools from '@browseros/tools/controller-definitions';
 import {createAgentServer, type AgentServerConfig} from '@browseros/agent';
 
 import {parseArguments} from './args.js';
-import {ControllerContext, ControllerBridge} from '@browseros/controller-server';
+import {
+  ControllerContext,
+  ControllerBridge,
+} from '@browseros/controller-server';
 
 const version = readVersion();
 const ports = parseArguments();
@@ -45,9 +48,11 @@ void (async () => {
   logger(`Starting BrowserOS Server v${version}`);
 
   // Start WebSocket server for extension
-  logger(`[Controller Server] Starting on ws://127.0.0.1:${ports.extensionPort}`);
-  const wsManager = new ControllerBridge(ports.extensionPort, logger);
-  const controllerContext = new ControllerContext(wsManager);
+  logger(
+    `[Controller Server] Starting on ws://127.0.0.1:${ports.extensionPort}`,
+  );
+  const controllerBridge = new ControllerBridge(ports.extensionPort, logger);
+  const controllerContext = new ControllerContext(controllerBridge);
 
   // Connect to Chrome DevTools Protocol (optional)
   let cdpContext: McpContext | null = null;
@@ -63,11 +68,17 @@ void (async () => {
       cdpTools = allTools;
       logger(`Loaded ${cdpTools.length} CDP tools`);
     } catch (error) {
-      logger(`Warning: Could not connect to CDP at http://127.0.0.1:${ports.cdpPort}`);
-      logger('CDP tools will not be available. Only extension tools will work.');
+      logger(
+        `Warning: Could not connect to CDP at http://127.0.0.1:${ports.cdpPort}`,
+      );
+      logger(
+        'CDP tools will not be available. Only extension tools will work.',
+      );
     }
   } else {
-    logger('CDP disabled (no --cdp-port specified). Only extension tools will be available.');
+    logger(
+      'CDP disabled (no --cdp-port specified). Only extension tools will be available.',
+    );
   }
 
   // Collect all controller tools
@@ -86,7 +97,9 @@ void (async () => {
     })),
   ];
 
-  logger(`Total tools available: ${mergedTools.length} (${cdpTools.length} CDP + ${extensionTools.length} extension)`);
+  logger(
+    `Total tools available: ${mergedTools.length} (${cdpTools.length} CDP + ${extensionTools.length} extension)`,
+  );
 
   // Create shared tool mutex
   const toolMutex = new Mutex();
@@ -97,7 +110,7 @@ void (async () => {
     port: ports.httpMcpPort,
     version,
     tools: mergedTools,
-    context: cdpContext || {} as any, // Dummy context if CDP not available
+    context: cdpContext || ({} as any), // Dummy context if CDP not available
     controllerContext, // Pass controller context for browser_* tools
     toolMutex,
     logger,
@@ -107,11 +120,15 @@ void (async () => {
   if (!ports.mcpServerEnabled) {
     logger('[MCP Server] Disabled (--disable-mcp-server)');
   } else {
-    logger(`[MCP Server] Listening on http://127.0.0.1:${ports.httpMcpPort}/mcp`);
-    logger(`[MCP Server] Health check: http://127.0.0.1:${ports.httpMcpPort}/health`);
+    logger(
+      `[MCP Server] Listening on http://127.0.0.1:${ports.httpMcpPort}/mcp`,
+    );
+    logger(
+      `[MCP Server] Health check: http://127.0.0.1:${ports.httpMcpPort}/health`,
+    );
   }
 
-  // Start Agent WebSocket server with shared WebSocketManager
+  // Start Agent WebSocket server with shared ControllerBridge
   let agentServer: any = null;
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -124,15 +141,21 @@ void (async () => {
         cwd: process.cwd(),
         maxSessions: parseInt(process.env.MAX_SESSIONS || '5'),
         idleTimeoutMs: parseInt(process.env.SESSION_IDLE_TIMEOUT_MS || '90000'),
-        eventGapTimeoutMs: parseInt(process.env.EVENT_GAP_TIMEOUT_MS || '60000')
+        eventGapTimeoutMs: parseInt(
+          process.env.EVENT_GAP_TIMEOUT_MS || '60000',
+        ),
       };
 
-      agentServer = createAgentServer(agentConfig, wsManager);
+      agentServer = createAgentServer(agentConfig, controllerBridge);
 
       logger(`[Agent Server] Listening on ws://127.0.0.1:${ports.agentPort}`);
-      logger(`[Agent Server] Max sessions: ${agentConfig.maxSessions}, Idle timeout: ${agentConfig.idleTimeoutMs}ms`);
+      logger(
+        `[Agent Server] Max sessions: ${agentConfig.maxSessions}, Idle timeout: ${agentConfig.idleTimeoutMs}ms`,
+      );
     } catch (error) {
-      logger(`[Agent Server] Failed to start: ${error instanceof Error ? error.message : String(error)}`);
+      logger(
+        `[Agent Server] Failed to start: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -160,9 +183,9 @@ void (async () => {
       agentServer.stop();
     }
 
-    // Close WebSocketManager LAST (after both MCP and Agent are stopped)
-    logger('Closing WebSocketManager...');
-    await wsManager.close();
+    // Close ControllerBridge LAST (after both MCP and Agent are stopped)
+    logger('Closing ControllerBridge...');
+    await controllerBridge.close();
 
     logger('Server shutdown complete');
     process.exit(0);

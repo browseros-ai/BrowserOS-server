@@ -73,25 +73,25 @@ type SessionConfig = z.infer<typeof SessionConfigSchema>
  * - Stores session metadata only
  * - Server maintains Map<sessionId, WebSocket> separately
  * - Provides capacity checking and idle session detection
- * - Receives shared WebSocketManager for browser extension connection
+ * - Receives shared ControllerBridge for browser extension connection
  */
 export class SessionManager {
   private sessions: Map<string, Session>
   private agents: Map<string, ClaudeSDKAgent>
   private config: SessionConfig
-  private wsManager: ControllerBridge
+  private controllerBridge: ControllerBridge
   private cleanupTimerId?: Timer
 
-  constructor(config: SessionConfig, wsManager: ControllerBridge) {
+  constructor(config: SessionConfig, controllerBridge: ControllerBridge) {
     this.sessions = new Map()
     this.agents = new Map()
     this.config = config
-    this.wsManager = wsManager
+    this.controllerBridge = controllerBridge
 
     Logger.info('📦 SessionManager initialized', {
       maxSessions: config.maxSessions,
       idleTimeoutMs: config.idleTimeoutMs,
-      sharedWebSocketManager: true
+      sharedControllerBridge: true
     })
   }
 
@@ -130,7 +130,7 @@ export class SessionManager {
     // Create agent if config provided
     if (agentConfig) {
       try {
-        const agent = new ClaudeSDKAgent(agentConfig, this.wsManager)
+        const agent = new ClaudeSDKAgent(agentConfig, this.controllerBridge)
         this.agents.set(sessionId, agent)
 
         Logger.info('✅ Session created with agent', {
