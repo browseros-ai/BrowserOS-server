@@ -5,7 +5,7 @@
 import {Command, InvalidArgumentError} from 'commander';
 
 export interface ServerPorts {
-  cdpPort: number | undefined;
+  cdpPort: number | null;
   httpMcpPort: number;
   agentPort: number;
   extensionPort: number;
@@ -66,10 +66,22 @@ export function parseArguments(argv = process.argv): ServerPorts {
 
   const options = program.opts();
 
-  const cdpPort = options.cdpPort ?? (process.env.CDP_PORT ? parsePort(process.env.CDP_PORT) : undefined);
-  const httpMcpPort = options.httpMcpPort ?? (process.env.HTTP_MCP_PORT ? parsePort(process.env.HTTP_MCP_PORT) : undefined);
-  const agentPort = options.agentPort ?? (process.env.AGENT_PORT ? parsePort(process.env.AGENT_PORT) : undefined);
-  const extensionPort = options.extensionPort ?? (process.env.EXTENSION_PORT ? parsePort(process.env.EXTENSION_PORT) : undefined);
+  const cdpPort =
+    options.cdpPort ??
+    (process.env.CDP_PORT ? parsePort(process.env.CDP_PORT) : undefined);
+  const httpMcpPort =
+    options.httpMcpPort ??
+    (process.env.HTTP_MCP_PORT
+      ? parsePort(process.env.HTTP_MCP_PORT)
+      : undefined);
+  const agentPort =
+    options.agentPort ??
+    (process.env.AGENT_PORT ? parsePort(process.env.AGENT_PORT) : undefined);
+  const extensionPort =
+    options.extensionPort ??
+    (process.env.EXTENSION_PORT
+      ? parsePort(process.env.EXTENSION_PORT)
+      : undefined);
 
   const missing: string[] = [];
   if (!httpMcpPort) missing.push('HTTP_MCP_PORT');
@@ -77,7 +89,9 @@ export function parseArguments(argv = process.argv): ServerPorts {
   if (!extensionPort) missing.push('EXTENSION_PORT');
 
   if (missing.length > 0) {
-    console.error(`Error: Missing required port configuration: ${missing.join(', ')}`);
+    console.error(
+      `Error: Missing required port configuration: ${missing.join(', ')}`,
+    );
     console.error('Please set these in .env file');
     process.exit(1);
   }
