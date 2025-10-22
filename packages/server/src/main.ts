@@ -175,36 +175,28 @@ async function startAgentServer(
 ): Promise<any> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    logger.warn('[Agent Server] ANTHROPIC_API_KEY not set - skipping');
-    return null;
+    logger.error('[Agent Server] ANTHROPIC_API_KEY is required');
+    logger.error('Please set ANTHROPIC_API_KEY in .env file');
+    process.exit(1);
   }
 
-  try {
-    const agentConfig: AgentServerConfig = {
-      port: ports.agentPort,
-      apiKey,
-      cwd: process.cwd(),
-      maxSessions: parseInt(process.env.MAX_SESSIONS || '5'),
-      idleTimeoutMs: parseInt(process.env.SESSION_IDLE_TIMEOUT_MS || '90000'),
-      eventGapTimeoutMs: parseInt(process.env.EVENT_GAP_TIMEOUT_MS || '60000'),
-    };
+  const agentConfig: AgentServerConfig = {
+    port: ports.agentPort,
+    apiKey,
+    cwd: process.cwd(),
+    maxSessions: parseInt(process.env.MAX_SESSIONS || '5'),
+    idleTimeoutMs: parseInt(process.env.SESSION_IDLE_TIMEOUT_MS || '90000'),
+    eventGapTimeoutMs: parseInt(process.env.EVENT_GAP_TIMEOUT_MS || '60000'),
+  };
 
-    const agentServer = createAgentServer(agentConfig, controllerBridge);
+  const agentServer = createAgentServer(agentConfig, controllerBridge);
 
-    logger.info(
-      `[Agent Server] Listening on ws://127.0.0.1:${ports.agentPort}`,
-    );
-    logger.info(
-      `[Agent Server] Max sessions: ${agentConfig.maxSessions}, Idle timeout: ${agentConfig.idleTimeoutMs}ms`,
-    );
+  logger.info(`[Agent Server] Listening on ws://127.0.0.1:${ports.agentPort}`);
+  logger.info(
+    `[Agent Server] Max sessions: ${agentConfig.maxSessions}, Idle timeout: ${agentConfig.idleTimeoutMs}ms`,
+  );
 
-    return agentServer;
-  } catch (error) {
-    logger.error(
-      `[Agent Server] Failed to start: ${error instanceof Error ? error.message : String(error)}`,
-    );
-    return null;
-  }
+  return agentServer;
 }
 
 function logSummary(ports: ReturnType<typeof parseArguments>) {
@@ -228,10 +220,8 @@ function createShutdownHandler(
 
     await shutdownMcpServer(mcpServer, logger);
 
-    if (agentServer) {
-      logger.info('Stopping agent server...');
-      agentServer.stop();
-    }
+    logger.info('Stopping agent server...');
+    agentServer.stop();
 
     logger.info('Closing ControllerBridge...');
     await controllerBridge.close();
