@@ -7,7 +7,7 @@ import {describe, it} from 'node:test';
 
 import {html, withBrowser} from '@browseros/common/tests/utils';
 
-import {takeSnapshot, waitFor} from '../../src/definitions/snapshot.js';
+import {takeSnapshot, waitFor} from '../../src/cdp-based/snapshot.js';
 
 describe('snapshot', () => {
   describe('browser_snapshot', () => {

@@ -10,7 +10,7 @@ import {withBrowser} from '@browseros/common/tests/utils';
 import {
   getNetworkRequest,
   listNetworkRequests,
-} from '../../src/definitions/network.js';
+} from '../../src/cdp-based/network.js';
 
 describe('network', () => {
   describe('network_list_requests', () => {

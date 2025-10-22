@@ -17,7 +17,7 @@ import {
   navigatePageHistory,
   resizePage,
   handleDialog,
-} from '../../src/definitions/pages.js';
+} from '../../src/cdp-based/pages.js';
 
 describe('pages', () => {
   describe('list_pages', () => {

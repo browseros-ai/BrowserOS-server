@@ -7,7 +7,7 @@ import {describe, it} from 'node:test';
 
 import {withBrowser} from '@browseros/common/tests/utils';
 
-import {emulateCpu, emulateNetwork} from '../../src/definitions/emulation.js';
+import {emulateCpu, emulateNetwork} from '../../src/cdp-based/emulation.js';
 
 describe('emulation', () => {
   describe('network', () => {

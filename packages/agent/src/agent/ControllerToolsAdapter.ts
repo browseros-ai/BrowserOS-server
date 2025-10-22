@@ -5,8 +5,8 @@
 
 import { tool, createSdkMcpServer } from '@anthropic-ai/claude-agent-sdk'
 import type { ToolDefinition } from '@browseros/tools'
-import { ControllerResponse } from '@browseros/tools/controller-definitions'
-import type { Context } from '@browseros/tools/controller-definitions'
+import { ControllerResponse } from '@browseros/tools/controller-based'
+import type { Context } from '@browseros/tools/controller-based'
 import { logger } from '@browseros/common'
 
 /**

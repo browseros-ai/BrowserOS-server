@@ -9,30 +9,10 @@ import { logger } from '@browseros/common'
 import type { AgentConfig } from './types.js'
 import { BaseAgent } from './BaseAgent.js'
 import { CLAUDE_SDK_SYSTEM_PROMPT } from './ClaudeSDKAgent.prompt.js'
-import * as controllerTools from '@browseros/tools/controller-definitions'
+import { allControllerTools } from '@browseros/tools/controller-based'
 import type { ToolDefinition } from '@browseros/tools'
 import { ControllerBridge, ControllerContext } from '@browseros/controller-server'
 import { createControllerMcpServer } from './ControllerToolsAdapter.js'
-
-/**
- * Get all controller tools from the controller-definitions module
- */
-function getAllControllerTools(): ToolDefinition<any, any, any>[] {
-  const tools: ToolDefinition<any, any, any>[] = []
-
-  for (const value of Object.values(controllerTools)) {
-    if (
-      typeof value === 'object' &&
-      value !== null &&
-      'name' in value &&
-      'handler' in value
-    ) {
-      tools.push(value as ToolDefinition<any, any, any>)
-    }
-  }
-
-  return tools
-}
 
 /**
  * Claude SDK specific default configuration
@@ -63,11 +43,10 @@ export class ClaudeSDKAgent extends BaseAgent {
 
     const controllerContext = new ControllerContext(controllerBridge)
 
-    // Get all controller tools and create SDK MCP server
-    const tools = getAllControllerTools()
-    const sdkMcpServer = createControllerMcpServer(tools, controllerContext)
+    // Get all controller tools from package and create SDK MCP server
+    const sdkMcpServer = createControllerMcpServer(allControllerTools, controllerContext)
 
-    logger.info(`✅ Created SDK MCP server with ${tools.length} controller tools`)
+    logger.info(`✅ Created SDK MCP server with ${allControllerTools.length} controller tools`)
 
     // Pass Claude SDK specific defaults to BaseAgent (must call super before accessing this)
     super('claude-sdk', config, {

@@ -2,7 +2,7 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import type {Context} from '@browseros/tools/controller-definitions';
+import type {Context} from '@browseros/tools/controller-based';
 
 import type {ControllerBridge} from './ControllerBridge.js';
 

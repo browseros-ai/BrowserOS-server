@@ -16,10 +16,10 @@ import * as scriptTools from './script.js';
 import * as snapshotTools from './snapshot.js';
 
 /**
- * All available browser automation tools
+ * All available CDP-based browser automation tools
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const allTools: Array<ToolDefinition<any>> = [
+export const allCdpTools: Array<ToolDefinition<any>> = [
   //FIXME: nikhil - figure out the better wway to enable/disable tools
   ...Object.values(consoleTools),
   // ...Object.values(emulationTools),

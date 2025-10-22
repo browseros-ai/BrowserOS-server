@@ -49,13 +49,13 @@ This package ONLY handles MCP protocol concerns:
 
 ```typescript
 import {createHttpMcpServer} from '@browseros/mcp';
-import {allTools} from '@browseros/tools';
+import {allCdpTools} from '@browseros/tools';
 import {McpContext, Mutex} from '@browseros/common';
 
 const server = createHttpMcpServer({
   port: 9223,
   version: '0.0.1',
-  tools: allTools,
+  tools: allCdpTools,
   context,
   toolMutex: new Mutex(),
   logger: console.log,

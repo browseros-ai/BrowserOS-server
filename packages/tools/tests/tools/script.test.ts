@@ -7,7 +7,7 @@ import {describe, it} from 'node:test';
 
 import {html, withBrowser} from '@browseros/common/tests/utils';
 
-import {evaluateScript} from '../../src/definitions/script.js';
+import {evaluateScript} from '../../src/cdp-based/script.js';
 
 describe('script', () => {
   describe('browser_evaluate_script', () => {

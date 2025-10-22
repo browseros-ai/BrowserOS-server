@@ -7,7 +7,7 @@ import {describe, it} from 'node:test';
 
 import {withBrowser} from '@browseros/common/tests/utils';
 
-import {consoleTool} from '../../src/definitions/console.js';
+import {consoleTool} from '../../src/cdp-based/console.js';
 
 describe('console', () => {
   describe('list_console_messages', () => {

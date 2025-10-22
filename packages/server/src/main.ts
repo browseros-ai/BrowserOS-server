@@ -12,9 +12,7 @@ import {
   readVersion,
 } from '@browseros/common';
 import {createHttpMcpServer, shutdownMcpServer} from '@browseros/mcp';
-import {allTools} from '@browseros/tools';
-import type {ToolDefinition} from '@browseros/tools';
-import * as controllerTools from '@browseros/tools/controller-definitions';
+import {allCdpTools, allControllerTools, type ToolDefinition} from '@browseros/tools';
 import {createAgentServer, type AgentServerConfig} from '@browseros/agent';
 
 import {parseArguments} from './args.js';
@@ -25,24 +23,6 @@ import {
 
 const version = readVersion();
 const ports = parseArguments();
-
-// Collect all controller tools
-function getAllControllerTools(): Array<ToolDefinition<any, any, any>> {
-  const tools: Array<ToolDefinition<any, any, any>> = [];
-
-  for (const [key, value] of Object.entries(controllerTools)) {
-    if (
-      typeof value === 'object' &&
-      value !== null &&
-      'name' in value &&
-      'handler' in value
-    ) {
-      tools.push(value as ToolDefinition<any, any, any>);
-    }
-  }
-
-  return tools;
-}
 
 void (async () => {
   logger.info(`Starting BrowserOS Server v${version}`);
@@ -65,7 +45,7 @@ void (async () => {
       );
       logger.info(`Connected to CDP at http://127.0.0.1:${ports.cdpPort}`);
       cdpContext = await McpContext.from(browser, logger);
-      cdpTools = allTools;
+      cdpTools = allCdpTools;
       logger.info(`Loaded ${cdpTools.length} CDP tools`);
     } catch (error) {
       logger.warn(
@@ -81,8 +61,8 @@ void (async () => {
     );
   }
 
-  // Collect all controller tools
-  const extensionTools = getAllControllerTools();
+  // Use all controller tools from package
+  const extensionTools = allControllerTools;
   logger.info(`Loaded ${extensionTools.length} controller (extension) tools`);
 
   // Merge CDP tools and controller tools
