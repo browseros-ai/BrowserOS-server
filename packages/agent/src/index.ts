@@ -9,10 +9,10 @@
 export { createServer as createAgentServer } from './websocket/server.js'
 export { ServerConfigSchema as AgentServerConfigSchema } from './websocket/server.js'
 export type { ServerConfig as AgentServerConfig } from './websocket/server.js'
-export type { WebSocketManager } from '@browseros/controller-server'
+export type { ControllerBridge } from '@browseros/controller-server'
 
 import { createServer, ServerConfigSchema, type ServerConfig } from './websocket/server.js'
-import { WebSocketManager } from '@browseros/controller-server'
+import { ControllerBridge } from '@browseros/controller-server'
 import { Logger } from './utils/Logger.js'
 
 /**
@@ -59,7 +59,7 @@ export async function startStandaloneAgentServer() {
   // Create WebSocketManager for standalone mode
   const controllerPort = parseInt(process.env.WS_PORT || '9224')
   Logger.info('🔧 Creating WebSocketManager for extension connection', { port: controllerPort })
-  const wsManager = new WebSocketManager(controllerPort, (msg) => Logger.debug(msg))
+  const wsManager = new ControllerBridge(controllerPort, (msg) => Logger.debug(msg))
 
   // Create and start agent server
   const server = createServer(config, wsManager)

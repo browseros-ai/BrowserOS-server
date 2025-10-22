@@ -24,7 +24,7 @@ interface PendingRequest {
   timeout: NodeJS.Timeout;
 }
 
-export class WebSocketManager {
+export class ControllerBridge {
   private wss: WebSocketServer;
   private client: WebSocket | null = null;
   private connected = false;

@@ -7,7 +7,7 @@ import { z } from 'zod'
 import { Logger } from '../utils/Logger.js'
 import type { AgentConfig } from '../agent/types.js'
 import { ClaudeSDKAgent } from '../agent/ClaudeSDKAgent.js'
-import { WebSocketManager } from '@browseros/controller-server'
+import { ControllerBridge } from '@browseros/controller-server'
 
 /**
  * Session state enum
@@ -79,10 +79,10 @@ export class SessionManager {
   private sessions: Map<string, Session>
   private agents: Map<string, ClaudeSDKAgent>
   private config: SessionConfig
-  private wsManager: WebSocketManager
+  private wsManager: ControllerBridge
   private cleanupTimerId?: Timer
 
-  constructor(config: SessionConfig, wsManager: WebSocketManager) {
+  constructor(config: SessionConfig, wsManager: ControllerBridge) {
     this.sessions = new Map()
     this.agents = new Map()
     this.config = config

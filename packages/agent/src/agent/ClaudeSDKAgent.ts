@@ -11,7 +11,7 @@ import { BaseAgent } from './BaseAgent.js'
 import { CLAUDE_SDK_SYSTEM_PROMPT } from './ClaudeSDKAgent.prompt.js'
 import * as controllerTools from '@browseros/tools/controller-definitions'
 import type { ToolDefinition } from '@browseros/tools'
-import { WebSocketManager, ControllerContext } from '@browseros/controller-server'
+import { ControllerBridge, ControllerContext } from '@browseros/controller-server'
 import { createControllerMcpServer } from './ControllerToolsAdapter.js'
 
 /**
@@ -58,7 +58,7 @@ const CLAUDE_SDK_DEFAULTS = {
 export class ClaudeSDKAgent extends BaseAgent {
   private abortController: AbortController | null = null
 
-  constructor(config: AgentConfig, wsManager: WebSocketManager) {
+  constructor(config: AgentConfig, wsManager: ControllerBridge) {
     Logger.info('🔧 Using shared WebSocketManager for controller connection')
 
     const controllerContext = new ControllerContext(wsManager)

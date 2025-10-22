@@ -7,7 +7,7 @@ import { z } from 'zod'
 import type { ServerWebSocket } from 'bun'
 import { Logger } from '../utils/Logger.js'
 import { SessionManager } from '../session/SessionManager.js'
-import { WebSocketManager } from '@browseros/controller-server'
+import { ControllerBridge } from '@browseros/controller-server'
 import {
   tryParseClientMessage,
   type ServerEvent,
@@ -63,7 +63,7 @@ const stats: ServerStats = {
  * @param config - Server configuration
  * @param wsManager - Shared WebSocketManager for browser extension connection
  */
-export function createServer(config: ServerConfig, wsManager: WebSocketManager) {
+export function createServer(config: ServerConfig, wsManager: ControllerBridge) {
   Logger.info('🚀 Starting WebSocket server...', {
     port: config.port,
     maxSessions: config.maxSessions,
