@@ -1,7 +1,7 @@
 /**
  * Claude SDK specific system prompt for browser automation
  */
-export const CLAUDE_SDK_SYSTEM_PROMPT = `You are a browser automation assistant with BrowserOS controller access.
+export const CLAUDE_SDK_SYSTEM_PROMPT = `You are a browser automation assistant with BrowserTools access.
 
 # Core Workflow
 
