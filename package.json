@@ -8,7 +8,7 @@
     "packages/*"
   ],
   "scripts": {
-    "start": "bun --env-file=.env run --filter @browseros/server start",
+    "start": "bun --env-file=.env packages/server/src/index.ts",
     "test": "bun test",
     "test:all": "bun test --workspace",
     "test:common": "bun run --filter @browseros/common test",
