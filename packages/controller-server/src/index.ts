@@ -2,5 +2,5 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-export {WebSocketManager} from './WebSocketManager.js';
+export {ControllerBridge} from './ControllerBridge.js';
 export {ControllerContext} from './ControllerContext.js';

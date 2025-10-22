@@ -5,34 +5,14 @@
 
 import { query } from '@anthropic-ai/claude-agent-sdk'
 import { EventFormatter, FormattedEvent } from '../utils/EventFormatter.js'
-import { Logger } from '../utils/Logger.js'
+import { logger } from '@browseros/common'
 import type { AgentConfig } from './types.js'
 import { BaseAgent } from './BaseAgent.js'
 import { CLAUDE_SDK_SYSTEM_PROMPT } from './ClaudeSDKAgent.prompt.js'
-import * as controllerTools from '@browseros/tools/controller-definitions'
+import { allControllerTools } from '@browseros/tools/controller-based'
 import type { ToolDefinition } from '@browseros/tools'
-import { WebSocketManager, ControllerContext } from '@browseros/controller-server'
+import { ControllerBridge, ControllerContext } from '@browseros/controller-server'
 import { createControllerMcpServer } from './ControllerToolsAdapter.js'
-
-/**
- * Get all controller tools from the controller-definitions module
- */
-function getAllControllerTools(): ToolDefinition<any, any, any>[] {
-  const tools: ToolDefinition<any, any, any>[] = []
-
-  for (const value of Object.values(controllerTools)) {
-    if (
-      typeof value === 'object' &&
-      value !== null &&
-      'name' in value &&
-      'handler' in value
-    ) {
-      tools.push(value as ToolDefinition<any, any, any>)
-    }
-  }
-
-  return tools
-}
 
 /**
  * Claude SDK specific default configuration
@@ -48,26 +28,25 @@ const CLAUDE_SDK_DEFAULTS = {
  *
  * Wraps @anthropic-ai/claude-agent-sdk with:
  * - In-process SDK MCP server with controller tools
- * - Shared WebSocketManager for browseros-controller connection
+ * - Shared ControllerBridge for browseros-controller connection
  * - Event formatting via EventFormatter
  * - AbortController for cleanup
  * - Metadata tracking
  *
- * Note: Requires external WebSocketManager (provided by main server)
+ * Note: Requires external ControllerBridge (provided by main server)
  */
 export class ClaudeSDKAgent extends BaseAgent {
   private abortController: AbortController | null = null
 
-  constructor(config: AgentConfig, wsManager: WebSocketManager) {
-    Logger.info('🔧 Using shared WebSocketManager for controller connection')
+  constructor(config: AgentConfig, controllerBridge: ControllerBridge) {
+    logger.info('🔧 Using shared ControllerBridge for controller connection')
 
-    const controllerContext = new ControllerContext(wsManager)
+    const controllerContext = new ControllerContext(controllerBridge)
 
-    // Get all controller tools and create SDK MCP server
-    const tools = getAllControllerTools()
-    const sdkMcpServer = createControllerMcpServer(tools, controllerContext)
+    // Get all controller tools from package and create SDK MCP server
+    const sdkMcpServer = createControllerMcpServer(allControllerTools, controllerContext)
 
-    Logger.info(`✅ Created SDK MCP server with ${tools.length} controller tools`)
+    logger.info(`✅ Created SDK MCP server with ${allControllerTools.length} controller tools`)
 
     // Pass Claude SDK specific defaults to BaseAgent (must call super before accessing this)
     super('claude-sdk', config, {
@@ -78,7 +57,7 @@ export class ClaudeSDKAgent extends BaseAgent {
       permissionMode: CLAUDE_SDK_DEFAULTS.permissionMode
     })
 
-    Logger.info('✅ ClaudeSDKAgent initialized with shared WebSocketManager')
+    logger.info('✅ ClaudeSDKAgent initialized with shared ControllerBridge')
   }
 
   /**
@@ -92,7 +71,7 @@ export class ClaudeSDKAgent extends BaseAgent {
     this.startExecution()
     this.abortController = new AbortController()
 
-    Logger.info('🤖 ClaudeSDKAgent executing', { message: message.substring(0, 100) })
+    logger.info('🤖 ClaudeSDKAgent executing', { message: message.substring(0, 100) })
 
     try {
       // Build SDK options with AbortController
@@ -136,7 +115,7 @@ export class ClaudeSDKAgent extends BaseAgent {
           }
 
           // Log raw result events for debugging
-          Logger.info('📊 Raw result event', {
+          logger.info('📊 Raw result event', {
             subtype: (event as any).subtype,
             is_error: (event as any).is_error,
             num_turns: numTurns,
@@ -153,7 +132,7 @@ export class ClaudeSDKAgent extends BaseAgent {
 
         // Yield formatted event if valid
         if (formattedEvent) {
-          Logger.debug('📤 ClaudeSDKAgent yielding event', {
+          logger.debug('📤 ClaudeSDKAgent yielding event', {
             type: formattedEvent.type
           })
           yield formattedEvent
@@ -163,7 +142,7 @@ export class ClaudeSDKAgent extends BaseAgent {
       // Complete execution tracking
       this.completeExecution()
 
-      Logger.info('✅ ClaudeSDKAgent execution complete', {
+      logger.info('✅ ClaudeSDKAgent execution complete', {
         turns: this.metadata.turns,
         toolsExecuted: this.metadata.toolsExecuted,
         duration: Date.now() - this.executionStartTime
@@ -173,7 +152,7 @@ export class ClaudeSDKAgent extends BaseAgent {
       // Mark execution error
       this.errorExecution(error instanceof Error ? error : new Error(String(error)))
 
-      Logger.error('❌ ClaudeSDKAgent execution failed', {
+      logger.error('❌ ClaudeSDKAgent execution failed', {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined
       })
@@ -188,11 +167,11 @@ export class ClaudeSDKAgent extends BaseAgent {
   /**
    * Cleanup agent resources
    *
-   * Aborts the running SDK query. Does NOT close shared WebSocketManager.
+   * Aborts the running SDK query. Does NOT close shared ControllerBridge.
    */
   async destroy(): Promise<void> {
     if (this.isDestroyed()) {
-      Logger.debug('⚠️  ClaudeSDKAgent already destroyed')
+      logger.debug('⚠️  ClaudeSDKAgent already destroyed')
       return
     }
 
@@ -200,14 +179,14 @@ export class ClaudeSDKAgent extends BaseAgent {
 
     // Abort the SDK query if it's running
     if (this.abortController) {
-      Logger.debug('🛑 Aborting SDK query')
+      logger.debug('🛑 Aborting SDK query')
       this.abortController.abort()
       await new Promise(resolve => setTimeout(resolve, 500))
     }
 
-    // DO NOT close WebSocketManager - it's shared and owned by main server
+    // DO NOT close ControllerBridge - it's shared and owned by main server
 
-    Logger.debug('🗑️  ClaudeSDKAgent destroyed', {
+    logger.debug('🗑️  ClaudeSDKAgent destroyed', {
       totalDuration: this.metadata.totalDuration,
       turns: this.metadata.turns,
       toolsExecuted: this.metadata.toolsExecuted

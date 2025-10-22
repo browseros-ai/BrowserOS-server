@@ -3,7 +3,7 @@
  * Copyright 2025 BrowserOS
  */
 
-import { Logger } from '../utils/Logger.js'
+import { logger } from '@browseros/common'
 import type { AgentConfig, AgentMetadata } from './types.js'
 import type { FormattedEvent } from '../utils/EventFormatter.js'
 
@@ -87,7 +87,7 @@ export abstract class BaseAgent {
       state: 'idle'
     }
 
-    Logger.debug(`🤖 ${agentType} agent created`, {
+    logger.debug(`🤖 ${agentType} agent created`, {
       agentType,
       cwd: this.config.cwd,
       maxTurns: this.config.maxTurns,

@@ -6,12 +6,11 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./definitions": "./src/definitions/index.ts",
+    "./cdp-based": "./src/cdp-based/index.ts",
+    "./controller-based": "./src/controller-based/index.ts",
     "./response": "./src/response/index.ts",
     "./formatters": "./src/formatters/index.ts",
-    "./types": "./src/types/index.ts",
-    "./controller-definitions": "./src/controller-definitions/index.ts",
-    "./controller-definitions/index.js": "./src/controller-definitions/index.ts"
+    "./types": "./src/types/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

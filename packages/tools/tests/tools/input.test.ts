@@ -16,7 +16,7 @@ import {
   drag,
   fillForm,
   uploadFile,
-} from '../../src/definitions/input.js';
+} from '../../src/cdp-based/input.js';
 import {serverHooks} from '../server.js';
 
 describe('input', () => {

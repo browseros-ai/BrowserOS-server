@@ -10,7 +10,7 @@ import {describe, it} from 'node:test';
 
 import {withBrowser} from '@browseros/common/tests/utils';
 
-import {screenshot} from '../../src/definitions/screenshot.js';
+import {screenshot} from '../../src/cdp-based/screenshot.js';
 import {screenshots} from '../snapshot.js';
 
 describe('screenshot', () => {

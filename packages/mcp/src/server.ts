@@ -5,7 +5,7 @@
 import http from 'node:http';
 
 import type {McpContext, Mutex} from '@browseros/common';
-import {metrics} from '@browseros/common';
+import {logger, metrics} from '@browseros/common';
 import type {ToolDefinition} from '@browseros/tools';
 import {McpResponse} from '@browseros/tools';
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -23,7 +23,7 @@ export interface McpServerConfig {
   context: McpContext;
   controllerContext?: any;
   toolMutex: Mutex;
-  logger: (message: string) => void;
+  logger: typeof logger;
   mcpServerEnabled: boolean;
 }
 
@@ -64,7 +64,7 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
         // Serialize tool execution with mutex
         const guard = await toolMutex.acquire();
         try {
-          logger(`${tool.name} request: ${JSON.stringify(params, null, '  ')}`);
+          logger.info(`${tool.name} request: ${JSON.stringify(params, null, '  ')}`);
 
           // Detect if this is a controller tool (browser_* tools)
           const isControllerTool = tool.name.startsWith('browser_');
@@ -203,7 +203,7 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
 
       // Update state
       mcpEnabled = data.enabled;
-      logger(
+      logger.info(
         `MCP server ${mcpEnabled ? 'enabled' : 'disabled'} via control endpoint`,
       );
 
@@ -243,7 +243,7 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
       }
 
       metrics.initialize(data);
-      logger(`Metrics initialized with client_id: ${data.client_id}`);
+      logger.info(`Metrics initialized with client_id: ${data.client_id}`);
 
       res.writeHead(200, {'Content-Type': 'application/json'});
       res.end(JSON.stringify({success: true}));
@@ -267,7 +267,7 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
 
     // Security check for all other endpoints
     if (!isLocalhostRequest(req)) {
-      logger(`Rejected non-localhost request from ${req.socket.remoteAddress}`);
+      logger.warn(`Rejected non-localhost request from ${req.socket.remoteAddress}`);
       res.writeHead(403, {'Content-Type': 'application/json'});
       res.end(
         JSON.stringify({error: 'Forbidden: Only localhost access allowed'}),
@@ -324,7 +324,7 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
         // Let the SDK handle the request (it will parse body, validate, and respond)
         await transport.handleRequest(req, res);
       } catch (error) {
-        logger(`Error handling MCP request: ${error}`);
+        logger.error(`Error handling MCP request: ${error}`);
         if (!res.headersSent) {
           res.writeHead(500, {'Content-Type': 'application/json'});
           res.end(
@@ -360,7 +360,7 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
 
   // Start listening
   httpServer.listen(port, '127.0.0.1', () => {
-    logger(`MCP Server ready at http://127.0.0.1:${port}/mcp`);
+    logger.info(`MCP Server ready at http://127.0.0.1:${port}/mcp`);
   });
 
   return httpServer;
@@ -371,12 +371,12 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
  */
 export async function shutdownMcpServer(
   server: http.Server,
-  logger: (message: string) => void,
+  logger: typeof logger,
 ): Promise<void> {
   return new Promise(resolve => {
-    logger('Closing HTTP server');
+    logger.info('Closing HTTP server');
     server.close(() => {
-      logger('HTTP server closed');
+      logger.info('HTTP server closed');
       resolve();
     });
   });

@@ -54,7 +54,7 @@ packages/tools/
 
 ```typescript
 // Import all tools
-import {allTools} from '@browseros/tools';
+import {allCdpTools} from '@browseros/tools';
 
 // Import specific category
 import {pages} from '@browseros/tools';
@@ -86,11 +86,11 @@ Each tool is self-contained with:
 ### For MCP Server
 
 ```typescript
-import {allTools, McpResponse} from '@browseros/tools';
+import {allCdpTools, McpResponse} from '@browseros/tools';
 import {McpContext} from '@browseros/common';
 
 // Register tools with MCP server
-for (const tool of allTools) {
+for (const tool of allCdpTools) {
   server.registerTool(tool.name, tool.schema, async params => {
     const response = new McpResponse();
     await tool.handler({params}, response, context);
@@ -102,12 +102,12 @@ for (const tool of allTools) {
 ### For Agent Server (Direct Usage)
 
 ```typescript
-import { allTools } from '@browseros/tools';
+import { allCdpTools } from '@browseros/tools';
 import { McpContext } from '@browseros/common';
 
 // Direct tool execution without MCP protocol
 async executeTool(toolName: string, params: any) {
-  const tool = allTools.find(t => t.name === toolName);
+  const tool = allCdpTools.find(t => t.name === toolName);
   const response = new McpResponse();
   await tool.handler({ params }, response, this.context);
   return response.handle(tool.name, this.context);
@@ -128,7 +128,7 @@ async executeTool(toolName: string, params: any) {
 1. Create tool definition in `src/definitions/<category>.ts`
 2. Use `defineTool()` helper for type safety
 3. Export from category file
-4. Tool automatically included in `allTools`
+4. Tool automatically included in `allCdpTools`
 
 Example:
 

@@ -4,6 +4,8 @@
  *
  * Main server orchestration
  */
+import type http from 'node:http';
+
 import {
   ensureBrowserConnected,
   McpContext,
@@ -12,164 +14,219 @@ import {
   readVersion,
 } from '@browseros/common';
 import {createHttpMcpServer, shutdownMcpServer} from '@browseros/mcp';
-import {allTools} from '@browseros/tools';
-import type {ToolDefinition} from '@browseros/tools';
-import * as controllerTools from '@browseros/tools/controller-definitions';
+import {
+  allCdpTools,
+  allControllerTools,
+  type ToolDefinition,
+} from '@browseros/tools';
 import {createAgentServer, type AgentServerConfig} from '@browseros/agent';
 
 import {parseArguments} from './args.js';
-import {ControllerContext, WebSocketManager} from '@browseros/controller-server';
+import {
+  ControllerContext,
+  ControllerBridge,
+} from '@browseros/controller-server';
 
 const version = readVersion();
 const ports = parseArguments();
 
-// Collect all controller tools
-function getAllControllerTools(): Array<ToolDefinition<any, any, any>> {
-  const tools: Array<ToolDefinition<any, any, any>> = [];
-
-  for (const [key, value] of Object.entries(controllerTools)) {
-    if (
-      typeof value === 'object' &&
-      value !== null &&
-      'name' in value &&
-      'handler' in value
-    ) {
-      tools.push(value as ToolDefinition<any, any, any>);
-    }
-  }
-
-  return tools;
-}
-
 void (async () => {
-  logger(`Starting BrowserOS Server v${version}`);
+  logger.info(`Starting BrowserOS Server v${version}`);
 
-  // Start WebSocket server for extension
-  logger(`Starting WebSocket server on port ${ports.extensionPort}...`);
-  const wsManager = new WebSocketManager(ports.extensionPort, logger);
-  const controllerContext = new ControllerContext(wsManager);
+  logger.info(
+    `[Controller Server] Starting on ws://127.0.0.1:${ports.extensionPort}`,
+  );
+  const {controllerBridge, controllerContext} = createController(
+    ports.extensionPort,
+  );
 
-  // Connect to Chrome DevTools Protocol (optional)
-  let cdpContext: McpContext | null = null;
-  let cdpTools: Array<ToolDefinition<any, any, any>> = [];
+  const cdpContext = await connectToCdp(ports.cdpPort);
 
-  if (ports.cdpPort) {
-    try {
-      const browser = await ensureBrowserConnected(
-        `http://127.0.0.1:${ports.cdpPort}`,
-      );
-      logger(`Connected to CDP at http://127.0.0.1:${ports.cdpPort}`);
-      cdpContext = await McpContext.from(browser, logger);
-      cdpTools = allTools;
-      logger(`Loaded ${cdpTools.length} CDP tools`);
-    } catch (error) {
-      logger(`Warning: Could not connect to CDP at http://127.0.0.1:${ports.cdpPort}`);
-      logger('CDP tools will not be available. Only extension tools will work.');
-    }
-  } else {
-    logger('CDP disabled (no --cdp-port specified). Only extension tools will be available.');
-  }
-
-  // Collect all controller tools
-  const extensionTools = getAllControllerTools();
-  logger(`Loaded ${extensionTools.length} controller (extension) tools`);
-
-  // Merge CDP tools and controller tools
-  const mergedTools = [
-    ...cdpTools, // CDP tools (empty if CDP not available)
-    ...extensionTools.map((tool: any) => ({
-      ...tool,
-      // Wrap handler to use controller context
-      handler: async (request: any, response: any, _context: any) => {
-        return tool.handler(request, response, controllerContext);
-      },
-    })),
-  ];
-
-  logger(`Total tools available: ${mergedTools.length} (${cdpTools.length} CDP + ${extensionTools.length} extension)`);
-
-  // Create shared tool mutex
+  logger.info(
+    `Loaded ${allControllerTools.length} controller (extension) tools`,
+  );
+  const tools = mergeTools(cdpContext, controllerContext);
   const toolMutex = new Mutex();
 
-  // Start MCP server with all tools
-  // Use cdpContext if available, otherwise create a dummy context (won't be used for extension tools)
+  const mcpServer = startMcpServer({
+    ports,
+    version,
+    tools,
+    cdpContext,
+    controllerContext,
+    toolMutex,
+  });
+
+  const agentServer = await startAgentServer(ports, controllerBridge);
+
+  logSummary(ports);
+
+  const shutdown = createShutdownHandler(
+    mcpServer,
+    agentServer,
+    controllerBridge,
+  );
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+})();
+
+function createController(extensionPort: number) {
+  const controllerBridge = new ControllerBridge(extensionPort, logger);
+  const controllerContext = new ControllerContext(controllerBridge);
+  return {controllerBridge, controllerContext};
+}
+
+async function connectToCdp(
+  cdpPort: number | null,
+): Promise<McpContext | null> {
+  if (!cdpPort) {
+    logger.info(
+      'CDP disabled (no --cdp-port specified). Only extension tools will be available.',
+    );
+    return null;
+  }
+
+  try {
+    const browser = await ensureBrowserConnected(`http://127.0.0.1:${cdpPort}`);
+    logger.info(`Connected to CDP at http://127.0.0.1:${cdpPort}`);
+    const context = await McpContext.from(browser, logger);
+    logger.info(`Loaded ${allCdpTools.length} CDP tools`);
+    return context;
+  } catch (error) {
+    logger.warn(
+      `Warning: Could not connect to CDP at http://127.0.0.1:${cdpPort}`,
+    );
+    logger.warn(
+      'CDP tools will not be available. Only extension tools will work.',
+    );
+    return null;
+  }
+}
+
+function wrapControllerTools(
+  tools: typeof allControllerTools,
+  controllerContext: ControllerContext,
+): Array<ToolDefinition<any, any, any>> {
+  return tools.map((tool: any) => ({
+    ...tool,
+    handler: async (request: any, response: any, _context: any) => {
+      return tool.handler(request, response, controllerContext);
+    },
+  }));
+}
+
+function mergeTools(
+  cdpContext: McpContext | null,
+  controllerContext: ControllerContext,
+): Array<ToolDefinition<any, any, any>> {
+  const cdpTools = cdpContext ? allCdpTools : [];
+  const wrappedControllerTools = wrapControllerTools(
+    allControllerTools,
+    controllerContext,
+  );
+
+  logger.info(
+    `Total tools available: ${cdpTools.length + wrappedControllerTools.length} ` +
+      `(${cdpTools.length} CDP + ${wrappedControllerTools.length} extension)`,
+  );
+
+  return [...cdpTools, ...wrappedControllerTools];
+}
+
+function startMcpServer(config: {
+  ports: ReturnType<typeof parseArguments>;
+  version: string;
+  tools: Array<ToolDefinition<any, any, any>>;
+  cdpContext: McpContext | null;
+  controllerContext: ControllerContext;
+  toolMutex: Mutex;
+}): http.Server {
+  const {ports, version, tools, cdpContext, controllerContext, toolMutex} =
+    config;
+
   const mcpServer = createHttpMcpServer({
     port: ports.httpMcpPort,
     version,
-    tools: mergedTools,
-    context: cdpContext || {} as any, // Dummy context if CDP not available
-    controllerContext, // Pass controller context for browser_* tools
+    tools,
+    context: cdpContext || ({} as any),
+    controllerContext,
     toolMutex,
     logger,
     mcpServerEnabled: ports.mcpServerEnabled,
   });
 
   if (!ports.mcpServerEnabled) {
-    logger('MCP server disabled (--disable-mcp-server)');
+    logger.info('[MCP Server] Disabled (--disable-mcp-server)');
   } else {
-    logger(`MCP server listening on http://127.0.0.1:${ports.httpMcpPort}/mcp`);
+    logger.info(
+      `[MCP Server] Listening on http://127.0.0.1:${ports.httpMcpPort}/mcp`,
+    );
+    logger.info(
+      `[MCP Server] Health check: http://127.0.0.1:${ports.httpMcpPort}/health`,
+    );
   }
 
-  logger(
-    `Health check available at http://127.0.0.1:${ports.httpMcpPort}/health`,
-  );
+  return mcpServer;
+}
 
-  // Start Agent WebSocket server with shared WebSocketManager
-  let agentServer: any = null;
-  if (ports.agentServerEnabled) {
-    // Check for required environment variables
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      logger('Warning: ANTHROPIC_API_KEY not set. Agent server will be disabled.');
-      logger('Set ANTHROPIC_API_KEY environment variable to enable agent functionality.');
-    } else {
-      try {
-        const agentConfig: AgentServerConfig = {
-          port: ports.agentPort,
-          apiKey,
-          cwd: process.cwd(),
-          maxSessions: parseInt(process.env.MAX_SESSIONS || '5'),
-          idleTimeoutMs: parseInt(process.env.SESSION_IDLE_TIMEOUT_MS || '90000'),
-          eventGapTimeoutMs: parseInt(process.env.EVENT_GAP_TIMEOUT_MS || '60000')
-        };
-
-        // Create agent server with shared WebSocketManager
-        agentServer = createAgentServer(agentConfig, wsManager);
-
-        logger(`✅ Agent server started on ws://127.0.0.1:${ports.agentPort}`);
-        logger(`   - Using shared WebSocketManager (port ${ports.extensionPort})`);
-        logger(`   - Max sessions: ${agentConfig.maxSessions}`);
-        logger(`   - Idle timeout: ${agentConfig.idleTimeoutMs}ms`);
-      } catch (error) {
-        logger(`❌ Failed to start agent server: ${error instanceof Error ? error.message : String(error)}`);
-        logger('Agent functionality will not be available.');
-      }
-    }
-  } else {
-    logger('Agent server disabled (--disable-agent-server)');
+async function startAgentServer(
+  ports: ReturnType<typeof parseArguments>,
+  controllerBridge: ControllerBridge,
+): Promise<any> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    logger.error('[Agent Server] ANTHROPIC_API_KEY is required');
+    logger.error('Please set ANTHROPIC_API_KEY in .env file');
+    process.exit(1);
   }
 
-  // Graceful shutdown handlers
-  const shutdown = async () => {
-    logger('Shutting down server...');
-
-    // Shutdown MCP server first
-    await shutdownMcpServer(mcpServer, logger);
-
-    // Shutdown agent server if it's running
-    if (agentServer) {
-      logger('Stopping agent server...');
-      agentServer.stop();
-    }
-
-    // Close WebSocketManager LAST (after both MCP and Agent are stopped)
-    logger('Closing WebSocketManager...');
-    await wsManager.close();
-
-    logger('Server shutdown complete');
-    process.exit(0);
+  const agentConfig: AgentServerConfig = {
+    port: ports.agentPort,
+    apiKey,
+    cwd: process.cwd(),
+    maxSessions: parseInt(process.env.MAX_SESSIONS || '5'),
+    idleTimeoutMs: parseInt(process.env.SESSION_IDLE_TIMEOUT_MS || '90000'),
+    eventGapTimeoutMs: parseInt(process.env.EVENT_GAP_TIMEOUT_MS || '60000'),
   };
 
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
-})();
+  const agentServer = createAgentServer(agentConfig, controllerBridge);
+
+  logger.info(`[Agent Server] Listening on ws://127.0.0.1:${ports.agentPort}`);
+  logger.info(
+    `[Agent Server] Max sessions: ${agentConfig.maxSessions}, Idle timeout: ${agentConfig.idleTimeoutMs}ms`,
+  );
+
+  return agentServer;
+}
+
+function logSummary(ports: ReturnType<typeof parseArguments>) {
+  logger.info('');
+  logger.info('Services running:');
+  logger.info(`  Controller Server: ws://127.0.0.1:${ports.extensionPort}`);
+  logger.info(`  Agent Server: ws://127.0.0.1:${ports.agentPort}`);
+  if (ports.mcpServerEnabled) {
+    logger.info(`  MCP Server: http://127.0.0.1:${ports.httpMcpPort}/mcp`);
+  }
+  logger.info('');
+}
+
+function createShutdownHandler(
+  mcpServer: http.Server,
+  agentServer: any,
+  controllerBridge: ControllerBridge,
+) {
+  return async () => {
+    logger.info('Shutting down server...');
+
+    await shutdownMcpServer(mcpServer, logger);
+
+    logger.info('Stopping agent server...');
+    agentServer.stop();
+
+    logger.info('Closing ControllerBridge...');
+    await controllerBridge.close();
+
+    logger.info('Server shutdown complete');
+    process.exit(0);
+  };
+}

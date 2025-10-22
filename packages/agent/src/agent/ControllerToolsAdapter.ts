@@ -5,9 +5,9 @@
 
 import { tool, createSdkMcpServer } from '@anthropic-ai/claude-agent-sdk'
 import type { ToolDefinition } from '@browseros/tools'
-import { ControllerResponse } from '@browseros/tools/controller-definitions'
-import type { Context } from '@browseros/tools/controller-definitions'
-import { Logger } from '../utils/Logger.js'
+import { ControllerResponse } from '@browseros/tools/controller-based'
+import type { Context } from '@browseros/tools/controller-based'
+import { logger } from '@browseros/common'
 
 /**
  * Convert a controller tool to Claude SDK MCP tool format
@@ -21,7 +21,7 @@ function adaptControllerTool(
     toolDef.description,
     toolDef.schema,
     async (args, _extra) => {
-      Logger.debug(`🔧 Executing controller tool: ${toolDef.name}`, { args })
+      logger.debug(`🔧 Executing controller tool: ${toolDef.name}`, { args })
 
       try {
         // Create request and response objects
@@ -37,7 +37,7 @@ function adaptControllerTool(
         return { content }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error)
-        Logger.error(`❌ Controller tool ${toolDef.name} failed`, { error: errorMsg })
+        logger.error(`❌ Controller tool ${toolDef.name} failed`, { error: errorMsg })
 
         return {
           content: [{
@@ -65,7 +65,7 @@ export function createControllerMcpServer(
   // Adapt all controller tools to SDK format
   const sdkTools = tools.map(tool => adaptControllerTool(tool, context))
 
-  Logger.info(`🔧 Creating SDK MCP server with ${sdkTools.length} controller tools`)
+  logger.info(`🔧 Creating SDK MCP server with ${sdkTools.length} controller tools`)
 
   // Create and return the SDK MCP server
   return createSdkMcpServer({
