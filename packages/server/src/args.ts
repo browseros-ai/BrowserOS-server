@@ -10,7 +10,6 @@ export interface ServerPorts {
   agentPort: number;
   extensionPort: number;
   mcpServerEnabled: boolean;
-  agentServerEnabled: boolean;
   // Future: httpsMcpPort?: number;
 }
 
@@ -70,7 +69,6 @@ export function parseArguments(argv = process.argv): ServerPorts {
       9224,
     )
     .option('--disable-mcp-server', 'Disable MCP server', false)
-    .option('--disable-agent-server', 'Disable Agent server', false)
     .exitOverride()
     .parse(argv);
 
@@ -82,6 +80,5 @@ export function parseArguments(argv = process.argv): ServerPorts {
     agentPort: options.agentPort,
     extensionPort: options.extensionPort,
     mcpServerEnabled: !options.disableMcpServer,
-    agentServerEnabled: !options.disableAgentServer,
   };
 }
