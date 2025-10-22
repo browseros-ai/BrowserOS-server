@@ -5,7 +5,7 @@
 
 import { query } from '@anthropic-ai/claude-agent-sdk'
 import { EventFormatter, FormattedEvent } from '../utils/EventFormatter.js'
-import { Logger } from '@browseros/common'
+import { logger } from '@browseros/common'
 import type { AgentConfig } from './types.js'
 import { BaseAgent } from './BaseAgent.js'
 import { CLAUDE_SDK_SYSTEM_PROMPT } from './ClaudeSDKAgent.prompt.js'
@@ -59,7 +59,7 @@ export class ClaudeSDKAgent extends BaseAgent {
   private abortController: AbortController | null = null
 
   constructor(config: AgentConfig, controllerBridge: ControllerBridge) {
-    Logger.info('🔧 Using shared ControllerBridge for controller connection')
+    logger.info('🔧 Using shared ControllerBridge for controller connection')
 
     const controllerContext = new ControllerContext(controllerBridge)
 
@@ -67,7 +67,7 @@ export class ClaudeSDKAgent extends BaseAgent {
     const tools = getAllControllerTools()
     const sdkMcpServer = createControllerMcpServer(tools, controllerContext)
 
-    Logger.info(`✅ Created SDK MCP server with ${tools.length} controller tools`)
+    logger.info(`✅ Created SDK MCP server with ${tools.length} controller tools`)
 
     // Pass Claude SDK specific defaults to BaseAgent (must call super before accessing this)
     super('claude-sdk', config, {
@@ -78,7 +78,7 @@ export class ClaudeSDKAgent extends BaseAgent {
       permissionMode: CLAUDE_SDK_DEFAULTS.permissionMode
     })
 
-    Logger.info('✅ ClaudeSDKAgent initialized with shared ControllerBridge')
+    logger.info('✅ ClaudeSDKAgent initialized with shared ControllerBridge')
   }
 
   /**
@@ -92,7 +92,7 @@ export class ClaudeSDKAgent extends BaseAgent {
     this.startExecution()
     this.abortController = new AbortController()
 
-    Logger.info('🤖 ClaudeSDKAgent executing', { message: message.substring(0, 100) })
+    logger.info('🤖 ClaudeSDKAgent executing', { message: message.substring(0, 100) })
 
     try {
       // Build SDK options with AbortController
@@ -136,7 +136,7 @@ export class ClaudeSDKAgent extends BaseAgent {
           }
 
           // Log raw result events for debugging
-          Logger.info('📊 Raw result event', {
+          logger.info('📊 Raw result event', {
             subtype: (event as any).subtype,
             is_error: (event as any).is_error,
             num_turns: numTurns,
@@ -153,7 +153,7 @@ export class ClaudeSDKAgent extends BaseAgent {
 
         // Yield formatted event if valid
         if (formattedEvent) {
-          Logger.debug('📤 ClaudeSDKAgent yielding event', {
+          logger.debug('📤 ClaudeSDKAgent yielding event', {
             type: formattedEvent.type
           })
           yield formattedEvent
@@ -163,7 +163,7 @@ export class ClaudeSDKAgent extends BaseAgent {
       // Complete execution tracking
       this.completeExecution()
 
-      Logger.info('✅ ClaudeSDKAgent execution complete', {
+      logger.info('✅ ClaudeSDKAgent execution complete', {
         turns: this.metadata.turns,
         toolsExecuted: this.metadata.toolsExecuted,
         duration: Date.now() - this.executionStartTime
@@ -173,7 +173,7 @@ export class ClaudeSDKAgent extends BaseAgent {
       // Mark execution error
       this.errorExecution(error instanceof Error ? error : new Error(String(error)))
 
-      Logger.error('❌ ClaudeSDKAgent execution failed', {
+      logger.error('❌ ClaudeSDKAgent execution failed', {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined
       })
@@ -192,7 +192,7 @@ export class ClaudeSDKAgent extends BaseAgent {
    */
   async destroy(): Promise<void> {
     if (this.isDestroyed()) {
-      Logger.debug('⚠️  ClaudeSDKAgent already destroyed')
+      logger.debug('⚠️  ClaudeSDKAgent already destroyed')
       return
     }
 
@@ -200,14 +200,14 @@ export class ClaudeSDKAgent extends BaseAgent {
 
     // Abort the SDK query if it's running
     if (this.abortController) {
-      Logger.debug('🛑 Aborting SDK query')
+      logger.debug('🛑 Aborting SDK query')
       this.abortController.abort()
       await new Promise(resolve => setTimeout(resolve, 500))
     }
 
     // DO NOT close ControllerBridge - it's shared and owned by main server
 
-    Logger.debug('🗑️  ClaudeSDKAgent destroyed', {
+    logger.debug('🗑️  ClaudeSDKAgent destroyed', {
       totalDuration: this.metadata.totalDuration,
       turns: this.metadata.turns,
       toolsExecuted: this.metadata.toolsExecuted

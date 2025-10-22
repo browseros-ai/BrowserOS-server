@@ -9,7 +9,7 @@ import type {Browser} from 'puppeteer';
 import puppeteer from 'puppeteer';
 import type {HTTPRequest, HTTPResponse} from 'puppeteer-core';
 
-import {Logger} from '../src/logger.js';
+import {logger} from '../src/logger.js';
 import {McpContext} from '../src/McpContext.js';
 
 import {ensureBrowserOS} from './browseros.js';

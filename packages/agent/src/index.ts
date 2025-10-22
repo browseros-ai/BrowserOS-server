@@ -13,7 +13,7 @@ export type { ControllerBridge } from '@browseros/controller-server'
 
 import { createServer, ServerConfigSchema, type ServerConfig } from './websocket/server.js'
 import { ControllerBridge } from '@browseros/controller-server'
-import { Logger } from '@browseros/common'
+import { logger } from '@browseros/common'
 
 /**
  * Utility function to start agent server in standalone mode
@@ -22,8 +22,8 @@ import { Logger } from '@browseros/common'
  * @returns Server instance and cleanup function
  */
 export async function startStandaloneAgentServer() {
-  Logger.info('🚀 BrowserOS Agent Server - Standalone Mode')
-  Logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  logger.info('🚀 BrowserOS Agent Server - Standalone Mode')
+  logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
   // Load configuration from environment
   const rawConfig = {
@@ -39,16 +39,16 @@ export async function startStandaloneAgentServer() {
   const result = ServerConfigSchema.safeParse(rawConfig)
 
   if (!result.success) {
-    Logger.error('❌ Invalid server configuration:')
+    logger.error('❌ Invalid server configuration:')
     result.error.issues.forEach((err) => {
-      Logger.error(`   ${err.path.join('.')}: ${err.message}`)
+      logger.error(`   ${err.path.join('.')}: ${err.message}`)
     })
     process.exit(1)
   }
 
   const config = result.data
 
-  Logger.info('✅ Configuration loaded', {
+  logger.info('✅ Configuration loaded', {
     port: config.port,
     cwd: config.cwd,
     maxSessions: config.maxSessions,
@@ -58,25 +58,25 @@ export async function startStandaloneAgentServer() {
 
   // Create ControllerBridge for standalone mode
   const controllerPort = parseInt(process.env.WS_PORT || '9224')
-  Logger.info('🔧 Creating ControllerBridge for extension connection', { port: controllerPort })
-  const controllerBridge = new ControllerBridge(controllerPort, Logger)
+  logger.info('🔧 Creating ControllerBridge for extension connection', { port: controllerPort })
+  const controllerBridge = new ControllerBridge(controllerPort, logger)
 
   // Create and start agent server
   const server = createServer(config, controllerBridge)
 
-  Logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-  Logger.info('✅ Server is ready to accept connections')
+  logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  logger.info('✅ Server is ready to accept connections')
 
   // Return server instance and cleanup function
   return {
     server,
     controllerBridge,
     async shutdown() {
-      Logger.info('🛑 Shutting down server...')
+      logger.info('🛑 Shutting down server...')
       server.stop()
-      Logger.info('🔌 Closing ControllerBridge...')
+      logger.info('🔌 Closing ControllerBridge...')
       await controllerBridge.close()
-      Logger.info('✅ Server stopped')
+      logger.info('✅ Server stopped')
     }
   }
 }
@@ -104,7 +104,7 @@ async function main() {
 
   // Error handlers
   process.on('uncaughtException', (error) => {
-    Logger.error('❌ Uncaught exception', {
+    logger.error('❌ Uncaught exception', {
       error: error.message,
       stack: error.stack
     })
@@ -112,13 +112,13 @@ async function main() {
   })
 
   process.on('unhandledRejection', (reason, promise) => {
-    Logger.error('❌ Unhandled rejection', {
+    logger.error('❌ Unhandled rejection', {
       reason: reason instanceof Error ? reason.message : String(reason),
       promise: promise.toString()
     })
   })
 
-  Logger.info('   Press Ctrl+C to stop')
+  logger.info('   Press Ctrl+C to stop')
 }
 
 // Only run main() if this file is executed directly (not imported)
@@ -126,7 +126,7 @@ async function main() {
 if (import.meta.main) {
   // Run the server
   main().catch((error) => {
-    Logger.error('❌ Fatal error during startup', {
+    logger.error('❌ Fatal error during startup', {
       error: error.message,
       stack: error.stack
     })

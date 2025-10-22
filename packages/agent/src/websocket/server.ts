@@ -5,7 +5,7 @@
 
 import { z } from 'zod'
 import type { ServerWebSocket } from 'bun'
-import { Logger } from '@browseros/common'
+import { logger } from '@browseros/common'
 import { SessionManager } from '../session/SessionManager.js'
 import { ControllerBridge } from '@browseros/controller-server'
 import {
@@ -64,7 +64,7 @@ const stats: ServerStats = {
  * @param controllerBridge - Shared ControllerBridge for browser extension connection
  */
 export function createServer(config: ServerConfig, controllerBridge: ControllerBridge) {
-  Logger.info('🚀 Starting WebSocket server...', {
+  logger.info('🚀 Starting WebSocket server...', {
     port: config.port,
     maxSessions: config.maxSessions,
     idleTimeoutMs: config.idleTimeoutMs,
@@ -88,7 +88,7 @@ export function createServer(config: ServerConfig, controllerBridge: ControllerB
     for (const sessionId of idleSessionIds) {
       const ws = wsConnections.get(sessionId)
       if (ws) {
-        Logger.info('🧹 Closing idle session', { sessionId })
+        logger.info('🧹 Closing idle session', { sessionId })
         ws.close(1001, 'Idle timeout')
         wsConnections.delete(sessionId)
       }
@@ -118,7 +118,7 @@ export function createServer(config: ServerConfig, controllerBridge: ControllerB
         // Check capacity BEFORE upgrading
         if (sessionManager.isAtCapacity()) {
           const capacity = sessionManager.getCapacity()
-          Logger.warn('⛔ Connection rejected - server at capacity', {
+          logger.warn('⛔ Connection rejected - server at capacity', {
             active: capacity.active,
             max: capacity.max
           })
@@ -187,7 +187,7 @@ export function createServer(config: ServerConfig, controllerBridge: ControllerB
 
           stats.connections++
 
-          Logger.info('✅ Client connected', {
+          logger.info('✅ Client connected', {
             sessionId,
             activeSessions: sessionManager.getMetrics().activeSessions
           })
@@ -205,7 +205,7 @@ export function createServer(config: ServerConfig, controllerBridge: ControllerB
           ws.send(JSON.stringify(connectionEvent))
         } catch (error) {
           // Should not happen (capacity checked in fetch)
-          Logger.error('❌ Failed to create session', {
+          logger.error('❌ Failed to create session', {
             sessionId,
             error: error instanceof Error ? error.message : String(error)
           })
@@ -238,7 +238,7 @@ export function createServer(config: ServerConfig, controllerBridge: ControllerB
             ? message
             : new TextDecoder().decode(message)
 
-          Logger.debug('📥 Message received', { sessionId, message: messageStr })
+          logger.debug('📥 Message received', { sessionId, message: messageStr })
 
           // Parse and validate
           const parsedData = JSON.parse(messageStr)
@@ -265,7 +265,7 @@ export function createServer(config: ServerConfig, controllerBridge: ControllerB
 
             // Check for event gap timeout
             if (errorMsg.includes('Event gap timeout')) {
-              Logger.error('⏱️ Agent timeout - deleting session', {
+              logger.error('⏱️ Agent timeout - deleting session', {
                 sessionId,
                 timeout: config.eventGapTimeoutMs
               })
@@ -286,7 +286,7 @@ export function createServer(config: ServerConfig, controllerBridge: ControllerB
           }
 
         } catch (error) {
-          Logger.error('❌ Error processing message', {
+          logger.error('❌ Error processing message', {
             sessionId,
             error: error instanceof Error ? error.message : String(error),
             stack: error instanceof Error ? error.stack : undefined
@@ -311,7 +311,7 @@ export function createServer(config: ServerConfig, controllerBridge: ControllerB
         // Remove WebSocket tracking
         wsConnections.delete(sessionId)
 
-        Logger.info('👋 Client disconnected', {
+        logger.info('👋 Client disconnected', {
           sessionId,
           code,
           reason: reason || 'No reason provided',
@@ -321,9 +321,9 @@ export function createServer(config: ServerConfig, controllerBridge: ControllerB
     }
   })
 
-  Logger.info(`✅ Server started on port ${config.port}`)
-  Logger.info(`   WebSocket: ws://localhost:${config.port}`)
-  Logger.info(`   Health: http://localhost:${config.port}/health`)
+  logger.info(`✅ Server started on port ${config.port}`)
+  logger.info(`   WebSocket: ws://localhost:${config.port}`)
+  logger.info(`   Health: http://localhost:${config.port}/health`)
 
   return server
 }
@@ -339,7 +339,7 @@ async function processMessage(
 ) {
   const { sessionId } = ws.data
 
-  Logger.info('🤖 Processing with agent...', { sessionId, message })
+  logger.info('🤖 Processing with agent...', { sessionId, message })
 
   try {
     // Get agent for this session
@@ -394,21 +394,21 @@ async function processMessage(
       // Send to client (SAME AS BEFORE)
       ws.send(JSON.stringify(formattedEvent.toJSON()))
 
-      Logger.debug('📤 Event sent', {
+      logger.debug('📤 Event sent', {
         sessionId,
         type: formattedEvent.type,
         eventCount
       })
     }
 
-    Logger.info('✅ Message processed successfully', {
+    logger.info('✅ Message processed successfully', {
       sessionId,
       totalEvents: eventCount,
       lastEventType
     })
 
   } catch (error) {
-    Logger.error('❌ Agent error', {
+    logger.error('❌ Agent error', {
       sessionId,
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined

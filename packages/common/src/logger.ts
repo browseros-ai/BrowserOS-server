@@ -14,19 +14,11 @@ const COLORS = {
 
 const RESET = '\x1b[0m';
 
-export class Logger {
-  private static instance: Logger;
+class Logger {
   private level: LogLevel;
 
-  private constructor(level: LogLevel = 'info') {
+  constructor(level: LogLevel = 'info') {
     this.level = level;
-  }
-
-  static getInstance(): Logger {
-    if (!Logger.instance) {
-      Logger.instance = new Logger();
-    }
-    return Logger.instance;
   }
 
   private format(level: LogLevel, message: string, meta?: object): string {
@@ -51,25 +43,25 @@ export class Logger {
     }
   }
 
-  static info(message: string, meta?: object) {
-    Logger.getInstance().log('info', message, meta);
+  info(message: string, meta?: object) {
+    this.log('info', message, meta);
   }
 
-  static error(message: string, meta?: object) {
-    Logger.getInstance().log('error', message, meta);
+  error(message: string, meta?: object) {
+    this.log('error', message, meta);
   }
 
-  static warn(message: string, meta?: object) {
-    Logger.getInstance().log('warn', message, meta);
+  warn(message: string, meta?: object) {
+    this.log('warn', message, meta);
   }
 
-  static debug(message: string, meta?: object) {
-    Logger.getInstance().log('debug', message, meta);
+  debug(message: string, meta?: object) {
+    this.log('debug', message, meta);
   }
 
-  static setLevel(level: LogLevel) {
-    Logger.getInstance().level = level;
+  setLevel(level: LogLevel) {
+    this.level = level;
   }
 }
 
-export const logger = Logger;
+export const logger = new Logger();

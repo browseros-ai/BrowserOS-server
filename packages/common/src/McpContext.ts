@@ -17,7 +17,7 @@ import type {
   PredefinedNetworkConditions,
 } from 'puppeteer-core';
 
-import {Logger} from './logger.js';
+import {logger} from './logger.js';
 import {NetworkCollector, PageCollector} from './PageCollector.js';
 // These will be injected from tools package
 import type {TraceResult} from './types.js';
@@ -68,7 +68,7 @@ function getExtensionFromMimeType(mimeType: string) {
 
 export class McpContext {
   browser: Browser;
-  logger: typeof Logger;
+  logger: typeof logger;
 
   // The most recent page state.
   #pages: Page[] = [];
@@ -86,7 +86,7 @@ export class McpContext {
   #nextSnapshotId = 1;
   #traceResults: TraceResult[] = [];
 
-  private constructor(browser: Browser, logger: typeof Logger) {
+  private constructor(browser: Browser, logger: typeof logger) {
     this.browser = browser;
     this.logger = logger;
 
@@ -119,7 +119,7 @@ export class McpContext {
     await this.#consoleCollector.init();
   }
 
-  static async from(browser: Browser, logger: typeof Logger) {
+  static async from(browser: Browser, logger: typeof logger) {
     const context = new McpContext(browser, logger);
     await context.#init();
     return context;

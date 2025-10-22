@@ -2,7 +2,7 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import {Logger} from '@browseros/common';
+import {logger} from '@browseros/common';
 import type { WebSocket} from 'ws';
 import {WebSocketServer} from 'ws';
 
@@ -31,9 +31,9 @@ export class ControllerBridge {
   private connected = false;
   private requestCounter = 0;
   private pendingRequests = new Map<string, PendingRequest>();
-  private logger: typeof Logger;
+  private logger: typeof logger;
 
-  constructor(port: number, logger: typeof Logger) {
+  constructor(port: number, logger: typeof logger) {
     this.logger = logger;
 
     this.wss = new WebSocketServer({
