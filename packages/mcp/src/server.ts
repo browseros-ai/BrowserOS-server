@@ -258,6 +258,8 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
   const httpServer = http.createServer(async (req, res) => {
     const url = new URL(req.url!, `http://${req.headers.host}`);
 
+    logger.info(`${req.method} ${url.pathname}`);
+
     // Health check endpoint (always available, no security checks)
     if (url.pathname === '/health') {
       res.writeHead(200, {'Content-Type': 'text/plain'});

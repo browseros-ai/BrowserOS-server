@@ -108,6 +108,8 @@ export function createServer(config: ServerConfig, controllerBridge: ControllerB
     async fetch(req, server) {
       const url = new URL(req.url)
 
+      logger.info(`${req.method} ${url.pathname}`)
+
       // Health check endpoint
       if (url.pathname === '/health') {
         return handleHealthCheck(sessionManager)
