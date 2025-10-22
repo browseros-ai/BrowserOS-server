@@ -8,8 +8,7 @@
     "browseros-server": "./src/index.ts"
   },
   "scripts": {
-    "start": "bun src/index.ts --http-mcp-port=${HTTP_MCP_PORT} --agent-port=${AGENT_PORT} --extension-port=${EXTENSION_PORT}",
-    "start:with-cdp": "echo \"⚠️  Ensure browserOS CDP is running on port ${CDP_PORT}\" && bun src/index.ts --cdp-port=${CDP_PORT} --http-mcp-port=${HTTP_MCP_PORT} --agent-port=${AGENT_PORT} --extension-port=${EXTENSION_PORT}",
+    "start": "bun src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test"
   },

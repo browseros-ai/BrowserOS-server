@@ -5,7 +5,7 @@
 import {Command, InvalidArgumentError} from 'commander';
 
 export interface ServerPorts {
-  cdpPort: number;
+  cdpPort: number | undefined;
   httpMcpPort: number;
   agentPort: number;
   extensionPort: number;
@@ -37,15 +37,16 @@ function parsePort(value: string): number {
 /**
  * Parse command-line arguments for BrowserOS unified server.
  *
- * Required:
- * - --http-mcp-port <number>: Port where MCP HTTP server should listen
- * - --agent-port <number>: Port for agent WebSocket server
+ * CLI args take precedence, fallback to environment variables from .env
+ *
+ * Required (from CLI or .env):
+ * - HTTP_MCP_PORT: MCP HTTP server port
+ * - AGENT_PORT: Agent WebSocket server port
+ * - EXTENSION_PORT: Extension WebSocket port
  *
  * Optional:
- * - --cdp-port <number>: Port where CDP WebSocket is listening
- * - --disable-mcp-server: Disable MCP server (default: server enabled)
- *
- * Exits with code 1 if arguments are invalid or missing.
+ * - CDP_PORT: Chrome DevTools Protocol port
+ * - --disable-mcp-server: Disable MCP server
  *
  * @param argv - Optional argv array for testing. Defaults to process.argv
  */
@@ -56,29 +57,36 @@ export function parseArguments(argv = process.argv): ServerPorts {
     .name('browseros-server')
     .description('BrowserOS Unified Server - MCP + Agent')
     .option('--cdp-port <port>', 'CDP WebSocket port (optional)', parsePort)
-    .requiredOption('--http-mcp-port <port>', 'MCP HTTP server port', parsePort)
-    .requiredOption(
-      '--agent-port <port>',
-      'Agent communication port',
-      parsePort,
-    )
-    .option(
-      '--extension-port <port>',
-      'WebSocket port for extension connection',
-      parsePort,
-      9224,
-    )
+    .option('--http-mcp-port <port>', 'MCP HTTP server port', parsePort)
+    .option('--agent-port <port>', 'Agent communication port', parsePort)
+    .option('--extension-port <port>', 'Extension WebSocket port', parsePort)
     .option('--disable-mcp-server', 'Disable MCP server', false)
     .exitOverride()
     .parse(argv);
 
   const options = program.opts();
 
+  const cdpPort = options.cdpPort ?? (process.env.CDP_PORT ? parsePort(process.env.CDP_PORT) : undefined);
+  const httpMcpPort = options.httpMcpPort ?? (process.env.HTTP_MCP_PORT ? parsePort(process.env.HTTP_MCP_PORT) : undefined);
+  const agentPort = options.agentPort ?? (process.env.AGENT_PORT ? parsePort(process.env.AGENT_PORT) : undefined);
+  const extensionPort = options.extensionPort ?? (process.env.EXTENSION_PORT ? parsePort(process.env.EXTENSION_PORT) : undefined);
+
+  const missing: string[] = [];
+  if (!httpMcpPort) missing.push('HTTP_MCP_PORT');
+  if (!agentPort) missing.push('AGENT_PORT');
+  if (!extensionPort) missing.push('EXTENSION_PORT');
+
+  if (missing.length > 0) {
+    console.error(`Error: Missing required port configuration: ${missing.join(', ')}`);
+    console.error('Please set these in .env file');
+    process.exit(1);
+  }
+
   return {
-    cdpPort: options.cdpPort,
-    httpMcpPort: options.httpMcpPort,
-    agentPort: options.agentPort,
-    extensionPort: options.extensionPort,
+    cdpPort,
+    httpMcpPort: httpMcpPort!,
+    agentPort: agentPort!,
+    extensionPort: extensionPort!,
     mcpServerEnabled: !options.disableMcpServer,
   };
 }

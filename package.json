@@ -9,8 +9,6 @@
   ],
   "scripts": {
     "start": "bun --env-file=.env run --filter @browseros/server start",
-    "start:debug": "bun run --filter @browseros/server start:debug",
-    "start:with-cdp": "bun run --filter @browseros/server start:with-cdp",
     "dev:agent": "bun run --filter @browseros/agent dev",
     "start:agent": "bun run --filter @browseros/agent start",
     "test": "bun test",

@@ -13,7 +13,7 @@ export type { ControllerBridge } from '@browseros/controller-server'
 
 import { createServer, ServerConfigSchema, type ServerConfig } from './websocket/server.js'
 import { ControllerBridge } from '@browseros/controller-server'
-import { Logger } from './utils/Logger.js'
+import { Logger } from '@browseros/common'
 
 /**
  * Utility function to start agent server in standalone mode
@@ -59,7 +59,7 @@ export async function startStandaloneAgentServer() {
   // Create ControllerBridge for standalone mode
   const controllerPort = parseInt(process.env.WS_PORT || '9224')
   Logger.info('🔧 Creating ControllerBridge for extension connection', { port: controllerPort })
-  const controllerBridge = new ControllerBridge(controllerPort, (msg) => Logger.debug(msg))
+  const controllerBridge = new ControllerBridge(controllerPort, Logger)
 
   // Create and start agent server
   const server = createServer(config, controllerBridge)

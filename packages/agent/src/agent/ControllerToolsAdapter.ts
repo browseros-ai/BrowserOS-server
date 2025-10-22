@@ -7,7 +7,7 @@ import { tool, createSdkMcpServer } from '@anthropic-ai/claude-agent-sdk'
 import type { ToolDefinition } from '@browseros/tools'
 import { ControllerResponse } from '@browseros/tools/controller-definitions'
 import type { Context } from '@browseros/tools/controller-definitions'
-import { Logger } from '../utils/Logger.js'
+import { Logger } from '@browseros/common'
 
 /**
  * Convert a controller tool to Claude SDK MCP tool format

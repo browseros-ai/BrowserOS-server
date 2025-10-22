@@ -2,6 +2,7 @@
  * @license
  * Copyright 2025 BrowserOS
  */
+import {Logger} from '@browseros/common';
 import type { WebSocket} from 'ws';
 import {WebSocketServer} from 'ws';
 
@@ -30,9 +31,9 @@ export class ControllerBridge {
   private connected = false;
   private requestCounter = 0;
   private pendingRequests = new Map<string, PendingRequest>();
-  private logger: (message: string) => void;
+  private logger: typeof Logger;
 
-  constructor(port: number, logger: (message: string) => void) {
+  constructor(port: number, logger: typeof Logger) {
     this.logger = logger;
 
     this.wss = new WebSocketServer({
@@ -41,11 +42,11 @@ export class ControllerBridge {
     });
 
     this.wss.on('listening', () => {
-      this.logger(`WebSocket server listening on ws://127.0.0.1:${port}`);
+      this.logger.info(`WebSocket server listening on ws://127.0.0.1:${port}`);
     });
 
     this.wss.on('connection', (ws: WebSocket) => {
-      this.logger('Extension connected');
+      this.logger.info('Extension connected');
       this.client = ws;
       this.connected = true;
 
@@ -56,21 +57,21 @@ export class ControllerBridge {
 
           // Handle ping/pong for heartbeat
           if (parsed.type === 'ping') {
-            this.logger('Received ping, sending pong');
+            this.logger.debug('Received ping, sending pong');
             ws.send(JSON.stringify({ type: 'pong' }));
             return;
           }
 
-          this.logger(`Received message: ${message}`);
+          this.logger.debug(`Received message: ${message}`);
           const response = parsed as ControllerResponse;
           this.handleResponse(response);
         } catch (error) {
-          this.logger(`Error parsing message: ${error}`);
+          this.logger.error(`Error parsing message: ${error}`);
         }
       });
 
       ws.on('close', () => {
-        this.logger('Extension disconnected');
+        this.logger.info('Extension disconnected');
         this.connected = false;
         this.client = null;
 
@@ -82,12 +83,12 @@ export class ControllerBridge {
       });
 
       ws.on('error', (error: Error) => {
-        this.logger(`WebSocket error: ${error.message}`);
+        this.logger.error(`WebSocket error: ${error.message}`);
       });
     });
 
     this.wss.on('error', (error: Error) => {
-      this.logger(`WebSocket server error: ${error.message}`);
+      this.logger.error(`WebSocket server error: ${error.message}`);
     });
   }
 
@@ -113,7 +114,7 @@ export class ControllerBridge {
       const request: ControllerRequest = {id, action, payload};
       try {
         const message = JSON.stringify(request);
-        this.logger(`Sending request: ${message}`);
+        this.logger.debug(`Sending request: ${message}`);
         this.client!.send(message);
       } catch (error) {
         clearTimeout(timeout);
@@ -127,7 +128,7 @@ export class ControllerBridge {
     const pending = this.pendingRequests.get(response.id);
 
     if (!pending) {
-      this.logger(`Received response for unknown request ID: ${response.id}`);
+      this.logger.warn(`Received response for unknown request ID: ${response.id}`);
       return;
     }
 
@@ -149,7 +150,7 @@ export class ControllerBridge {
       }
 
       this.wss.close(() => {
-        this.logger('WebSocket server closed');
+        this.logger.info('WebSocket server closed');
         resolve();
       });
     });

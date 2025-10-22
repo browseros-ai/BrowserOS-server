@@ -5,7 +5,7 @@
 
 import { z } from 'zod'
 import type { ServerWebSocket } from 'bun'
-import { Logger } from '../utils/Logger.js'
+import { Logger } from '@browseros/common'
 import { SessionManager } from '../session/SessionManager.js'
 import { ControllerBridge } from '@browseros/controller-server'
 import {

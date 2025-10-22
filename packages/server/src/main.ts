@@ -45,10 +45,10 @@ function getAllControllerTools(): Array<ToolDefinition<any, any, any>> {
 }
 
 void (async () => {
-  logger(`Starting BrowserOS Server v${version}`);
+  logger.info(`Starting BrowserOS Server v${version}`);
 
   // Start WebSocket server for extension
-  logger(
+  logger.info(
     `[Controller Server] Starting on ws://127.0.0.1:${ports.extensionPort}`,
   );
   const controllerBridge = new ControllerBridge(ports.extensionPort, logger);
@@ -63,27 +63,27 @@ void (async () => {
       const browser = await ensureBrowserConnected(
         `http://127.0.0.1:${ports.cdpPort}`,
       );
-      logger(`Connected to CDP at http://127.0.0.1:${ports.cdpPort}`);
+      logger.info(`Connected to CDP at http://127.0.0.1:${ports.cdpPort}`);
       cdpContext = await McpContext.from(browser, logger);
       cdpTools = allTools;
-      logger(`Loaded ${cdpTools.length} CDP tools`);
+      logger.info(`Loaded ${cdpTools.length} CDP tools`);
     } catch (error) {
-      logger(
+      logger.warn(
         `Warning: Could not connect to CDP at http://127.0.0.1:${ports.cdpPort}`,
       );
-      logger(
+      logger.warn(
         'CDP tools will not be available. Only extension tools will work.',
       );
     }
   } else {
-    logger(
+    logger.info(
       'CDP disabled (no --cdp-port specified). Only extension tools will be available.',
     );
   }
 
   // Collect all controller tools
   const extensionTools = getAllControllerTools();
-  logger(`Loaded ${extensionTools.length} controller (extension) tools`);
+  logger.info(`Loaded ${extensionTools.length} controller (extension) tools`);
 
   // Merge CDP tools and controller tools
   const mergedTools = [
@@ -97,7 +97,7 @@ void (async () => {
     })),
   ];
 
-  logger(
+  logger.info(
     `Total tools available: ${mergedTools.length} (${cdpTools.length} CDP + ${extensionTools.length} extension)`,
   );
 
@@ -118,12 +118,12 @@ void (async () => {
   });
 
   if (!ports.mcpServerEnabled) {
-    logger('[MCP Server] Disabled (--disable-mcp-server)');
+    logger.info('[MCP Server] Disabled (--disable-mcp-server)');
   } else {
-    logger(
+    logger.info(
       `[MCP Server] Listening on http://127.0.0.1:${ports.httpMcpPort}/mcp`,
     );
-    logger(
+    logger.info(
       `[MCP Server] Health check: http://127.0.0.1:${ports.httpMcpPort}/health`,
     );
   }
@@ -132,7 +132,7 @@ void (async () => {
   let agentServer: any = null;
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    logger('[Agent Server] ANTHROPIC_API_KEY not set - skipping');
+    logger.warn('[Agent Server] ANTHROPIC_API_KEY not set - skipping');
   } else {
     try {
       const agentConfig: AgentServerConfig = {
@@ -148,46 +148,46 @@ void (async () => {
 
       agentServer = createAgentServer(agentConfig, controllerBridge);
 
-      logger(`[Agent Server] Listening on ws://127.0.0.1:${ports.agentPort}`);
-      logger(
+      logger.info(`[Agent Server] Listening on ws://127.0.0.1:${ports.agentPort}`);
+      logger.info(
         `[Agent Server] Max sessions: ${agentConfig.maxSessions}, Idle timeout: ${agentConfig.idleTimeoutMs}ms`,
       );
     } catch (error) {
-      logger(
+      logger.error(
         `[Agent Server] Failed to start: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
 
-  logger('');
-  logger('Services running:');
-  logger(`  Controller Server: ws://127.0.0.1:${ports.extensionPort}`);
+  logger.info('');
+  logger.info('Services running:');
+  logger.info(`  Controller Server: ws://127.0.0.1:${ports.extensionPort}`);
   if (ports.mcpServerEnabled) {
-    logger(`  MCP Server: http://127.0.0.1:${ports.httpMcpPort}/mcp`);
+    logger.info(`  MCP Server: http://127.0.0.1:${ports.httpMcpPort}/mcp`);
   }
   if (agentServer) {
-    logger(`  Agent Server: ws://127.0.0.1:${ports.agentPort}`);
+    logger.info(`  Agent Server: ws://127.0.0.1:${ports.agentPort}`);
   }
-  logger('');
+  logger.info('');
 
   // Graceful shutdown handlers
   const shutdown = async () => {
-    logger('Shutting down server...');
+    logger.info('Shutting down server...');
 
     // Shutdown MCP server first
     await shutdownMcpServer(mcpServer, logger);
 
     // Shutdown agent server if it's running
     if (agentServer) {
-      logger('Stopping agent server...');
+      logger.info('Stopping agent server...');
       agentServer.stop();
     }
 
     // Close ControllerBridge LAST (after both MCP and Agent are stopped)
-    logger('Closing ControllerBridge...');
+    logger.info('Closing ControllerBridge...');
     await controllerBridge.close();
 
-    logger('Server shutdown complete');
+    logger.info('Server shutdown complete');
     process.exit(0);
   };
 

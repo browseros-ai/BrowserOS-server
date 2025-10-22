@@ -207,7 +207,7 @@ export const handleDialog = defineTool({
           await dialog.accept(request.params.promptText);
         } catch (err) {
           // Likely already handled by the user outside of MCP.
-          logger(err);
+          logger.error(err);
         }
         response.appendResponseLine('Successfully accepted the dialog');
         break;
@@ -217,7 +217,7 @@ export const handleDialog = defineTool({
           await dialog.dismiss();
         } catch (err) {
           // Likely already handled.
-          logger(err);
+          logger.error(err);
         }
         response.appendResponseLine('Successfully dismissed the dialog');
         break;

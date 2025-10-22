@@ -190,7 +190,7 @@ async function stopTracingAndAppendOutput(
     }
   } catch (e) {
     const errorText = e instanceof Error ? e.message : JSON.stringify(e);
-    logger(`Error stopping performance trace: ${errorText}`);
+    logger.error(`Error stopping performance trace: ${errorText}`);
     response.appendResponseLine(
       'An error occurred generating the response for this trace:',
     );

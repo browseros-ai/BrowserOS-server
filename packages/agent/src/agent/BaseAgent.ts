@@ -3,7 +3,7 @@
  * Copyright 2025 BrowserOS
  */
 
-import { Logger } from '../utils/Logger.js'
+import { Logger } from '@browseros/common'
 import type { AgentConfig, AgentMetadata } from './types.js'
 import type { FormattedEvent } from '../utils/EventFormatter.js'
 

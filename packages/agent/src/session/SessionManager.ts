@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod'
-import { Logger } from '../utils/Logger.js'
+import { Logger } from '@browseros/common'
 import type { AgentConfig } from '../agent/types.js'
 import { ClaudeSDKAgent } from '../agent/ClaudeSDKAgent.js'
 import { ControllerBridge } from '@browseros/controller-server'

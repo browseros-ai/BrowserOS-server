@@ -6,7 +6,6 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
-import type {Debugger} from 'debug';
 import type {
   Browser,
   ConsoleMessage,
@@ -18,6 +17,7 @@ import type {
   PredefinedNetworkConditions,
 } from 'puppeteer-core';
 
+import {Logger} from './logger.js';
 import {NetworkCollector, PageCollector} from './PageCollector.js';
 // These will be injected from tools package
 import type {TraceResult} from './types.js';
@@ -68,7 +68,7 @@ function getExtensionFromMimeType(mimeType: string) {
 
 export class McpContext {
   browser: Browser;
-  logger: Debugger;
+  logger: typeof Logger;
 
   // The most recent page state.
   #pages: Page[] = [];
@@ -86,7 +86,7 @@ export class McpContext {
   #nextSnapshotId = 1;
   #traceResults: TraceResult[] = [];
 
-  private constructor(browser: Browser, logger: Debugger) {
+  private constructor(browser: Browser, logger: typeof Logger) {
     this.browser = browser;
     this.logger = logger;
 
@@ -119,7 +119,7 @@ export class McpContext {
     await this.#consoleCollector.init();
   }
 
-  static async from(browser: Browser, logger: Debugger) {
+  static async from(browser: Browser, logger: typeof Logger) {
     const context = new McpContext(browser, logger);
     await context.#init();
     return context;
@@ -362,7 +362,7 @@ export class McpContext {
       await fs.writeFile(filename, data);
       return {filename};
     } catch (err) {
-      this.logger(err);
+      this.logger.error(err);
       throw new Error('Could not save a screenshot to a file', {cause: err});
     }
   }
@@ -375,7 +375,7 @@ export class McpContext {
       await fs.writeFile(filePath, data);
       return {filename};
     } catch (err) {
-      this.logger(err);
+      this.logger.error(err);
       throw new Error('Could not save a screenshot to a file', {cause: err});
     }
   }

@@ -5,11 +5,11 @@
 import {execSync} from 'node:child_process';
 
 import {McpResponse} from '@browseros/tools';
-import logger from 'debug';
 import type {Browser} from 'puppeteer';
 import puppeteer from 'puppeteer';
 import type {HTTPRequest, HTTPResponse} from 'puppeteer-core';
 
+import {Logger} from '../src/logger.js';
 import {McpContext} from '../src/McpContext.js';
 
 import {ensureBrowserOS} from './browseros.js';
@@ -67,7 +67,7 @@ export async function withBrowser(
   );
 
   const response = new McpResponse();
-  const context = await McpContext.from(cachedBrowser, logger('test'));
+  const context = await McpContext.from(cachedBrowser, Logger);
 
   await cb(response, context);
 }
