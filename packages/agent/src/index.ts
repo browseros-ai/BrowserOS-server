@@ -27,7 +27,7 @@ export async function startStandaloneAgentServer() {
 
   // Load configuration from environment
   const rawConfig = {
-    port: parseInt(process.env.PORT || '3000'),
+    port: parseInt(process.env.AGENT_PORT || '3000'),
     apiKey: process.env.ANTHROPIC_API_KEY || '',
     cwd: process.cwd(),
     maxSessions: parseInt(process.env.MAX_SESSIONS || '5'),
