@@ -6,20 +6,12 @@
   "main": "src/index.ts",
   "module": "src/index.ts",
   "scripts": {
-    "dev": "bun --hot src/index.ts",
-    "start": "bun src/index.ts",
     "test": "bun test",
     "test:unit": "bun test",
     "test:browser": "bun run scripts/tests/test-browser-automation.ts",
     "test:client": "bun run scripts/tests/test-client.ts",
     "test:multi": "bun run scripts/tests/test-multi-client.ts",
-    "test:api": "bun run scripts/tests/test-api-key.ts",
-    "build": "bun build src/index.ts --compile --minify --sourcemap --outfile browseros-agent-server",
-    "build:all": "bun run build:linux && bun run build:macos && bun run build:windows",
-    "build:linux": "bun build src/index.ts --compile --minify --target=bun-linux-x64 --outfile dist/browseros-agent-server-linux",
-    "build:macos": "bun build src/index.ts --compile --minify --target=bun-darwin-arm64 --outfile dist/browseros-agent-server-macos",
-    "build:windows": "bun build src/index.ts --compile --minify --target=bun-windows-x64 --outfile dist/browseros-agent-server-windows.exe",
-    "clean": "rm -rf node_modules bun.lock dist browseros-agent-server"
+    "test:api": "bun run scripts/tests/test-api-key.ts"
   },
   "engines": {
     "bun": ">=1.0.0",
