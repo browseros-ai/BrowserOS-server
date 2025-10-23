@@ -14,7 +14,8 @@
     "tabGroups",
     "webNavigation",
     "downloads",
-    "browserOS"
+    "browserOS",
+    "alarms"
   ],
   "host_permissions": [
     "<all_urls>"
