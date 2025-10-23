@@ -160,6 +160,9 @@ browseros-server
 browseros-server.exe
 browseros-server-*
 
+# Generated SDK archive (34 MB, regenerated on build)
+**/embedded-claude-sdk.tar.gz
+
 log.txt
 
 .DS_Store
