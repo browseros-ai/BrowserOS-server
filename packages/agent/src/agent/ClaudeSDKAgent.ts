@@ -102,38 +102,46 @@ export class ClaudeSDKAgent extends BaseAgent {
       logger.info('✅ Using Claude Code CLI from node_modules', {
         path: this.cliPath,
       });
-    } else {
-      try {
-        this.tempDir = await fs.promises.mkdtemp(
-          path.join(os.tmpdir(), 'browseros-sdk-'),
-        );
+      return;
+    }
 
-        const archiveContent = await Bun.file(sdkArchive).arrayBuffer();
-        const archivePath = path.join(this.tempDir, 'sdk.tar.gz');
-        await fs.promises.writeFile(
-          archivePath,
-          new Uint8Array(archiveContent),
-        );
+    const version = process.env.BROWSEROS_VERSION || 'unkown';
+    this.tempDir = path.join(os.tmpdir(), `browseros-sdk-${version}`);
+    this.cliPath = path.join(this.tempDir, 'claude-agent-sdk/cli.js');
 
-        await tar.x({
-          file: archivePath,
-          cwd: this.tempDir,
-          strict: true,
-        });
+    if (fs.existsSync(this.cliPath)) {
+      logger.info('✅ Using cached SDK from temp directory', {
+        version,
+        path: this.cliPath,
+      });
+      return;
+    }
 
-        this.cliPath = path.join(this.tempDir, 'claude-agent-sdk/cli.js');
-        await fs.promises.chmod(this.cliPath, 0o755);
+    try {
+      await fs.promises.mkdir(this.tempDir, {recursive: true});
 
-        logger.info('✅ Extracted embedded Claude SDK from archive', {
-          path: this.cliPath,
-        });
-      } catch (error) {
-        throw new Error(
-          '❌ Failed to extract Claude SDK.\n' +
-            `Error: ${error instanceof Error ? error.message : String(error)}\n` +
-            'Ensure sufficient disk space and write permissions.',
-        );
-      }
+      const archiveContent = await Bun.file(sdkArchive).arrayBuffer();
+      const archivePath = path.join(this.tempDir, 'sdk.tar.gz');
+      await fs.promises.writeFile(archivePath, new Uint8Array(archiveContent));
+
+      await tar.x({
+        file: archivePath,
+        cwd: this.tempDir,
+        strict: true,
+      });
+
+      await fs.promises.chmod(this.cliPath, 0o755);
+
+      logger.info('✅ Extracted embedded Claude SDK from archive', {
+        version,
+        path: this.cliPath,
+      });
+    } catch (error) {
+      throw new Error(
+        '❌ Failed to extract Claude SDK.\n' +
+          `Error: ${error instanceof Error ? error.message : String(error)}\n` +
+          'Ensure sufficient disk space and write permissions.',
+      );
     }
   }
 
@@ -297,6 +305,7 @@ export class ClaudeSDKAgent extends BaseAgent {
    * Cleanup agent resources
    *
    * Aborts the running SDK query. Does NOT close shared ControllerBridge.
+   * Note: Does NOT delete cached SDK directory (reused across restarts).
    */
   async destroy(): Promise<void> {
     if (this.isDestroyed()) {
@@ -306,20 +315,10 @@ export class ClaudeSDKAgent extends BaseAgent {
 
     this.markDestroyed();
 
-    // Abort the SDK query if it's running
     if (this.abortController) {
       logger.debug('🛑 Aborting SDK query');
       this.abortController.abort();
       await new Promise(resolve => setTimeout(resolve, 500));
-    }
-
-    if (this.tempDir) {
-      try {
-        await fs.promises.rm(this.tempDir, {recursive: true, force: true});
-        logger.debug('🗑️  Cleaned up temp SDK directory');
-      } catch (error) {
-        logger.warn('Failed to cleanup temp SDK directory', {error});
-      }
     }
 
     logger.debug('🗑️  ClaudeSDKAgent destroyed', {
