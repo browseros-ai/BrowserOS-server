@@ -30,6 +30,8 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
   schema: {
     tabId: z.coerce.number().describe('Tab ID to extract content from'),
     type: z.enum(['text', 'text-with-links']).describe('Type of content to extract: text or text-with-links'),
+    page: z.string().optional().default('all').describe('Page number to retrieve: "all", "1", "2", etc. (default: "all")'),
+    contextWindow: z.string().optional().default('20k').describe('Context window size for pagination: "20k", "30k", "50k", "100k" (default: "20k")'),
     options: z
       .object({
         context: z.enum(['visible', 'full']).optional().describe('Extract from visible viewport or full page (default: visible)'),
@@ -47,11 +49,24 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
     const params = request.params as {
       tabId: number;
       type: 'text' | 'text-with-links';
+      page?: string;
+      contextWindow?: string;
       options?: {context?: 'visible' | 'full'; includeSections?: string[]};
     };
 
     try {
       const includeLinks = params.type === 'text-with-links';
+      const requestedPage = params.page || 'all';
+      const contextWindowStr = params.contextWindow || '20k';
+
+      // Parse context window size
+      const parseContextWindow = (cw: string): number => {
+        const match = cw.match(/^(\d+)k$/i);
+        if (!match) return 20000; // default 20k
+        return parseInt(match[1]) * 1000;
+      };
+
+      const contextWindowSize = parseContextWindow(contextWindowStr);
 
       const snapshotResult = await context.executeAction('getSnapshot', {
         tabId: params.tabId,
@@ -63,25 +78,62 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
         return;
       }
 
-      let pageContent = '';
-
+      // Build full content
+      let fullContent = '';
       snapshot.items.forEach((item) => {
         if (item.type === 'heading') {
           const prefix = '#'.repeat(item.level || 1);
-          pageContent += `${prefix} ${item.text}\n`;
+          fullContent += `${prefix} ${item.text}\n`;
         } else if (item.type === 'text') {
-          pageContent += `${item.text}\n`;
+          fullContent += `${item.text}\n`;
         } else if (item.type === 'link' && includeLinks) {
-          pageContent += `[${item.text}](${item.url})\n`;
+          fullContent += `[${item.text}](${item.url})\n`;
         }
       });
 
-      if (pageContent) {
-        response.appendResponseLine(pageContent.trim());
-        response.appendResponseLine('');
-        response.appendResponseLine(`(${pageContent.length} characters)`);
-      } else {
+      if (!fullContent) {
         response.appendResponseLine('No content extracted.');
+        return;
+      }
+
+      // Split content into pages
+      const pages: string[] = [];
+      let currentPage = '';
+      const lines = fullContent.split('\n');
+
+      for (const line of lines) {
+        if ((currentPage + line + '\n').length > contextWindowSize && currentPage.length > 0) {
+          pages.push(currentPage.trim());
+          currentPage = '';
+        }
+        currentPage += line + '\n';
+      }
+      if (currentPage.trim()) {
+        pages.push(currentPage.trim());
+      }
+
+      const totalPages = pages.length;
+
+      // Return requested page(s)
+      if (requestedPage === 'all') {
+        response.appendResponseLine(`Total pages: ${totalPages} (${contextWindowStr} per page)`);
+        response.appendResponseLine('');
+        response.appendResponseLine(fullContent.trim());
+        response.appendResponseLine('');
+        response.appendResponseLine(`(${fullContent.length} characters total)`);
+      } else {
+        const pageNum = parseInt(requestedPage);
+        if (isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
+          response.appendResponseLine(`Error: Invalid page number "${requestedPage}". Valid pages: 1-${totalPages} or "all"`);
+          return;
+        }
+
+        const pageIndex = pageNum - 1;
+        response.appendResponseLine(`Page ${pageNum} of ${totalPages} (${contextWindowStr} limit per page)`);
+        response.appendResponseLine('');
+        response.appendResponseLine(pages[pageIndex]);
+        response.appendResponseLine('');
+        response.appendResponseLine(`(${pages[pageIndex].length} characters)`);
       }
 
       response.appendResponseLine('');
