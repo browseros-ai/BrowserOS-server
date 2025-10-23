@@ -393,14 +393,30 @@ async function processMessage(
       eventCount++
       lastEventType = formattedEvent.type
 
-      // Send to client (SAME AS BEFORE)
-      ws.send(JSON.stringify(formattedEvent.toJSON()))
+      // Send to client - catch errors if client disconnected
+      try {
+        ws.send(JSON.stringify(formattedEvent.toJSON()))
 
-      logger.debug('📤 Event sent', {
-        sessionId,
-        type: formattedEvent.type,
-        eventCount
-      })
+        logger.debug('📤 Event sent', {
+          sessionId,
+          type: formattedEvent.type,
+          eventCount
+        })
+      } catch (sendError) {
+        // Client disconnected during streaming
+        logger.info('⚠️  Client disconnected during event streaming, stopping iterator', {
+          sessionId,
+          eventCount
+        })
+
+        // Cleanup iterator
+        if (iterator.return) {
+          await iterator.return(undefined).catch(() => {})
+        }
+
+        // Exit the loop
+        throw new Error('Client disconnected during streaming')
+      }
     }
 
     logger.info('✅ Message processed successfully', {

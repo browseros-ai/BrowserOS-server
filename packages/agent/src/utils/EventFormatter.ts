@@ -7,7 +7,7 @@
  * Formatted event structure for WebSocket clients
  */
 export class FormattedEvent {
-  type: 'init' | 'thinking' | 'tool_use' | 'tool_result' | 'response' | 'completion' | 'error'
+  type: 'init' | 'thinking' | 'tool_use' | 'tool_result' | 'response' | 'completion' | 'error' | 'processing'
   content: string
   metadata?: {
     turnCount?: number
@@ -35,6 +35,13 @@ export class FormattedEvent {
  * Formats Claude SDK events into clean, human-readable messages
  */
 export class EventFormatter {
+
+  /**
+   * Create a processing/heartbeat event to indicate Claude is still working
+   */
+  static createProcessingEvent(): FormattedEvent {
+    return new FormattedEvent('processing', '⏳ Processing...')
+  }
 
   /**
    * Format any Claude SDK event into a FormattedEvent
