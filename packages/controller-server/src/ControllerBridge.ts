@@ -3,7 +3,7 @@
  * Copyright 2025 BrowserOS
  */
 import {logger} from '@browseros/common';
-import type { WebSocket} from 'ws';
+import type {WebSocket} from 'ws';
 import {WebSocketServer} from 'ws';
 
 interface ControllerRequest {
@@ -32,6 +32,7 @@ export class ControllerBridge {
   private requestCounter = 0;
   private pendingRequests = new Map<string, PendingRequest>();
   private logger: typeof logger;
+  private closing = false;
 
   constructor(port: number, logger: typeof logger) {
     this.logger = logger;
@@ -58,7 +59,7 @@ export class ControllerBridge {
           // Handle ping/pong for heartbeat
           if (parsed.type === 'ping') {
             this.logger.debug('Received ping, sending pong');
-            ws.send(JSON.stringify({ type: 'pong' }));
+            ws.send(JSON.stringify({type: 'pong'}));
             return;
           }
 
@@ -96,7 +97,11 @@ export class ControllerBridge {
     return this.connected && this.client !== null;
   }
 
-  async sendRequest(action: string, payload: unknown, timeoutMs = 30000): Promise<unknown> {
+  async sendRequest(
+    action: string,
+    payload: unknown,
+    timeoutMs = 30000,
+  ): Promise<unknown> {
     if (!this.isConnected()) {
       throw new Error('Extension not connected');
     }
@@ -128,7 +133,9 @@ export class ControllerBridge {
     const pending = this.pendingRequests.get(response.id);
 
     if (!pending) {
-      this.logger.warn(`Received response for unknown request ID: ${response.id}`);
+      this.logger.warn(
+        `Received response for unknown request ID: ${response.id}`,
+      );
       return;
     }
 
@@ -143,13 +150,28 @@ export class ControllerBridge {
   }
 
   async close(): Promise<void> {
-    return new Promise((resolve) => {
-      if (this.client) {
-        this.client.close();
-        this.client = null;
-      }
+    if (this.closing) {
+      return;
+    }
+    this.closing = true;
+
+    if (this.client) {
+      this.client.terminate();
+      this.client = null;
+    }
+
+    this.wss.clients.forEach(client => {
+      client.terminate();
+    });
+
+    return new Promise(resolve => {
+      const timeout = setTimeout(() => {
+        this.logger.info('WebSocket server closed (forced)');
+        resolve();
+      }, 1000);
 
       this.wss.close(() => {
+        clearTimeout(timeout);
         this.logger.info('WebSocket server closed');
         resolve();
       });
