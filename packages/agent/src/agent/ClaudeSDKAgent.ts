@@ -6,8 +6,6 @@
 import {query} from '@anthropic-ai/claude-agent-sdk';
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
-import * as tar from 'tar';
 import {EventFormatter, FormattedEvent} from '../utils/EventFormatter.js';
 import {
   logger,
@@ -24,8 +22,6 @@ import {
   ControllerContext,
 } from '@browseros/controller-server';
 import {createControllerMcpServer} from './ControllerToolsAdapter.js';
-
-import sdkArchive from './embedded-claude-sdk.tar.gz' with {type: 'file'};
 
 /**
  * Claude SDK specific default configuration
@@ -52,7 +48,6 @@ export class ClaudeSDKAgent extends BaseAgent {
   private abortController: AbortController | null = null;
   private gatewayConfig: BrowserOSConfig | null = null;
   private cliPath!: string;
-  private tempDir: string | null = null;
 
   constructor(config: AgentConfig, controllerBridge: ControllerBridge) {
     logger.info('🔧 Using shared ControllerBridge for controller connection');
@@ -91,58 +86,30 @@ export class ClaudeSDKAgent extends BaseAgent {
   }
 
   private async setupClaudeSdk(): Promise<void> {
-    const isBunfsPath =
-      sdkArchive.includes('$bunfs') || sdkArchive.includes('/bunfs/');
-
-    if (!isBunfsPath && fs.existsSync(sdkArchive)) {
+    if (process.env.NODE_ENV === 'development') {
       const require = await import('node:module').then(m =>
         m.createRequire(import.meta.url),
       );
       this.cliPath = require.resolve('@anthropic-ai/claude-agent-sdk/cli.js');
-      logger.info('✅ Using Claude Code CLI from node_modules', {
+      logger.info('✅ Using Claude Code CLI from node_modules (dev mode)', {
         path: this.cliPath,
       });
       return;
     }
 
-    const version = process.env.BROWSEROS_VERSION || 'unkown';
-    this.tempDir = path.join(os.tmpdir(), `browseros-sdk-${version}`);
-    this.cliPath = path.join(this.tempDir, 'claude-agent-sdk/cli.js');
+    const serverDir = path.dirname(process.execPath);
+    this.cliPath = path.join(serverDir, 'browseros_cli');
 
-    if (fs.existsSync(this.cliPath)) {
-      logger.info('✅ Using cached SDK from temp directory', {
-        version,
-        path: this.cliPath,
-      });
-      return;
-    }
-
-    try {
-      await fs.promises.mkdir(this.tempDir, {recursive: true});
-
-      const archiveContent = await Bun.file(sdkArchive).arrayBuffer();
-      const archivePath = path.join(this.tempDir, 'sdk.tar.gz');
-      await fs.promises.writeFile(archivePath, new Uint8Array(archiveContent));
-
-      await tar.x({
-        file: archivePath,
-        cwd: this.tempDir,
-        strict: true,
-      });
-
-      await fs.promises.chmod(this.cliPath, 0o755);
-
-      logger.info('✅ Extracted embedded Claude SDK from archive', {
-        version,
-        path: this.cliPath,
-      });
-    } catch (error) {
+    if (!fs.existsSync(this.cliPath)) {
       throw new Error(
-        '❌ Failed to extract Claude SDK.\n' +
-          `Error: ${error instanceof Error ? error.message : String(error)}\n` +
-          'Ensure sufficient disk space and write permissions.',
+        `❌ CLI binary not found at: ${this.cliPath}\n` +
+          'Ensure browseros_cli is deployed alongside browseros_server.',
       );
     }
+
+    logger.info('✅ Using Claude Code CLI binary (production mode)', {
+      path: this.cliPath,
+    });
   }
 
   private async loadApiKey(): Promise<void> {
@@ -210,6 +177,10 @@ export class ClaudeSDKAgent extends BaseAgent {
         abortController: this.abortController,
         pathToClaudeCodeExecutable: this.cliPath,
       };
+
+      if (process.env.NODE_ENV === 'development') {
+        options.executable = 'bun';
+      }
 
       if (this.gatewayConfig?.model) {
         options.model = this.gatewayConfig.model;
@@ -305,7 +276,6 @@ export class ClaudeSDKAgent extends BaseAgent {
    * Cleanup agent resources
    *
    * Aborts the running SDK query. Does NOT close shared ControllerBridge.
-   * Note: Does NOT delete cached SDK directory (reused across restarts).
    */
   async destroy(): Promise<void> {
     if (this.isDestroyed()) {
