@@ -9,66 +9,15 @@ import {defineTool} from '../../types/ToolDefinition.js';
 import type {Context} from '../types/Context.js';
 import type {Response} from '../types/Response.js';
 
-// Accessibility tree types (from chrome.browserOS)
-interface AccessibilityNode {
-  nodeId: number;
-  role: string;
-  name?: string;
-  childIds?: number[];
-  [key: string]: any;
-}
-
-interface AccessibilityTree {
-  rootId: number;
-  nodes: Record<string, AccessibilityNode>;
-}
-
-// Roles that contain meaningful content for extraction
-const EXTRACTABLE_ROLES = new Set([
-  'staticText',
-  'heading',
-  'paragraph',
-  'link',
-  'button',
-  'textField',
-  'checkBox',
-  'comboBoxSelect',
-  'labelText',
-  'menuListOption',
-  'toggleButton',
-  'status',
-  'alert',
-  'image',
-  'rootWebArea',
-  'navigation',
-  'main'
-]);
-
 interface Snapshot {
-  type: 'text' | 'links';
-  context: 'visible' | 'full';
-  timestamp: number;
-  sections: SnapshotSection[];
-  processingTimeMs: number;
+  items: SnapshotItem[];
 }
 
-interface SnapshotSection {
-  type: string;
-  textResult?: {
-    text: string;
-    characterCount: number;
-  };
-  linksResult?: {
-    links: LinkInfo[];
-  };
-}
-
-interface LinkInfo {
+interface SnapshotItem {
   text: string;
-  url: string;
-  title?: string;
-  attributes?: Record<string, any>;
-  isExternal: boolean;
+  type: 'heading' | 'link' | 'text';
+  level?: number;
+  url?: string;
 }
 
 export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
@@ -99,97 +48,47 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
       tabId: number;
       type: 'text' | 'text-with-links';
       options?: {context?: 'visible' | 'full'; includeSections?: string[]};
-      // TODO: Add these when implementing LLM extraction
-      // format?: any;
-      // task?: string;
     };
 
-    // Get accessibility tree
-    const tree = await context.executeAction('getAccessibilityTree', {
-      tabId: params.tabId,
-    }) as AccessibilityTree;
+    try {
+      const includeLinks = params.type === 'text-with-links';
 
-    // Extract hierarchical text using DFS stack operations
-    let hierarchicalContent = '';
-
-    if (tree && tree.nodes && tree.rootId) {
-      const lines: string[] = [];
-      const stack: Array<{ nodeId: number; depth: number }> = [];
-      stack.push({ nodeId: tree.rootId, depth: 0 });
-
-      while (stack.length > 0) {
-        const { nodeId, depth } = stack.pop()!;
-
-        // Get node (keys are strings)
-        const node = tree.nodes[String(nodeId)];
-        if (!node) continue;
-
-        // Add text line if node has extractable role and name
-        if (EXTRACTABLE_ROLES.has(node.role) && node.name) {
-          const indentation = '\t'.repeat(depth);
-          lines.push(`${indentation}${node.name}`);
-        }
-
-        // Always traverse children to maintain hierarchy
-        // Add in reverse order for correct DFS traversal
-        if (node.childIds && Array.isArray(node.childIds)) {
-          for (let i = node.childIds.length - 1; i >= 0; i--) {
-            stack.push({
-              nodeId: node.childIds[i],
-              depth: depth + 1
-            });
-          }
-        }
-      }
-
-      hierarchicalContent = lines.join('\n');
-    }
-
-    // Get links only if extraction mode includes links
-    const extractLinks = params.type === 'text-with-links';
-    let linksContent = '';
-
-    if (extractLinks) {
-      const linksSnapshot = await context.executeAction('getSnapshot', {
+      const snapshotResult = await context.executeAction('getSnapshot', {
         tabId: params.tabId,
-        type: 'links',
-        options: params.options,
       });
-      const snapshot = linksSnapshot as Snapshot;
+      const snapshot = snapshotResult as Snapshot;
 
-      // Format links (similar to getLinksSnapshotString)
-      const linkStrings: string[] = [];
-      for (const section of snapshot.sections) {
-        if (section.linksResult?.links) {
-          for (const link of section.linksResult.links) {
-            const linkStr = link.text ? `${link.text}: ${link.url}` : link.url;
-            linkStrings.push(linkStr);
-          }
-        }
+      if (!snapshot || !snapshot.items) {
+        response.appendResponseLine('No content found on the page.');
+        return;
       }
-      linksContent = [...new Set(linkStrings)].join('\n').trim();
-    }
 
-    if (hierarchicalContent) {
-      response.appendResponseLine('Content (hierarchical structure):');
-      response.appendResponseLine(hierarchicalContent);
-      response.appendResponseLine('');
-      response.appendResponseLine(`(${hierarchicalContent.length} characters)`);
-      response.appendResponseLine('');
-    }
+      let pageContent = '';
 
-    if (linksContent) {
-      response.appendResponseLine('Links found:');
-      response.appendResponseLine(linksContent);
-      response.appendResponseLine('');
-      const linkCount = linksContent.split('\n').length;
-      response.appendResponseLine(`(${linkCount} links)`);
-      response.appendResponseLine('');
-    }
+      snapshot.items.forEach((item) => {
+        if (item.type === 'heading') {
+          const prefix = '#'.repeat(item.level || 1);
+          pageContent += `${prefix} ${item.text}\n`;
+        } else if (item.type === 'text') {
+          pageContent += `${item.text}\n`;
+        } else if (item.type === 'link' && includeLinks) {
+          pageContent += `[${item.text}](${item.url})\n`;
+        }
+      });
 
-    // TODO: Add placeholder note about LLM extraction
-    response.appendResponseLine('='.repeat(60));
-    response.appendResponseLine('NOTE: AI-powered structured data extraction coming soon.');
-    response.appendResponseLine('      (Will support format and task parameters for LLM extraction)');
+      if (pageContent) {
+        response.appendResponseLine(pageContent.trim());
+        response.appendResponseLine('');
+        response.appendResponseLine(`(${pageContent.length} characters)`);
+      } else {
+        response.appendResponseLine('No content extracted.');
+      }
+
+      response.appendResponseLine('');
+      response.appendResponseLine('='.repeat(60));
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      response.appendResponseLine(`Error: ${errorMessage}`);
+    }
   },
 });
