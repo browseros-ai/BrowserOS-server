@@ -7,6 +7,7 @@ import {query} from '@anthropic-ai/claude-agent-sdk';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import * as tar from 'tar';
 import {EventFormatter, FormattedEvent} from '../utils/EventFormatter.js';
 import {
   logger,
@@ -81,10 +82,15 @@ export class ClaudeSDKAgent extends BaseAgent {
   }
 
   /**
-   * Initialize agent - fetch config from BrowserOS Config URL if configured
-   * Falls back to ANTHROPIC_API_KEY env var if config URL not set or fails
+   * Initialize agent - fetch config from BrowserOS Config URL
    */
   override async init(): Promise<void> {
+    await this.setupClaudeSdk();
+    await this.loadApiKey();
+    await super.init();
+  }
+
+  private async setupClaudeSdk(): Promise<void> {
     const isBunfsPath =
       sdkArchive.includes('$bunfs') || sdkArchive.includes('/bunfs/');
 
@@ -109,7 +115,11 @@ export class ClaudeSDKAgent extends BaseAgent {
           new Uint8Array(archiveContent),
         );
 
-        await Bun.$`tar -xzf ${archivePath} -C ${this.tempDir}`.quiet();
+        await tar.x({
+          file: archivePath,
+          cwd: this.tempDir,
+          strict: true,
+        });
 
         this.cliPath = path.join(this.tempDir, 'claude-agent-sdk/cli.js');
         await fs.promises.chmod(this.cliPath, 0o755);
@@ -125,7 +135,9 @@ export class ClaudeSDKAgent extends BaseAgent {
         );
       }
     }
+  }
 
+  private async loadApiKey(): Promise<void> {
     const configUrl = process.env.BROWSEROS_CONFIG_URL;
 
     if (configUrl) {
@@ -134,12 +146,9 @@ export class ClaudeSDKAgent extends BaseAgent {
       try {
         this.gatewayConfig = await fetchBrowserOSConfig(configUrl);
         this.config.apiKey = this.gatewayConfig.apiKey;
-
         logger.info('✅ Using API key from BrowserOS Config URL', {
           model: this.gatewayConfig.model,
         });
-
-        await super.init();
         return;
       } catch (error) {
         logger.warn(
@@ -155,7 +164,6 @@ export class ClaudeSDKAgent extends BaseAgent {
     if (envApiKey) {
       this.config.apiKey = envApiKey;
       logger.info('✅ Using API key from ANTHROPIC_API_KEY env var');
-      await super.init();
       return;
     }
 
