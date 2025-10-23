@@ -4,6 +4,9 @@
  */
 
 import { query } from '@anthropic-ai/claude-agent-sdk'
+import fs from 'node:fs'
+import path from 'node:path'
+import os from 'node:os'
 import { EventFormatter, FormattedEvent } from '../utils/EventFormatter.js'
 import { logger, fetchBrowserOSConfig, type BrowserOSConfig } from '@browseros/common'
 import type { AgentConfig } from './types.js'
@@ -13,6 +16,8 @@ import { allControllerTools } from '@browseros/tools/controller-based'
 import type { ToolDefinition } from '@browseros/tools'
 import { ControllerBridge, ControllerContext } from '@browseros/controller-server'
 import { createControllerMcpServer } from './ControllerToolsAdapter.js'
+
+import cliJs from '../../../../node_modules/@anthropic-ai/claude-agent-sdk/cli.js' with { type: 'file' }
 
 /**
  * Claude SDK specific default configuration
@@ -38,6 +43,8 @@ const CLAUDE_SDK_DEFAULTS = {
 export class ClaudeSDKAgent extends BaseAgent {
   private abortController: AbortController | null = null
   private gatewayConfig: BrowserOSConfig | null = null
+  private cliPath!: string
+  private tempDir: string | null = null
 
   constructor(config: AgentConfig, controllerBridge: ControllerBridge) {
     logger.info('🔧 Using shared ControllerBridge for controller connection')
@@ -66,6 +73,29 @@ export class ClaudeSDKAgent extends BaseAgent {
    * Falls back to ANTHROPIC_API_KEY env var if config URL not set or fails
    */
   override async init(): Promise<void> {
+    const isBunfsPath = cliJs.includes('$bunfs') || cliJs.includes('/bunfs/')
+
+    if (!isBunfsPath && fs.existsSync(cliJs)) {
+      this.cliPath = cliJs
+      logger.info('✅ Using Claude Code CLI from node_modules', { path: cliJs })
+    } else {
+      try {
+        this.tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'browseros-cli-'))
+        this.cliPath = path.join(this.tempDir, 'cli.js')
+
+        const cliContent = await Bun.file(cliJs).arrayBuffer()
+        await fs.promises.writeFile(this.cliPath, new Uint8Array(cliContent), { mode: 0o755 })
+
+        logger.info('✅ Extracted embedded Claude Code CLI to temp', { path: this.cliPath })
+      } catch (error) {
+        throw new Error(
+          '❌ Failed to extract Claude Code CLI.\n' +
+          `Error: ${error instanceof Error ? error.message : String(error)}\n` +
+          'Ensure sufficient disk space and write permissions.'
+        )
+      }
+    }
+
     const configUrl = process.env.BROWSEROS_CONFIG_URL
 
     if (configUrl) {
@@ -126,7 +156,8 @@ export class ClaudeSDKAgent extends BaseAgent {
         systemPrompt: this.config.systemPrompt,
         mcpServers: this.config.mcpServers,
         permissionMode: this.config.permissionMode,
-        abortController: this.abortController
+        abortController: this.abortController,
+        pathToClaudeCodeExecutable: this.cliPath
       }
 
       if (this.gatewayConfig?.model) {
@@ -232,7 +263,14 @@ export class ClaudeSDKAgent extends BaseAgent {
       await new Promise(resolve => setTimeout(resolve, 500))
     }
 
-    // DO NOT close ControllerBridge - it's shared and owned by main server
+    if (this.tempDir) {
+      try {
+        await fs.promises.rm(this.tempDir, { recursive: true, force: true })
+        logger.debug('🗑️  Cleaned up temp CLI directory')
+      } catch (error) {
+        logger.warn('Failed to cleanup temp CLI directory', { error })
+      }
+    }
 
     logger.debug('🗑️  ClaudeSDKAgent destroyed', {
       totalDuration: this.metadata.totalDuration,
