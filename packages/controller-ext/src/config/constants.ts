@@ -44,7 +44,7 @@ export const WEBSOCKET_CONFIG: WebSocketConfig = {
   reconnectMultiplier: 1.5,
   maxReconnectAttempts: Infinity,
 
-  heartbeatInterval: 30000,
+  heartbeatInterval: 20000,
   heartbeatTimeout: 5000,
 
   connectionTimeout: 10000,

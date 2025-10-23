@@ -37,6 +37,7 @@ import type { ProtocolRequest, ProtocolResponse} from '@/protocol/types';
 import { ConnectionStatus } from '@/protocol/types';
 import { ConcurrencyLimiter } from '@/utils/ConcurrencyLimiter';
 import { getWebSocketPort } from '@/utils/ConfigHelper';
+import { KeepAlive } from '@/utils/KeepAlive';
 import { logger } from '@/utils/Logger';
 import { RequestTracker } from '@/utils/RequestTracker';
 import { RequestValidator } from '@/utils/RequestValidator';
@@ -302,6 +303,8 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onStartup.addListener(async () => {
   logger.info('[BrowserOS Controller] Browser started');
 
+  await KeepAlive.start();
+
   if (!controller) {
     const port = await getWebSocketPort();
     controller = new BrowserOSController(port);
@@ -311,6 +314,9 @@ chrome.runtime.onStartup.addListener(async () => {
 
 // Start immediately (service worker context)
 (async () => {
+  // Start KeepAlive to prevent service worker from being terminated
+  await KeepAlive.start();
+
   if (!controller) {
     const port = await getWebSocketPort();
     controller = new BrowserOSController(port);
@@ -326,12 +332,13 @@ chrome.runtime.onStartup.addListener(async () => {
 })();
 
 // Cleanup on unload
-chrome.runtime.onSuspend?.addListener(() => {
+chrome.runtime.onSuspend?.addListener(async () => {
   logger.info('[BrowserOS Controller] Extension suspending');
   if (controller) {
     controller.stop();
     controller = null;
   }
+  await KeepAlive.stop();
 });
 
 // Export for debugging in console
