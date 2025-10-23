@@ -109,7 +109,18 @@ export class ClaudeSDKAgent extends BaseAgent {
   private async *nextWithHeartbeat(iterator: AsyncIterator<any>): AsyncGenerator<any> {
     const heartbeatInterval = 20000 // 20 seconds
     let heartbeatTimer: NodeJS.Timeout | null = null
+    let abortHandler: (() => void) | null = null
     let iteratorPromise = iterator.next()
+
+    // Create abort promise ONCE outside loop to avoid accumulating event listeners
+    const abortPromise = new Promise<never>((_, reject) => {
+      if (this.abortController) {
+        abortHandler = () => {
+          reject(new Error('Agent execution aborted by client'))
+        }
+        this.abortController.signal.addEventListener('abort', abortHandler, { once: true })
+      }
+    })
 
     try {
       while (true) {
@@ -121,17 +132,6 @@ export class ClaudeSDKAgent extends BaseAgent {
 
         const timeoutPromise = new Promise(resolve => {
           heartbeatTimer = setTimeout(() => resolve({ type: 'heartbeat' }), heartbeatInterval)
-        })
-
-        // Create abort promise that rejects when abort signal is triggered
-        const abortPromise = new Promise<never>((_, reject) => {
-          if (this.abortController) {
-            const abortHandler = () => {
-              reject(new Error('Agent execution aborted by client'))
-            }
-            // Listen for abort signal
-            this.abortController.signal.addEventListener('abort', abortHandler, { once: true })
-          }
         })
 
         type RaceResult = { type: 'result'; result: any } | { type: 'heartbeat' }
@@ -166,7 +166,15 @@ export class ClaudeSDKAgent extends BaseAgent {
         }
       }
     } finally {
-      if (heartbeatTimer) clearTimeout(heartbeatTimer)
+      // Clean up heartbeat timer
+      if (heartbeatTimer) {
+        clearTimeout(heartbeatTimer)
+      }
+
+      // Clean up abort listener if it wasn't triggered
+      if (abortHandler && this.abortController && !this.abortController.signal.aborted) {
+        this.abortController.signal.removeEventListener('abort', abortHandler)
+      }
     }
   }
 

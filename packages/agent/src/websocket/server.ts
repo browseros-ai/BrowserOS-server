@@ -414,8 +414,9 @@ async function processMessage(
           await iterator.return(undefined).catch(() => {})
         }
 
-        // Exit the loop
-        throw new Error('Client disconnected during streaming')
+        // Exit cleanly - don't throw, just return
+        // (throwing would trigger outer error handler which tries to sendError again)
+        return
       }
     }
 
