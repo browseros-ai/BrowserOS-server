@@ -9,66 +9,15 @@ import {defineTool} from '../../types/ToolDefinition.js';
 import type {Context} from '../types/Context.js';
 import type {Response} from '../types/Response.js';
 
-// Accessibility tree types (from chrome.browserOS)
-interface AccessibilityNode {
-  nodeId: number;
-  role: string;
-  name?: string;
-  childIds?: number[];
-  [key: string]: any;
-}
-
-interface AccessibilityTree {
-  rootId: number;
-  nodes: Record<string, AccessibilityNode>;
-}
-
-// Roles that contain meaningful content for extraction
-const EXTRACTABLE_ROLES = new Set([
-  'staticText',
-  'heading',
-  'paragraph',
-  'link',
-  'button',
-  'textField',
-  'checkBox',
-  'comboBoxSelect',
-  'labelText',
-  'menuListOption',
-  'toggleButton',
-  'status',
-  'alert',
-  'image',
-  'rootWebArea',
-  'navigation',
-  'main'
-]);
-
 interface Snapshot {
-  type: 'text' | 'links';
-  context: 'visible' | 'full';
-  timestamp: number;
-  sections: SnapshotSection[];
-  processingTimeMs: number;
+  items: SnapshotItem[];
 }
 
-interface SnapshotSection {
-  type: string;
-  textResult?: {
-    text: string;
-    characterCount: number;
-  };
-  linksResult?: {
-    links: LinkInfo[];
-  };
-}
-
-interface LinkInfo {
+interface SnapshotItem {
   text: string;
-  url: string;
-  title?: string;
-  attributes?: Record<string, any>;
-  isExternal: boolean;
+  type: 'heading' | 'link' | 'text';
+  level?: number;
+  url?: string;
 }
 
 export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
@@ -81,6 +30,8 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
   schema: {
     tabId: z.coerce.number().describe('Tab ID to extract content from'),
     type: z.enum(['text', 'text-with-links']).describe('Type of content to extract: text or text-with-links'),
+    page: z.string().optional().default('all').describe('Page number to retrieve: "all", "1", "2", etc. (default: "all")'),
+    contextWindow: z.string().optional().default('20k').describe('Context window size for pagination: "20k", "30k", "50k", "100k" (default: "20k")'),
     options: z
       .object({
         context: z.enum(['visible', 'full']).optional().describe('Extract from visible viewport or full page (default: visible)'),
@@ -98,98 +49,98 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
     const params = request.params as {
       tabId: number;
       type: 'text' | 'text-with-links';
+      page?: string;
+      contextWindow?: string;
       options?: {context?: 'visible' | 'full'; includeSections?: string[]};
-      // TODO: Add these when implementing LLM extraction
-      // format?: any;
-      // task?: string;
     };
 
-    // Get accessibility tree
-    const tree = await context.executeAction('getAccessibilityTree', {
-      tabId: params.tabId,
-    }) as AccessibilityTree;
+    try {
+      const includeLinks = params.type === 'text-with-links';
+      const requestedPage = params.page || 'all';
+      const contextWindowStr = params.contextWindow || '20k';
 
-    // Extract hierarchical text using DFS stack operations
-    let hierarchicalContent = '';
+      // Parse context window size
+      const parseContextWindow = (cw: string): number => {
+        const match = cw.match(/^(\d+)k$/i);
+        if (!match) return 20000; // default 20k
+        return parseInt(match[1]) * 1000;
+      };
 
-    if (tree && tree.nodes && tree.rootId) {
-      const lines: string[] = [];
-      const stack: Array<{ nodeId: number; depth: number }> = [];
-      stack.push({ nodeId: tree.rootId, depth: 0 });
+      const contextWindowSize = parseContextWindow(contextWindowStr);
 
-      while (stack.length > 0) {
-        const { nodeId, depth } = stack.pop()!;
-
-        // Get node (keys are strings)
-        const node = tree.nodes[String(nodeId)];
-        if (!node) continue;
-
-        // Add text line if node has extractable role and name
-        if (EXTRACTABLE_ROLES.has(node.role) && node.name) {
-          const indentation = '\t'.repeat(depth);
-          lines.push(`${indentation}${node.name}`);
-        }
-
-        // Always traverse children to maintain hierarchy
-        // Add in reverse order for correct DFS traversal
-        if (node.childIds && Array.isArray(node.childIds)) {
-          for (let i = node.childIds.length - 1; i >= 0; i--) {
-            stack.push({
-              nodeId: node.childIds[i],
-              depth: depth + 1
-            });
-          }
-        }
-      }
-
-      hierarchicalContent = lines.join('\n');
-    }
-
-    // Get links only if extraction mode includes links
-    const extractLinks = params.type === 'text-with-links';
-    let linksContent = '';
-
-    if (extractLinks) {
-      const linksSnapshot = await context.executeAction('getSnapshot', {
+      const snapshotResult = await context.executeAction('getSnapshot', {
         tabId: params.tabId,
-        type: 'links',
-        options: params.options,
       });
-      const snapshot = linksSnapshot as Snapshot;
+      const snapshot = snapshotResult as Snapshot;
 
-      // Format links (similar to getLinksSnapshotString)
-      const linkStrings: string[] = [];
-      for (const section of snapshot.sections) {
-        if (section.linksResult?.links) {
-          for (const link of section.linksResult.links) {
-            const linkStr = link.text ? `${link.text}: ${link.url}` : link.url;
-            linkStrings.push(linkStr);
-          }
-        }
+      if (!snapshot || !snapshot.items) {
+        response.appendResponseLine('No content found on the page.');
+        return;
       }
-      linksContent = [...new Set(linkStrings)].join('\n').trim();
-    }
 
-    if (hierarchicalContent) {
-      response.appendResponseLine('Content (hierarchical structure):');
-      response.appendResponseLine(hierarchicalContent);
-      response.appendResponseLine('');
-      response.appendResponseLine(`(${hierarchicalContent.length} characters)`);
-      response.appendResponseLine('');
-    }
+      // Build full content
+      let fullContent = '';
+      snapshot.items.forEach((item) => {
+        if (item.type === 'heading') {
+          const prefix = '#'.repeat(item.level || 1);
+          fullContent += `${prefix} ${item.text}\n`;
+        } else if (item.type === 'text') {
+          fullContent += `${item.text}\n`;
+        } else if (item.type === 'link' && includeLinks) {
+          fullContent += `[${item.text}](${item.url})\n`;
+        }
+      });
 
-    if (linksContent) {
-      response.appendResponseLine('Links found:');
-      response.appendResponseLine(linksContent);
-      response.appendResponseLine('');
-      const linkCount = linksContent.split('\n').length;
-      response.appendResponseLine(`(${linkCount} links)`);
-      response.appendResponseLine('');
-    }
+      if (!fullContent) {
+        response.appendResponseLine('No content extracted.');
+        return;
+      }
 
-    // TODO: Add placeholder note about LLM extraction
-    response.appendResponseLine('='.repeat(60));
-    response.appendResponseLine('NOTE: AI-powered structured data extraction coming soon.');
-    response.appendResponseLine('      (Will support format and task parameters for LLM extraction)');
+      // Split content into pages
+      const pages: string[] = [];
+      let currentPage = '';
+      const lines = fullContent.split('\n');
+
+      for (const line of lines) {
+        if ((currentPage + line + '\n').length > contextWindowSize && currentPage.length > 0) {
+          pages.push(currentPage.trim());
+          currentPage = '';
+        }
+        currentPage += line + '\n';
+      }
+      if (currentPage.trim()) {
+        pages.push(currentPage.trim());
+      }
+
+      const totalPages = pages.length;
+
+      // Return requested page(s)
+      if (requestedPage === 'all') {
+        response.appendResponseLine(`Total pages: ${totalPages} (${contextWindowStr} per page)`);
+        response.appendResponseLine('');
+        response.appendResponseLine(fullContent.trim());
+        response.appendResponseLine('');
+        response.appendResponseLine(`(${fullContent.length} characters total)`);
+      } else {
+        const pageNum = parseInt(requestedPage);
+        if (isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
+          response.appendResponseLine(`Error: Invalid page number "${requestedPage}". Valid pages: 1-${totalPages} or "all"`);
+          return;
+        }
+
+        const pageIndex = pageNum - 1;
+        response.appendResponseLine(`Page ${pageNum} of ${totalPages} (${contextWindowStr} limit per page)`);
+        response.appendResponseLine('');
+        response.appendResponseLine(pages[pageIndex]);
+        response.appendResponseLine('');
+        response.appendResponseLine(`(${pages[pageIndex].length} characters)`);
+      }
+
+      response.appendResponseLine('');
+      response.appendResponseLine('='.repeat(60));
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      response.appendResponseLine(`Error: ${errorMessage}`);
+    }
   },
 });

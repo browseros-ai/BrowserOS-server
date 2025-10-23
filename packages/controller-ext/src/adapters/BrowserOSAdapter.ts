@@ -363,69 +363,45 @@ export class BrowserOSAdapter {
   }
 
   /**
-   * Get a content snapshot of the specified type from the page
+   * Get a content snapshot from the page
    */
-  async getSnapshot(
-    tabId: number,
-    type: SnapshotType,
-    options?: SnapshotOptions,
-  ): Promise<Snapshot> {
+  async getSnapshot(tabId: number): Promise<Snapshot> {
     try {
-      logger.debug(`[BrowserOSAdapter] Getting ${type} snapshot for tab ${tabId} with options: ${JSON.stringify(options)}`);
+      logger.debug(`[BrowserOSAdapter] Getting snapshot for tab ${tabId}`);
 
       return new Promise<Snapshot>((resolve, reject) => {
-        if (options) {
-          chrome.browserOS.getSnapshot(
-            tabId,
-            type,
-            options,
-            (snapshot: Snapshot) => {
-              if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message));
-              } else {
-                logger.debug(`[BrowserOSAdapter] Retrieved ${type} snapshot with ${snapshot.sections.length} sections`);
-                resolve(snapshot);
-              }
-            },
-          );
-        } else {
-          chrome.browserOS.getSnapshot(tabId, type, (snapshot: Snapshot) => {
-            if (chrome.runtime.lastError) {
-              reject(new Error(chrome.runtime.lastError.message));
-            } else {
-              logger.debug(`[BrowserOSAdapter] Retrieved ${type} snapshot with ${snapshot.sections.length} sections`);
-              resolve(snapshot);
-            }
-          });
-        }
+        chrome.browserOS.getSnapshot(tabId, (snapshot: Snapshot) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else {
+            logger.debug(`[BrowserOSAdapter] Retrieved snapshot: ${JSON.stringify(snapshot)}`);
+            resolve(snapshot);
+          }
+        });
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[BrowserOSAdapter] Failed to get ${type} snapshot: ${errorMessage}`);
-      throw new Error(`Failed to get ${type} snapshot: ${errorMessage}`);
+      logger.error(`[BrowserOSAdapter] Failed to get snapshot: ${errorMessage}`);
+      throw new Error(`Failed to get snapshot: ${errorMessage}`);
     }
   }
 
   /**
    * Get text content snapshot from the page
-   * Convenience method for text snapshot
+   * Convenience method (deprecated - use getSnapshot directly)
+   * @deprecated Use getSnapshot(tabId) instead
    */
-  async getTextSnapshot(
-    tabId: number,
-    options?: SnapshotOptions,
-  ): Promise<Snapshot> {
-    return this.getSnapshot(tabId, "text", options);
+  async getTextSnapshot(tabId: number): Promise<Snapshot> {
+    return this.getSnapshot(tabId);
   }
 
   /**
    * Get links snapshot from the page
-   * Convenience method for links snapshot
+   * Convenience method (deprecated - use getSnapshot directly)
+   * @deprecated Use getSnapshot(tabId) instead
    */
-  async getLinksSnapshot(
-    tabId: number,
-    options?: SnapshotOptions,
-  ): Promise<Snapshot> {
-    return this.getSnapshot(tabId, "links", options);
+  async getLinksSnapshot(tabId: number): Promise<Snapshot> {
+    return this.getSnapshot(tabId);
   }
 
   /**
