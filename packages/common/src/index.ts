@@ -9,6 +9,7 @@ export {McpContext} from './McpContext.js';
 export {Mutex} from './Mutex.js';
 export {logger} from './logger.js';
 export {metrics} from './metrics.js';
+export {fetchBrowserOSConfig} from './gateway.js';
 
 // Utils exports
 export * from './utils/index.js';
@@ -21,3 +22,4 @@ export type {
   TextSnapshot,
 } from './McpContext.js';
 export type {TraceResult} from './types.js';
+export type {BrowserOSConfig} from './gateway.js';
