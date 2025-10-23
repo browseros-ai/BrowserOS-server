@@ -5,7 +5,7 @@
 
 import { query } from '@anthropic-ai/claude-agent-sdk'
 import { EventFormatter, FormattedEvent } from '../utils/EventFormatter.js'
-import { logger } from '@browseros/common'
+import { logger, fetchBrowserOSConfig, type BrowserOSConfig } from '@browseros/common'
 import type { AgentConfig } from './types.js'
 import { BaseAgent } from './BaseAgent.js'
 import { CLAUDE_SDK_SYSTEM_PROMPT } from './ClaudeSDKAgent.prompt.js'
@@ -37,6 +37,7 @@ const CLAUDE_SDK_DEFAULTS = {
  */
 export class ClaudeSDKAgent extends BaseAgent {
   private abortController: AbortController | null = null
+  private gatewayConfig: BrowserOSConfig | null = null
 
   constructor(config: AgentConfig, controllerBridge: ControllerBridge) {
     logger.info('🔧 Using shared ControllerBridge for controller connection')
@@ -61,20 +62,62 @@ export class ClaudeSDKAgent extends BaseAgent {
   }
 
   /**
+   * Initialize agent - fetch config from BrowserOS Config URL if configured
+   * Falls back to ANTHROPIC_API_KEY env var if config URL not set or fails
+   */
+  override async init(): Promise<void> {
+    const configUrl = process.env.BROWSEROS_CONFIG_URL
+
+    if (configUrl) {
+      logger.info('🌐 Fetching config from BrowserOS Config URL', { configUrl })
+
+      try {
+        this.gatewayConfig = await fetchBrowserOSConfig(configUrl)
+        this.config.apiKey = this.gatewayConfig.apiKey
+
+        logger.info('✅ Using API key from BrowserOS Config URL', {
+          model: this.gatewayConfig.model
+        })
+
+        await super.init()
+        return
+      } catch (error) {
+        logger.warn('⚠️  Failed to fetch from config URL, falling back to ANTHROPIC_API_KEY', {
+          error: error instanceof Error ? error.message : String(error)
+        })
+      }
+    }
+
+    const envApiKey = process.env.ANTHROPIC_API_KEY
+    if (envApiKey) {
+      this.config.apiKey = envApiKey
+      logger.info('✅ Using API key from ANTHROPIC_API_KEY env var')
+      await super.init()
+      return
+    }
+
+    throw new Error(
+      'No API key found. Set either BROWSEROS_CONFIG_URL or ANTHROPIC_API_KEY'
+    )
+  }
+
+  /**
    * Execute a task using Claude SDK and stream formatted events
    *
    * @param message - User's natural language request
    * @yields FormattedEvent instances
    */
   async *execute(message: string): AsyncGenerator<FormattedEvent> {
-    // Start execution tracking
+    if (!this.initialized) {
+      await this.init()
+    }
+
     this.startExecution()
     this.abortController = new AbortController()
 
     logger.info('🤖 ClaudeSDKAgent executing', { message: message.substring(0, 100) })
 
     try {
-      // Build SDK options with AbortController
       const options: any = {
         apiKey: this.config.apiKey,
         maxTurns: this.config.maxTurns,
@@ -84,6 +127,11 @@ export class ClaudeSDKAgent extends BaseAgent {
         mcpServers: this.config.mcpServers,
         permissionMode: this.config.permissionMode,
         abortController: this.abortController
+      }
+
+      if (this.gatewayConfig?.model) {
+        options.model = this.gatewayConfig.model
+        logger.debug('Using model from gateway', { model: this.gatewayConfig.model })
       }
 
       // Call Claude SDK

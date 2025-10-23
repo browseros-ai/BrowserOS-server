@@ -173,16 +173,9 @@ async function startAgentServer(
   ports: ReturnType<typeof parseArguments>,
   controllerBridge: ControllerBridge,
 ): Promise<any> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    logger.error('[Agent Server] ANTHROPIC_API_KEY is required');
-    logger.error('Please set ANTHROPIC_API_KEY in .env file');
-    process.exit(1);
-  }
-
   const agentConfig: AgentServerConfig = {
     port: ports.agentPort,
-    apiKey,
+    apiKey: process.env.ANTHROPIC_API_KEY || '',
     cwd: process.cwd(),
     maxSessions: parseInt(process.env.MAX_SESSIONS || '5'),
     idleTimeoutMs: parseInt(process.env.SESSION_IDLE_TIMEOUT_MS || '90000'),
