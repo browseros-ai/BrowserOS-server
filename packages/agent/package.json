@@ -31,7 +31,7 @@
     "@browseros/tools": "workspace:*",
     "@browseros/common": "workspace:*",
     "@browseros/server": "workspace:*",
-    "@anthropic-ai/claude-agent-sdk": "^0.1.11",
+    "@anthropic-ai/claude-agent-sdk": "^0.1.25",
     "zod": "^4.1.12"
   },
   "devDependencies": {
