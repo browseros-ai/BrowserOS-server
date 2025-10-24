@@ -100,6 +100,17 @@ export class ClaudeSDKAgent extends BaseAgent {
       return;
     }
 
+    const execDir = path.dirname(process.execPath);
+    const browserosCliPath = path.join(execDir, 'browseros_cli');
+
+    if (fs.existsSync(browserosCliPath)) {
+      this.cliPath = browserosCliPath;
+      logger.info('✅ Using browseros_cli from installation directory', {
+        path: this.cliPath,
+      });
+      return;
+    }
+
     const version = process.env.BROWSEROS_VERSION || 'unknown';
     const platform = this.detectPlatform();
     const cacheDir = path.join(os.tmpdir(), `browseros-sdk-${version}`);
