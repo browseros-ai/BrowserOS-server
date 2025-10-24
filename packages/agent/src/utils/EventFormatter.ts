@@ -369,4 +369,125 @@ export class EventFormatter {
     }
     return false
   }
+
+  /**
+   * Format Codex SDK events into FormattedEvent
+   *
+   * Codex event structure (flat, not nested like Claude):
+   * - thread.started: Thread initialization
+   * - turn.started: Turn begins
+   * - item.completed: Response item (agent_message, tool_use, tool_result)
+   * - turn.completed: Turn ends with usage stats
+   */
+  static formatCodex(event: any): FormattedEvent | null {
+    const eventType = event.type
+
+    // Thread initialization
+    if (eventType === 'thread.started') {
+      return new FormattedEvent('init', `🚀 Thread started: ${event.thread_id}`)
+    }
+
+    // Turn started - agent is thinking
+    if (eventType === 'turn.started') {
+      return new FormattedEvent('thinking', '💭 Agent processing...')
+    }
+
+    // Item completed - main content events
+    if (eventType === 'item.completed') {
+      return this.formatCodexItem(event.item)
+    }
+
+    // Turn completed - completion with usage stats
+    if (eventType === 'turn.completed') {
+      return this.formatCodexTurnCompleted(event)
+    }
+
+    // Turn failed - error event
+    if (eventType === 'turn.failed') {
+      const errorMsg = event.error?.message || 'Unknown error'
+      return new FormattedEvent('error', `❌ Turn failed: ${errorMsg}`)
+    }
+
+    return null
+  }
+
+  /**
+   * Format Codex item.completed event based on item type
+   */
+  private static formatCodexItem(item: any): FormattedEvent | null {
+    if (!item || !item.type) {
+      return null
+    }
+
+    // Agent message - final response text
+    if (item.type === 'agent_message') {
+      return new FormattedEvent('response', item.text || '')
+    }
+
+    // Reasoning - Codex thinking/reasoning
+    if (item.type === 'reasoning') {
+      const text = item.text || item.content || ''
+      if (!text) return null
+
+      const truncated = text.length > 150 ? text.substring(0, 150) + '...' : text
+      return new FormattedEvent('thinking', `💭 ${truncated}`)
+    }
+
+    // MCP tool call - Codex MCP tool usage
+    if (item.type === 'mcp_tool_call') {
+      // Codex uses item.tool for tool name (not item.name)
+      const toolName = this.cleanToolName(item.tool || 'tool')
+
+      // Show tool call with server name
+      const serverInfo = item.server ? ` (${item.server})` : ''
+      return new FormattedEvent('tool_use', `🔧 ${toolName}${serverInfo}`)
+    }
+
+    // Tool use - agent calling a tool (standard format)
+    if (item.type === 'tool_use') {
+      const toolName = this.cleanToolName(item.name)
+      const args = this.formatToolArgs(item.input)
+      return new FormattedEvent('tool_use', `🔧 ${toolName}${args ? `\n   Args: ${args}` : ''}`)
+    }
+
+    // Tool result - tool execution result (standard format)
+    if (item.type === 'tool_result') {
+      if (item.error) {
+        return new FormattedEvent('tool_result', `❌ Error: ${item.error}`)
+      }
+
+      const resultText = typeof item.content === 'string'
+        ? item.content
+        : JSON.stringify(item.content)
+
+      const truncated = resultText.length > 200
+        ? resultText.substring(0, 200) + '...'
+        : resultText
+
+      return new FormattedEvent('tool_result', `✓ ${truncated}`)
+    }
+
+    return null
+  }
+
+  /**
+   * Format Codex turn.completed event
+   */
+  private static formatCodexTurnCompleted(event: any): FormattedEvent {
+    const usage = event.usage || {}
+    const metadata = {
+      turnCount: 1, // Each turn.completed represents one turn
+      isError: false,
+      duration: 0 // Codex doesn't provide duration in turn.completed
+    }
+
+    // Build completion message with usage stats
+    let message = '✅ Turn completed'
+
+    if (usage.output_tokens) {
+      message += ` (${usage.output_tokens} tokens)`
+    }
+
+    return new FormattedEvent('completion', message, metadata)
+  }
 }

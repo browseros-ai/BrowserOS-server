@@ -34,7 +34,8 @@ export const ServerConfigSchema = z.object({
   cwd: z.string().min(1, 'Working directory is required'),
   maxSessions: z.number().int().positive(),
   idleTimeoutMs: z.number().positive(),        // Time to wait after agent completion before cleanup
-  eventGapTimeoutMs: z.number().positive()     // Max time between consecutive SDK events
+  eventGapTimeoutMs: z.number().positive(),    // Max time between consecutive SDK events
+  agentType: z.enum(['claude-sdk', 'codex-sdk']).optional()  // Agent type (defaults to claude-sdk)
 })
 
 export type ServerConfig = z.infer<typeof ServerConfigSchema>
@@ -172,15 +173,18 @@ export function createServer(config: ServerConfig, controllerBridge: ControllerB
         const { sessionId, createdAt } = ws.data
 
         try {
-          // Build minimal agent config - defaults will be applied in ClaudeSDKAgent
+          // Build minimal agent config - defaults will be applied in agent
           const agentConfig = {
             apiKey: config.apiKey,
             cwd: config.cwd
           }
 
-          // Create session with agent
+          // Create session with agent (use configured agent type or SessionManager default)
           sessionManager.createSession(
-            { id: sessionId },
+            {
+              id: sessionId,
+              agentType: config.agentType  // Let SessionManager use its default if undefined
+            },
             agentConfig
           )
 

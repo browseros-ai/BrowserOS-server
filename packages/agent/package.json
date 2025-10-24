@@ -28,10 +28,12 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@browseros/tools": "workspace:*",
+    "@anthropic-ai/claude-agent-sdk": "^0.1.11",
     "@browseros/common": "workspace:*",
     "@browseros/server": "workspace:*",
-    "@anthropic-ai/claude-agent-sdk": "^0.1.11",
+    "@browseros/tools": "workspace:*",
+    "@openai/codex-sdk": "^0.48.0",
+    "openai": "^6.7.0",
     "zod": "^4.1.12"
   },
   "devDependencies": {

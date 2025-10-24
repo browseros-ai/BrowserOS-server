@@ -7,7 +7,9 @@ import { z } from 'zod'
 import { logger } from '@browseros/common'
 import type { AgentConfig } from '../agent/types.js'
 import { ClaudeSDKAgent } from '../agent/ClaudeSDKAgent.js'
+import { CodexSDKAgent } from '../agent/CodexSDKAgent.js'
 import { ControllerBridge } from '@browseros/controller-server'
+import type { BaseAgent } from '../agent/BaseAgent.js'
 
 /**
  * Session state enum
@@ -47,10 +49,16 @@ const SessionMetricsSchema = z.object({
 type SessionMetrics = z.infer<typeof SessionMetricsSchema>
 
 /**
+ * Agent type selector
+ */
+export type AgentType = 'claude-sdk' | 'codex-sdk'
+
+/**
  * Session creation options
  */
 const CreateSessionOptionsSchema = z.object({
-  id: z.string().uuid().optional()  // Optional: specify sessionId (useful for testing)
+  id: z.string().uuid().optional(),  // Optional: specify sessionId (useful for testing)
+  agentType: z.enum(['claude-sdk', 'codex-sdk']).optional()  // Optional: specify agent type (defaults to claude-sdk)
 })
 
 type CreateSessionOptions = z.infer<typeof CreateSessionOptionsSchema>
@@ -77,7 +85,7 @@ type SessionConfig = z.infer<typeof SessionConfigSchema>
  */
 export class SessionManager {
   private sessions: Map<string, Session>
-  private agents: Map<string, ClaudeSDKAgent>
+  private agents: Map<string, BaseAgent>
   private config: SessionConfig
   private controllerBridge: ControllerBridge
   private cleanupTimerId?: Timer
@@ -96,7 +104,7 @@ export class SessionManager {
   }
 
   /**
-   * Create a new session with a ClaudeSDKAgent
+   * Create a new session with an agent (Claude or Codex)
    *
    * @param options - Session creation options
    * @param agentConfig - Agent configuration
@@ -112,6 +120,7 @@ export class SessionManager {
     }
 
     const sessionId = options?.id || crypto.randomUUID()
+    const agentType = options?.agentType || 'codex-sdk'
     const now = Date.now()
 
     const session: Session = {
@@ -130,12 +139,15 @@ export class SessionManager {
     // Create agent if config provided
     if (agentConfig) {
       try {
-        const agent = new ClaudeSDKAgent(agentConfig, this.controllerBridge)
+        const agent = agentType === 'codex-sdk'
+          ? new CodexSDKAgent(agentConfig, this.controllerBridge)
+          : new ClaudeSDKAgent(agentConfig, this.controllerBridge)
+
         this.agents.set(sessionId, agent)
 
         logger.info('✅ Session created with agent', {
           sessionId,
-          agentType: 'claude-sdk',
+          agentType,
           totalSessions: this.sessions.size
         })
       } catch (error) {
@@ -144,6 +156,7 @@ export class SessionManager {
 
         logger.error('❌ Failed to create agent for session', {
           sessionId,
+          agentType,
           error: error instanceof Error ? error.message : String(error)
         })
 
@@ -177,9 +190,9 @@ export class SessionManager {
    * Get agent for a session
    *
    * @param sessionId - Session ID
-   * @returns ClaudeSDKAgent instance or undefined if not found
+   * @returns BaseAgent instance (ClaudeSDKAgent or CodexSDKAgent) or undefined if not found
    */
-  getAgent(sessionId: string): ClaudeSDKAgent | undefined {
+  getAgent(sessionId: string): BaseAgent | undefined {
     return this.agents.get(sessionId)
   }
 
