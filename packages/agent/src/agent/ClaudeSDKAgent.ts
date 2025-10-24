@@ -6,6 +6,7 @@
 import {query} from '@anthropic-ai/claude-agent-sdk';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import {EventFormatter, FormattedEvent} from '../utils/EventFormatter.js';
 import {
   logger,
@@ -22,6 +23,8 @@ import {
   ControllerContext,
 } from '@browseros/controller-server';
 import {createControllerMcpServer} from './ControllerToolsAdapter.js';
+
+const CLAUDE_CLI_CDN = 'https://cdn.browseros.com/cli';
 
 /**
  * Claude SDK specific default configuration
@@ -97,19 +100,67 @@ export class ClaudeSDKAgent extends BaseAgent {
       return;
     }
 
-    const serverDir = path.dirname(process.execPath);
-    this.cliPath = path.join(serverDir, 'browseros_cli');
+    const version = process.env.BROWSEROS_VERSION || 'unknown';
+    const platform = this.detectPlatform();
+    const cacheDir = path.join(os.tmpdir(), `browseros-sdk-${version}`);
+    this.cliPath = path.join(cacheDir, 'claude');
 
-    if (!fs.existsSync(this.cliPath)) {
-      throw new Error(
-        `❌ CLI binary not found at: ${this.cliPath}\n` +
-          'Ensure browseros_cli is deployed alongside browseros_server.',
-      );
+    if (fs.existsSync(this.cliPath)) {
+      logger.info('✅ Using cached Claude CLI binary', {
+        version,
+        platform,
+        path: this.cliPath,
+      });
+      return;
     }
 
-    logger.info('✅ Using Claude Code CLI binary (production mode)', {
-      path: this.cliPath,
-    });
+    logger.info('📥 Downloading Claude CLI binary', {version, platform});
+    await this.downloadClaudeBinary(platform, cacheDir);
+    logger.info('✅ Downloaded Claude CLI binary', {path: this.cliPath});
+  }
+
+  private detectPlatform(): string {
+    const platform = process.platform;
+    const arch = process.arch;
+
+    if (platform === 'darwin' && arch === 'arm64')
+      return 'claude-cli-darwin-arm64';
+    if (platform === 'darwin' && arch === 'x64')
+      return 'claude-cli-darwin-x64';
+    if (platform === 'linux' && arch === 'x64') return 'claude-cli-linux-x64';
+    if (platform === 'linux' && arch === 'arm64')
+      return 'claude-cli-linux-arm64';
+    if (platform === 'win32' && arch === 'x64')
+      return 'claude-cli-windows-x64.exe';
+
+    throw new Error(
+      `Unsupported platform: ${platform}-${arch}. Supported platforms: darwin-arm64, darwin-x64, linux-x64, linux-arm64, win32-x64`,
+    );
+  }
+
+  private async downloadClaudeBinary(
+    platform: string,
+    cacheDir: string,
+  ): Promise<void> {
+    const url = `${CLAUDE_CLI_CDN}/${platform}`;
+
+    try {
+      await fs.promises.mkdir(cacheDir, {recursive: true});
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      await fs.promises.writeFile(this.cliPath, new Uint8Array(arrayBuffer));
+      await fs.promises.chmod(this.cliPath, 0o755);
+    } catch (error) {
+      throw new Error(
+        `❌ Failed to download Claude CLI from ${url}\n` +
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 
   private async loadApiKey(): Promise<void> {
