@@ -104,15 +104,17 @@ export class ClaudeSDKAgent extends BaseAgent {
   /**
    * Wrapper around iterator.next() that yields heartbeat events while waiting
    * @param iterator - The async iterator
-   * @yields Heartbeat events (FormattedEvent) and the final iterator result (IteratorResult)
+   * @yields Heartbeat events (FormattedEvent) while waiting, then the final iterator result (IteratorResult)
    */
   private async *nextWithHeartbeat(iterator: AsyncIterator<any>): AsyncGenerator<any> {
     const heartbeatInterval = 20000 // 20 seconds
     let heartbeatTimer: NodeJS.Timeout | null = null
     let abortHandler: (() => void) | null = null
-    let iteratorPromise = iterator.next()
 
-    // Create abort promise ONCE outside loop to avoid accumulating event listeners
+    // Call iterator.next() once - this generator wraps a single next() call
+    const iteratorPromise = iterator.next()
+
+    // Create abort promise
     const abortPromise = new Promise<never>((_, reject) => {
       if (this.abortController) {
         abortHandler = () => {
@@ -123,6 +125,7 @@ export class ClaudeSDKAgent extends BaseAgent {
     })
 
     try {
+      // Loop until the iterator promise resolves, yielding heartbeats while waiting
       while (true) {
         // Check if execution was aborted
         if (this.abortController?.signal.aborted) {
@@ -130,12 +133,14 @@ export class ClaudeSDKAgent extends BaseAgent {
           return
         }
 
+        // Create timeout promise for this iteration
         const timeoutPromise = new Promise(resolve => {
           heartbeatTimer = setTimeout(() => resolve({ type: 'heartbeat' }), heartbeatInterval)
         })
 
         type RaceResult = { type: 'result'; result: any } | { type: 'heartbeat' }
         let race: RaceResult
+
         try {
           race = await Promise.race([
             iteratorPromise.then(result => ({ type: 'result' as const, result })),
@@ -152,15 +157,18 @@ export class ClaudeSDKAgent extends BaseAgent {
           return
         }
 
+        // Clear the timeout if it was set
         if (heartbeatTimer) {
           clearTimeout(heartbeatTimer)
           heartbeatTimer = null
         }
 
         if (race.type === 'heartbeat') {
+          // Heartbeat timeout occurred - yield processing event and continue waiting
           yield EventFormatter.createProcessingEvent()
+          // Loop continues - will race the same iteratorPromise (still pending) vs new timeout
         } else {
-          // Yield the iterator result (not return!) so the consumer receives it
+          // Iterator result arrived - yield it and exit this generator
           yield race.result
           return
         }
