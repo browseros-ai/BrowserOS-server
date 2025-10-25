@@ -4,7 +4,8 @@
  */
 
 import { Codex, type McpServerConfig } from '@browseros/codex-sdk-ts'
-import { EventFormatter, FormattedEvent } from '../utils/EventFormatter.js'
+import { FormattedEvent } from '../utils/EventFormatter.js'
+import { CodexEventFormatter } from './CodexSDKAgent.formatter.js'
 import { logger, fetchBrowserOSConfig, type BrowserOSConfig } from '@browseros/common'
 import type { AgentConfig } from './types.js'
 import { BaseAgent } from './BaseAgent.js'
@@ -105,13 +106,11 @@ export class CodexSDKAgent extends BaseAgent {
 
         this.codex = new Codex({
           codexPathOverride: ENV.CODEX_BINARY_PATH,
-          apiKey: this.config.apiKey,
-          baseUrl: this.gatewayConfig.baseUrl
+          apiKey: this.config.apiKey
         })
 
         logger.info('✅ Codex SDK initialized', {
-          binaryPath: ENV.CODEX_BINARY_PATH,
-          hasBaseUrl: !!this.gatewayConfig.baseUrl
+          binaryPath: ENV.CODEX_BINARY_PATH
         })
         return
       } catch (error) {
@@ -206,7 +205,7 @@ export class CodexSDKAgent extends BaseAgent {
 
         if (race.type === 'heartbeat') {
           // Heartbeat timeout occurred - yield processing event and continue waiting
-          yield EventFormatter.createProcessingEvent()
+          yield CodexEventFormatter.createProcessingEvent()
           // Loop continues - will race the same iteratorPromise (still pending) vs new timeout
         } else {
           // Iterator result arrived - yield it and exit this generator
@@ -353,8 +352,8 @@ export class CodexSDKAgent extends BaseAgent {
           }
         }
 
-        // Format the event using EventFormatter
-        const formattedEvent = EventFormatter.formatCodex(event)
+        // Format the event using CodexEventFormatter
+        const formattedEvent = CodexEventFormatter.format(event)
 
         // Yield formatted event if valid
         if (formattedEvent) {
