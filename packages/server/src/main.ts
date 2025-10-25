@@ -19,7 +19,7 @@ import {
   allControllerTools,
   type ToolDefinition,
 } from '@browseros/tools';
-import {createAgentServer, type AgentServerConfig} from '@browseros/agent';
+import {createAgentServer, registerAgents, type AgentServerConfig} from '@browseros/agent';
 
 import {parseArguments} from './args.js';
 import {
@@ -173,6 +173,9 @@ async function startAgentServer(
   ports: ReturnType<typeof parseArguments>,
   controllerBridge: ControllerBridge,
 ): Promise<any> {
+  // Register all available agents (Codex SDK, Claude SDK, etc.)
+  registerAgents();
+
   const agentConfig: AgentServerConfig = {
     port: ports.agentPort,
     apiKey: process.env.ANTHROPIC_API_KEY || '',

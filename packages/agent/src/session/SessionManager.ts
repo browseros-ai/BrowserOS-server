@@ -6,7 +6,8 @@
 import { z } from 'zod'
 import { logger } from '@browseros/common'
 import type { AgentConfig } from '../agent/types.js'
-import { CodexSDKAgent } from '../agent/CodexSDKAgent.js'
+import { AgentFactory } from '../agent/AgentFactory.js'
+import type { BaseAgent } from '../agent/BaseAgent.js'
 import { ControllerBridge } from '@browseros/controller-server'
 
 /**
@@ -50,7 +51,8 @@ type SessionMetrics = z.infer<typeof SessionMetricsSchema>
  * Session creation options
  */
 const CreateSessionOptionsSchema = z.object({
-  id: z.string().uuid().optional()  // Optional: specify sessionId (useful for testing)
+  id: z.string().uuid().optional(),  // Optional: specify sessionId (useful for testing)
+  agentType: z.string().min(1).optional()  // Optional: agent type (defaults to 'codex-sdk')
 })
 
 type CreateSessionOptions = z.infer<typeof CreateSessionOptionsSchema>
@@ -77,7 +79,7 @@ type SessionConfig = z.infer<typeof SessionConfigSchema>
  */
 export class SessionManager {
   private sessions: Map<string, Session>
-  private agents: Map<string, CodexSDKAgent>
+  private agents: Map<string, BaseAgent>
   private config: SessionConfig
   private controllerBridge: ControllerBridge
   private cleanupTimerId?: Timer
@@ -96,9 +98,9 @@ export class SessionManager {
   }
 
   /**
-   * Create a new session with a CodexSDKAgent
+   * Create a new session with an agent
    *
-   * @param options - Session creation options
+   * @param options - Session creation options (includes optional agentType)
    * @param agentConfig - Agent configuration
    * @returns Session instance
    */
@@ -130,12 +132,14 @@ export class SessionManager {
     // Create agent if config provided
     if (agentConfig) {
       try {
-        const agent = new CodexSDKAgent(agentConfig, this.controllerBridge)
+        // Use factory to create agent (defaults to 'codex-sdk' if not specified)
+        const agentType = options?.agentType || 'codex-sdk'
+        const agent = AgentFactory.create(agentType, agentConfig, this.controllerBridge)
         this.agents.set(sessionId, agent)
 
         logger.info('✅ Session created with agent', {
           sessionId,
-          agentType: 'codex-sdk',
+          agentType,
           totalSessions: this.sessions.size
         })
       } catch (error) {
@@ -177,9 +181,9 @@ export class SessionManager {
    * Get agent for a session
    *
    * @param sessionId - Session ID
-   * @returns CodexSDKAgent instance or undefined if not found
+   * @returns BaseAgent instance or undefined if not found
    */
-  getAgent(sessionId: string): CodexSDKAgent | undefined {
+  getAgent(sessionId: string): BaseAgent | undefined {
     return this.agents.get(sessionId)
   }
 
