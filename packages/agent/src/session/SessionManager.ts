@@ -6,7 +6,7 @@
 import { z } from 'zod'
 import { logger } from '@browseros/common'
 import type { AgentConfig } from '../agent/types.js'
-import { ClaudeSDKAgent } from '../agent/ClaudeSDKAgent.js'
+import { CodexSDKAgent } from '../agent/CodexSDKAgent.js'
 import { ControllerBridge } from '@browseros/controller-server'
 
 /**
@@ -77,7 +77,7 @@ type SessionConfig = z.infer<typeof SessionConfigSchema>
  */
 export class SessionManager {
   private sessions: Map<string, Session>
-  private agents: Map<string, ClaudeSDKAgent>
+  private agents: Map<string, CodexSDKAgent>
   private config: SessionConfig
   private controllerBridge: ControllerBridge
   private cleanupTimerId?: Timer
@@ -96,7 +96,7 @@ export class SessionManager {
   }
 
   /**
-   * Create a new session with a ClaudeSDKAgent
+   * Create a new session with a CodexSDKAgent
    *
    * @param options - Session creation options
    * @param agentConfig - Agent configuration
@@ -130,12 +130,12 @@ export class SessionManager {
     // Create agent if config provided
     if (agentConfig) {
       try {
-        const agent = new ClaudeSDKAgent(agentConfig, this.controllerBridge)
+        const agent = new CodexSDKAgent(agentConfig, this.controllerBridge)
         this.agents.set(sessionId, agent)
 
         logger.info('✅ Session created with agent', {
           sessionId,
-          agentType: 'claude-sdk',
+          agentType: 'codex-sdk',
           totalSessions: this.sessions.size
         })
       } catch (error) {
@@ -177,9 +177,9 @@ export class SessionManager {
    * Get agent for a session
    *
    * @param sessionId - Session ID
-   * @returns ClaudeSDKAgent instance or undefined if not found
+   * @returns CodexSDKAgent instance or undefined if not found
    */
-  getAgent(sessionId: string): ClaudeSDKAgent | undefined {
+  getAgent(sessionId: string): CodexSDKAgent | undefined {
     return this.agents.get(sessionId)
   }
 

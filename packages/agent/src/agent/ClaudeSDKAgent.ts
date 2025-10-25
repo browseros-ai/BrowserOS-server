@@ -8,7 +8,7 @@ import { EventFormatter, FormattedEvent } from '../utils/EventFormatter.js'
 import { logger, fetchBrowserOSConfig, type BrowserOSConfig } from '@browseros/common'
 import type { AgentConfig } from './types.js'
 import { BaseAgent } from './BaseAgent.js'
-import { CLAUDE_SDK_SYSTEM_PROMPT } from './ClaudeSDKAgent.prompt.js'
+import { AGENT_SYSTEM_PROMPT } from './Agent.prompt.js'
 import { allControllerTools } from '@browseros/tools/controller-based'
 import type { ToolDefinition } from '@browseros/tools'
 import { ControllerBridge, ControllerContext } from '@browseros/controller-server'
@@ -51,7 +51,7 @@ export class ClaudeSDKAgent extends BaseAgent {
 
     // Pass Claude SDK specific defaults to BaseAgent (must call super before accessing this)
     super('claude-sdk', config, {
-      systemPrompt: CLAUDE_SDK_SYSTEM_PROMPT,
+      systemPrompt: AGENT_SYSTEM_PROMPT,
       mcpServers: { 'browseros-controller': sdkMcpServer },
       maxTurns: CLAUDE_SDK_DEFAULTS.maxTurns,
       maxThinkingTokens: CLAUDE_SDK_DEFAULTS.maxThinkingTokens,
