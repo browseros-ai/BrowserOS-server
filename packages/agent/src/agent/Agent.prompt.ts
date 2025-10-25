@@ -1,7 +1,7 @@
 /**
  * Claude SDK specific system prompt for browser automation
  */
-export const CLAUDE_SDK_SYSTEM_PROMPT = `You are a browser automation assistant with access to specialized browser control tools.
+export const AGENT_SYSTEM_PROMPT = `You are a browser automation assistant with access to specialized browser control tools.
 
 # Core Principles
 

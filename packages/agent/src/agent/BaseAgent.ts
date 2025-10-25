@@ -4,8 +4,7 @@
  */
 
 import {logger} from '@browseros/common';
-import type {AgentConfig, AgentMetadata} from './types.js';
-import type {FormattedEvent} from '../utils/EventFormatter.js';
+import type {AgentConfig, AgentMetadata, FormattedEvent} from './types.js';
 
 /**
  * Generic default system prompt for agents
@@ -70,6 +69,8 @@ export abstract class BaseAgent {
     this.config = {
       apiKey: config.apiKey,
       cwd: config.cwd,
+      mcpServerHost: config.mcpServerHost ?? agentDefaults?.mcpServerHost,
+      mcpServerPort: config.mcpServerPort ?? agentDefaults?.mcpServerPort,
       maxTurns:
         config.maxTurns ?? agentDefaults?.maxTurns ?? DEFAULT_CONFIG.maxTurns,
       maxThinkingTokens:
@@ -89,7 +90,7 @@ export abstract class BaseAgent {
         agentDefaults?.permissionMode ??
         DEFAULT_CONFIG.permissionMode,
       customOptions: config.customOptions ?? agentDefaults?.customOptions ?? {},
-    };
+    } as Required<AgentConfig>;
 
     // Initialize metadata
     this.metadata = {

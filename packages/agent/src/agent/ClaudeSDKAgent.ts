@@ -4,11 +4,11 @@
  */
 
 import { query } from '@anthropic-ai/claude-agent-sdk'
-import { EventFormatter, FormattedEvent } from '../utils/EventFormatter.js'
+import { FormattedEvent, type AgentConfig } from './types.js'
+import { ClaudeEventFormatter } from './ClaudeSDKAgent.formatter.js'
 import { logger, fetchBrowserOSConfig, type BrowserOSConfig } from '@browseros/common'
-import type { AgentConfig } from './types.js'
 import { BaseAgent } from './BaseAgent.js'
-import { CLAUDE_SDK_SYSTEM_PROMPT } from './ClaudeSDKAgent.prompt.js'
+import { AGENT_SYSTEM_PROMPT } from './Agent.prompt.js'
 import { allControllerTools } from '@browseros/tools/controller-based'
 import type { ToolDefinition } from '@browseros/tools'
 import { ControllerBridge, ControllerContext } from '@browseros/controller-server'
@@ -51,7 +51,7 @@ export class ClaudeSDKAgent extends BaseAgent {
 
     // Pass Claude SDK specific defaults to BaseAgent (must call super before accessing this)
     super('claude-sdk', config, {
-      systemPrompt: CLAUDE_SDK_SYSTEM_PROMPT,
+      systemPrompt: AGENT_SYSTEM_PROMPT,
       mcpServers: { 'browseros-controller': sdkMcpServer },
       maxTurns: CLAUDE_SDK_DEFAULTS.maxTurns,
       maxThinkingTokens: CLAUDE_SDK_DEFAULTS.maxThinkingTokens,
@@ -165,7 +165,7 @@ export class ClaudeSDKAgent extends BaseAgent {
 
         if (race.type === 'heartbeat') {
           // Heartbeat timeout occurred - yield processing event and continue waiting
-          yield EventFormatter.createProcessingEvent()
+          yield ClaudeEventFormatter.createProcessingEvent()
           // Loop continues - will race the same iteratorPromise (still pending) vs new timeout
         } else {
           // Iterator result arrived - yield it and exit this generator
@@ -278,8 +278,8 @@ export class ClaudeSDKAgent extends BaseAgent {
           })
         }
 
-        // Format the event using EventFormatter
-        const formattedEvent = EventFormatter.format(event)
+        // Format the event using ClaudeEventFormatter
+        const formattedEvent = ClaudeEventFormatter.format(event)
 
         // Yield formatted event if valid
         if (formattedEvent) {
