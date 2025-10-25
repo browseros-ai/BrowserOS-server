@@ -32,3 +32,4 @@ export type { CodexOptions } from "./codexOptions";
 
 export type { ThreadOptions, ApprovalMode, SandboxMode } from "./threadOptions";
 export type { TurnOptions } from "./turnOptions";
+export type { McpServerConfig } from "./exec";
