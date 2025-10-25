@@ -9,7 +9,7 @@
 // CONFIGURATION
 // ============================================================================
 
-const WS_URL = process.env.WS_URL || 'ws://localhost:3000'
+const WS_URL = process.env.WS_URL || 'ws://localhost:9200'
 const TEST_QUERY = 'Open amazon.com and order Sensodyne toothpaste 🪥'
 const CLIENT_TIMEOUT = parseInt(process.env.CLIENT_TIMEOUT || '0') // 0 = no timeout
 
