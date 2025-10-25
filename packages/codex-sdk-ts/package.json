@@ -4,8 +4,8 @@
   "description": "Forked Codex SDK with MCP server configuration support",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/openai/codex.git",
-    "directory": "sdk/typescript"
+    "url": "git+https://github.com/browseros-ai/browseros-server.git",
+    "directory": "packages/codex-sdk-ts"
   },
   "keywords": [
     "openai",
