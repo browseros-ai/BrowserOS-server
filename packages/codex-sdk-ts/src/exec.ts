@@ -5,6 +5,14 @@ import { fileURLToPath } from "node:url";
 
 import { SandboxMode } from "./threadOptions";
 
+/** MCP Server Configuration */
+export interface McpServerConfig {
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+  url?: string;
+}
+
 export type CodexExecArgs = {
   input: string;
 
@@ -22,6 +30,8 @@ export type CodexExecArgs = {
   skipGitRepoCheck?: boolean;
   // --output-schema
   outputSchemaFile?: string;
+  // MCP servers for programmatic configuration
+  mcpServers?: Record<string, McpServerConfig>;
 };
 
 const INTERNAL_ORIGINATOR_ENV = "CODEX_INTERNAL_ORIGINATOR_OVERRIDE";
@@ -64,6 +74,32 @@ export class CodexExec {
 
     if (args.threadId) {
       commandArgs.push("resume", args.threadId);
+    }
+
+    // MCP Server Configuration Support
+    // Inject -c flags to programmatically configure MCP servers
+    if (args.mcpServers && typeof args.mcpServers === "object") {
+      for (const [serverName, serverConfig] of Object.entries(args.mcpServers)) {
+        // Build MCP server config object
+        const mcpConfigObj: Record<string, any> = {};
+
+        // Check if it's an HTTP server (has url property) or stdio server (has command property)
+        if ((serverConfig as any).url) {
+          mcpConfigObj.url = (serverConfig as any).url;
+        } else if (serverConfig.command) {
+          mcpConfigObj.command = serverConfig.command;
+          if (serverConfig.args) {
+            mcpConfigObj.args = serverConfig.args;
+          }
+          if (serverConfig.env) {
+            mcpConfigObj.env = serverConfig.env;
+          }
+        }
+
+        // Serialize to JSON and add as -c flag
+        const mcpConfigJson = JSON.stringify(mcpConfigObj);
+        commandArgs.push("-c", `mcp.servers.${serverName}=${mcpConfigJson}`);
+      }
     }
 
     const env = {
