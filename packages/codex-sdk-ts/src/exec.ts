@@ -7,9 +7,10 @@ import { SandboxMode } from "./threadOptions";
 
 /** MCP Server Configuration */
 export interface McpServerConfig {
-  command: string;
+  command?: string;
   args?: string[];
   env?: Record<string, string>;
+  url?: string;
 }
 
 export type CodexExecArgs = {
