@@ -3,7 +3,7 @@
  * Copyright 2025 BrowserOS
  */
 
-import { FormattedEvent } from '../utils/EventFormatter.js'
+import { FormattedEvent } from './types.js'
 
 /**
  * Codex SDK Event Formatter

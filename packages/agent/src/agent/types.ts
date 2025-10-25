@@ -6,13 +6,41 @@
 import { z } from 'zod'
 
 /**
+ * Formatted event structure for WebSocket clients
+ */
+export class FormattedEvent {
+  type: 'init' | 'thinking' | 'tool_use' | 'tool_result' | 'response' | 'completion' | 'error' | 'processing'
+  content: string
+  metadata?: {
+    turnCount?: number
+    isError?: boolean
+    duration?: number
+    deniedTools?: number
+  }
+
+  constructor(type: FormattedEvent['type'], content: string, metadata?: FormattedEvent['metadata']) {
+    this.type = type
+    this.content = content
+    this.metadata = metadata
+  }
+
+  toJSON() {
+    return {
+      type: this.type,
+      content: this.content,
+      ...(this.metadata && { metadata: this.metadata })
+    }
+  }
+}
+
+/**
  * Configuration for agent initialization
  *
  * Contains all parameters needed to create and configure an agent
  */
 export const AgentConfigSchema = z.object({
   /**
-   * Anthropic API key (for Claude SDK agents)
+   * API key for the agent SDK (Anthropic, OpenAI, etc.)
    */
   apiKey: z.string().min(1, 'API key is required'),
 
@@ -20,6 +48,16 @@ export const AgentConfigSchema = z.object({
    * Working directory for file operations
    */
   cwd: z.string().min(1, 'Working directory is required'),
+
+  /**
+   * MCP server host (default: 127.0.0.1)
+   */
+  mcpServerHost: z.string().min(1).optional(),
+
+  /**
+   * MCP server port (default: 9100)
+   */
+  mcpServerPort: z.number().positive().optional(),
 
   /**
    * Maximum conversation turns before stopping
@@ -55,7 +93,6 @@ export const AgentConfigSchema = z.object({
   /**
    * Agent-specific custom options
    * Allows custom agents to accept additional config
-   * For ClaudeSDKAgent: controllerPort (number) - WebSocket port for controller connection
    */
   customOptions: z.record(z.string(), z.unknown()).optional()
 })

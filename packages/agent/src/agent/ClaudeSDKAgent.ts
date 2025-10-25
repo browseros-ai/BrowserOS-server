@@ -4,10 +4,9 @@
  */
 
 import { query } from '@anthropic-ai/claude-agent-sdk'
-import { FormattedEvent } from '../utils/EventFormatter.js'
+import { FormattedEvent, type AgentConfig } from './types.js'
 import { ClaudeEventFormatter } from './ClaudeSDKAgent.formatter.js'
 import { logger, fetchBrowserOSConfig, type BrowserOSConfig } from '@browseros/common'
-import type { AgentConfig } from './types.js'
 import { BaseAgent } from './BaseAgent.js'
 import { AGENT_SYSTEM_PROMPT } from './Agent.prompt.js'
 import { allControllerTools } from '@browseros/tools/controller-based'
