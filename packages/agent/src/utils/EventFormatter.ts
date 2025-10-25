@@ -369,4 +369,122 @@ export class EventFormatter {
     }
     return false
   }
+
+  /**
+   * Format Codex SDK events
+   *
+   * Handles Codex-specific event structure:
+   * - thread.started: Thread initialization
+   * - turn.started: Agent begins processing
+   * - item.completed: Content items (messages, reasoning, tool calls)
+   * - turn.completed: Turn ends with usage stats
+   * - turn.failed: Error events
+   *
+   * @param event - Raw Codex event
+   * @returns FormattedEvent or null if event should not be displayed
+   */
+  static formatCodex(event: any): FormattedEvent | null {
+    const eventType = event.type
+
+    if (eventType === 'thread.started') {
+      return new FormattedEvent('init', `🚀 Thread started: ${event.thread_id}`)
+    }
+
+    if (eventType === 'turn.started') {
+      return new FormattedEvent('thinking', '💭 Agent processing...')
+    }
+
+    if (eventType === 'item.completed') {
+      return this.formatCodexItem(event.item)
+    }
+
+    if (eventType === 'turn.completed') {
+      return this.formatCodexTurnCompleted(event)
+    }
+
+    if (eventType === 'turn.failed') {
+      const errorMsg = event.error?.message || 'Unknown error'
+      return new FormattedEvent('error', `❌ Turn failed: ${errorMsg}`)
+    }
+
+    return null
+  }
+
+  /**
+   * Format Codex item.completed event based on item type
+   *
+   * @param item - Codex item object
+   * @returns FormattedEvent or null if item should not be displayed
+   */
+  private static formatCodexItem(item: any): FormattedEvent | null {
+    if (!item?.type) {
+      return null
+    }
+
+    switch (item.type) {
+      case 'agent_message':
+        return new FormattedEvent('response', item.text || '')
+
+      case 'reasoning': {
+        const text = item.text || item.content || ''
+        if (!text) return null
+        const truncated = text.length > 150 ? text.substring(0, 150) + '...' : text
+        return new FormattedEvent('thinking', `💭 ${truncated}`)
+      }
+
+      case 'mcp_tool_call': {
+        const toolName = this.cleanToolName(item.tool || 'tool')
+        const serverInfo = item.server ? ` (${item.server})` : ''
+        return new FormattedEvent('tool_use', `🔧 ${toolName}${serverInfo}`)
+      }
+
+      case 'tool_use': {
+        const toolName = this.cleanToolName(item.name)
+        const args = this.formatToolArgs(item.input)
+        const argsText = args ? `\n   Args: ${args}` : ''
+        return new FormattedEvent('tool_use', `🔧 ${toolName}${argsText}`)
+      }
+
+      case 'tool_result': {
+        if (item.error) {
+          return new FormattedEvent('tool_result', `❌ Error: ${item.error}`)
+        }
+
+        const resultText = typeof item.content === 'string'
+          ? item.content
+          : JSON.stringify(item.content)
+
+        const truncated = resultText.length > 200
+          ? resultText.substring(0, 200) + '...'
+          : resultText
+
+        return new FormattedEvent('tool_result', `✓ ${truncated}`)
+      }
+
+      default:
+        return null
+    }
+  }
+
+  /**
+   * Format Codex turn.completed event with usage statistics
+   *
+   * @param event - Codex turn.completed event
+   * @returns FormattedEvent with completion metadata
+   */
+  private static formatCodexTurnCompleted(event: any): FormattedEvent {
+    const usage = event.usage || {}
+    const metadata = {
+      turnCount: 1,
+      isError: false,
+      duration: 0
+    }
+
+    let message = '✅ Turn completed'
+    if (usage.output_tokens) {
+      message += ` (${usage.output_tokens} tokens)`
+    }
+
+    return new FormattedEvent('completion', message, metadata)
+  }
 }
