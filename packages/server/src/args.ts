@@ -3,6 +3,7 @@
  * Copyright 2025 BrowserOS
  */
 import {Command, InvalidArgumentError} from 'commander';
+import {version} from '../../../package.json' assert {type: 'json'};
 
 export interface ServerPorts {
   cdpPort: number | null;
@@ -56,6 +57,7 @@ export function parseArguments(argv = process.argv): ServerPorts {
   program
     .name('browseros-server')
     .description('BrowserOS Unified Server - MCP + Agent')
+    .version(version)
     .option('--cdp-port <port>', 'CDP WebSocket port (optional)', parsePort)
     .option('--http-mcp-port <port>', 'MCP HTTP server port', parsePort)
     .option('--agent-port <port>', 'Agent communication port', parsePort)
