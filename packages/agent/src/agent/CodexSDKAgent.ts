@@ -3,6 +3,8 @@
  * Copyright 2025 BrowserOS
  */
 
+import { accessSync, constants as fsConstants } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { Codex, type McpServerConfig } from '@browseros/codex-sdk-ts'
 import { FormattedEvent, type AgentConfig } from './types.js'
 import { CodexEventFormatter } from './CodexSDKAgent.formatter.js'
@@ -16,7 +18,7 @@ import type { ControllerBridge } from '@browseros/controller-server'
  * System-level environment configuration
  * Only binary path - everything else comes from AgentConfig
  */
-const CODEX_BINARY_PATH = process.env.CODEX_BINARY_PATH || '/opt/homebrew/bin/codex'
+const DEFAULT_CODEX_BINARY_PATH = '/opt/homebrew/bin/codex'
 
 /**
  * Codex SDK specific default configuration
@@ -51,7 +53,7 @@ function buildMcpServerConfig(config: AgentConfig): McpServerConfig {
  * - Config fetching from BrowserOS Config URL
  *
  * Environment Variables:
- * - CODEX_BINARY_PATH: Path to codex binary (default: /opt/homebrew/bin/codex)
+ * - CODEX_BINARY_PATH: Optional override when no bundled codex binary is found (default fallback: /opt/homebrew/bin/codex)
  * - BROWSEROS_CONFIG_URL: URL to fetch provider config (optional)
  * - OPENAI_API_KEY: OpenAI API key fallback (used if config URL not set or fails)
  *
@@ -66,13 +68,14 @@ export class CodexSDKAgent extends BaseAgent {
   private codex: Codex | null = null
   private gatewayConfig: BrowserOSConfig | null = null
   private selectedProvider: Provider | null = null
+  private codexExecutablePath: string = DEFAULT_CODEX_BINARY_PATH
 
   constructor(config: AgentConfig, _controllerBridge: ControllerBridge) {
     const mcpServerConfig = buildMcpServerConfig(config)
 
     logger.info('🔧 CodexSDKAgent initializing', {
       mcpServerUrl: mcpServerConfig.url,
-      codexBinaryPath: CODEX_BINARY_PATH,
+      defaultCodexBinaryPath: DEFAULT_CODEX_BINARY_PATH,
       toolCount: allControllerTools.length
     })
 
@@ -90,6 +93,12 @@ export class CodexSDKAgent extends BaseAgent {
    * Falls back to OPENAI_API_KEY env var if config URL not set or fails
    */
   override async init(): Promise<void> {
+    this.codexExecutablePath = this.resolveCodexExecutablePath()
+
+    logger.info('🚀 Resolved Codex binary path', {
+      codexExecutablePath: this.codexExecutablePath
+    })
+
     const configUrl = process.env.BROWSEROS_CONFIG_URL
 
     if (configUrl) {
@@ -131,14 +140,33 @@ export class CodexSDKAgent extends BaseAgent {
 
     // Initialize Codex instance with binary path and API key from config
     this.codex = new Codex({
-      codexPathOverride: CODEX_BINARY_PATH,
+      codexPathOverride: this.codexExecutablePath,
       apiKey: this.config.apiKey
     })
 
     logger.info('✅ Codex SDK initialized', {
-      binaryPath: CODEX_BINARY_PATH,
+      binaryPath: this.codexExecutablePath,
       model: this.selectedProvider?.model
     })
+  }
+
+  private resolveCodexExecutablePath(): string {
+    const currentBinaryDirectory = dirname(process.execPath)
+    const codexBinaryName = process.platform === 'win32' ? 'codex.exe' : 'codex'
+    const bundledCodexPath = join(currentBinaryDirectory, codexBinaryName)
+
+    try {
+      accessSync(bundledCodexPath, fsConstants.X_OK)
+      return bundledCodexPath
+    } catch {
+      // Ignore failures; fall back to env/default below
+    }
+
+    if (process.env.CODEX_BINARY_PATH) {
+      return process.env.CODEX_BINARY_PATH
+    }
+
+    return DEFAULT_CODEX_BINARY_PATH
   }
 
   /**
