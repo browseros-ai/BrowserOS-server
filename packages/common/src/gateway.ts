@@ -5,9 +5,14 @@
 
 import {logger} from './logger.js';
 
-export interface BrowserOSConfig {
+export interface Provider {
+  name: string;
   model: string;
   apiKey: string;
+}
+
+export interface BrowserOSConfig {
+  providers: Provider[];
 }
 
 export async function fetchBrowserOSConfig(
@@ -32,11 +37,17 @@ export async function fetchBrowserOSConfig(
 
     const config = (await response.json()) as BrowserOSConfig;
 
-    if (!config.model || !config.apiKey) {
-      throw new Error('Invalid config response: missing model or apiKey');
+    if (!Array.isArray(config.providers) || config.providers.length === 0) {
+      throw new Error('Invalid config response: providers array is empty or missing');
     }
 
-    logger.info('✅ BrowserOS config fetched');
+    for (const provider of config.providers) {
+      if (!provider.name || !provider.model || !provider.apiKey) {
+        throw new Error('Invalid provider: missing name, model, or apiKey');
+      }
+    }
+
+    logger.info('✅ BrowserOS config fetched with', {count: config.providers.length});
 
     return config;
   } catch (error) {

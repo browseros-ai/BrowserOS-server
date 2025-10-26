@@ -6,7 +6,7 @@
 import { query } from '@anthropic-ai/claude-agent-sdk'
 import { FormattedEvent, type AgentConfig } from './types.js'
 import { ClaudeEventFormatter } from './ClaudeSDKAgent.formatter.js'
-import { logger, fetchBrowserOSConfig, type BrowserOSConfig } from '@browseros/common'
+import { logger, fetchBrowserOSConfig, type BrowserOSConfig, type Provider } from '@browseros/common'
 import { BaseAgent } from './BaseAgent.js'
 import { AGENT_SYSTEM_PROMPT } from './Agent.prompt.js'
 import { allControllerTools } from '@browseros/tools/controller-based'
@@ -38,6 +38,7 @@ const CLAUDE_SDK_DEFAULTS = {
 export class ClaudeSDKAgent extends BaseAgent {
   private abortController: AbortController | null = null
   private gatewayConfig: BrowserOSConfig | null = null
+  private selectedProvider: Provider | null = null
 
   constructor(config: AgentConfig, controllerBridge: ControllerBridge) {
     logger.info('🔧 Using shared ControllerBridge for controller connection')
@@ -73,10 +74,16 @@ export class ClaudeSDKAgent extends BaseAgent {
 
       try {
         this.gatewayConfig = await fetchBrowserOSConfig(configUrl)
-        this.config.apiKey = this.gatewayConfig.apiKey
+        this.selectedProvider = this.gatewayConfig.providers.find(p => p.name === 'anthropic')
+
+        if (!this.selectedProvider) {
+          throw new Error('No anthropic provider found in config')
+        }
+
+        this.config.apiKey = this.selectedProvider.apiKey
 
         logger.info('✅ Using API key from BrowserOS Config URL', {
-          model: this.gatewayConfig.model
+          model: this.selectedProvider.model
         })
 
         await super.init()
@@ -214,9 +221,9 @@ export class ClaudeSDKAgent extends BaseAgent {
         abortController: this.abortController
       }
 
-      if (this.gatewayConfig?.model) {
-        options.model = this.gatewayConfig.model
-        logger.debug('Using model from gateway', { model: this.gatewayConfig.model })
+      if (this.selectedProvider?.model) {
+        options.model = this.selectedProvider.model
+        logger.debug('Using model from gateway', { model: this.selectedProvider.model })
       }
 
       // Call Claude SDK
