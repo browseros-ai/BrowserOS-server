@@ -6,7 +6,7 @@
 import { Codex, type McpServerConfig } from '@browseros/codex-sdk-ts'
 import { FormattedEvent, type AgentConfig } from './types.js'
 import { CodexEventFormatter } from './CodexSDKAgent.formatter.js'
-import { logger } from '@browseros/common'
+import { logger, fetchBrowserOSConfig, type BrowserOSConfig, type Provider } from '@browseros/common'
 import { BaseAgent } from './BaseAgent.js'
 import { AGENT_SYSTEM_PROMPT } from './Agent.prompt.js'
 import { allControllerTools } from '@browseros/tools/controller-based'
@@ -48,21 +48,24 @@ function buildMcpServerConfig(config: AgentConfig): McpServerConfig {
  * - Heartbeat mechanism for long-running operations
  * - Thread-based execution model
  * - Metadata tracking
+ * - Config fetching from BrowserOS Config URL
  *
  * Environment Variables:
  * - CODEX_BINARY_PATH: Path to codex binary (default: /opt/homebrew/bin/codex)
+ * - BROWSEROS_CONFIG_URL: URL to fetch provider config (optional)
+ * - OPENAI_API_KEY: OpenAI API key fallback (used if config URL not set or fails)
  *
  * Configuration (via AgentConfig):
  * - apiKey: OpenAI API key
  * - mcpServerHost: MCP server host (optional, defaults to 127.0.0.1)
  * - mcpServerPort: MCP server port (optional, defaults to 9100)
  * - cwd: Working directory
- *
- * Note: Config fetching from URL should be handled by the server/factory before creating the agent
  */
 export class CodexSDKAgent extends BaseAgent {
   private abortController: AbortController | null = null
   private codex: Codex | null = null
+  private gatewayConfig: BrowserOSConfig | null = null
+  private selectedProvider: Provider | null = null
 
   constructor(config: AgentConfig, _controllerBridge: ControllerBridge) {
     const mcpServerConfig = buildMcpServerConfig(config)
@@ -83,9 +86,47 @@ export class CodexSDKAgent extends BaseAgent {
   }
 
   /**
-   * Initialize agent - setup Codex SDK with config
+   * Initialize agent - fetch config from BrowserOS Config URL if configured
+   * Falls back to OPENAI_API_KEY env var if config URL not set or fails
    */
   override async init(): Promise<void> {
+    const configUrl = process.env.BROWSEROS_CONFIG_URL
+
+    if (configUrl) {
+      logger.info('🌐 Fetching config from BrowserOS Config URL', { configUrl })
+
+      try {
+        this.gatewayConfig = await fetchBrowserOSConfig(configUrl)
+        this.selectedProvider = this.gatewayConfig.providers.find(p => p.name === 'openai')
+
+        if (!this.selectedProvider) {
+          throw new Error('No openai provider found in config')
+        }
+
+        this.config.apiKey = this.selectedProvider.apiKey
+
+        logger.info('✅ Using API key from BrowserOS Config URL', {
+          model: this.selectedProvider.model
+        })
+      } catch (error) {
+        logger.warn('⚠️  Failed to fetch from config URL, falling back to OPENAI_API_KEY', {
+          error: error instanceof Error ? error.message : String(error)
+        })
+      }
+    }
+
+    if (!this.config.apiKey) {
+      const envApiKey = process.env.OPENAI_API_KEY
+      if (envApiKey) {
+        this.config.apiKey = envApiKey
+        logger.info('✅ Using API key from OPENAI_API_KEY env var')
+      } else {
+        throw new Error(
+          'No API key found. Set either BROWSEROS_CONFIG_URL or OPENAI_API_KEY'
+        )
+      }
+    }
+
     await super.init()
 
     // Initialize Codex instance with binary path and API key from config
@@ -95,7 +136,8 @@ export class CodexSDKAgent extends BaseAgent {
     })
 
     logger.info('✅ Codex SDK initialized', {
-      binaryPath: CODEX_BINARY_PATH
+      binaryPath: CODEX_BINARY_PATH,
+      model: this.selectedProvider?.model
     })
   }
 
