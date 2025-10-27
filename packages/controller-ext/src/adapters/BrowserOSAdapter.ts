@@ -444,7 +444,7 @@ export class BrowserOSAdapter {
           });
         });
       }
-    } catch (error: unknown) {
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`[BrowserOSAdapter] Failed to get snapshot: ${errorMessage}`);
       throw new Error(`Failed to get snapshot: ${errorMessage}`);
