@@ -1,19 +1,26 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
-import { TabAdapter } from '@/adapters/TabAdapter';
+import {TabAdapter} from '@/adapters/TabAdapter';
 
 // Input schema
 const OpenTabInputSchema = z.object({
-  url: z.string().url().optional().describe('URL to open (optional, defaults to new tab page)'),
-  active: z.boolean().optional().default(true).describe('Whether to make the new tab active'),
+  url: z
+    .string()
+    .url()
+    .optional()
+    .describe('URL to open (optional, defaults to new tab page)'),
+  active: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe('Whether to make the new tab active'),
 });
 
 // Output schema

@@ -29,14 +29,42 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
   },
   schema: {
     tabId: z.coerce.number().describe('Tab ID to extract content from'),
-    type: z.enum(['text', 'text-with-links']).describe('Type of content to extract: text or text-with-links'),
-    page: z.string().optional().default('all').describe('Page number to retrieve: "all", "1", "2", etc. (default: "all")'),
-    contextWindow: z.string().optional().default('20k').describe('Context window size for pagination: "20k", "30k", "50k", "100k" (default: "20k")'),
+    type: z
+      .enum(['text', 'text-with-links'])
+      .describe('Type of content to extract: text or text-with-links'),
+    page: z
+      .string()
+      .optional()
+      .default('all')
+      .describe(
+        'Page number to retrieve: "all", "1", "2", etc. (default: "all")',
+      ),
+    contextWindow: z
+      .string()
+      .optional()
+      .default('20k')
+      .describe(
+        'Context window size for pagination: "20k", "30k", "50k", "100k" (default: "20k")',
+      ),
     options: z
       .object({
-        context: z.enum(['visible', 'full']).optional().describe('Extract from visible viewport or full page (default: visible)'),
+        context: z
+          .enum(['visible', 'full'])
+          .optional()
+          .describe(
+            'Extract from visible viewport or full page (default: visible)',
+          ),
         includeSections: z
-          .array(z.enum(['main', 'navigation', 'footer', 'header', 'article', 'aside']))
+          .array(
+            z.enum([
+              'main',
+              'navigation',
+              'footer',
+              'header',
+              'article',
+              'aside',
+            ]),
+          )
           .optional()
           .describe('Specific sections to include'),
       })
@@ -81,7 +109,7 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
 
       // Build full content
       let fullContent = '';
-      snapshot.items.forEach((item) => {
+      snapshot.items.forEach(item => {
         if (item.type === 'heading') {
           const prefix = '#'.repeat(item.level || 1);
           fullContent += `${prefix} ${item.text}\n`;
@@ -103,7 +131,10 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
       const lines = fullContent.split('\n');
 
       for (const line of lines) {
-        if ((currentPage + line + '\n').length > contextWindowSize && currentPage.length > 0) {
+        if (
+          (currentPage + line + '\n').length > contextWindowSize &&
+          currentPage.length > 0
+        ) {
           pages.push(currentPage.trim());
           currentPage = '';
         }
@@ -117,7 +148,9 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
 
       // Return requested page(s)
       if (requestedPage === 'all') {
-        response.appendResponseLine(`Total pages: ${totalPages} (${contextWindowStr} per page)`);
+        response.appendResponseLine(
+          `Total pages: ${totalPages} (${contextWindowStr} per page)`,
+        );
         response.appendResponseLine('');
         response.appendResponseLine(fullContent.trim());
         response.appendResponseLine('');
@@ -125,12 +158,16 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
       } else {
         const pageNum = parseInt(requestedPage);
         if (isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
-          response.appendResponseLine(`Error: Invalid page number "${requestedPage}". Valid pages: 1-${totalPages} or "all"`);
+          response.appendResponseLine(
+            `Error: Invalid page number "${requestedPage}". Valid pages: 1-${totalPages} or "all"`,
+          );
           return;
         }
 
         const pageIndex = pageNum - 1;
-        response.appendResponseLine(`Page ${pageNum} of ${totalPages} (${contextWindowStr} limit per page)`);
+        response.appendResponseLine(
+          `Page ${pageNum} of ${totalPages} (${contextWindowStr} limit per page)`,
+        );
         response.appendResponseLine('');
         response.appendResponseLine(pages[pageIndex]);
         response.appendResponseLine('');
@@ -140,7 +177,8 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
       response.appendResponseLine('');
       response.appendResponseLine('='.repeat(60));
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       response.appendResponseLine(`Error: ${errorMessage}`);
     }
   },

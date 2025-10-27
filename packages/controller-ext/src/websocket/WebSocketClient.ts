@@ -1,17 +1,12 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { WEBSOCKET_CONFIG } from '@/config/constants';
-import type {
-  ProtocolRequest,
-  ProtocolResponse} from '@/protocol/types';
-import {
-  ConnectionStatus
-} from '@/protocol/types';
-import { logger } from '@/utils/Logger';
+import {WEBSOCKET_CONFIG} from '@/config/constants';
+import type {ProtocolRequest, ProtocolResponse} from '@/protocol/types';
+import {ConnectionStatus} from '@/protocol/types';
+import {logger} from '@/utils/Logger';
 
 export class WebSocketClient {
   private ws: WebSocket | null = null;
@@ -22,7 +17,7 @@ export class WebSocketClient {
   private heartbeatTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
   private port: number;
   private lastPongReceived: number = Date.now();
-  private pendingPing: boolean = false;
+  private pendingPing = false;
 
   // Event handlers
   private messageHandlers = new Set<(msg: ProtocolResponse) => void>();
@@ -56,7 +51,6 @@ export class WebSocketClient {
 
       // Wait for connection with timeout
       await this._waitForConnection();
-
     } catch (error) {
       logger.error(`Connection failed: ${error}`);
       this._handleConnectionFailure();
@@ -108,7 +102,7 @@ export class WebSocketClient {
   // Private methods
 
   private _buildUrl(): string {
-    const { protocol, host, path } = WEBSOCKET_CONFIG;
+    const {protocol, host, path} = WEBSOCKET_CONFIG;
     return `${protocol}://${host}:${this.port}${path}`;
   }
 
@@ -158,8 +152,9 @@ export class WebSocketClient {
       logger.debug(`Received: ${JSON.stringify(message).substring(0, 100)}...`);
 
       // Emit to all message handlers
-      this.messageHandlers.forEach(handler => handler(message as ProtocolResponse));
-
+      this.messageHandlers.forEach(handler =>
+        handler(message as ProtocolResponse),
+      );
     } catch (error) {
       logger.error(`Failed to parse message: ${error}`);
     }
@@ -197,7 +192,7 @@ export class WebSocketClient {
     const baseDelay = Math.min(
       WEBSOCKET_CONFIG.reconnectDelay *
         Math.pow(WEBSOCKET_CONFIG.reconnectMultiplier, this.reconnectAttempts),
-      WEBSOCKET_CONFIG.maxReconnectDelay
+      WEBSOCKET_CONFIG.maxReconnectDelay,
     );
 
     // Add jitter: ±20% random variation to prevent thundering herd
@@ -205,7 +200,9 @@ export class WebSocketClient {
     const delay = Math.max(0, baseDelay + jitter);
 
     this.reconnectAttempts++;
-    logger.warn(`Reconnecting in ${Math.round(delay)}ms (attempt ${this.reconnectAttempts})`);
+    logger.warn(
+      `Reconnecting in ${Math.round(delay)}ms (attempt ${this.reconnectAttempts})`,
+    );
 
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
@@ -225,15 +222,20 @@ export class WebSocketClient {
 
       // Check if previous ping timed out
       const timeSinceLastPong = Date.now() - this.lastPongReceived;
-      if (timeSinceLastPong > WEBSOCKET_CONFIG.heartbeatInterval + WEBSOCKET_CONFIG.heartbeatTimeout) {
-        logger.error(`Heartbeat timeout: no pong received for ${timeSinceLastPong}ms`);
+      if (
+        timeSinceLastPong >
+        WEBSOCKET_CONFIG.heartbeatInterval + WEBSOCKET_CONFIG.heartbeatTimeout
+      ) {
+        logger.error(
+          `Heartbeat timeout: no pong received for ${timeSinceLastPong}ms`,
+        );
         this._handleHeartbeatTimeout();
         return;
       }
 
       // Send ping
       try {
-        const pingMessage = JSON.stringify({ type: 'ping' });
+        const pingMessage = JSON.stringify({type: 'ping'});
         this.ws.send(pingMessage);
         this.pendingPing = true;
         logger.debug('Sent heartbeat ping');
@@ -242,7 +244,9 @@ export class WebSocketClient {
         this._clearHeartbeatTimeout();
         this.heartbeatTimeoutTimer = setTimeout(() => {
           if (this.pendingPing) {
-            logger.error(`Ping timeout: no pong received within ${WEBSOCKET_CONFIG.heartbeatTimeout}ms`);
+            logger.error(
+              `Ping timeout: no pong received within ${WEBSOCKET_CONFIG.heartbeatTimeout}ms`,
+            );
             this._handleHeartbeatTimeout();
           }
         }, WEBSOCKET_CONFIG.heartbeatTimeout);

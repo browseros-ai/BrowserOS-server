@@ -7,8 +7,8 @@
  * Image content data for screenshot attachments
  */
 export interface ImageContentData {
-  data: string;      // base64-encoded image data
-  mimeType: string;  // e.g., 'image/png'
+  data: string; // base64-encoded image data
+  mimeType: string; // e.g., 'image/png'
 }
 
 /**

@@ -38,7 +38,9 @@ export async function fetchBrowserOSConfig(
     const config = (await response.json()) as BrowserOSConfig;
 
     if (!Array.isArray(config.providers) || config.providers.length === 0) {
-      throw new Error('Invalid config response: providers array is empty or missing');
+      throw new Error(
+        'Invalid config response: providers array is empty or missing',
+      );
     }
 
     for (const provider of config.providers) {
@@ -47,7 +49,9 @@ export async function fetchBrowserOSConfig(
       }
     }
 
-    logger.info('✅ BrowserOS config fetched with', {count: config.providers.length});
+    logger.info('✅ BrowserOS config fetched with', {
+      count: config.providers.length,
+    });
 
     return config;
   } catch (error) {

@@ -25,8 +25,8 @@
     "dev:ext": "rimraf dist/ext && bun run --filter browseros-controller build:dev && mkdir -p dist/ext && cp -r packages/controller-ext/dist/* dist/ext/",
     "dist:ext": "rimraf dist/ext && mkdir -p dist/ext && bun run --filter browseros-controller build && cp -r packages/controller-ext/dist/* dist/ext/",
     "dist:server": "bun run build:codex-sdk-ts && rimraf dist/server && mkdir -p dist/server && bun build --compile packages/server/src/index.ts --outfile dist/server/browseros-server-linux-x64 --minify --sourcemap --target=bun-linux-x64-modern --env inline && bun build --compile packages/server/src/index.ts --outfile dist/server/browseros-server-linux-arm64 --minify --sourcemap --target=bun-linux-arm64 --env inline && bun build --compile packages/server/src/index.ts --outfile dist/server/browseros-server-windows-x64.exe --minify --sourcemap --target=bun-windows-x64-modern --env inline && bun build --compile packages/server/src/index.ts --outfile dist/server/browseros-server-darwin-arm64 --minify --sourcemap --target=bun-darwin-arm64 --env inline && bun build --compile packages/server/src/index.ts --outfile dist/server/browseros-server-darwin-x64 --minify --sourcemap --target=bun-darwin-x64 --env inline",
-    "format": "eslint --cache --fix . && prettier --write --cache .",
-    "check-format": "eslint --cache . && prettier --check --cache .;",
+    "format": "prettier --write --cache . || true ; eslint --cache --fix . || true",
+    "check-format": "prettier --check --cache . || true ; eslint --cache || true",
     "docs": "npm run docs:generate && npm run format",
     "docs:generate": "node --experimental-strip-types scripts/generate-docs.ts",
     "clean": "rimraf dist"

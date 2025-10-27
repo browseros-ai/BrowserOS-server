@@ -1,14 +1,13 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
-import { BrowserOSAdapter } from '@/adapters/BrowserOSAdapter';
+import {BrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
 
 // Input schema
 const ExecuteJavaScriptInputSchema = z.object({
@@ -55,8 +54,13 @@ export class ExecuteJavaScriptAction extends ActionHandler<
   readonly inputSchema = ExecuteJavaScriptInputSchema;
   private browserOSAdapter = BrowserOSAdapter.getInstance();
 
-  async execute(input: ExecuteJavaScriptInput): Promise<ExecuteJavaScriptOutput> {
-    const result = await this.browserOSAdapter.executeJavaScript(input.tabId, input.code);
-    return { result };
+  async execute(
+    input: ExecuteJavaScriptInput,
+  ): Promise<ExecuteJavaScriptOutput> {
+    const result = await this.browserOSAdapter.executeJavaScript(
+      input.tabId,
+      input.code,
+    );
+    return {result};
   }
 }

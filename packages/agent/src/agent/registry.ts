@@ -3,9 +3,9 @@
  * Copyright 2025 BrowserOS
  */
 
-import { AgentFactory } from './AgentFactory.js'
-import { CodexSDKAgent } from './CodexSDKAgent.js'
-import { ClaudeSDKAgent } from './ClaudeSDKAgent.js'
+import {AgentFactory} from './AgentFactory.js';
+import {ClaudeSDKAgent} from './ClaudeSDKAgent.js';
+import {CodexSDKAgent} from './CodexSDKAgent.js';
 
 /**
  * Register all available agents
@@ -17,12 +17,12 @@ export function registerAgents(): void {
   AgentFactory.register(
     'codex-sdk',
     CodexSDKAgent,
-    'Codex SDK agent for OpenAI Codex integration'
-  )
+    'Codex SDK agent for OpenAI Codex integration',
+  );
 
   AgentFactory.register(
     'claude-sdk',
     ClaudeSDKAgent,
-    'Claude SDK agent for Anthropic Claude integration'
-  )
+    'Claude SDK agent for Anthropic Claude integration',
+  );
 }

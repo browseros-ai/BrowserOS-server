@@ -1,14 +1,13 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
-import { BookmarkAdapter } from '@/adapters/BookmarkAdapter';
+import {BookmarkAdapter} from '@/adapters/BookmarkAdapter';
 
 // Input schema
 const RemoveBookmarkInputSchema = z.object({
@@ -17,7 +16,9 @@ const RemoveBookmarkInputSchema = z.object({
 
 // Output schema
 const RemoveBookmarkOutputSchema = z.object({
-  success: z.boolean().describe('Whether the bookmark was successfully removed'),
+  success: z
+    .boolean()
+    .describe('Whether the bookmark was successfully removed'),
   message: z.string().describe('Confirmation message'),
 });
 
@@ -45,7 +46,10 @@ type RemoveBookmarkOutput = z.infer<typeof RemoveBookmarkOutputSchema>;
  * }
  * // Returns: { success: true, message: "Removed bookmark 123" }
  */
-export class RemoveBookmarkAction extends ActionHandler<RemoveBookmarkInput, RemoveBookmarkOutput> {
+export class RemoveBookmarkAction extends ActionHandler<
+  RemoveBookmarkInput,
+  RemoveBookmarkOutput
+> {
   readonly inputSchema = RemoveBookmarkInputSchema;
   private bookmarkAdapter = new BookmarkAdapter();
 

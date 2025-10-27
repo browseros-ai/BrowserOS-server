@@ -1,10 +1,9 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
 /**
  * Environment Variable Management
@@ -57,10 +56,22 @@ export const WebSocketConfigSchema = z.object({
   path: z.string().describe('WebSocket server path'),
 
   // Connection settings
-  reconnectDelay: z.number().min(0).describe('Initial reconnection delay in ms'),
-  maxReconnectDelay: z.number().min(0).describe('Maximum reconnection delay in ms'),
-  reconnectMultiplier: z.number().min(1).describe('Reconnection delay multiplier'),
-  maxReconnectAttempts: z.number().min(0).describe('Max reconnection attempts (0 = infinite)'),
+  reconnectDelay: z
+    .number()
+    .min(0)
+    .describe('Initial reconnection delay in ms'),
+  maxReconnectDelay: z
+    .number()
+    .min(0)
+    .describe('Maximum reconnection delay in ms'),
+  reconnectMultiplier: z
+    .number()
+    .min(1)
+    .describe('Reconnection delay multiplier'),
+  maxReconnectAttempts: z
+    .number()
+    .min(0)
+    .describe('Max reconnection attempts (0 = infinite)'),
 
   // Heartbeat settings
   heartbeatInterval: z.number().min(0).describe('Heartbeat interval in ms'),
@@ -75,7 +86,11 @@ export const WebSocketConfigSchema = z.object({
  * Concurrency configuration schema
  */
 export const ConcurrencyConfigSchema = z.object({
-  maxConcurrent: z.number().int().min(1).describe('Maximum concurrent requests'),
+  maxConcurrent: z
+    .number()
+    .int()
+    .min(1)
+    .describe('Maximum concurrent requests'),
   maxQueueSize: z.number().int().min(1).describe('Maximum queue size'),
 });
 
@@ -117,7 +132,9 @@ const envRaw = {
     // Connection settings
     reconnectDelay: getEnvNumber('WEBSOCKET_RECONNECT_DELAY', 1000),
     maxReconnectDelay: getEnvNumber('WEBSOCKET_MAX_RECONNECT_DELAY', 30000),
-    reconnectMultiplier: parseFloat(getEnvString('WEBSOCKET_RECONNECT_MULTIPLIER', '1.5')),
+    reconnectMultiplier: parseFloat(
+      getEnvString('WEBSOCKET_RECONNECT_MULTIPLIER', '1.5'),
+    ),
     maxReconnectAttempts: getEnvNumber('WEBSOCKET_MAX_RECONNECT_ATTEMPTS', 0),
 
     // Heartbeat settings
@@ -138,7 +155,11 @@ const envRaw = {
   // Logging Configuration
   logging: {
     enabled: getEnvBoolean('LOGGING_ENABLED', true),
-    level: getEnvString('LOGGING_LEVEL', 'info') as 'debug' | 'info' | 'warn' | 'error',
+    level: getEnvString('LOGGING_LEVEL', 'info') as
+      | 'debug'
+      | 'info'
+      | 'warn'
+      | 'error',
     prefix: getEnvString('LOGGING_PREFIX', '[BrowserOS Controller]'),
   },
 };
@@ -155,17 +176,17 @@ export const env = EnvironmentSchema.parse(envRaw);
  *
  * @returns Validation result with success flag and any error messages
  */
-export function validateEnvironment(): { valid: boolean; errors: string[] } {
+export function validateEnvironment(): {valid: boolean; errors: string[]} {
   try {
     EnvironmentSchema.parse(envRaw);
-    return { valid: true, errors: [] };
+    return {valid: true, errors: []};
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const errors = error.issues.map((issue) => {
+      const errors = error.issues.map(issue => {
         const path = issue.path.join('.');
         return `${path}: ${issue.message}`;
       });
-      return { valid: false, errors };
+      return {valid: false, errors};
     }
     return {
       valid: false,

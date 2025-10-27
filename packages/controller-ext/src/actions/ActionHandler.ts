@@ -1,18 +1,17 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import type { ActionResponse} from '@/protocol/types';
-import { ActionResponseSchema } from '@/protocol/types';
-import { logger } from '@/utils/Logger';
+import type {ActionResponse} from '@/protocol/types';
+import {ActionResponseSchema} from '@/protocol/types';
+import {logger} from '@/utils/Logger';
 
 // Re-export for convenience
-export type { ActionResponse };
-export { ActionResponseSchema };
+export type {ActionResponse};
+export {ActionResponseSchema};
 
 /**
  * ActionHandler - Abstract base class for all actions
@@ -71,13 +70,12 @@ export abstract class ActionHandler<TInput = any, TOutput = any> {
 
       // Step 3: Return success response
       logger.debug(`[${actionName}] Action completed successfully`);
-      return { ok: true, data: result };
-
+      return {ok: true, data: result};
     } catch (error) {
       // Handle validation or execution errors
       const errorMessage = this._formatError(error);
       logger.error(`[${actionName}] Action failed: ${errorMessage}`);
-      return { ok: false, error: errorMessage };
+      return {ok: false, error: errorMessage};
     }
   }
 

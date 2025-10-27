@@ -3,27 +3,30 @@
  * Copyright 2025 BrowserOS
  */
 
-import { z } from 'zod'
-import type { ServerWebSocket } from 'bun'
-import { logger } from '@browseros/common'
-import { SessionManager } from '../session/SessionManager.js'
-import { ControllerBridge } from '@browseros/controller-server'
+import {logger} from '@browseros/common';
+import type {ControllerBridge} from '@browseros/controller-server';
+import type {ServerWebSocket} from 'bun';
+import {z} from 'zod';
+
+import {SessionManager} from '../session/SessionManager.js';
+
+
 import {
   tryParseClientMessage,
   type ServerEvent,
   type ConnectionEvent,
-  type ErrorEvent
-} from './protocol.js'
+  type ErrorEvent,
+} from './protocol.js';
 
 /**
  * WebSocket data stored per connection
  */
 const WebSocketDataSchema = z.object({
   sessionId: z.string().uuid(),
-  createdAt: z.number().positive()
-})
+  createdAt: z.number().positive(),
+});
 
-type WebSocketData = z.infer<typeof WebSocketDataSchema>
+type WebSocketData = z.infer<typeof WebSocketDataSchema>;
 
 /**
  * Server configuration schema
@@ -34,19 +37,19 @@ export const ServerConfigSchema = z.object({
   cwd: z.string().min(1, 'Working directory is required'),
   mcpServerPort: z.number().positive().optional(), // MCP server port (defaults to 9100)
   maxSessions: z.number().int().positive(),
-  idleTimeoutMs: z.number().positive(),        // Time to wait after agent completion before cleanup
-  eventGapTimeoutMs: z.number().positive()     // Max time between consecutive SDK events
-})
+  idleTimeoutMs: z.number().positive(), // Time to wait after agent completion before cleanup
+  eventGapTimeoutMs: z.number().positive(), // Max time between consecutive SDK events
+});
 
-export type ServerConfig = z.infer<typeof ServerConfigSchema>
+export type ServerConfig = z.infer<typeof ServerConfigSchema>;
 
 /**
  * Server statistics (internal, no validation needed)
  */
 interface ServerStats {
-  startTime: number
-  connections: number
-  messagesProcessed: number
+  startTime: number;
+  connections: number;
+  messagesProcessed: number;
 }
 
 /**
@@ -55,8 +58,8 @@ interface ServerStats {
 const stats: ServerStats = {
   startTime: Date.now(),
   connections: 0,
-  messagesProcessed: 0
-}
+  messagesProcessed: 0,
+};
 
 /**
  * Create and start the WebSocket server
@@ -64,41 +67,47 @@ const stats: ServerStats = {
  * @param config - Server configuration
  * @param controllerBridge - Shared ControllerBridge for browser extension connection
  */
-export function createServer(config: ServerConfig, controllerBridge: ControllerBridge) {
+export function createServer(
+  config: ServerConfig,
+  controllerBridge: ControllerBridge,
+) {
   logger.info('🚀 Starting WebSocket server...', {
     port: config.port,
     maxSessions: config.maxSessions,
     idleTimeoutMs: config.idleTimeoutMs,
     eventGapTimeoutMs: config.eventGapTimeoutMs,
-    sharedControllerBridge: true
-  })
+    sharedControllerBridge: true,
+  });
 
   // Create SessionManager with shared ControllerBridge
-  const sessionManager = new SessionManager({
-    maxSessions: config.maxSessions,
-    idleTimeoutMs: config.idleTimeoutMs
-  }, controllerBridge)
+  const sessionManager = new SessionManager(
+    {
+      maxSessions: config.maxSessions,
+      idleTimeoutMs: config.idleTimeoutMs,
+    },
+    controllerBridge,
+  );
 
   // Track WebSocket connections (needed to close idle sessions)
-  const wsConnections = new Map<string, ServerWebSocket<WebSocketData>>()
+  const wsConnections = new Map<string, ServerWebSocket<WebSocketData>>();
 
   // Cleanup idle sessions callback (now async)
   const cleanupIdle = async () => {
-    const idleSessionIds = sessionManager.findIdleSessions()
+    const idleSessionIds = sessionManager.findIdleSessions();
 
     for (const sessionId of idleSessionIds) {
-      const ws = wsConnections.get(sessionId)
+      const ws = wsConnections.get(sessionId);
       if (ws) {
-        logger.info('🧹 Closing idle session', { sessionId })
-        ws.close(1001, 'Idle timeout')
-        wsConnections.delete(sessionId)
+        logger.info('🧹 Closing idle session', {sessionId});
+        ws.close(1001, 'Idle timeout');
+        wsConnections.delete(sessionId);
       }
-      await sessionManager.deleteSession(sessionId)
+      await sessionManager.deleteSession(sessionId);
     }
-  }
+  };
 
   // Run cleanup check with the timer
-  setInterval(cleanupIdle, 60000)
+  setInterval(cleanupIdle, 60000);
 
   const server = Bun.serve<WebSocketData>({
     port: config.port,
@@ -107,59 +116,59 @@ export function createServer(config: ServerConfig, controllerBridge: ControllerB
      * HTTP request handler (for health check and upgrade)
      */
     async fetch(req, server) {
-      const url = new URL(req.url)
+      const url = new URL(req.url);
 
-      logger.info(`${req.method} ${url.pathname}`)
+      logger.info(`${req.method} ${url.pathname}`);
 
       // Health check endpoint
       if (url.pathname === '/health') {
-        return handleHealthCheck(sessionManager)
+        return handleHealthCheck(sessionManager);
       }
 
       // WebSocket upgrade
       if (req.headers.get('upgrade') === 'websocket') {
         // Check capacity BEFORE upgrading
         if (sessionManager.isAtCapacity()) {
-          const capacity = sessionManager.getCapacity()
+          const capacity = sessionManager.getCapacity();
           logger.warn('⛔ Connection rejected - server at capacity', {
             active: capacity.active,
-            max: capacity.max
-          })
+            max: capacity.max,
+          });
 
           return new Response(
             JSON.stringify({
               error: 'Server at capacity',
-              capacity: capacity
+              capacity: capacity,
             }),
             {
               status: 503,
               headers: {
                 'Content-Type': 'application/json',
-                'Retry-After': '60'
-              }
-            }
-          )
+                'Retry-After': '60',
+              },
+            },
+          );
         }
 
         // Create session ID before upgrade
-        const sessionId = crypto.randomUUID()
+        const sessionId = crypto.randomUUID();
 
         const success = server.upgrade(req, {
           data: {
             sessionId,
-            createdAt: Date.now()
-          }
-        })
+            createdAt: Date.now(),
+          },
+        });
 
         if (success) {
-          return undefined
+          return undefined;
         }
 
-        return new Response('WebSocket upgrade failed', { status: 500 })
+        return new Response('WebSocket upgrade failed', {status: 500});
       }
 
       // 404 for other routes
-      return new Response('Not Found', { status: 404 })
+      return new Response('Not Found', {status: 404});
     },
 
     /**
@@ -170,31 +179,28 @@ export function createServer(config: ServerConfig, controllerBridge: ControllerB
        * Handle new WebSocket connection
        */
       open(ws) {
-        const { sessionId, createdAt } = ws.data
+        const {sessionId, createdAt} = ws.data;
 
         try {
           // Build agent config with MCP server settings
           const agentConfig = {
             apiKey: config.apiKey,
             cwd: config.cwd,
-            mcpServerPort: config.mcpServerPort
-          }
+            mcpServerPort: config.mcpServerPort,
+          };
 
           // Create session with agent
-          sessionManager.createSession(
-            { id: sessionId },
-            agentConfig
-          )
+          sessionManager.createSession({id: sessionId}, agentConfig);
 
           // Track WebSocket connection
-          wsConnections.set(sessionId, ws)
+          wsConnections.set(sessionId, ws);
 
-          stats.connections++
+          stats.connections++;
 
           logger.info('✅ Client connected', {
             sessionId,
-            activeSessions: sessionManager.getMetrics().activeSessions
-          })
+            activeSessions: sessionManager.getMetrics().activeSessions,
+          });
 
           // Send connection confirmation
           const connectionEvent: ConnectionEvent = {
@@ -202,18 +208,18 @@ export function createServer(config: ServerConfig, controllerBridge: ControllerB
             data: {
               status: 'connected',
               sessionId,
-              timestamp: createdAt
-            }
-          }
+              timestamp: createdAt,
+            },
+          };
 
-          ws.send(JSON.stringify(connectionEvent))
+          ws.send(JSON.stringify(connectionEvent));
         } catch (error) {
           // Should not happen (capacity checked in fetch)
           logger.error('❌ Failed to create session', {
             sessionId,
-            error: error instanceof Error ? error.message : String(error)
-          })
-          ws.close(1008, 'Failed to create session')
+            error: error instanceof Error ? error.message : String(error),
+          });
+          ws.close(1008, 'Failed to create session');
         }
       },
 
@@ -221,85 +227,100 @@ export function createServer(config: ServerConfig, controllerBridge: ControllerB
        * Handle incoming messages from client
        */
       async message(ws, message) {
-        const { sessionId } = ws.data
+        const {sessionId} = ws.data;
 
         try {
           // Check if session exists
           if (!sessionManager.hasSession(sessionId)) {
-            sendError(ws, 'Session not found')
-            ws.close(1008, 'Session not found')
-            return
+            sendError(ws, 'Session not found');
+            ws.close(1008, 'Session not found');
+            return;
           }
 
           // Try to mark session as processing (reject if already processing)
           if (!sessionManager.markProcessing(sessionId)) {
-            sendError(ws, 'Session is already processing a message. Please wait.')
-            return
+            sendError(
+              ws,
+              'Session is already processing a message. Please wait.',
+            );
+            return;
           }
 
           // Parse message
-          const messageStr = typeof message === 'string'
-            ? message
-            : new TextDecoder().decode(message)
+          const messageStr =
+            typeof message === 'string'
+              ? message
+              : new TextDecoder().decode(message);
 
-          logger.debug('📥 Message received', { sessionId, message: messageStr })
+          logger.debug('📥 Message received', {sessionId, message: messageStr});
 
           // Parse and validate
-          const parsedData = JSON.parse(messageStr)
-          const clientMessage = tryParseClientMessage(parsedData)
+          const parsedData = JSON.parse(messageStr);
+          const clientMessage = tryParseClientMessage(parsedData);
 
           if (!clientMessage) {
-            sessionManager.markIdle(sessionId) // Mark idle before returning
-            sendError(ws, 'Invalid message format')
-            return
+            sessionManager.markIdle(sessionId); // Mark idle before returning
+            sendError(ws, 'Invalid message format');
+            return;
           }
 
           // Update stats
-          stats.messagesProcessed++
+          stats.messagesProcessed++;
 
           // Process the message with Claude SDK
           try {
-            await processMessage(ws, clientMessage.content, config, sessionManager)
+            await processMessage(
+              ws,
+              clientMessage.content,
+              config,
+              sessionManager,
+            );
 
             // Mark session as idle after successful processing
-            sessionManager.markIdle(sessionId)
-
+            sessionManager.markIdle(sessionId);
           } catch (error) {
-            const errorMsg = error instanceof Error ? error.message : String(error)
+            const errorMsg =
+              error instanceof Error ? error.message : String(error);
 
             // Check for event gap timeout
             if (errorMsg.includes('Event gap timeout')) {
               logger.error('⏱️ Agent timeout - deleting session', {
                 sessionId,
-                timeout: config.eventGapTimeoutMs
-              })
+                timeout: config.eventGapTimeoutMs,
+              });
 
               // Send error to client
-              sendError(ws, `⏱️ Agent timeout: No activity for ${config.eventGapTimeoutMs / 1000}s`)
+              sendError(
+                ws,
+                `⏱️ Agent timeout: No activity for ${config.eventGapTimeoutMs / 1000}s`,
+              );
 
               // Immediately delete session and close connection (now async)
-              await sessionManager.deleteSession(sessionId)
-              wsConnections.delete(sessionId)
-              ws.close(1008, 'Agent timeout - no activity')
-              return
+              await sessionManager.deleteSession(sessionId);
+              wsConnections.delete(sessionId);
+              ws.close(1008, 'Agent timeout - no activity');
+              return;
             }
 
             // Other errors - mark idle normally
-            sessionManager.markIdle(sessionId)
-            throw error
+            sessionManager.markIdle(sessionId);
+            throw error;
           }
-
         } catch (error) {
           logger.error('❌ Error processing message', {
             sessionId,
             error: error instanceof Error ? error.message : String(error),
-            stack: error instanceof Error ? error.stack : undefined
-          })
+            stack: error instanceof Error ? error.stack : undefined,
+          });
 
           // Mark session as idle on error
-          sessionManager.markIdle(sessionId)
+          sessionManager.markIdle(sessionId);
 
-          sendError(ws, 'Error processing message: ' + (error instanceof Error ? error.message : String(error)))
+          sendError(
+            ws,
+            'Error processing message: ' +
+              (error instanceof Error ? error.message : String(error)),
+          );
         }
       },
 
@@ -307,29 +328,29 @@ export function createServer(config: ServerConfig, controllerBridge: ControllerB
        * Handle WebSocket close
        */
       async close(ws, code, reason) {
-        const { sessionId } = ws.data
+        const {sessionId} = ws.data;
 
         // Delete session from manager (now async)
-        await sessionManager.deleteSession(sessionId)
+        await sessionManager.deleteSession(sessionId);
 
         // Remove WebSocket tracking
-        wsConnections.delete(sessionId)
+        wsConnections.delete(sessionId);
 
         logger.info('👋 Client disconnected', {
           sessionId,
           code,
           reason: reason || 'No reason provided',
-          remainingSessions: sessionManager.getMetrics().activeSessions
-        })
-      }
-    }
-  })
+          remainingSessions: sessionManager.getMetrics().activeSessions,
+        });
+      },
+    },
+  });
 
-  logger.info(`✅ Server started on port ${config.port}`)
-  logger.info(`   WebSocket: ws://localhost:${config.port}`)
-  logger.info(`   Health: http://localhost:${config.port}/health`)
+  logger.info(`✅ Server started on port ${config.port}`);
+  logger.info(`   WebSocket: ws://localhost:${config.port}`);
+  logger.info(`   Health: http://localhost:${config.port}/health`);
 
-  return server
+  return server;
 }
 
 /**
@@ -339,106 +360,114 @@ async function processMessage(
   ws: ServerWebSocket<WebSocketData>,
   message: string,
   config: ServerConfig,
-  sessionManager: SessionManager
+  sessionManager: SessionManager,
 ) {
-  const { sessionId } = ws.data
+  const {sessionId} = ws.data;
 
-  logger.info('🤖 Processing with agent...', { sessionId, message })
+  logger.info('🤖 Processing with agent...', {sessionId, message});
 
   try {
     // Get agent for this session
-    const agent = sessionManager.getAgent(sessionId)
+    const agent = sessionManager.getAgent(sessionId);
     if (!agent) {
-      throw new Error('Agent not found for session')
+      throw new Error('Agent not found for session');
     }
 
-    let eventCount = 0
-    let lastEventType = ''
-    let lastEventTime = Date.now()
+    let eventCount = 0;
+    let lastEventType = '';
+    let lastEventTime = Date.now();
 
     // Get async iterator from agent
-    const iterator = agent.execute(message)[Symbol.asyncIterator]()
+    const iterator = agent.execute(message)[Symbol.asyncIterator]();
 
     // Stream events with gap timeout monitoring (SAME AS BEFORE)
     while (true) {
       // Calculate time since last event
-      const timeSinceLastEvent = Date.now() - lastEventTime
-      const remainingTime = Math.max(1000, config.eventGapTimeoutMs - timeSinceLastEvent)
+      const timeSinceLastEvent = Date.now() - lastEventTime;
+      const remainingTime = Math.max(
+        1000,
+        config.eventGapTimeoutMs - timeSinceLastEvent,
+      );
 
       // Create timeout promise
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
-          reject(new Error('EventGapTimeout'))
-        }, remainingTime)
-      })
+          reject(new Error('EventGapTimeout'));
+        }, remainingTime);
+      });
 
       // Race next event with gap timeout
-      let result
+      let result;
       try {
-        result = await Promise.race([
-          iterator.next(),
-          timeoutPromise
-        ])
+        result = await Promise.race([iterator.next(), timeoutPromise]);
       } catch (timeoutError) {
         // Cleanup iterator
-        if (iterator.return) await iterator.return(undefined)
-        throw new Error(`Event gap timeout: No activity for ${config.eventGapTimeoutMs / 1000}s`)
+        if (iterator.return) await iterator.return(undefined);
+        throw new Error(
+          `Event gap timeout: No activity for ${config.eventGapTimeoutMs / 1000}s`,
+        );
       }
 
       // Check if iteration is done
-      if (result.done) break
+      if (result.done) break;
 
       // Update last event time
-      lastEventTime = Date.now()
-      const formattedEvent = result.value  // Already FormattedEvent!
+      lastEventTime = Date.now();
+      const formattedEvent = result.value; // Already FormattedEvent!
 
-      eventCount++
-      lastEventType = formattedEvent.type
+      eventCount++;
+      lastEventType = formattedEvent.type;
 
       // Send to client - catch errors if client disconnected
       try {
-        ws.send(JSON.stringify(formattedEvent.toJSON()))
+        ws.send(JSON.stringify(formattedEvent.toJSON()));
 
         logger.debug('📤 Event sent', {
           sessionId,
           type: formattedEvent.type,
-          eventCount
-        })
+          eventCount,
+        });
       } catch (sendError) {
         // Client disconnected during streaming
-        logger.info('⚠️  Client disconnected during event streaming, stopping iterator', {
-          sessionId,
-          eventCount
-        })
+        logger.info(
+          '⚠️  Client disconnected during event streaming, stopping iterator',
+          {
+            sessionId,
+            eventCount,
+          },
+        );
 
         // Cleanup iterator
         if (iterator.return) {
-          await iterator.return(undefined).catch(() => {})
+          await iterator.return(undefined).catch(() => {});
         }
 
         // Exit cleanly - don't throw, just return
         // (throwing would trigger outer error handler which tries to sendError again)
-        return
+        return;
       }
     }
 
     logger.info('✅ Message processed successfully', {
       sessionId,
       totalEvents: eventCount,
-      lastEventType
-    })
-
+      lastEventType,
+    });
   } catch (error) {
     logger.error('❌ Agent error', {
       sessionId,
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
-    })
+      stack: error instanceof Error ? error.stack : undefined,
+    });
 
-    sendError(ws, 'Agent error: ' + (error instanceof Error ? error.message : String(error)))
+    sendError(
+      ws,
+      'Agent error: ' +
+        (error instanceof Error ? error.message : String(error)),
+    );
 
     // Re-throw to be caught by outer handler
-    throw error
+    throw error;
   }
 }
 
@@ -448,19 +477,19 @@ async function processMessage(
 function sendError(ws: ServerWebSocket<WebSocketData>, error: string) {
   const errorEvent: ErrorEvent = {
     type: 'error',
-    error
-  }
+    error,
+  };
 
-  ws.send(JSON.stringify(errorEvent))
+  ws.send(JSON.stringify(errorEvent));
 }
 
 /**
  * Handle health check endpoint
  */
 function handleHealthCheck(sessionManager: SessionManager): Response {
-  const uptime = Date.now() - stats.startTime
-  const capacity = sessionManager.getCapacity()
-  const metrics = sessionManager.getMetrics()
+  const uptime = Date.now() - stats.startTime;
+  const capacity = sessionManager.getCapacity();
+  const metrics = sessionManager.getMetrics();
 
   const health = {
     status: 'healthy',
@@ -470,20 +499,20 @@ function handleHealthCheck(sessionManager: SessionManager): Response {
       max: capacity.max,
       available: capacity.available,
       idle: metrics.idleSessions,
-      processing: metrics.processingSessions
+      processing: metrics.processingSessions,
     },
     stats: {
       totalConnections: stats.connections,
       messagesProcessed: stats.messagesProcessed,
-      averageMessagesPerSession: metrics.averageMessageCount
+      averageMessagesPerSession: metrics.averageMessageCount,
     },
-    timestamp: Date.now()
-  }
+    timestamp: Date.now(),
+  };
 
   return new Response(JSON.stringify(health), {
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
-    }
-  })
+      'Access-Control-Allow-Origin': '*',
+    },
+  });
 }

@@ -112,15 +112,24 @@ export class McpResponse implements Response {
     context: McpContext,
   ): Promise<Array<TextContent | ImageContent>> {
     // Gather additional data based on flags
-    if (this.#includePages && typeof context.createPagesSnapshot === 'function') {
+    if (
+      this.#includePages &&
+      typeof context.createPagesSnapshot === 'function'
+    ) {
       await context.createPagesSnapshot();
     }
-    if (this.#includeSnapshot && typeof context.createTextSnapshot === 'function') {
+    if (
+      this.#includeSnapshot &&
+      typeof context.createTextSnapshot === 'function'
+    ) {
       await context.createTextSnapshot();
     }
 
     // Process network request details
-    if (this.#attachedNetworkRequestData?.networkRequestUrl && typeof context.getNetworkRequestByUrl === 'function') {
+    if (
+      this.#attachedNetworkRequestData?.networkRequestUrl &&
+      typeof context.getNetworkRequestByUrl === 'function'
+    ) {
       const request = context.getNetworkRequestByUrl(
         this.#attachedNetworkRequestData.networkRequestUrl,
       );
@@ -136,7 +145,10 @@ export class McpResponse implements Response {
     }
 
     // Process console messages
-    if (this.#includeConsoleData && typeof context.getConsoleData === 'function') {
+    if (
+      this.#includeConsoleData &&
+      typeof context.getConsoleData === 'function'
+    ) {
       const consoleMessages = context.getConsoleData();
       if (consoleMessages) {
         this.#formattedConsoleData = await Promise.all(
@@ -208,7 +220,10 @@ export class McpResponse implements Response {
   #appendEmulationStatus(response: string[], context: McpContext): void {
     if (typeof context.getNetworkConditions === 'function') {
       const networkConditions = context.getNetworkConditions();
-      if (networkConditions && typeof context.getNavigationTimeout === 'function') {
+      if (
+        networkConditions &&
+        typeof context.getNavigationTimeout === 'function'
+      ) {
         response.push('## Network emulation');
         response.push(`Emulating: ${networkConditions}`);
         response.push(
@@ -238,7 +253,10 @@ Call handle_dialog to handle it before continuing.`);
   }
 
   #appendPagesInfo(response: string[], context: McpContext): void {
-    if (typeof context.getPages === 'function' && typeof context.getSelectedPageIdx === 'function') {
+    if (
+      typeof context.getPages === 'function' &&
+      typeof context.getSelectedPageIdx === 'function'
+    ) {
       const parts = ['## Pages'];
       let idx = 0;
       for (const page of context.getPages()) {

@@ -1,14 +1,12 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { logger } from './Logger';
+import {logger} from './Logger';
 
-import type { ProtocolRequest} from '@/protocol/types';
-import { ProtocolRequestSchema } from '@/protocol/types';
-
+import type {ProtocolRequest} from '@/protocol/types';
+import {ProtocolRequestSchema} from '@/protocol/types';
 
 export class RequestValidator {
   private activeIds = new Set<string>();
@@ -27,7 +25,9 @@ export class RequestValidator {
     // Step 2: Check for duplicate ID
     if (this.activeIds.has(request.id)) {
       logger.error(`Duplicate request ID detected: ${request.id}`);
-      throw new Error(`Duplicate request ID: ${request.id}. Already processing this request.`);
+      throw new Error(
+        `Duplicate request ID: ${request.id}. Already processing this request.`,
+      );
     }
 
     // Step 3: Track this ID
@@ -52,16 +52,18 @@ export class RequestValidator {
 
     for (const [id, timestamp] of this.idTimestamps.entries()) {
       if (timestamp < fiveMinutesAgo) {
-        logger.warn(`Cleaning up stale request ID: ${id} (age: ${Math.round((now - timestamp) / 1000)}s)`);
+        logger.warn(
+          `Cleaning up stale request ID: ${id} (age: ${Math.round((now - timestamp) / 1000)}s)`,
+        );
         this.activeIds.delete(id);
         this.idTimestamps.delete(id);
       }
     }
   }
 
-  getStats(): { activeIds: number } {
+  getStats(): {activeIds: number} {
     return {
-      activeIds: this.activeIds.size
+      activeIds: this.activeIds.size,
     };
   }
 

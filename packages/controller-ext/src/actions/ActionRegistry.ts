@@ -1,12 +1,11 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import type { ActionHandler, ActionResponse } from './ActionHandler';
+import type {ActionHandler, ActionResponse} from './ActionHandler';
 
-import { logger } from '@/utils/Logger';
+import {logger} from '@/utils/Logger';
 
 /**
  * ActionRegistry - Central dispatcher for all actions
@@ -33,7 +32,9 @@ export class ActionRegistry {
    */
   register(actionName: string, handler: ActionHandler): void {
     if (this.handlers.has(actionName)) {
-      logger.warn(`[ActionRegistry] Action "${actionName}" already registered, overwriting`);
+      logger.warn(
+        `[ActionRegistry] Action "${actionName}" already registered, overwriting`,
+      );
     }
 
     this.handlers.set(actionName, handler);
@@ -54,7 +55,10 @@ export class ActionRegistry {
    * @param payload - Action payload (unvalidated)
    * @returns Action response
    */
-  async dispatch(actionName: string, payload: unknown): Promise<ActionResponse> {
+  async dispatch(
+    actionName: string,
+    payload: unknown,
+  ): Promise<ActionResponse> {
     logger.debug(`[ActionRegistry] Dispatching action: ${actionName}`);
 
     // Check if action exists
@@ -66,22 +70,27 @@ export class ActionRegistry {
       logger.error(`[ActionRegistry] ${errorMessage}`);
       return {
         ok: false,
-        error: errorMessage
+        error: errorMessage,
       };
     }
 
     // Delegate to handler
     try {
       const response = await handler.handle(payload);
-      logger.debug(`[ActionRegistry] Action "${actionName}" ${response.ok ? 'succeeded' : 'failed'}`);
+      logger.debug(
+        `[ActionRegistry] Action "${actionName}" ${response.ok ? 'succeeded' : 'failed'}`,
+      );
       return response;
     } catch (error) {
       // Catch any unexpected errors from handler
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[ActionRegistry] Unexpected error in "${actionName}": ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[ActionRegistry] Unexpected error in "${actionName}": ${errorMessage}`,
+      );
       return {
         ok: false,
-        error: `Action execution failed: ${errorMessage}`
+        error: `Action execution failed: ${errorMessage}`,
       };
     }
   }

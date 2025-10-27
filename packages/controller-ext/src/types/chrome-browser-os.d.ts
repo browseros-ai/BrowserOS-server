@@ -1,4 +1,3 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
@@ -26,23 +25,23 @@ declare namespace chrome.browserOS {
   type BoundingRect = Rect;
 
   // Interactive element types
-  type InteractiveNodeType = "clickable" | "typeable" | "selectable" | "other";
+  type InteractiveNodeType = 'clickable' | 'typeable' | 'selectable' | 'other';
 
   // Supported keyboard keys
   type Key =
-    | "Enter"
-    | "Delete"
-    | "Backspace"
-    | "Tab"
-    | "Escape"
-    | "ArrowUp"
-    | "ArrowDown"
-    | "ArrowLeft"
-    | "ArrowRight"
-    | "Home"
-    | "End"
-    | "PageUp"
-    | "PageDown";
+    | 'Enter'
+    | 'Delete'
+    | 'Backspace'
+    | 'Tab'
+    | 'Escape'
+    | 'ArrowUp'
+    | 'ArrowDown'
+    | 'ArrowLeft'
+    | 'ArrowRight'
+    | 'Home'
+    | 'End'
+    | 'PageUp'
+    | 'PageDown';
 
   // Interactive node in the snapshot
   interface InteractiveNode {
@@ -51,7 +50,7 @@ declare namespace chrome.browserOS {
     name?: string;
     rect?: Rect;
     attributes?: {
-      in_viewport?: string;  // "true" if visible in viewport, "false" if not visible
+      in_viewport?: string; // "true" if visible in viewport, "false" if not visible
       [key: string]: any;
     };
   }
@@ -162,37 +161,37 @@ declare namespace chrome.browserOS {
   function sendKeys(
     tabId: number,
     key:
-      | "Enter"
-      | "Delete"
-      | "Backspace"
-      | "Tab"
-      | "Escape"
-      | "ArrowUp"
-      | "ArrowDown"
-      | "ArrowLeft"
-      | "ArrowRight"
-      | "Home"
-      | "End"
-      | "PageUp"
-      | "PageDown",
+      | 'Enter'
+      | 'Delete'
+      | 'Backspace'
+      | 'Tab'
+      | 'Escape'
+      | 'ArrowUp'
+      | 'ArrowDown'
+      | 'ArrowLeft'
+      | 'ArrowRight'
+      | 'Home'
+      | 'End'
+      | 'PageUp'
+      | 'PageDown',
     callback: () => void,
   ): void;
 
   function sendKeys(
     key:
-      | "Enter"
-      | "Delete"
-      | "Backspace"
-      | "Tab"
-      | "Escape"
-      | "ArrowUp"
-      | "ArrowDown"
-      | "ArrowLeft"
-      | "ArrowRight"
-      | "Home"
-      | "End"
-      | "PageUp"
-      | "PageDown",
+      | 'Enter'
+      | 'Delete'
+      | 'Backspace'
+      | 'Tab'
+      | 'Escape'
+      | 'ArrowUp'
+      | 'ArrowDown'
+      | 'ArrowLeft'
+      | 'ArrowRight'
+      | 'Home'
+      | 'End'
+      | 'PageUp'
+      | 'PageDown',
     callback: () => void,
   ): void;
 
@@ -231,25 +230,25 @@ declare namespace chrome.browserOS {
   function captureScreenshot(callback: (dataUrl: string) => void): void;
 
   // Snapshot extraction types
-  type SnapshotType = "text" | "links";
+  type SnapshotType = 'text' | 'links';
 
   // Context for snapshot extraction
-  type SnapshotContext = "visible" | "full";
+  type SnapshotContext = 'visible' | 'full';
 
   // Section types based on ARIA landmarks
   type SectionType =
-    | "main"
-    | "navigation"
-    | "footer"
-    | "header"
-    | "article"
-    | "aside"
-    | "complementary"
-    | "contentinfo"
-    | "form"
-    | "search"
-    | "region"
-    | "other";
+    | 'main'
+    | 'navigation'
+    | 'footer'
+    | 'header'
+    | 'article'
+    | 'aside'
+    | 'complementary'
+    | 'contentinfo'
+    | 'form'
+    | 'search'
+    | 'region'
+    | 'other';
 
   // Text snapshot result for a section
   interface TextSnapshotResult {
@@ -358,11 +357,7 @@ declare namespace chrome.browserOS {
     callback: () => void,
   ): void;
 
-  function clickCoordinates(
-    x: number,
-    y: number,
-    callback: () => void,
-  ): void;
+  function clickCoordinates(x: number, y: number, callback: () => void): void;
 
   // Type text at specific viewport coordinates
   function typeAtCoordinates(
@@ -409,7 +404,13 @@ declare namespace chrome.browserOS {
 }
 declare namespace chrome {
   namespace BrowserOS {
-    function getPrefs(keys: string[], callback: (prefs: Record<string, unknown>) => void): void;
-    function setPrefs(prefs: Record<string, unknown>, callback?: (success: boolean) => void): void;
+    function getPrefs(
+      keys: string[],
+      callback: (prefs: Record<string, unknown>) => void,
+    ): void;
+    function setPrefs(
+      prefs: Record<string, unknown>,
+      callback?: (success: boolean) => void,
+    ): void;
   }
 }

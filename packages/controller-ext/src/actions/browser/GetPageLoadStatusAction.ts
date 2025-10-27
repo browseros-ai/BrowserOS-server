@@ -1,18 +1,24 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
-import { BrowserOSAdapter, type PageLoadStatus } from '@/adapters/BrowserOSAdapter';
+import {
+  BrowserOSAdapter,
+  type PageLoadStatus,
+} from '@/adapters/BrowserOSAdapter';
 
 // Input schema for getPageLoadStatus action
 const GetPageLoadStatusInputSchema = z.object({
-  tabId: z.number().int().positive().describe('Tab ID to check page load status')
+  tabId: z
+    .number()
+    .int()
+    .positive()
+    .describe('Tab ID to check page load status'),
 });
 
 type GetPageLoadStatusInput = z.infer<typeof GetPageLoadStatusInputSchema>;
@@ -40,20 +46,26 @@ export interface GetPageLoadStatusOutput {
  *   "tabId": 123
  * }
  */
-export class GetPageLoadStatusAction extends ActionHandler<GetPageLoadStatusInput, GetPageLoadStatusOutput> {
+export class GetPageLoadStatusAction extends ActionHandler<
+  GetPageLoadStatusInput,
+  GetPageLoadStatusOutput
+> {
   readonly inputSchema = GetPageLoadStatusInputSchema;
   private browserOSAdapter = BrowserOSAdapter.getInstance();
 
-  async execute(input: GetPageLoadStatusInput): Promise<GetPageLoadStatusOutput> {
-    const { tabId } = input;
+  async execute(
+    input: GetPageLoadStatusInput,
+  ): Promise<GetPageLoadStatusOutput> {
+    const {tabId} = input;
 
-    const status: PageLoadStatus = await this.browserOSAdapter.getPageLoadStatus(tabId);
+    const status: PageLoadStatus =
+      await this.browserOSAdapter.getPageLoadStatus(tabId);
 
     return {
       tabId,
       isResourcesLoading: status.isResourcesLoading,
       isDOMContentLoaded: status.isDOMContentLoaded,
-      isPageComplete: status.isPageComplete
+      isPageComplete: status.isPageComplete,
     };
   }
 }

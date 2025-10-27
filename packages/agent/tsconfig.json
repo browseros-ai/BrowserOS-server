@@ -9,8 +9,5 @@
   },
   "include": ["src/**/*"],
   "exclude": ["dist/**/*", "node_modules"],
-  "references": [
-    {"path": "../controller-server"},
-    {"path": "../tools"}
-  ]
+  "references": [{"path": "../controller-server"}, {"path": "../tools"}]
 }

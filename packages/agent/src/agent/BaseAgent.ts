@@ -4,6 +4,7 @@
  */
 
 import {logger} from '@browseros/common';
+
 import type {AgentConfig, AgentMetadata, FormattedEvent} from './types.js';
 
 /**
@@ -57,8 +58,8 @@ export const DEFAULT_CONFIG = {
 export abstract class BaseAgent {
   protected config: Required<AgentConfig>;
   protected metadata: AgentMetadata;
-  protected executionStartTime: number = 0;
-  protected initialized: boolean = false;
+  protected executionStartTime = 0;
+  protected initialized = false;
 
   constructor(
     agentType: string,
@@ -173,7 +174,7 @@ export abstract class BaseAgent {
   /**
    * Helper: Increment tool execution count
    */
-  protected updateToolsExecuted(count: number = 1): void {
+  protected updateToolsExecuted(count = 1): void {
     this.metadata.toolsExecuted += count;
   }
 

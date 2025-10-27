@@ -1,30 +1,43 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
-import { HistoryAdapter } from '@/adapters/HistoryAdapter';
+import {HistoryAdapter} from '@/adapters/HistoryAdapter';
 
 // Input schema
 const GetRecentHistoryInputSchema = z.object({
-  maxResults: z.number().int().positive().optional().default(20).describe('Maximum number of results (default: 20)'),
-  hoursBack: z.number().int().positive().optional().default(24).describe('How many hours back to search (default: 24)'),
+  maxResults: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .default(20)
+    .describe('Maximum number of results (default: 20)'),
+  hoursBack: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .default(24)
+    .describe('How many hours back to search (default: 24)'),
 });
 
 // Output schema
 const GetRecentHistoryOutputSchema = z.object({
-  items: z.array(z.object({
-    id: z.string(),
-    url: z.string().optional(),
-    title: z.string().optional(),
-    lastVisitTime: z.number().optional(),
-    visitCount: z.number().optional(),
-  })),
+  items: z.array(
+    z.object({
+      id: z.string(),
+      url: z.string().optional(),
+      title: z.string().optional(),
+      lastVisitTime: z.number().optional(),
+      visitCount: z.number().optional(),
+    }),
+  ),
   count: z.number(),
 });
 
@@ -56,14 +69,17 @@ type GetRecentHistoryOutput = z.infer<typeof GetRecentHistoryOutputSchema>;
  * }
  * // Returns: { items: [{url: "https://google.com", title: "Google", lastVisitTime: 1729012345678}], count: 10 }
  */
-export class GetRecentHistoryAction extends ActionHandler<GetRecentHistoryInput, GetRecentHistoryOutput> {
+export class GetRecentHistoryAction extends ActionHandler<
+  GetRecentHistoryInput,
+  GetRecentHistoryOutput
+> {
   readonly inputSchema = GetRecentHistoryInputSchema;
   private historyAdapter = new HistoryAdapter();
 
   async execute(input: GetRecentHistoryInput): Promise<GetRecentHistoryOutput> {
     const results = await this.historyAdapter.getRecentHistory(
       input.maxResults,
-      input.hoursBack
+      input.hoursBack,
     );
 
     const items = results.map(item => ({

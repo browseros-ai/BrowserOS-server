@@ -1,7 +1,13 @@
-import { CodexOptions } from "./codexOptions";
-import { CodexExec } from "./exec";
-import { Thread } from "./thread";
-import { ThreadOptions } from "./threadOptions";
+
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+import type {CodexOptions} from './codexOptions';
+import {CodexExec} from './exec';
+import {Thread} from './thread';
+import type {ThreadOptions} from './threadOptions';
 
 /**
  * Codex is the main class for interacting with the Codex agent.

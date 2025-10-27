@@ -1,33 +1,46 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
-import { HistoryAdapter } from '@/adapters/HistoryAdapter';
+import {HistoryAdapter} from '@/adapters/HistoryAdapter';
 
 // Input schema
 const SearchHistoryInputSchema = z.object({
   query: z.string().describe('Search query to match URL or title'),
-  maxResults: z.number().int().positive().optional().default(20).describe('Maximum number of results (default: 20)'),
-  startTime: z.number().optional().describe('Start time in milliseconds since epoch (optional)'),
-  endTime: z.number().optional().describe('End time in milliseconds since epoch (optional)'),
+  maxResults: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .default(20)
+    .describe('Maximum number of results (default: 20)'),
+  startTime: z
+    .number()
+    .optional()
+    .describe('Start time in milliseconds since epoch (optional)'),
+  endTime: z
+    .number()
+    .optional()
+    .describe('End time in milliseconds since epoch (optional)'),
 });
 
 // Output schema
 const SearchHistoryOutputSchema = z.object({
-  items: z.array(z.object({
-    id: z.string(),
-    url: z.string().optional(),
-    title: z.string().optional(),
-    lastVisitTime: z.number().optional(),
-    visitCount: z.number().optional(),
-    typedCount: z.number().optional(),
-  })),
+  items: z.array(
+    z.object({
+      id: z.string(),
+      url: z.string().optional(),
+      title: z.string().optional(),
+      lastVisitTime: z.number().optional(),
+      visitCount: z.number().optional(),
+      typedCount: z.number().optional(),
+    }),
+  ),
   count: z.number(),
 });
 
@@ -61,7 +74,10 @@ type SearchHistoryOutput = z.infer<typeof SearchHistoryOutputSchema>;
  * }
  * // Returns: { items: [{url: "https://github.com", title: "GitHub", visitCount: 42}], count: 1 }
  */
-export class SearchHistoryAction extends ActionHandler<SearchHistoryInput, SearchHistoryOutput> {
+export class SearchHistoryAction extends ActionHandler<
+  SearchHistoryInput,
+  SearchHistoryOutput
+> {
   readonly inputSchema = SearchHistoryInputSchema;
   private historyAdapter = new HistoryAdapter();
 
@@ -70,7 +86,7 @@ export class SearchHistoryAction extends ActionHandler<SearchHistoryInput, Searc
       input.query,
       input.maxResults,
       input.startTime,
-      input.endTime
+      input.endTime,
     );
 
     const items = results.map(item => ({

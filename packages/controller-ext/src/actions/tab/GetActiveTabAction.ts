@@ -1,14 +1,13 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
-import { TabAdapter } from '@/adapters/TabAdapter';
+import {TabAdapter} from '@/adapters/TabAdapter';
 
 /**
  * GetActiveTabAction - Returns information about the currently active tab
@@ -85,7 +84,7 @@ export class GetActiveTabAction extends ActionHandler<any, GetActiveTabOutput> {
       tabId: tab.id,
       url: tab.url || '',
       title: tab.title || '',
-      windowId: tab.windowId
+      windowId: tab.windowId,
     };
   }
 }

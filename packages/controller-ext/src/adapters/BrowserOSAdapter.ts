@@ -1,4 +1,3 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
@@ -6,13 +5,14 @@
  */
 /// <reference path="../types/chrome-browser-os.d.ts" />
 
-import { logger } from '@/utils/Logger';
+import {logger} from '@/utils/Logger';
 
 // ============= Re-export types from chrome.browserOS namespace =============
 
 export type InteractiveNode = chrome.browserOS.InteractiveNode;
 export type InteractiveSnapshot = chrome.browserOS.InteractiveSnapshot;
-export type InteractiveSnapshotOptions = chrome.browserOS.InteractiveSnapshotOptions;
+export type InteractiveSnapshotOptions =
+  chrome.browserOS.InteractiveSnapshotOptions;
 export type PageLoadStatus = chrome.browserOS.PageLoadStatus;
 export type InteractiveNodeType = chrome.browserOS.InteractiveNodeType;
 export type Rect = chrome.browserOS.BoundingRect;
@@ -68,7 +68,9 @@ export class BrowserOSAdapter {
     options?: InteractiveSnapshotOptions,
   ): Promise<InteractiveSnapshot> {
     try {
-      logger.debug(`[BrowserOSAdapter] Getting interactive snapshot for tab ${tabId} with options: ${JSON.stringify(options)}`);
+      logger.debug(
+        `[BrowserOSAdapter] Getting interactive snapshot for tab ${tabId} with options: ${JSON.stringify(options)}`,
+      );
 
       return new Promise<InteractiveSnapshot>((resolve, reject) => {
         if (options) {
@@ -79,7 +81,9 @@ export class BrowserOSAdapter {
               if (chrome.runtime.lastError) {
                 reject(new Error(chrome.runtime.lastError.message));
               } else {
-                logger.debug(`[BrowserOSAdapter] Retrieved snapshot with ${snapshot.elements.length} elements`);
+                logger.debug(
+                  `[BrowserOSAdapter] Retrieved snapshot with ${snapshot.elements.length} elements`,
+                );
                 resolve(snapshot);
               }
             },
@@ -91,7 +95,9 @@ export class BrowserOSAdapter {
               if (chrome.runtime.lastError) {
                 reject(new Error(chrome.runtime.lastError.message));
               } else {
-                logger.debug(`[BrowserOSAdapter] Retrieved snapshot with ${snapshot.elements.length} elements`);
+                logger.debug(
+                  `[BrowserOSAdapter] Retrieved snapshot with ${snapshot.elements.length} elements`,
+                );
                 resolve(snapshot);
               }
             },
@@ -99,8 +105,11 @@ export class BrowserOSAdapter {
         }
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[BrowserOSAdapter] Failed to get interactive snapshot: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[BrowserOSAdapter] Failed to get interactive snapshot: ${errorMessage}`,
+      );
       throw new Error(`Failed to get interactive snapshot: ${errorMessage}`);
     }
   }
@@ -110,7 +119,9 @@ export class BrowserOSAdapter {
    */
   async click(tabId: number, nodeId: number): Promise<void> {
     try {
-      logger.debug(`[BrowserOSAdapter] Clicking node ${nodeId} in tab ${tabId}`);
+      logger.debug(
+        `[BrowserOSAdapter] Clicking node ${nodeId} in tab ${tabId}`,
+      );
 
       return new Promise<void>((resolve, reject) => {
         chrome.browserOS.click(tabId, nodeId, () => {
@@ -122,7 +133,8 @@ export class BrowserOSAdapter {
         });
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger.error(`[BrowserOSAdapter] Failed to click node: ${errorMessage}`);
       throw new Error(`Failed to click node ${nodeId}: ${errorMessage}`);
     }
@@ -133,7 +145,9 @@ export class BrowserOSAdapter {
    */
   async inputText(tabId: number, nodeId: number, text: string): Promise<void> {
     try {
-      logger.debug(`[BrowserOSAdapter] Inputting text into node ${nodeId} in tab ${tabId}`);
+      logger.debug(
+        `[BrowserOSAdapter] Inputting text into node ${nodeId} in tab ${tabId}`,
+      );
 
       return new Promise<void>((resolve, reject) => {
         chrome.browserOS.inputText(tabId, nodeId, text, () => {
@@ -145,9 +159,12 @@ export class BrowserOSAdapter {
         });
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger.error(`[BrowserOSAdapter] Failed to input text: ${errorMessage}`);
-      throw new Error(`Failed to input text into node ${nodeId}: ${errorMessage}`);
+      throw new Error(
+        `Failed to input text into node ${nodeId}: ${errorMessage}`,
+      );
     }
   }
 
@@ -156,7 +173,9 @@ export class BrowserOSAdapter {
    */
   async clear(tabId: number, nodeId: number): Promise<void> {
     try {
-      logger.debug(`[BrowserOSAdapter] Clearing node ${nodeId} in tab ${tabId}`);
+      logger.debug(
+        `[BrowserOSAdapter] Clearing node ${nodeId} in tab ${tabId}`,
+      );
 
       return new Promise<void>((resolve, reject) => {
         chrome.browserOS.clear(tabId, nodeId, () => {
@@ -168,7 +187,8 @@ export class BrowserOSAdapter {
         });
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger.error(`[BrowserOSAdapter] Failed to clear node: ${errorMessage}`);
       throw new Error(`Failed to clear node ${nodeId}: ${errorMessage}`);
     }
@@ -179,7 +199,9 @@ export class BrowserOSAdapter {
    */
   async scrollToNode(tabId: number, nodeId: number): Promise<boolean> {
     try {
-      logger.debug(`[BrowserOSAdapter] Scrolling to node ${nodeId} in tab ${tabId}`);
+      logger.debug(
+        `[BrowserOSAdapter] Scrolling to node ${nodeId} in tab ${tabId}`,
+      );
 
       return new Promise<boolean>((resolve, reject) => {
         chrome.browserOS.scrollToNode(tabId, nodeId, (scrolled: boolean) => {
@@ -191,8 +213,11 @@ export class BrowserOSAdapter {
         });
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[BrowserOSAdapter] Failed to scroll to node: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[BrowserOSAdapter] Failed to scroll to node: ${errorMessage}`,
+      );
       throw new Error(`Failed to scroll to node ${nodeId}: ${errorMessage}`);
     }
   }
@@ -214,7 +239,8 @@ export class BrowserOSAdapter {
         });
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger.error(`[BrowserOSAdapter] Failed to send keys: ${errorMessage}`);
       throw new Error(`Failed to send keys: ${errorMessage}`);
     }
@@ -225,7 +251,9 @@ export class BrowserOSAdapter {
    */
   async getPageLoadStatus(tabId: number): Promise<PageLoadStatus> {
     try {
-      logger.debug(`[BrowserOSAdapter] Getting page load status for tab ${tabId}`);
+      logger.debug(
+        `[BrowserOSAdapter] Getting page load status for tab ${tabId}`,
+      );
 
       return new Promise<PageLoadStatus>((resolve, reject) => {
         chrome.browserOS.getPageLoadStatus(tabId, (status: PageLoadStatus) => {
@@ -237,8 +265,11 @@ export class BrowserOSAdapter {
         });
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[BrowserOSAdapter] Failed to get page load status: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[BrowserOSAdapter] Failed to get page load status: ${errorMessage}`,
+      );
       throw new Error(`Failed to get page load status: ${errorMessage}`);
     }
   }
@@ -250,7 +281,9 @@ export class BrowserOSAdapter {
     tabId: number,
   ): Promise<chrome.browserOS.AccessibilityTree> {
     try {
-      logger.debug(`[BrowserOSAdapter] Getting accessibility tree for tab ${tabId}`);
+      logger.debug(
+        `[BrowserOSAdapter] Getting accessibility tree for tab ${tabId}`,
+      );
 
       return new Promise<chrome.browserOS.AccessibilityTree>(
         (resolve, reject) => {
@@ -267,8 +300,11 @@ export class BrowserOSAdapter {
         },
       );
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[BrowserOSAdapter] Failed to get accessibility tree: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[BrowserOSAdapter] Failed to get accessibility tree: ${errorMessage}`,
+      );
       throw new Error(`Failed to get accessibility tree: ${errorMessage}`);
     }
   }
@@ -289,10 +325,12 @@ export class BrowserOSAdapter {
     height?: number,
   ): Promise<string> {
     try {
-      const sizeDesc = size ? ` (${size})` : "";
-      const highlightDesc = showHighlights ? " with highlights" : "";
-      const dimensionsDesc = width && height ? ` (${width}x${height})` : "";
-      logger.debug(`[BrowserOSAdapter] Capturing screenshot for tab ${tabId}${sizeDesc}${highlightDesc}${dimensionsDesc}`);
+      const sizeDesc = size ? ` (${size})` : '';
+      const highlightDesc = showHighlights ? ' with highlights' : '';
+      const dimensionsDesc = width && height ? ` (${width}x${height})` : '';
+      logger.debug(
+        `[BrowserOSAdapter] Capturing screenshot for tab ${tabId}${sizeDesc}${highlightDesc}${dimensionsDesc}`,
+      );
 
       return new Promise<string>((resolve, reject) => {
         // Use exact dimensions if provided
@@ -307,7 +345,9 @@ export class BrowserOSAdapter {
               if (chrome.runtime.lastError) {
                 reject(new Error(chrome.runtime.lastError.message));
               } else {
-                logger.debug(`[BrowserOSAdapter] Screenshot captured for tab ${tabId} (${width}x${height})${highlightDesc}`);
+                logger.debug(
+                  `[BrowserOSAdapter] Screenshot captured for tab ${tabId} (${width}x${height})${highlightDesc}`,
+                );
                 resolve(dataUrl);
               }
             },
@@ -324,7 +364,9 @@ export class BrowserOSAdapter {
                 if (chrome.runtime.lastError) {
                   reject(new Error(chrome.runtime.lastError.message));
                 } else {
-                  logger.debug(`[BrowserOSAdapter] Screenshot captured for tab ${tabId}${sizeDesc}${highlightDesc}`);
+                  logger.debug(
+                    `[BrowserOSAdapter] Screenshot captured for tab ${tabId}${sizeDesc}${highlightDesc}`,
+                  );
                   resolve(dataUrl);
                 }
               },
@@ -337,7 +379,9 @@ export class BrowserOSAdapter {
                 if (chrome.runtime.lastError) {
                   reject(new Error(chrome.runtime.lastError.message));
                 } else {
-                  logger.debug(`[BrowserOSAdapter] Screenshot captured for tab ${tabId} (${size}: ${pixelSize}px)`);
+                  logger.debug(
+                    `[BrowserOSAdapter] Screenshot captured for tab ${tabId} (${size}: ${pixelSize}px)`,
+                  );
                   resolve(dataUrl);
                 }
               },
@@ -349,15 +393,20 @@ export class BrowserOSAdapter {
             if (chrome.runtime.lastError) {
               reject(new Error(chrome.runtime.lastError.message));
             } else {
-              logger.debug(`[BrowserOSAdapter] Screenshot captured for tab ${tabId}`);
+              logger.debug(
+                `[BrowserOSAdapter] Screenshot captured for tab ${tabId}`,
+              );
               resolve(dataUrl);
             }
           });
         }
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[BrowserOSAdapter] Failed to capture screenshot: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[BrowserOSAdapter] Failed to capture screenshot: ${errorMessage}`,
+      );
       throw new Error(`Failed to capture screenshot: ${errorMessage}`);
     }
   }
@@ -436,9 +485,14 @@ export class BrowserOSAdapter {
       const result = await chrome.browserOS[method](...args);
       return result;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[BrowserOSAdapter] Failed to invoke API ${method}: ${errorMessage}`);
-      throw new Error(`Failed to invoke BrowserOS API ${method}: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[BrowserOSAdapter] Failed to invoke API ${method}: ${errorMessage}`,
+      );
+      throw new Error(
+        `Failed to invoke BrowserOS API ${method}: ${errorMessage}`,
+      );
     }
   }
 
@@ -453,9 +507,9 @@ export class BrowserOSAdapter {
    * Get list of available BrowserOS APIs
    */
   getAvailableAPIs(): string[] {
-    return Object.keys(chrome.browserOS).filter((key) => {
+    return Object.keys(chrome.browserOS).filter(key => {
       // @ts-expect-error - Dynamic key access for API discovery
-      return typeof chrome.browserOS[key] === "function";
+      return typeof chrome.browserOS[key] === 'function';
     });
   }
 
@@ -464,13 +518,13 @@ export class BrowserOSAdapter {
    */
   async getVersion(): Promise<string | null> {
     try {
-      logger.debug("[BrowserOSAdapter] Getting BrowserOS version");
+      logger.debug('[BrowserOSAdapter] Getting BrowserOS version');
 
       return new Promise<string | null>((resolve, reject) => {
         // Check if getVersionNumber API is available
         if (
-          "getVersionNumber" in chrome.browserOS &&
-          typeof chrome.browserOS.getVersionNumber === "function"
+          'getVersionNumber' in chrome.browserOS &&
+          typeof chrome.browserOS.getVersionNumber === 'function'
         ) {
           chrome.browserOS.getVersionNumber((version: string) => {
             if (chrome.runtime.lastError) {
@@ -486,7 +540,8 @@ export class BrowserOSAdapter {
         }
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger.error(`[BrowserOSAdapter] Failed to get version: ${errorMessage}`);
       // Return null on error
       return null;
@@ -501,13 +556,15 @@ export class BrowserOSAdapter {
     properties?: Record<string, any>,
   ): Promise<void> {
     try {
-      logger.debug(`[BrowserOSAdapter] Logging metric: ${eventName} with properties: ${JSON.stringify(properties)}`);
+      logger.debug(
+        `[BrowserOSAdapter] Logging metric: ${eventName} with properties: ${JSON.stringify(properties)}`,
+      );
 
       return new Promise<void>((resolve, reject) => {
         // Check if logMetric API is available
         if (
-          "logMetric" in chrome.browserOS &&
-          typeof chrome.browserOS.logMetric === "function"
+          'logMetric' in chrome.browserOS &&
+          typeof chrome.browserOS.logMetric === 'function'
         ) {
           if (properties) {
             chrome.browserOS.logMetric(eventName, properties, () => {
@@ -530,12 +587,15 @@ export class BrowserOSAdapter {
           }
         } else {
           // If API not available, log a warning but don't fail
-          logger.warn(`[BrowserOSAdapter] logMetric API not available, skipping metric: ${eventName}`);
+          logger.warn(
+            `[BrowserOSAdapter] logMetric API not available, skipping metric: ${eventName}`,
+          );
           resolve();
         }
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger.error(`[BrowserOSAdapter] Failed to log metric: ${errorMessage}`);
       return;
     }
@@ -554,24 +614,29 @@ export class BrowserOSAdapter {
       return new Promise<any>((resolve, reject) => {
         // Check if executeJavaScript API is available
         if (
-          "executeJavaScript" in chrome.browserOS &&
-          typeof chrome.browserOS.executeJavaScript === "function"
+          'executeJavaScript' in chrome.browserOS &&
+          typeof chrome.browserOS.executeJavaScript === 'function'
         ) {
           chrome.browserOS.executeJavaScript(tabId, code, (result: any) => {
             if (chrome.runtime.lastError) {
               reject(new Error(chrome.runtime.lastError.message));
             } else {
-              logger.debug(`[BrowserOSAdapter] JavaScript executed successfully in tab ${tabId}`);
+              logger.debug(
+                `[BrowserOSAdapter] JavaScript executed successfully in tab ${tabId}`,
+              );
               resolve(result);
             }
           });
         } else {
-          reject(new Error("executeJavaScript API not available"));
+          reject(new Error('executeJavaScript API not available'));
         }
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[BrowserOSAdapter] Failed to execute JavaScript: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[BrowserOSAdapter] Failed to execute JavaScript: ${errorMessage}`,
+      );
       throw new Error(`Failed to execute JavaScript: ${errorMessage}`);
     }
   }
@@ -584,30 +649,39 @@ export class BrowserOSAdapter {
    */
   async clickCoordinates(tabId: number, x: number, y: number): Promise<void> {
     try {
-      logger.debug(`[BrowserOSAdapter] Clicking at coordinates (${x}, ${y}) in tab ${tabId}`);
+      logger.debug(
+        `[BrowserOSAdapter] Clicking at coordinates (${x}, ${y}) in tab ${tabId}`,
+      );
 
       return new Promise<void>((resolve, reject) => {
         // Check if clickCoordinates API is available
         if (
-          "clickCoordinates" in chrome.browserOS &&
-          typeof chrome.browserOS.clickCoordinates === "function"
+          'clickCoordinates' in chrome.browserOS &&
+          typeof chrome.browserOS.clickCoordinates === 'function'
         ) {
           chrome.browserOS.clickCoordinates(tabId, x, y, () => {
             if (chrome.runtime.lastError) {
               reject(new Error(chrome.runtime.lastError.message));
             } else {
-              logger.debug(`[BrowserOSAdapter] Successfully clicked at (${x}, ${y}) in tab ${tabId}`);
+              logger.debug(
+                `[BrowserOSAdapter] Successfully clicked at (${x}, ${y}) in tab ${tabId}`,
+              );
               resolve();
             }
           });
         } else {
-          reject(new Error("clickCoordinates API not available"));
+          reject(new Error('clickCoordinates API not available'));
         }
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[BrowserOSAdapter] Failed to click at coordinates: ${errorMessage}`);
-      throw new Error(`Failed to click at coordinates (${x}, ${y}): ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[BrowserOSAdapter] Failed to click at coordinates: ${errorMessage}`,
+      );
+      throw new Error(
+        `Failed to click at coordinates (${x}, ${y}): ${errorMessage}`,
+      );
     }
   }
 
@@ -625,30 +699,39 @@ export class BrowserOSAdapter {
     text: string,
   ): Promise<void> {
     try {
-      logger.debug(`[BrowserOSAdapter] Typing at coordinates (${x}, ${y}) in tab ${tabId}`);
+      logger.debug(
+        `[BrowserOSAdapter] Typing at coordinates (${x}, ${y}) in tab ${tabId}`,
+      );
 
       return new Promise<void>((resolve, reject) => {
         // Check if typeAtCoordinates API is available
         if (
-          "typeAtCoordinates" in chrome.browserOS &&
-          typeof chrome.browserOS.typeAtCoordinates === "function"
+          'typeAtCoordinates' in chrome.browserOS &&
+          typeof chrome.browserOS.typeAtCoordinates === 'function'
         ) {
           chrome.browserOS.typeAtCoordinates(tabId, x, y, text, () => {
             if (chrome.runtime.lastError) {
               reject(new Error(chrome.runtime.lastError.message));
             } else {
-              logger.debug(`[BrowserOSAdapter] Successfully typed "${text}" at (${x}, ${y}) in tab ${tabId}`);
+              logger.debug(
+                `[BrowserOSAdapter] Successfully typed "${text}" at (${x}, ${y}) in tab ${tabId}`,
+              );
               resolve();
             }
           });
         } else {
-          reject(new Error("typeAtCoordinates API not available"));
+          reject(new Error('typeAtCoordinates API not available'));
         }
       });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[BrowserOSAdapter] Failed to type at coordinates: ${errorMessage}`);
-      throw new Error(`Failed to type at coordinates (${x}, ${y}): ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[BrowserOSAdapter] Failed to type at coordinates: ${errorMessage}`,
+      );
+      throw new Error(
+        `Failed to type at coordinates (${x}, ${y}): ${errorMessage}`,
+      );
     }
   }
 
@@ -690,11 +773,7 @@ export class BrowserOSAdapter {
    * @param pageId - Optional page ID for settings tracking
    * @returns Promise resolving to true if successful
    */
-  async setPref(
-    name: string,
-    value: any,
-    pageId?: string,
-  ): Promise<boolean> {
+  async setPref(name: string, value: any, pageId?: string): Promise<boolean> {
     try {
       console.log(
         `[BrowserOSAdapter] Setting preference ${name} to ${JSON.stringify(value)}`,
@@ -741,7 +820,7 @@ export class BrowserOSAdapter {
    */
   async getAllPrefs(): Promise<PrefObject[]> {
     try {
-      console.log("[BrowserOSAdapter] Getting all preferences");
+      console.log('[BrowserOSAdapter] Getting all preferences');
 
       return new Promise<PrefObject[]>((resolve, reject) => {
         chrome.browserOS.getAllPrefs((prefs: PrefObject[]) => {
@@ -764,7 +843,6 @@ export class BrowserOSAdapter {
       throw new Error(`Failed to get all preferences: ${errorMessage}`);
     }
   }
-
 }
 
 // Export singleton instance getter for convenience

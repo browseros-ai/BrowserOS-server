@@ -1,15 +1,18 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
 import { ActionHandler } from '../ActionHandler';
 import { logger } from '@/utils/Logger';
 
-import { BrowserOSAdapter, type Snapshot, type SnapshotOptions } from '@/adapters/BrowserOSAdapter';
+import {
+  BrowserOSAdapter,
+  type Snapshot,
+  type SnapshotOptions,
+} from '@/adapters/BrowserOSAdapter';
 
 // Input schema for getSnapshot action
 const GetSnapshotInputSchema = z.object({
@@ -42,7 +45,10 @@ export type GetSnapshotOutput = Snapshot;
  *   "type": "text"
  * }
  */
-export class GetSnapshotAction extends ActionHandler<GetSnapshotInput, GetSnapshotOutput> {
+export class GetSnapshotAction extends ActionHandler<
+  GetSnapshotInput,
+  GetSnapshotOutput
+> {
   readonly inputSchema = GetSnapshotInputSchema;
   private browserOSAdapter = BrowserOSAdapter.getInstance();
 

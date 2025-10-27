@@ -18,14 +18,18 @@ export * from './tools/index.js';
 
 // Import all tools for the array export
 import {
-  getActiveTab,
-  listTabs,
-  openTab,
-  closeTab,
-  switchTab,
-  getLoadStatus,
-} from './tools/tabManagement.js';
-import {navigate} from './tools/navigation.js';
+  executeJavaScript,
+  sendKeys,
+  checkAvailability,
+} from './tools/advanced.js';
+import {
+  getBookmarks,
+  createBookmark,
+  removeBookmark,
+} from './tools/bookmarks.js';
+import {getPageContent} from './tools/content.js';
+import {clickCoordinates, typeAtCoordinates} from './tools/coordinates.js';
+import {searchHistory, getRecentHistory} from './tools/history.js';
 import {
   getInteractiveElements,
   clickElement,
@@ -33,13 +37,17 @@ import {
   clearInput,
   scrollToElement,
 } from './tools/interaction.js';
-import {scrollDown, scrollUp} from './tools/scrolling.js';
+import {navigate} from './tools/navigation.js';
 import {getScreenshot} from './tools/screenshot.js';
-import {getPageContent} from './tools/content.js';
-import {executeJavaScript, sendKeys, checkAvailability} from './tools/advanced.js';
-import {clickCoordinates, typeAtCoordinates} from './tools/coordinates.js';
-import {getBookmarks, createBookmark, removeBookmark} from './tools/bookmarks.js';
-import {searchHistory, getRecentHistory} from './tools/history.js';
+import {scrollDown, scrollUp} from './tools/scrolling.js';
+import {
+  getActiveTab,
+  listTabs,
+  openTab,
+  closeTab,
+  switchTab,
+  getLoadStatus,
+} from './tools/tabManagement.js';
 
 // Array export for convenience (27 tools)
 export const allControllerTools = [

@@ -1,19 +1,23 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
-import { TabAdapter } from '@/adapters/TabAdapter';
+import {TabAdapter} from '@/adapters/TabAdapter';
 
 // Input schema
 const NavigateInputSchema = z.object({
   url: z.string().url().describe('URL to navigate to (must include https://)'),
-  tabId: z.number().int().positive().optional().describe('Tab ID to navigate (optional, defaults to active tab)'),
+  tabId: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe('Tab ID to navigate (optional, defaults to active tab)'),
 });
 
 // Output schema
@@ -50,7 +54,10 @@ type NavigateOutput = z.infer<typeof NavigateOutputSchema>;
  * }
  * // Returns: { tabId: 123, url: "https://www.wikipedia.org", message: "Navigating to https://www.wikipedia.org" }
  */
-export class NavigateAction extends ActionHandler<NavigateInput, NavigateOutput> {
+export class NavigateAction extends ActionHandler<
+  NavigateInput,
+  NavigateOutput
+> {
   readonly inputSchema = NavigateInputSchema;
   private tabAdapter = new TabAdapter();
 

@@ -1,25 +1,36 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler, ActionResponse } from '../ActionHandler';
+import {ActionHandler, ActionResponse} from '../ActionHandler';
 
-import { BrowserOSAdapter } from '@/adapters/BrowserOSAdapter';
-import type { InteractiveSnapshot, InteractiveSnapshotOptions } from '@/adapters/BrowserOSAdapter';
+import {BrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
+import type {
+  InteractiveSnapshot,
+  InteractiveSnapshotOptions,
+} from '@/adapters/BrowserOSAdapter';
 
 // Input schema
 const GetInteractiveSnapshotInputSchema = z.object({
   tabId: z.number().describe('The tab ID to get snapshot from'),
-  options: z.object({
-    includeHidden: z.boolean().optional().default(false).describe('Include hidden elements (default: false)'),
-  }).optional().describe('Optional snapshot options'),
+  options: z
+    .object({
+      includeHidden: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe('Include hidden elements (default: false)'),
+    })
+    .optional()
+    .describe('Optional snapshot options'),
 });
 
-type GetInteractiveSnapshotInput = z.infer<typeof GetInteractiveSnapshotInputSchema>;
+type GetInteractiveSnapshotInput = z.infer<
+  typeof GetInteractiveSnapshotInputSchema
+>;
 
 /**
  * GetInteractiveSnapshotAction - Get interactive elements from the page
@@ -45,7 +56,9 @@ export class GetInteractiveSnapshotAction extends ActionHandler<
   readonly inputSchema = GetInteractiveSnapshotInputSchema;
   private browserOSAdapter = BrowserOSAdapter.getInstance();
 
-  async execute(input: GetInteractiveSnapshotInput): Promise<InteractiveSnapshot> {
+  async execute(
+    input: GetInteractiveSnapshotInput,
+  ): Promise<InteractiveSnapshot> {
     return await this.browserOSAdapter.getInteractiveSnapshot(
       input.tabId,
       input.options as InteractiveSnapshotOptions | undefined,

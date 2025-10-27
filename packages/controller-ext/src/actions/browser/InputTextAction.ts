@@ -1,19 +1,22 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler, ActionResponse } from '../ActionHandler';
+import {ActionHandler, ActionResponse} from '../ActionHandler';
 
-import { BrowserOSAdapter } from '@/adapters/BrowserOSAdapter';
+import {BrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
 
 // Input schema
 const InputTextInputSchema = z.object({
   tabId: z.number().describe('The tab ID containing the element'),
-  nodeId: z.number().int().positive().describe('The nodeId from interactive snapshot'),
+  nodeId: z
+    .number()
+    .int()
+    .positive()
+    .describe('The nodeId from interactive snapshot'),
   text: z.string().describe('Text to type into the element'),
 });
 
@@ -47,12 +50,19 @@ type InputTextOutput = z.infer<typeof InputTextOutputSchema>;
  *
  * Used by: TypeTool, form automation workflows
  */
-export class InputTextAction extends ActionHandler<InputTextInput, InputTextOutput> {
+export class InputTextAction extends ActionHandler<
+  InputTextInput,
+  InputTextOutput
+> {
   readonly inputSchema = InputTextInputSchema;
   private browserOSAdapter = BrowserOSAdapter.getInstance();
 
   async execute(input: InputTextInput): Promise<InputTextOutput> {
-    await this.browserOSAdapter.inputText(input.tabId, input.nodeId, input.text);
-    return { success: true };
+    await this.browserOSAdapter.inputText(
+      input.tabId,
+      input.nodeId,
+      input.text,
+    );
+    return {success: true};
   }
 }
