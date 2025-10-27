@@ -30,6 +30,8 @@ export type SnapshotOptions = chrome.browserOS.SnapshotOptions;
 
 export type PrefObject = chrome.browserOS.PrefObject;
 
+import { VersionUtils } from '@/utils/versionUtils';
+
 // ============= BrowserOS Adapter =============
 
 // Screenshot size constants
@@ -419,7 +421,7 @@ export class BrowserOSAdapter {
       logger.debug(`[BrowserOSAdapter] Getting snapshot for tab ${tabId}`);
       // get version number
       const version = await this.getVersion();
-      if (version && version < '137.0.7220.69') {
+      if (version && VersionUtils.isVersionAtLeast(version, '137.0.7220.69')) {
         // Pass the type
         return await new Promise<Snapshot>((resolve, reject) => {
           chrome.browserOS.getSnapshot(tabId, type, (snapshot: Snapshot) => {
