@@ -77,28 +77,30 @@ export class CodexExec {
     }
 
     // MCP Server Configuration Support
-    // Inject -c flags to programmatically configure MCP servers
+    // CRITICAL: Use mcp_servers (underscore) not mcp.servers (dot)
+    // First, clear any global mcp_servers config, then add ours
     if (args.mcpServers && typeof args.mcpServers === "object") {
-      for (const [serverName, serverConfig] of Object.entries(args.mcpServers)) {
-        // Build MCP server config object
-        const mcpConfigObj: Record<string, any> = {};
+      // Clear global mcp_servers by setting it to empty object
+      commandArgs.push("-c", "mcp_servers={}");
 
-        // Check if it's an HTTP server (has url property) or stdio server (has command property)
+      // Now add each server using correct format: mcp_servers.servername.property
+      for (const [serverName, serverConfig] of Object.entries(args.mcpServers)) {
         if ((serverConfig as any).url) {
-          mcpConfigObj.url = (serverConfig as any).url;
+          // HTTP MCP server - use correct mcp_servers format
+          const url = (serverConfig as any).url;
+          commandArgs.push("-c", `mcp_servers.${serverName}.url=${JSON.stringify(url)}`);
         } else if (serverConfig.command) {
-          mcpConfigObj.command = serverConfig.command;
+          // Stdio MCP server - use correct mcp_servers format
+          commandArgs.push("-c", `mcp_servers.${serverName}.command=${JSON.stringify(serverConfig.command)}`);
+
           if (serverConfig.args) {
-            mcpConfigObj.args = serverConfig.args;
+            commandArgs.push("-c", `mcp_servers.${serverName}.args=${JSON.stringify(serverConfig.args)}`);
           }
+
           if (serverConfig.env) {
-            mcpConfigObj.env = serverConfig.env;
+            commandArgs.push("-c", `mcp_servers.${serverName}.env=${JSON.stringify(serverConfig.env)}`);
           }
         }
-
-        // Serialize to JSON and add as -c flag
-        const mcpConfigJson = JSON.stringify(mcpConfigObj);
-        commandArgs.push("-c", `mcp.servers.${serverName}=${mcpConfigJson}`);
       }
     }
 
