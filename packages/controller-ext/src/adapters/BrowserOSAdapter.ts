@@ -418,29 +418,39 @@ export class BrowserOSAdapter {
    */
   async getSnapshot(tabId: number, type: SnapshotType): Promise<Snapshot> {
     try {
-      logger.debug(`[BrowserOSAdapter] Getting snapshot for tab ${tabId}`);
-      // get version number
+      logger.debug(
+        `[BrowserOSAdapter] Getting snapshot for tab ${tabId} with type ${type}`,
+      );
       const version = await this.getVersion();
-      if (version && VersionUtils.isVersionAtLeast(version, '137.0.7220.69')) {
-        // Pass the type
+      logger.debug(`[BrowserOSAdapter] BrowserOS version: ${version}`);
+
+      if (
+        version &&
+        !VersionUtils.isVersionAtLeast(version, '137.0.7220.69')
+      ) {
+        // Older versions: pass the type parameter
         return await new Promise<Snapshot>((resolve, reject) => {
           chrome.browserOS.getSnapshot(tabId, type, (snapshot: Snapshot) => {
             if (chrome.runtime.lastError) {
               reject(new Error(chrome.runtime.lastError.message));
             } else {
-              logger.debug(`[BrowserOSAdapter] Retrieved snapshot: ${JSON.stringify(snapshot)}`);
+              logger.debug(
+                `[BrowserOSAdapter] Retrieved snapshot: ${JSON.stringify(snapshot)}`,
+              );
               resolve(snapshot);
             }
           });
         });
       } else {
-        // Ignore the type
+        // Newer versions: don't pass type parameter
         return await new Promise<Snapshot>((resolve, reject) => {
           chrome.browserOS.getSnapshot(tabId, (snapshot: Snapshot) => {
             if (chrome.runtime.lastError) {
               reject(new Error(chrome.runtime.lastError.message));
             } else {
-              logger.debug(`[BrowserOSAdapter] Retrieved snapshot: ${JSON.stringify(snapshot)}`);
+              logger.debug(
+                `[BrowserOSAdapter] Retrieved snapshot: ${JSON.stringify(snapshot)}`,
+              );
               resolve(snapshot);
             }
           });
