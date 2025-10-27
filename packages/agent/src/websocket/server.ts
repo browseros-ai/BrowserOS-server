@@ -32,7 +32,6 @@ export const ServerConfigSchema = z.object({
   port: z.number().int().min(1).max(65535),
   apiKey: z.string().min(1, 'API key is required'),
   cwd: z.string().min(1, 'Working directory is required'),
-  mcpServerHost: z.string().min(1).optional(),   // MCP server host (defaults to 127.0.0.1)
   mcpServerPort: z.number().positive().optional(), // MCP server port (defaults to 9100)
   maxSessions: z.number().int().positive(),
   idleTimeoutMs: z.number().positive(),        // Time to wait after agent completion before cleanup
@@ -178,7 +177,6 @@ export function createServer(config: ServerConfig, controllerBridge: ControllerB
           const agentConfig = {
             apiKey: config.apiKey,
             cwd: config.cwd,
-            mcpServerHost: config.mcpServerHost,
             mcpServerPort: config.mcpServerPort
           }
 

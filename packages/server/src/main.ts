@@ -180,7 +180,6 @@ async function startAgentServer(
     port: ports.agentPort,
     apiKey: process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || '',
     cwd: process.cwd(),
-    mcpServerHost: process.env.MCP_SERVER_HOST,
     mcpServerPort: ports.httpMcpPort,
     maxSessions: parseInt(process.env.MAX_SESSIONS || '5'),
     idleTimeoutMs: parseInt(process.env.SESSION_IDLE_TIMEOUT_MS || '90000'),

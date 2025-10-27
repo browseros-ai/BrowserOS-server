@@ -50,11 +50,6 @@ export const AgentConfigSchema = z.object({
   cwd: z.string().min(1, 'Working directory is required'),
 
   /**
-   * MCP server host (default: 127.0.0.1)
-   */
-  mcpServerHost: z.string().min(1).optional(),
-
-  /**
    * MCP server port (default: 9100)
    */
   mcpServerPort: z.number().positive().optional(),

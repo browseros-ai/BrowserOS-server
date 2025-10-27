@@ -69,7 +69,6 @@ export abstract class BaseAgent {
     this.config = {
       apiKey: config.apiKey,
       cwd: config.cwd,
-      mcpServerHost: config.mcpServerHost ?? agentDefaults?.mcpServerHost,
       mcpServerPort: config.mcpServerPort ?? agentDefaults?.mcpServerPort,
       maxTurns:
         config.maxTurns ?? agentDefaults?.maxTurns ?? DEFAULT_CONFIG.maxTurns,
