@@ -33,9 +33,8 @@ const CODEX_SDK_DEFAULTS = {
  * Build MCP server configuration from agent config
  */
 function buildMcpServerConfig(config: AgentConfig): McpServerConfig {
-  const host = config.mcpServerHost || CODEX_SDK_DEFAULTS.mcpServerHost
   const port = config.mcpServerPort || CODEX_SDK_DEFAULTS.mcpServerPort
-  const mcpServerUrl = `http://${host}:${port}/mcp`
+  const mcpServerUrl = `http://${CODEX_SDK_DEFAULTS.mcpServerHost}:${port}/mcp`
   return { url: mcpServerUrl } as McpServerConfig
 }
 
@@ -59,7 +58,6 @@ function buildMcpServerConfig(config: AgentConfig): McpServerConfig {
  *
  * Configuration (via AgentConfig):
  * - apiKey: OpenAI API key
- * - mcpServerHost: MCP server host (optional, defaults to 127.0.0.1)
  * - mcpServerPort: MCP server port (optional, defaults to 9100)
  * - cwd: Working directory
  */
