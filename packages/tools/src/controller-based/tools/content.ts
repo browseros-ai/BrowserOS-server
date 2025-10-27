@@ -98,6 +98,7 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
 
       const snapshotResult = await context.executeAction('getSnapshot', {
         tabId: params.tabId,
+        type: includeLinks ? 'links' : 'text',
       });
       const snapshot = snapshotResult as Snapshot;
 

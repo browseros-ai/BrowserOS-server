@@ -43,7 +43,7 @@ const CODEX_SDK_DEFAULTS = {
 function buildMcpServerConfig(config: AgentConfig): McpServerConfig {
   const port = config.mcpServerPort || CODEX_SDK_DEFAULTS.mcpServerPort;
   const mcpServerUrl = `http://${CODEX_SDK_DEFAULTS.mcpServerHost}:${port}/mcp`;
-  return {url: mcpServerUrl} as McpServerConfig;
+  return { url: mcpServerUrl } as McpServerConfig;
 }
 
 /**
@@ -304,13 +304,16 @@ export class CodexSDKAgent extends BaseAgent {
         servers: Object.keys(this.config.mcpServers || {}),
       });
 
-      // Start thread with MCP servers (pass as Record, not array)
+      // Start thread with MCP servers and model (pass as Record, not array)
+      const modelName = this.selectedProvider?.model || 'o4-mini';
       const thread = this.codex.startThread({
         mcpServers: this.config.mcpServers,
+        model: modelName
       } as any);
 
       logger.debug('📡 Started Codex thread with MCP servers', {
         mcpServerCount: Object.keys(this.config.mcpServers || {}).length,
+        model: modelName
       });
 
       // Get streaming events from thread

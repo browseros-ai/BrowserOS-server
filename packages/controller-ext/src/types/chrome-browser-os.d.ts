@@ -294,6 +294,30 @@ declare namespace chrome.browserOS {
 
   function getSnapshot(
     tabId: number,
+    type: SnapshotType,
+    options: SnapshotOptions,
+    callback: (snapshot: Snapshot) => void,
+  ): void;
+
+  function getSnapshot(
+    tabId: number,
+    type: SnapshotType,
+    callback: (snapshot: Snapshot) => void,
+  ): void;
+
+  function getSnapshot(
+    tabId: number,
+    callback: (snapshot: Snapshot) => void,
+  ): void;
+
+  function getSnapshot(
+    type: SnapshotType,
+    options: SnapshotOptions,
+    callback: (snapshot: Snapshot) => void,
+  ): void;
+
+  function getSnapshot(
+    type: SnapshotType,
     callback: (snapshot: Snapshot) => void,
   ): void;
 
