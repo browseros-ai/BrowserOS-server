@@ -275,13 +275,16 @@ export class CodexSDKAgent extends BaseAgent {
         servers: Object.keys(this.config.mcpServers || {})
       })
 
-      // Start thread with MCP servers (pass as Record, not array)
+      // Start thread with MCP servers and model (pass as Record, not array)
+      const modelName = this.selectedProvider?.model || 'o4-mini'
       const thread = this.codex.startThread({
-        mcpServers: this.config.mcpServers
+        mcpServers: this.config.mcpServers,
+        model: modelName
       } as any)
 
       logger.debug('📡 Started Codex thread with MCP servers', {
-        mcpServerCount: Object.keys(this.config.mcpServers || {}).length
+        mcpServerCount: Object.keys(this.config.mcpServers || {}).length,
+        model: modelName
       })
 
       // Get streaming events from thread

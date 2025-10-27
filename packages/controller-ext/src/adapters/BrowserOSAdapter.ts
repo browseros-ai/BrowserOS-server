@@ -365,21 +365,37 @@ export class BrowserOSAdapter {
   /**
    * Get a content snapshot from the page
    */
-  async getSnapshot(tabId: number): Promise<Snapshot> {
+  async getSnapshot(tabId: number, type: SnapshotType): Promise<Snapshot> {
     try {
       logger.debug(`[BrowserOSAdapter] Getting snapshot for tab ${tabId}`);
-
-      return new Promise<Snapshot>((resolve, reject) => {
-        chrome.browserOS.getSnapshot(tabId, (snapshot: Snapshot) => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-          } else {
-            logger.debug(`[BrowserOSAdapter] Retrieved snapshot: ${JSON.stringify(snapshot)}`);
-            resolve(snapshot);
-          }
+      // get version number
+      const version = await this.getVersion();
+      if (version && version < '137.0.7220.69') {
+        // Pass the type
+        return await new Promise<Snapshot>((resolve, reject) => {
+          chrome.browserOS.getSnapshot(tabId, type, (snapshot: Snapshot) => {
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+            } else {
+              logger.debug(`[BrowserOSAdapter] Retrieved snapshot: ${JSON.stringify(snapshot)}`);
+              resolve(snapshot);
+            }
+          });
         });
-      });
-    } catch (error) {
+      } else {
+        // Ignore the type
+        return await new Promise<Snapshot>((resolve, reject) => {
+          chrome.browserOS.getSnapshot(tabId, (snapshot: Snapshot) => {
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+            } else {
+              logger.debug(`[BrowserOSAdapter] Retrieved snapshot: ${JSON.stringify(snapshot)}`);
+              resolve(snapshot);
+            }
+          });
+        });
+      }
+    } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`[BrowserOSAdapter] Failed to get snapshot: ${errorMessage}`);
       throw new Error(`Failed to get snapshot: ${errorMessage}`);
@@ -389,19 +405,19 @@ export class BrowserOSAdapter {
   /**
    * Get text content snapshot from the page
    * Convenience method (deprecated - use getSnapshot directly)
-   * @deprecated Use getSnapshot(tabId) instead
+   * Use getSnapshot(tabId, 'text') instead
    */
   async getTextSnapshot(tabId: number): Promise<Snapshot> {
-    return this.getSnapshot(tabId);
+    return this.getSnapshot(tabId, 'text');
   }
 
   /**
    * Get links snapshot from the page
    * Convenience method (deprecated - use getSnapshot directly)
-   * @deprecated Use getSnapshot(tabId) instead
+   * Use getSnapshot(tabId, 'links') instead
    */
   async getLinksSnapshot(tabId: number): Promise<Snapshot> {
-    return this.getSnapshot(tabId);
+    return this.getSnapshot(tabId, 'links');
   }
 
   /**
