@@ -43,9 +43,6 @@ export class CodexEventFormatter {
     // if (eventType === 'turn.completed') { // Deprecating this event as it doesnt provide much useful information
     //   return this.formatTurnCompleted(event)
     // }
-    // if (eventType === 'turn.completed') { // Deprecating this event as it doesnt provide much useful information
-    //   return this.formatTurnCompleted(event)
-    // }
 
     if (eventType === 'turn.failed') {
       const errorMsg = event.error?.message || 'Unknown error';
@@ -65,7 +62,7 @@ export class CodexEventFormatter {
 
     switch (item.type) {
       case 'agent_message':
-        return new FormattedEvent('completion', item.text || '')
+        return new FormattedEvent('completion', item.text || '');
 
       case 'reasoning': {
         const text = item.text || item.content || '';
