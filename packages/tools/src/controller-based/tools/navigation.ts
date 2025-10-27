@@ -18,7 +18,10 @@ export const navigate = defineTool<z.ZodRawShape, Context, Response>({
   },
   schema: {
     url: z.string().describe('URL to navigate to (must include protocol)'),
-    tabId: z.coerce.number().optional().describe('Tab ID to navigate (optional, defaults to active tab)'),
+    tabId: z.coerce
+      .number()
+      .optional()
+      .describe('Tab ID to navigate (optional, defaults to active tab)'),
   },
   handler: async (request, response, context) => {
     const params = request.params as {url: string; tabId?: number};

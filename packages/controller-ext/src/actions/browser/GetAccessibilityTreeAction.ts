@@ -1,20 +1,25 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
-import { BrowserOSAdapter } from '@/adapters/BrowserOSAdapter';
+import {BrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
 
 const GetAccessibilityTreeInputSchema = z.object({
-  tabId: z.number().int().positive().describe('Tab ID to get accessibility tree from'),
+  tabId: z
+    .number()
+    .int()
+    .positive()
+    .describe('Tab ID to get accessibility tree from'),
 });
 
-type GetAccessibilityTreeInput = z.infer<typeof GetAccessibilityTreeInputSchema>;
+type GetAccessibilityTreeInput = z.infer<
+  typeof GetAccessibilityTreeInputSchema
+>;
 export type GetAccessibilityTreeOutput = chrome.browserOS.AccessibilityTree;
 
 /**
@@ -42,8 +47,10 @@ export class GetAccessibilityTreeAction extends ActionHandler<
   readonly inputSchema = GetAccessibilityTreeInputSchema;
   private browserOSAdapter = BrowserOSAdapter.getInstance();
 
-  async execute(input: GetAccessibilityTreeInput): Promise<GetAccessibilityTreeOutput> {
-    const { tabId } = input;
+  async execute(
+    input: GetAccessibilityTreeInput,
+  ): Promise<GetAccessibilityTreeOutput> {
+    const {tabId} = input;
     const tree = await this.browserOSAdapter.getAccessibilityTree(tabId);
     return tree;
   }

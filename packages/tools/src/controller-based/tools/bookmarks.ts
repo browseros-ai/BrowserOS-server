@@ -17,14 +17,22 @@ export const getBookmarks = defineTool<z.ZodRawShape, Context, Response>({
     readOnlyHint: true,
   },
   schema: {
-    folderId: z.string().optional().describe('Optional folder ID to get bookmarks from (omit for all)'),
+    folderId: z
+      .string()
+      .optional()
+      .describe('Optional folder ID to get bookmarks from (omit for all)'),
   },
   handler: async (request, response, context) => {
     const {folderId} = request.params as {folderId?: string};
 
     const result = await context.executeAction('getBookmarks', {folderId});
     const data = result as {
-      bookmarks: Array<{id: string; title: string; url?: string; parentId?: string}>;
+      bookmarks: Array<{
+        id: string;
+        title: string;
+        url?: string;
+        parentId?: string;
+      }>;
     };
 
     response.appendResponseLine(`Found ${data.bookmarks.length} bookmarks:`);
@@ -35,7 +43,9 @@ export const getBookmarks = defineTool<z.ZodRawShape, Context, Response>({
         response.appendResponseLine(`[${bookmark.id}] ${bookmark.title}`);
         response.appendResponseLine(`    ${bookmark.url}`);
       } else {
-        response.appendResponseLine(`[${bookmark.id}] 📁 ${bookmark.title} (folder)`);
+        response.appendResponseLine(
+          `[${bookmark.id}] 📁 ${bookmark.title} (folder)`,
+        );
       }
     }
   },
@@ -60,7 +70,11 @@ export const createBookmark = defineTool<z.ZodRawShape, Context, Response>({
       parentId?: string;
     };
 
-    const result = await context.executeAction('createBookmark', {title, url, parentId});
+    const result = await context.executeAction('createBookmark', {
+      title,
+      url,
+      parentId,
+    });
     const data = result as {id: string; title: string; url: string};
 
     response.appendResponseLine(`Created bookmark: ${data.title}`);

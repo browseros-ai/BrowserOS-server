@@ -1,10 +1,9 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { logger } from '@/utils/Logger';
+import {logger} from '@/utils/Logger';
 
 /**
  * TabAdapter - Wrapper for Chrome tabs API
@@ -30,18 +29,20 @@ export class TabAdapter {
     try {
       const tabs = await chrome.tabs.query({
         active: true,
-        currentWindow: true
+        currentWindow: true,
       });
 
       if (tabs.length === 0) {
         throw new Error('No active tab found');
       }
 
-      logger.debug(`[TabAdapter] Found active tab: ${tabs[0].id} (${tabs[0].url})`);
+      logger.debug(
+        `[TabAdapter] Found active tab: ${tabs[0].id} (${tabs[0].url})`,
+      );
       return tabs[0];
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger.error(`[TabAdapter] Failed to get active tab: ${errorMessage}`);
       throw new Error(`Failed to get active tab: ${errorMessage}`);
     }
@@ -61,9 +62,9 @@ export class TabAdapter {
       const tab = await chrome.tabs.get(tabId);
       logger.debug(`[TabAdapter] Found tab: ${tab.id} (${tab.url})`);
       return tab;
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger.error(`[TabAdapter] Failed to get tab ${tabId}: ${errorMessage}`);
       throw new Error(`Tab not found (id: ${tabId})`);
     }
@@ -81,9 +82,9 @@ export class TabAdapter {
       const tabs = await chrome.tabs.query({});
       logger.debug(`[TabAdapter] Found ${tabs.length} tabs`);
       return tabs;
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger.error(`[TabAdapter] Failed to get all tabs: ${errorMessage}`);
       throw new Error(`Failed to get tabs: ${errorMessage}`);
     }
@@ -102,9 +103,9 @@ export class TabAdapter {
       const tabs = await chrome.tabs.query(query);
       logger.debug(`[TabAdapter] Query found ${tabs.length} tabs`);
       return tabs;
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger.error(`[TabAdapter] Failed to query tabs: ${errorMessage}`);
       throw new Error(`Failed to query tabs: ${errorMessage}`);
     }
@@ -120,13 +121,17 @@ export class TabAdapter {
     logger.debug(`[TabAdapter] Getting tabs in window ${windowId}`);
 
     try {
-      const tabs = await chrome.tabs.query({ windowId });
-      logger.debug(`[TabAdapter] Found ${tabs.length} tabs in window ${windowId}`);
+      const tabs = await chrome.tabs.query({windowId});
+      logger.debug(
+        `[TabAdapter] Found ${tabs.length} tabs in window ${windowId}`,
+      );
       return tabs;
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[TabAdapter] Failed to get tabs in window ${windowId}: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[TabAdapter] Failed to get tabs in window ${windowId}: ${errorMessage}`,
+      );
       throw new Error(`Failed to get tabs in window: ${errorMessage}`);
     }
   }
@@ -140,13 +145,15 @@ export class TabAdapter {
     logger.debug('[TabAdapter] Getting current window tabs');
 
     try {
-      const tabs = await chrome.tabs.query({ currentWindow: true });
+      const tabs = await chrome.tabs.query({currentWindow: true});
       logger.debug(`[TabAdapter] Found ${tabs.length} tabs in current window`);
       return tabs;
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[TabAdapter] Failed to get current window tabs: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[TabAdapter] Failed to get current window tabs: ${errorMessage}`,
+      );
       throw new Error(`Failed to get current window tabs: ${errorMessage}`);
     }
   }
@@ -160,10 +167,12 @@ export class TabAdapter {
    */
   async openTab(url?: string, active = true): Promise<chrome.tabs.Tab> {
     const targetUrl = url || 'chrome://newtab/';
-    logger.debug(`[TabAdapter] Opening new tab: ${targetUrl} (active: ${active})`);
+    logger.debug(
+      `[TabAdapter] Opening new tab: ${targetUrl} (active: ${active})`,
+    );
 
     try {
-      const tab = await chrome.tabs.create({ url: targetUrl, active });
+      const tab = await chrome.tabs.create({url: targetUrl, active});
 
       if (!tab.id) {
         throw new Error('Created tab has no ID');
@@ -171,9 +180,9 @@ export class TabAdapter {
 
       logger.debug(`[TabAdapter] Created tab ${tab.id}: ${targetUrl}`);
       return tab;
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger.error(`[TabAdapter] Failed to open tab: ${errorMessage}`);
       throw new Error(`Failed to open tab: ${errorMessage}`);
     }
@@ -194,10 +203,12 @@ export class TabAdapter {
 
       await chrome.tabs.remove(tabId);
       logger.debug(`[TabAdapter] Closed tab ${tabId}: ${title}`);
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[TabAdapter] Failed to close tab ${tabId}: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[TabAdapter] Failed to close tab ${tabId}: ${errorMessage}`,
+      );
       throw new Error(`Failed to close tab ${tabId}: ${errorMessage}`);
     }
   }
@@ -213,18 +224,22 @@ export class TabAdapter {
 
     try {
       // Update tab to be active
-      const tab = await chrome.tabs.update(tabId, { active: true });
+      const tab = await chrome.tabs.update(tabId, {active: true});
 
       if (!tab) {
         throw new Error('Failed to update tab');
       }
 
-      logger.debug(`[TabAdapter] Switched to tab ${tabId}: ${tab.title || 'Untitled'}`);
+      logger.debug(
+        `[TabAdapter] Switched to tab ${tabId}: ${tab.title || 'Untitled'}`,
+      );
       return tab;
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[TabAdapter] Failed to switch to tab ${tabId}: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[TabAdapter] Failed to switch to tab ${tabId}: ${errorMessage}`,
+      );
       throw new Error(`Failed to switch to tab ${tabId}: ${errorMessage}`);
     }
   }
@@ -240,7 +255,7 @@ export class TabAdapter {
     logger.debug(`[TabAdapter] Navigating tab ${tabId} to ${url}`);
 
     try {
-      const tab = await chrome.tabs.update(tabId, { url });
+      const tab = await chrome.tabs.update(tabId, {url});
 
       if (!tab) {
         throw new Error('Failed to update tab');
@@ -248,11 +263,15 @@ export class TabAdapter {
 
       logger.debug(`[TabAdapter] Tab ${tabId} navigating to ${url}`);
       return tab;
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[TabAdapter] Failed to navigate tab ${tabId}: ${errorMessage}`);
-      throw new Error(`Failed to navigate tab ${tabId} to ${url}: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[TabAdapter] Failed to navigate tab ${tabId}: ${errorMessage}`,
+      );
+      throw new Error(
+        `Failed to navigate tab ${tabId} to ${url}: ${errorMessage}`,
+      );
     }
   }
 }

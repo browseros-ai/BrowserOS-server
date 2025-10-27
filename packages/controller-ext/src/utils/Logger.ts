@@ -1,10 +1,9 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { LOGGING_CONFIG } from '@/config/constants';
+import {LOGGING_CONFIG} from '@/config/constants';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -26,10 +25,12 @@ export class Logger {
         if (LOGGING_CONFIG.level === 'debug') console.log(logMessage);
         break;
       case 'info':
-        if (['debug', 'info'].includes(LOGGING_CONFIG.level)) console.info(logMessage);
+        if (['debug', 'info'].includes(LOGGING_CONFIG.level))
+          console.info(logMessage);
         break;
       case 'warn':
-        if (['debug', 'info', 'warn'].includes(LOGGING_CONFIG.level)) console.warn(logMessage);
+        if (['debug', 'info', 'warn'].includes(LOGGING_CONFIG.level))
+          console.warn(logMessage);
         break;
       case 'error':
         console.error(logMessage);

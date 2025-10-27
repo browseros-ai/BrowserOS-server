@@ -7,6 +7,7 @@ A high-performance WebSocket server for Claude AI agents with browser automation
 Multi-agent server that handles concurrent Claude AI sessions with full Chrome DevTools integration. Built on Bun for ultra-fast performance with standalone binary deployment.
 
 **Key Features:**
+
 - 🤖 Multi-agent WebSocket server
 - 🌐 Browser automation (26 Chrome DevTools tools)
 - ⚡ Built with Bun runtime
@@ -93,6 +94,7 @@ bun run test:unit
 ```
 
 Tests 4 core modules with 20 unit tests:
+
 - `BaseAgent.test.ts` - Agent base class
 - `EventFormatter.test.ts` - Event formatting
 - `SessionManager.test.ts` - Session management
@@ -106,6 +108,7 @@ bun run test:api
 ```
 
 Expected output:
+
 ```
 ✅ API key is valid
 ✅ Model: claude-sonnet-4
@@ -149,26 +152,29 @@ curl http://localhost:3000/health
 ## Usage Example
 
 ```typescript
-import { WebSocket } from 'ws'
+import {WebSocket} from 'ws';
 
-const ws = new WebSocket('ws://localhost:3000')
+const ws = new WebSocket('ws://localhost:3000');
 
 ws.on('open', () => {
-  ws.send(JSON.stringify({
-    type: 'message',
-    content: 'Navigate to example.com and take a screenshot'
-  }))
-})
+  ws.send(
+    JSON.stringify({
+      type: 'message',
+      content: 'Navigate to example.com and take a screenshot',
+    }),
+  );
+});
 
-ws.on('message', (data) => {
-  const event = JSON.parse(data.toString())
-  console.log(event.type, event.content)
-})
+ws.on('message', data => {
+  const event = JSON.parse(data.toString());
+  console.log(event.type, event.content);
+});
 ```
 
 ## Event Types
 
 Events streamed to clients:
+
 - `connection` - Connection confirmed
 - `init` - Agent initialized
 - `response` - Agent text response
@@ -180,22 +186,26 @@ Events streamed to clients:
 ## Troubleshooting
 
 **Port in use:**
+
 ```bash
 lsof -ti:3000 | xargs kill -9
 ```
 
 **API key invalid:**
+
 - Verify key starts with `sk-ant-api03-`
 - No quotes in `.env` file
 - Check at https://console.anthropic.com/settings/keys
 
 **MCP server fails:**
+
 ```bash
 # Test Chrome DevTools MCP manually
 npx -y chrome-devtools-mcp@latest --help
 ```
 
 **Chrome not found:**
+
 - macOS: `brew install --cask google-chrome`
 - Ubuntu: `sudo apt-get install chromium-browser`
 

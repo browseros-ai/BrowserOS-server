@@ -1,22 +1,37 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
-import { TabAdapter } from '@/adapters/TabAdapter';
+import {TabAdapter} from '@/adapters/TabAdapter';
 
 // Input schema for getTabs action
-const GetTabsInputSchema = z.object({
-  currentWindowOnly: z.boolean().optional().default(false).describe('If true, return only tabs in current window'),
-  windowId: z.number().int().positive().optional().describe('If specified, return tabs in this window only'),
-  url: z.string().optional().describe('URL pattern to filter tabs (supports wildcards like "*://*.google.com/*")'),
-  title: z.string().optional().describe('Title pattern to filter tabs')
-}).describe('Optional filters for querying tabs');
+const GetTabsInputSchema = z
+  .object({
+    currentWindowOnly: z
+      .boolean()
+      .optional()
+      .default(false)
+      .describe('If true, return only tabs in current window'),
+    windowId: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe('If specified, return tabs in this window only'),
+    url: z
+      .string()
+      .optional()
+      .describe(
+        'URL pattern to filter tabs (supports wildcards like "*://*.google.com/*")',
+      ),
+    title: z.string().optional().describe('Title pattern to filter tabs'),
+  })
+  .describe('Optional filters for querying tabs');
 
 type GetTabsInput = z.infer<typeof GetTabsInputSchema>;
 
@@ -96,12 +111,12 @@ export class GetTabsAction extends ActionHandler<GetTabsInput, GetTabsOutput> {
         title: tab.title || '',
         windowId: tab.windowId!,
         active: tab.active || false,
-        index: tab.index
+        index: tab.index,
       }));
 
     return {
       tabs: tabInfos,
-      count: tabInfos.length
+      count: tabInfos.length,
     };
   }
 }

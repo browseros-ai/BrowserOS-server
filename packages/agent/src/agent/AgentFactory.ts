@@ -3,9 +3,10 @@
  * Copyright 2025 BrowserOS
  */
 
-import type { AgentConfig } from './types.js'
-import type { ControllerBridge } from '@browseros/controller-server'
-import type { BaseAgent } from './BaseAgent.js'
+import type {ControllerBridge} from '@browseros/controller-server';
+
+import type {BaseAgent} from './BaseAgent.js';
+import type {AgentConfig} from './types.js';
 
 /**
  * Agent constructor signature
@@ -13,16 +14,16 @@ import type { BaseAgent } from './BaseAgent.js'
  */
 export type AgentConstructor = new (
   config: AgentConfig,
-  controllerBridge: ControllerBridge
-) => BaseAgent
+  controllerBridge: ControllerBridge,
+) => BaseAgent;
 
 /**
  * Agent registration entry
  */
 interface AgentRegistration {
-  name: string
-  constructor: AgentConstructor
-  description?: string
+  name: string;
+  constructor: AgentConstructor;
+  description?: string;
 }
 
 /**
@@ -42,7 +43,7 @@ interface AgentRegistration {
  * ```
  */
 export class AgentFactory {
-  private static registry = new Map<string, AgentRegistration>()
+  private static registry = new Map<string, AgentRegistration>();
 
   /**
    * Register an agent type
@@ -54,17 +55,17 @@ export class AgentFactory {
   static register(
     type: string,
     constructor: AgentConstructor,
-    description?: string
+    description?: string,
   ): void {
     if (this.registry.has(type)) {
-      throw new Error(`Agent type '${type}' is already registered`)
+      throw new Error(`Agent type '${type}' is already registered`);
     }
 
     this.registry.set(type, {
       name: type,
       constructor,
-      description
-    })
+      description,
+    });
   }
 
   /**
@@ -79,18 +80,18 @@ export class AgentFactory {
   static create(
     type: string,
     config: AgentConfig,
-    controllerBridge: ControllerBridge
+    controllerBridge: ControllerBridge,
   ): BaseAgent {
-    const registration = this.registry.get(type)
+    const registration = this.registry.get(type);
 
     if (!registration) {
-      const availableTypes = Array.from(this.registry.keys()).join(', ')
+      const availableTypes = Array.from(this.registry.keys()).join(', ');
       throw new Error(
-        `Agent type '${type}' is not registered. Available types: ${availableTypes}`
-      )
+        `Agent type '${type}' is not registered. Available types: ${availableTypes}`,
+      );
     }
 
-    return new registration.constructor(config, controllerBridge)
+    return new registration.constructor(config, controllerBridge);
   }
 
   /**
@@ -100,7 +101,7 @@ export class AgentFactory {
    * @returns true if registered
    */
   static has(type: string): boolean {
-    return this.registry.has(type)
+    return this.registry.has(type);
   }
 
   /**
@@ -109,7 +110,7 @@ export class AgentFactory {
    * @returns Array of registered agent type identifiers
    */
   static getAvailableTypes(): string[] {
-    return Array.from(this.registry.keys())
+    return Array.from(this.registry.keys());
   }
 
   /**
@@ -119,7 +120,7 @@ export class AgentFactory {
    * @returns Registration info or undefined
    */
   static getRegistration(type: string): AgentRegistration | undefined {
-    return this.registry.get(type)
+    return this.registry.get(type);
   }
 
   /**
@@ -129,13 +130,13 @@ export class AgentFactory {
    * @returns true if unregistered, false if not found
    */
   static unregister(type: string): boolean {
-    return this.registry.delete(type)
+    return this.registry.delete(type);
   }
 
   /**
    * Clear all registrations (useful for testing)
    */
   static clear(): void {
-    this.registry.clear()
+    this.registry.clear();
   }
 }

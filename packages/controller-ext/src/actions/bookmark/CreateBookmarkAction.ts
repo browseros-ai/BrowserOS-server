@@ -1,20 +1,22 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
-import { BookmarkAdapter } from '@/adapters/BookmarkAdapter';
+import {BookmarkAdapter} from '@/adapters/BookmarkAdapter';
 
 // Input schema
 const CreateBookmarkInputSchema = z.object({
   title: z.string().describe('Bookmark title'),
   url: z.string().url().describe('Bookmark URL'),
-  parentId: z.string().optional().describe('Parent folder ID (optional, defaults to "Other Bookmarks")'),
+  parentId: z
+    .string()
+    .optional()
+    .describe('Parent folder ID (optional, defaults to "Other Bookmarks")'),
 });
 
 // Output schema
@@ -22,7 +24,10 @@ const CreateBookmarkOutputSchema = z.object({
   id: z.string().describe('Created bookmark ID'),
   title: z.string().describe('Bookmark title'),
   url: z.string().describe('Bookmark URL'),
-  dateAdded: z.number().optional().describe('Timestamp when bookmark was created'),
+  dateAdded: z
+    .number()
+    .optional()
+    .describe('Timestamp when bookmark was created'),
 });
 
 type CreateBookmarkInput = z.infer<typeof CreateBookmarkInputSchema>;
@@ -54,7 +59,10 @@ type CreateBookmarkOutput = z.infer<typeof CreateBookmarkOutputSchema>;
  * }
  * // Returns: { id: "123", title: "Google", url: "https://www.google.com", dateAdded: 1729012345678 }
  */
-export class CreateBookmarkAction extends ActionHandler<CreateBookmarkInput, CreateBookmarkOutput> {
+export class CreateBookmarkAction extends ActionHandler<
+  CreateBookmarkInput,
+  CreateBookmarkOutput
+> {
   readonly inputSchema = CreateBookmarkInputSchema;
   private bookmarkAdapter = new BookmarkAdapter();
 

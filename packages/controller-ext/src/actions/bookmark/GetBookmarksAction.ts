@@ -1,31 +1,47 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
-import { BookmarkAdapter } from '@/adapters/BookmarkAdapter';
+import {BookmarkAdapter} from '@/adapters/BookmarkAdapter';
 
 // Input schema
 const GetBookmarksInputSchema = z.object({
-  query: z.string().optional().describe('Search query to filter bookmarks (optional, returns all if not provided)'),
-  limit: z.number().int().positive().optional().default(20).describe('Maximum number of results (default: 20)'),
-  recent: z.boolean().optional().default(false).describe('Get recent bookmarks instead of searching'),
+  query: z
+    .string()
+    .optional()
+    .describe(
+      'Search query to filter bookmarks (optional, returns all if not provided)',
+    ),
+  limit: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .default(20)
+    .describe('Maximum number of results (default: 20)'),
+  recent: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Get recent bookmarks instead of searching'),
 });
 
 // Output schema
 const GetBookmarksOutputSchema = z.object({
-  bookmarks: z.array(z.object({
-    id: z.string(),
-    title: z.string(),
-    url: z.string().optional(),
-    dateAdded: z.number().optional(),
-    parentId: z.string().optional(),
-  })),
+  bookmarks: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      url: z.string().optional(),
+      dateAdded: z.number().optional(),
+      parentId: z.string().optional(),
+    }),
+  ),
   count: z.number(),
 });
 
@@ -58,7 +74,10 @@ type GetBookmarksOutput = z.infer<typeof GetBookmarksOutputSchema>;
  * }
  * // Returns: { bookmarks: [{id: "1", title: "Google", url: "https://google.com"}], count: 1 }
  */
-export class GetBookmarksAction extends ActionHandler<GetBookmarksInput, GetBookmarksOutput> {
+export class GetBookmarksAction extends ActionHandler<
+  GetBookmarksInput,
+  GetBookmarksOutput
+> {
   readonly inputSchema = GetBookmarksInputSchema;
   private bookmarkAdapter = new BookmarkAdapter();
 

@@ -3,33 +3,45 @@
  * Copyright 2025 BrowserOS
  */
 
-import { z } from 'zod'
+import {z} from 'zod';
 
 /**
  * Formatted event structure for WebSocket clients
  */
 export class FormattedEvent {
-  type: 'init' | 'thinking' | 'tool_use' | 'tool_result' | 'response' | 'completion' | 'error' | 'processing'
-  content: string
+  type:
+    | 'init'
+    | 'thinking'
+    | 'tool_use'
+    | 'tool_result'
+    | 'response'
+    | 'completion'
+    | 'error'
+    | 'processing';
+  content: string;
   metadata?: {
-    turnCount?: number
-    isError?: boolean
-    duration?: number
-    deniedTools?: number
-  }
+    turnCount?: number;
+    isError?: boolean;
+    duration?: number;
+    deniedTools?: number;
+  };
 
-  constructor(type: FormattedEvent['type'], content: string, metadata?: FormattedEvent['metadata']) {
-    this.type = type
-    this.content = content
-    this.metadata = metadata
+  constructor(
+    type: FormattedEvent['type'],
+    content: string,
+    metadata?: FormattedEvent['metadata'],
+  ) {
+    this.type = type;
+    this.content = content;
+    this.metadata = metadata;
   }
 
   toJSON() {
     return {
       type: this.type,
       content: this.content,
-      ...(this.metadata && { metadata: this.metadata })
-    }
+      ...(this.metadata && {metadata: this.metadata}),
+    };
   }
 }
 
@@ -89,10 +101,10 @@ export const AgentConfigSchema = z.object({
    * Agent-specific custom options
    * Allows custom agents to accept additional config
    */
-  customOptions: z.record(z.string(), z.unknown()).optional()
-})
+  customOptions: z.record(z.string(), z.unknown()).optional(),
+});
 
-export type AgentConfig = z.infer<typeof AgentConfigSchema>
+export type AgentConfig = z.infer<typeof AgentConfigSchema>;
 
 /**
  * Runtime metadata about agent execution state
@@ -136,7 +148,7 @@ export const AgentMetadataSchema = z.object({
   /**
    * Agent-specific custom metadata
    */
-  custom: z.record(z.string(), z.unknown()).optional()
-})
+  custom: z.record(z.string(), z.unknown()).optional(),
+});
 
-export type AgentMetadata = z.infer<typeof AgentMetadataSchema>
+export type AgentMetadata = z.infer<typeof AgentMetadataSchema>;

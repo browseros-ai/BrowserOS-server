@@ -1,22 +1,27 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
-import { BrowserOSAdapter } from '@/adapters/BrowserOSAdapter';
+import {BrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
 
 const ClearInputSchema = z.object({
   tabId: z.number().describe('The tab ID containing the element'),
-  nodeId: z.number().int().positive().describe('The nodeId from interactive snapshot'),
+  nodeId: z
+    .number()
+    .int()
+    .positive()
+    .describe('The nodeId from interactive snapshot'),
 });
 
 type ClearInput = z.infer<typeof ClearInputSchema>;
-interface ClearOutput { success: boolean }
+interface ClearOutput {
+  success: boolean;
+}
 
 /**
  * ClearAction - Clear text from an input element
@@ -30,6 +35,6 @@ export class ClearAction extends ActionHandler<ClearInput, ClearOutput> {
 
   async execute(input: ClearInput): Promise<ClearOutput> {
     await this.browserOSAdapter.clear(input.tabId, input.nodeId);
-    return { success: true };
+    return {success: true};
   }
 }

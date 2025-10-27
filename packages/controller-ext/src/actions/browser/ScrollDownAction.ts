@@ -1,14 +1,13 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
-import { BrowserOSAdapter } from '@/adapters/BrowserOSAdapter';
+import {BrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
 
 // Input schema
 const ScrollDownInputSchema = z.object({
@@ -38,7 +37,10 @@ type ScrollDownOutput = z.infer<typeof ScrollDownOutputSchema>;
  * Usage:
  * Used for scrolling through long pages to view content below the fold.
  */
-export class ScrollDownAction extends ActionHandler<ScrollDownInput, ScrollDownOutput> {
+export class ScrollDownAction extends ActionHandler<
+  ScrollDownInput,
+  ScrollDownOutput
+> {
   readonly inputSchema = ScrollDownInputSchema;
   private browserOSAdapter = BrowserOSAdapter.getInstance();
 
@@ -47,8 +49,8 @@ export class ScrollDownAction extends ActionHandler<ScrollDownInput, ScrollDownO
     await this.browserOSAdapter.sendKeys(input.tabId, 'PageDown');
 
     // Add small delay for scroll to complete
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 100));
 
-    return { success: true };
+    return {success: true};
   }
 }

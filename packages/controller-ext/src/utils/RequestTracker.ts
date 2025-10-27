@@ -1,10 +1,9 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { logger } from './Logger';
+import {logger} from './Logger';
 
 export interface TrackedRequest {
   id: string;
@@ -36,7 +35,7 @@ export class RequestTracker {
       id,
       action,
       startTime: Date.now(),
-      status: 'pending'
+      status: 'pending',
     });
     logger.debug(`Request started: ${id} [${action}]`);
   }
@@ -56,7 +55,9 @@ export class RequestTracker {
       req.duration = Date.now() - req.startTime;
       req.error = error;
 
-      logger.info(`Request ${error ? 'failed' : 'completed'}: ${id} [${req.action}] in ${req.duration}ms`);
+      logger.info(
+        `Request ${error ? 'failed' : 'completed'}: ${id} [${req.action}] in ${req.duration}ms`,
+      );
 
       // Schedule cleanup after 1 minute
       setTimeout(() => this.requests.delete(id), 60000);
@@ -64,18 +65,22 @@ export class RequestTracker {
   }
 
   getActiveRequests(): TrackedRequest[] {
-    return Array.from(this.requests.values())
-      .filter(r => r.status === 'pending' || r.status === 'executing');
+    return Array.from(this.requests.values()).filter(
+      r => r.status === 'pending' || r.status === 'executing',
+    );
   }
 
   getStats(): RequestStats {
     const all = Array.from(this.requests.values());
-    const inFlight = all.filter(r => r.status === 'pending' || r.status === 'executing').length;
+    const inFlight = all.filter(
+      r => r.status === 'pending' || r.status === 'executing',
+    ).length;
 
     const completed = all.filter(r => r.duration !== undefined);
-    const avgDuration = completed.length > 0
-      ? completed.reduce((sum, r) => sum + r.duration!, 0) / completed.length
-      : 0;
+    const avgDuration =
+      completed.length > 0
+        ? completed.reduce((sum, r) => sum + r.duration!, 0) / completed.length
+        : 0;
 
     const failed = all.filter(r => r.status === 'failed').length;
     const errorRate = all.length > 0 ? failed / all.length : 0;
@@ -84,17 +89,17 @@ export class RequestTracker {
       inFlight,
       avgDuration: Math.round(avgDuration),
       errorRate: Math.round(errorRate * 100) / 100,
-      totalRequests: all.length
+      totalRequests: all.length,
     };
   }
 
   getHungRequests(timeoutMs = 30000): TrackedRequest[] {
     const now = Date.now();
-    return Array.from(this.requests.values())
-      .filter(r =>
+    return Array.from(this.requests.values()).filter(
+      r =>
         (r.status === 'pending' || r.status === 'executing') &&
-        (now - r.startTime) > timeoutMs
-      );
+        now - r.startTime > timeoutMs,
+    );
   }
 
   private cleanup(): void {
@@ -103,8 +108,10 @@ export class RequestTracker {
     const fiveMinutesAgo = now - 5 * 60 * 1000;
 
     for (const [id, req] of this.requests.entries()) {
-      if ((req.status === 'completed' || req.status === 'failed') &&
-          req.startTime < fiveMinutesAgo) {
+      if (
+        (req.status === 'completed' || req.status === 'failed') &&
+        req.startTime < fiveMinutesAgo
+      ) {
         this.requests.delete(id);
       }
     }

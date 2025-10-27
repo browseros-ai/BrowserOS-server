@@ -85,6 +85,7 @@ cp .env.example .env
 ### Available Configuration Options
 
 #### WebSocket Configuration
+
 ```bash
 WEBSOCKET_PROTOCOL=ws          # ws or wss (default: ws)
 WEBSOCKET_HOST=localhost        # Server host (default: localhost)
@@ -93,6 +94,7 @@ WEBSOCKET_PATH=/controller     # Server path (default: /controller)
 ```
 
 #### Connection Settings
+
 ```bash
 WEBSOCKET_RECONNECT_DELAY=1000              # Initial reconnect delay in ms (default: 1000)
 WEBSOCKET_MAX_RECONNECT_DELAY=30000         # Max reconnect delay in ms (default: 30000)
@@ -105,12 +107,14 @@ WEBSOCKET_REQUEST_TIMEOUT=30000             # Request timeout in ms (default: 30
 ```
 
 #### Concurrency Settings
+
 ```bash
 CONCURRENCY_MAX_CONCURRENT=100     # Max concurrent requests (default: 100)
 CONCURRENCY_MAX_QUEUE_SIZE=1000    # Max queued requests (default: 1000)
 ```
 
 #### Logging Settings
+
 ```bash
 LOGGING_ENABLED=true                       # Enable/disable logging (default: true)
 LOGGING_LEVEL=info                         # Log level: debug, info, warn, error (default: info)
@@ -139,6 +143,7 @@ The extension will now connect to `ws://localhost:8080/controller` instead of th
 ## 📖 Architecture
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for complete system documentation including:
+
 - High-level architecture diagram
 - Request flow (step-by-step)
 - Component details
@@ -198,11 +203,13 @@ npm run watch      # Watch mode for development
 3. Service worker console shows all logs
 
 **Check extension status:**
+
 ```javascript
-__browserosController.getStats()
+__browserosController.getStats();
 ```
 
 **Expected output:**
+
 ```javascript
 {
   connection: "connected",
@@ -215,6 +222,7 @@ __browserosController.getStats()
 
 **Check registered actions:**
 Look for this log on extension load:
+
 ```
 Registered 14 action(s): checkBrowserOS, getActiveTab, getTabs, ...
 ```
@@ -223,22 +231,22 @@ Registered 14 action(s): checkBrowserOS, getActiveTab, getTabs, ...
 
 ## 📋 Available Actions
 
-| Action | Input | Output | Description |
-|--------|-------|--------|-------------|
-| `checkBrowserOS` | `{}` | `{available, apis}` | Check if chrome.browserOS is available |
-| `getActiveTab` | `{}` | `{tabId, url, title, windowId}` | Get currently active tab |
-| `getTabs` | `{}` | `{tabs[]}` | Get all open tabs |
-| `getInteractiveSnapshot` | `{tabId, options?}` | `InteractiveSnapshot` | Get all interactive elements on page |
-| `click` | `{tabId, nodeId}` | `{success}` | Click element by nodeId |
-| `inputText` | `{tabId, nodeId, text}` | `{success}` | Type text into element |
-| `clear` | `{tabId, nodeId}` | `{success}` | Clear text from element |
-| `scrollToNode` | `{tabId, nodeId}` | `{scrolled}` | Scroll element into view |
-| `captureScreenshot` | `{tabId, size?, showHighlights?}` | `{dataUrl}` | Take screenshot |
-| `sendKeys` | `{tabId, keys}` | `{success}` | Send keyboard keys |
-| `getPageLoadStatus` | `{tabId}` | `PageLoadStatus` | Get page load status |
-| `getSnapshot` | `{tabId, type, options?}` | `Snapshot` | Get text/links snapshot |
-| `clickCoordinates` | `{tabId, x, y}` | `{success}` | Click at coordinates |
-| `typeAtCoordinates` | `{tabId, x, y, text}` | `{success}` | Type at coordinates |
+| Action                   | Input                             | Output                          | Description                            |
+| ------------------------ | --------------------------------- | ------------------------------- | -------------------------------------- |
+| `checkBrowserOS`         | `{}`                              | `{available, apis}`             | Check if chrome.browserOS is available |
+| `getActiveTab`           | `{}`                              | `{tabId, url, title, windowId}` | Get currently active tab               |
+| `getTabs`                | `{}`                              | `{tabs[]}`                      | Get all open tabs                      |
+| `getInteractiveSnapshot` | `{tabId, options?}`               | `InteractiveSnapshot`           | Get all interactive elements on page   |
+| `click`                  | `{tabId, nodeId}`                 | `{success}`                     | Click element by nodeId                |
+| `inputText`              | `{tabId, nodeId, text}`           | `{success}`                     | Type text into element                 |
+| `clear`                  | `{tabId, nodeId}`                 | `{success}`                     | Clear text from element                |
+| `scrollToNode`           | `{tabId, nodeId}`                 | `{scrolled}`                    | Scroll element into view               |
+| `captureScreenshot`      | `{tabId, size?, showHighlights?}` | `{dataUrl}`                     | Take screenshot                        |
+| `sendKeys`               | `{tabId, keys}`                   | `{success}`                     | Send keyboard keys                     |
+| `getPageLoadStatus`      | `{tabId}`                         | `PageLoadStatus`                | Get page load status                   |
+| `getSnapshot`            | `{tabId, type, options?}`         | `Snapshot`                      | Get text/links snapshot                |
+| `clickCoordinates`       | `{tabId, x, y}`                   | `{success}`                     | Click at coordinates                   |
+| `typeAtCoordinates`      | `{tabId, x, y, text}`             | `{success}`                     | Type at coordinates                    |
 
 ---
 
@@ -247,6 +255,7 @@ Registered 14 action(s): checkBrowserOS, getActiveTab, getTabs, ...
 **Endpoint:** `ws://localhost:9224/controller`
 
 **Request Format:**
+
 ```json
 {
   "id": "unique-request-id",
@@ -259,6 +268,7 @@ Registered 14 action(s): checkBrowserOS, getActiveTab, getTabs, ...
 ```
 
 **Response Format:**
+
 ```json
 {
   "id": "unique-request-id",
@@ -270,6 +280,7 @@ Registered 14 action(s): checkBrowserOS, getActiveTab, getTabs, ...
 ```
 
 **Error Response:**
+
 ```json
 {
   "id": "unique-request-id",
@@ -285,12 +296,14 @@ Registered 14 action(s): checkBrowserOS, getActiveTab, getTabs, ...
 ### Issue 1: "chrome.browserOS is undefined"
 
 **Symptoms:**
+
 - Diagnostic shows `"available": false`
 - All browser actions fail
 
 **Cause:** Not using BrowserOS Chrome
 
 **Solution:**
+
 - Download and use BrowserOS Chrome (not regular Chrome)
 - Verify at `chrome://version` - should show "BrowserOS" in the name
 
@@ -299,11 +312,13 @@ Registered 14 action(s): checkBrowserOS, getActiveTab, getTabs, ...
 ### Issue 2: "Port 9224 is already in use"
 
 **Symptoms:**
+
 ```
 ❌ Fatal Error: Port 9224 is already in use!
 ```
 
 **Solution:**
+
 ```bash
 lsof -ti:9224 | xargs kill -9
 npm test
@@ -314,16 +329,19 @@ npm test
 ### Issue 3: Extension Not Connecting
 
 **Symptoms:**
+
 - Test client shows "Waiting for extension to connect..." forever
 - Service worker console shows "Connection timeout"
 
 **Checklist:**
+
 1. ✅ Test server running (`npm test`)
 2. ✅ Extension loaded in BrowserOS Chrome
 3. ✅ Extension enabled (chrome://extensions/)
 4. ✅ Service worker active (not suspended)
 
 **Solution:**
+
 1. Reload extension: chrome://extensions/ → "Reload" button
 2. Restart test server: Ctrl+C, then `npm test`
 
@@ -332,6 +350,7 @@ npm test
 ### Issue 4: "Unknown action"
 
 **Symptoms:**
+
 ```
 Error: Unknown action: "click". Available actions: getActiveTab, getTabs, ...
 ```
@@ -339,6 +358,7 @@ Error: Unknown action: "click". Available actions: getActiveTab, getTabs, ...
 **Cause:** Action not registered (extension didn't reload properly)
 
 **Solution:**
+
 1. Toggle extension OFF and ON at chrome://extensions/
 2. Check service worker console for: `Registered 14 action(s): ...`
 
@@ -399,6 +419,7 @@ MIT
 ## 🆘 Support
 
 For issues or questions:
+
 1. Check [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed documentation
 2. Review the "Common Issues" section above
 3. Check service worker console for detailed error logs

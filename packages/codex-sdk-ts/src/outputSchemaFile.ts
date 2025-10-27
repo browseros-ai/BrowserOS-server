@@ -1,35 +1,44 @@
-import { promises as fs } from "node:fs";
-import os from "node:os";
-import path from "node:path";
 
-export type OutputSchemaFile = {
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+import {promises as fs} from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
+export interface OutputSchemaFile {
   schemaPath?: string;
   cleanup: () => Promise<void>;
-};
+}
 
-export async function createOutputSchemaFile(schema: unknown): Promise<OutputSchemaFile> {
+export async function createOutputSchemaFile(
+  schema: unknown,
+): Promise<OutputSchemaFile> {
   if (schema === undefined) {
-    return { cleanup: async () => {} };
+    return {cleanup: async () => {}};
   }
 
   if (!isJsonObject(schema)) {
-    throw new Error("outputSchema must be a plain JSON object");
+    throw new Error('outputSchema must be a plain JSON object');
   }
 
-  const schemaDir = await fs.mkdtemp(path.join(os.tmpdir(), "codex-output-schema-"));
-  const schemaPath = path.join(schemaDir, "schema.json");
+  const schemaDir = await fs.mkdtemp(
+    path.join(os.tmpdir(), 'codex-output-schema-'),
+  );
+  const schemaPath = path.join(schemaDir, 'schema.json');
   const cleanup = async () => {
     try {
-      await fs.rm(schemaDir, { recursive: true, force: true });
-    }
-    catch  {
+      await fs.rm(schemaDir, {recursive: true, force: true});
+    } catch {
       // suppress
     }
   };
 
   try {
-    await fs.writeFile(schemaPath, JSON.stringify(schema), "utf8");
-    return { schemaPath, cleanup };
+    await fs.writeFile(schemaPath, JSON.stringify(schema), 'utf8');
+    return {schemaPath, cleanup};
   } catch (error) {
     await cleanup();
     throw error;
@@ -37,5 +46,5 @@ export async function createOutputSchemaFile(schema: unknown): Promise<OutputSch
 }
 
 function isJsonObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

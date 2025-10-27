@@ -1,20 +1,30 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
-import { BrowserOSAdapter, type ScreenshotSizeKey } from '@/adapters/BrowserOSAdapter';
+import {
+  BrowserOSAdapter,
+  type ScreenshotSizeKey,
+} from '@/adapters/BrowserOSAdapter';
 
 // Input schema
 const CaptureScreenshotInputSchema = z.object({
   tabId: z.number().describe('The tab ID to capture'),
-  size: z.enum(['small', 'medium', 'large']).optional().default('medium').describe('Screenshot size preset (default: medium)'),
-  showHighlights: z.boolean().optional().default(true).describe('Show element highlights (default: true)'),
+  size: z
+    .enum(['small', 'medium', 'large'])
+    .optional()
+    .default('medium')
+    .describe('Screenshot size preset (default: medium)'),
+  showHighlights: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe('Show element highlights (default: true)'),
   width: z.number().optional().describe('Exact width in pixels'),
   height: z.number().optional().describe('Exact height in pixels'),
 });
@@ -56,7 +66,9 @@ export class CaptureScreenshotAction extends ActionHandler<
   readonly inputSchema = CaptureScreenshotInputSchema;
   private browserOSAdapter = BrowserOSAdapter.getInstance();
 
-  async execute(input: CaptureScreenshotInput): Promise<CaptureScreenshotOutput> {
+  async execute(
+    input: CaptureScreenshotInput,
+  ): Promise<CaptureScreenshotOutput> {
     const dataUrl = await this.browserOSAdapter.captureScreenshot(
       input.tabId,
       input.size as ScreenshotSizeKey | undefined,
@@ -64,6 +76,6 @@ export class CaptureScreenshotAction extends ActionHandler<
       input.width,
       input.height,
     );
-    return { dataUrl };
+    return {dataUrl};
   }
 }

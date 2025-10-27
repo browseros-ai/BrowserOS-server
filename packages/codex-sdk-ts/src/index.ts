@@ -1,3 +1,9 @@
+
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 export type {
   ThreadEvent,
   ThreadStartedEvent,
@@ -10,7 +16,7 @@ export type {
   ThreadError,
   ThreadErrorEvent,
   Usage,
-} from "./events";
+} from './events';
 export type {
   ThreadItem,
   AgentMessageItem,
@@ -21,15 +27,15 @@ export type {
   WebSearchItem,
   TodoListItem,
   ErrorItem,
-} from "./items";
+} from './items';
 
-export { Thread } from "./thread";
-export type { RunResult, RunStreamedResult, Input, UserInput } from "./thread";
+export {Thread} from './thread';
+export type {RunResult, RunStreamedResult, Input, UserInput} from './thread';
 
-export { Codex } from "./codex";
+export {Codex} from './codex';
 
-export type { CodexOptions } from "./codexOptions";
+export type {CodexOptions} from './codexOptions';
 
-export type { ThreadOptions, ApprovalMode, SandboxMode } from "./threadOptions";
-export type { TurnOptions } from "./turnOptions";
-export type { McpServerConfig } from "./exec";
+export type {ThreadOptions, ApprovalMode, SandboxMode} from './threadOptions';
+export type {TurnOptions} from './turnOptions';
+export type {McpServerConfig} from './exec';

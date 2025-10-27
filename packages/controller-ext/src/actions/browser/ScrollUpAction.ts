@@ -1,14 +1,13 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
-import { BrowserOSAdapter } from '@/adapters/BrowserOSAdapter';
+import {BrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
 
 // Input schema
 const ScrollUpInputSchema = z.object({
@@ -38,7 +37,10 @@ type ScrollUpOutput = z.infer<typeof ScrollUpOutputSchema>;
  * Usage:
  * Used for scrolling back up through long pages.
  */
-export class ScrollUpAction extends ActionHandler<ScrollUpInput, ScrollUpOutput> {
+export class ScrollUpAction extends ActionHandler<
+  ScrollUpInput,
+  ScrollUpOutput
+> {
   readonly inputSchema = ScrollUpInputSchema;
   private browserOSAdapter = BrowserOSAdapter.getInstance();
 
@@ -47,8 +49,8 @@ export class ScrollUpAction extends ActionHandler<ScrollUpInput, ScrollUpOutput>
     await this.browserOSAdapter.sendKeys(input.tabId, 'PageUp');
 
     // Add small delay for scroll to complete
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 100));
 
-    return { success: true };
+    return {success: true};
   }
 }

@@ -4,7 +4,8 @@
  */
 
 const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY!;
-const POSTHOG_ENDPOINT = process.env.POSTHOG_ENDPOINT || 'https://us.i.posthog.com/i/v0/e/';
+const POSTHOG_ENDPOINT =
+  process.env.POSTHOG_ENDPOINT || 'https://us.i.posthog.com/i/v0/e/';
 const EVENT_PREFIX = 'browseros.server.';
 
 interface MetricsConfig {
@@ -17,7 +18,9 @@ class MetricsService {
 
   initialize(config: MetricsConfig): void {
     if (!config.client_id) {
-      console.warn('client_id is required for metrics initialization. Metrics will be disabled.');
+      console.warn(
+        'client_id is required for metrics initialization. Metrics will be disabled.',
+      );
       return;
     }
     this.config = config;

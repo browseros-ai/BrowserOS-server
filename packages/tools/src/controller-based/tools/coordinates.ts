@@ -22,11 +22,17 @@ export const clickCoordinates = defineTool<z.ZodRawShape, Context, Response>({
     y: z.coerce.number().describe('Y coordinate'),
   },
   handler: async (request, response, context) => {
-    const {tabId, x, y} = request.params as {tabId: number; x: number; y: number};
+    const {tabId, x, y} = request.params as {
+      tabId: number;
+      x: number;
+      y: number;
+    };
 
     await context.executeAction('clickCoordinates', {tabId, x, y});
 
-    response.appendResponseLine(`Clicked at coordinates (${x}, ${y}) in tab ${tabId}`);
+    response.appendResponseLine(
+      `Clicked at coordinates (${x}, ${y}) in tab ${tabId}`,
+    );
   },
 });
 
@@ -53,6 +59,8 @@ export const typeAtCoordinates = defineTool<z.ZodRawShape, Context, Response>({
 
     await context.executeAction('typeAtCoordinates', {tabId, x, y, text});
 
-    response.appendResponseLine(`Clicked at (${x}, ${y}) and typed text in tab ${tabId}`);
+    response.appendResponseLine(
+      `Clicked at (${x}, ${y}) and typed text in tab ${tabId}`,
+    );
   },
 });

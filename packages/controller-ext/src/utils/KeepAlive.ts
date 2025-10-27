@@ -3,7 +3,7 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { logger } from '@/utils/Logger';
+import {logger} from '@/utils/Logger';
 
 const KEEPALIVE_ALARM_NAME = 'browseros-keepalive';
 const KEEPALIVE_INTERVAL_MINUTES = 0.33; // ~20 seconds
@@ -17,7 +17,7 @@ export class KeepAlive {
       return;
     }
 
-    chrome.alarms.onAlarm.addListener((alarm) => {
+    chrome.alarms.onAlarm.addListener(alarm => {
       if (alarm.name === KEEPALIVE_ALARM_NAME) {
         logger.debug('KeepAlive: ping (service worker alive)');
       }
@@ -28,7 +28,9 @@ export class KeepAlive {
     });
 
     this.isInitialized = true;
-    logger.info(`KeepAlive started: alarm every ${KEEPALIVE_INTERVAL_MINUTES * 60}s`);
+    logger.info(
+      `KeepAlive started: alarm every ${KEEPALIVE_INTERVAL_MINUTES * 60}s`,
+    );
   }
 
   static async stop(): Promise<void> {
