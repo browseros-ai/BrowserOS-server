@@ -1,3 +1,9 @@
+
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 /**
  * Claude SDK specific system prompt for browser automation
  */
@@ -115,4 +121,4 @@ browser_get_page_content(tabId, "text-with-links", { context: "visible" })
 browser_get_screenshot(tabId, { size: "medium" })
 \`\`\`
 
-Focus on efficiency and use the most appropriate tool for each task. When in doubt, prefer simpler tools over complex ones.`
+Focus on efficiency and use the most appropriate tool for each task. When in doubt, prefer simpler tools over complex ones.`;

@@ -19,10 +19,24 @@ export const getScreenshot = defineTool<z.ZodRawShape, Context, Response>({
   },
   schema: {
     tabId: z.coerce.number().describe('Tab ID to capture'),
-    size: z.enum(['small', 'medium', 'large']).optional().describe('Screenshot size preset (small: 512px, medium: 768px, large: 1028px)'),
-    showHighlights: z.boolean().optional().describe('Show element highlights in screenshot'),
-    width: z.coerce.number().optional().describe('Exact width in pixels (overrides size)'),
-    height: z.coerce.number().optional().describe('Exact height in pixels (overrides size)'),
+    size: z
+      .enum(['small', 'medium', 'large'])
+      .optional()
+      .describe(
+        'Screenshot size preset (small: 512px, medium: 768px, large: 1028px)',
+      ),
+    showHighlights: z
+      .boolean()
+      .optional()
+      .describe('Show element highlights in screenshot'),
+    width: z.coerce
+      .number()
+      .optional()
+      .describe('Exact width in pixels (overrides size)'),
+    height: z.coerce
+      .number()
+      .optional()
+      .describe('Exact height in pixels (overrides size)'),
   },
   handler: async (request, response, context) => {
     const params = request.params as {

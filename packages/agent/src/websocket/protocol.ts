@@ -3,7 +3,7 @@
  * Copyright 2025 BrowserOS
  */
 
-import { z } from 'zod'
+import {z} from 'zod';
 
 /**
  * MESSAGE PROTOCOL
@@ -21,10 +21,10 @@ import { z } from 'zod'
  */
 export const ClientMessageSchema = z.object({
   type: z.literal('message'),
-  content: z.string().min(1, 'Message content cannot be empty')
-})
+  content: z.string().min(1, 'Message content cannot be empty'),
+});
 
-export type ClientMessage = z.infer<typeof ClientMessageSchema>
+export type ClientMessage = z.infer<typeof ClientMessageSchema>;
 
 // ============================================================================
 // SERVER → CLIENT EVENTS
@@ -38,22 +38,30 @@ export const ConnectionEventSchema = z.object({
   data: z.object({
     status: z.literal('connected'),
     sessionId: z.string(),
-    timestamp: z.number()
-  })
-})
+    timestamp: z.number(),
+  }),
+});
 
-export type ConnectionEvent = z.infer<typeof ConnectionEventSchema>
+export type ConnectionEvent = z.infer<typeof ConnectionEventSchema>;
 
 /**
  * Agent event (init, response, tool_use, tool_result, completion, error)
  * Uses FormattedEvent structure from Phase 1
  */
 export const AgentEventSchema = z.object({
-  type: z.enum(['init', 'thinking', 'tool_use', 'tool_result', 'response', 'completion', 'error']),
-  content: z.string()
-})
+  type: z.enum([
+    'init',
+    'thinking',
+    'tool_use',
+    'tool_result',
+    'response',
+    'completion',
+    'error',
+  ]),
+  content: z.string(),
+});
 
-export type AgentEvent = z.infer<typeof AgentEventSchema>
+export type AgentEvent = z.infer<typeof AgentEventSchema>;
 
 /**
  * Error event
@@ -61,10 +69,10 @@ export type AgentEvent = z.infer<typeof AgentEventSchema>
 export const ErrorEventSchema = z.object({
   type: z.literal('error'),
   error: z.string(),
-  code: z.string().optional()
-})
+  code: z.string().optional(),
+});
 
-export type ErrorEvent = z.infer<typeof ErrorEventSchema>
+export type ErrorEvent = z.infer<typeof ErrorEventSchema>;
 
 /**
  * Union of all server event types
@@ -72,10 +80,10 @@ export type ErrorEvent = z.infer<typeof ErrorEventSchema>
 export const ServerEventSchema = z.union([
   ConnectionEventSchema,
   AgentEventSchema,
-  ErrorEventSchema
-])
+  ErrorEventSchema,
+]);
 
-export type ServerEvent = z.infer<typeof ServerEventSchema>
+export type ServerEvent = z.infer<typeof ServerEventSchema>;
 
 // ============================================================================
 // VALIDATION HELPERS
@@ -86,15 +94,15 @@ export type ServerEvent = z.infer<typeof ServerEventSchema>
  * @throws {z.ZodError} if validation fails
  */
 export function validateClientMessage(data: unknown): ClientMessage {
-  return ClientMessageSchema.parse(data)
+  return ClientMessageSchema.parse(data);
 }
 
 /**
  * Try to parse a client message, returning null on error
  */
 export function tryParseClientMessage(data: unknown): ClientMessage | null {
-  const result = ClientMessageSchema.safeParse(data)
-  return result.success ? result.data : null
+  const result = ClientMessageSchema.safeParse(data);
+  return result.success ? result.data : null;
 }
 
 /**
@@ -102,5 +110,5 @@ export function tryParseClientMessage(data: unknown): ClientMessage | null {
  * @throws {z.ZodError} if validation fails
  */
 export function validateServerEvent(data: unknown): ServerEvent {
-  return ServerEventSchema.parse(data)
+  return ServerEventSchema.parse(data);
 }

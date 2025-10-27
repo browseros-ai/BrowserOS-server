@@ -3,16 +3,27 @@
  * Copyright 2025 BrowserOS
  */
 
-import { query } from '@anthropic-ai/claude-agent-sdk'
-import { FormattedEvent, type AgentConfig } from './types.js'
-import { ClaudeEventFormatter } from './ClaudeSDKAgent.formatter.js'
-import { logger, fetchBrowserOSConfig, type BrowserOSConfig, type Provider } from '@browseros/common'
-import { BaseAgent } from './BaseAgent.js'
-import { AGENT_SYSTEM_PROMPT } from './Agent.prompt.js'
-import { allControllerTools } from '@browseros/tools/controller-based'
-import type { ToolDefinition } from '@browseros/tools'
-import { ControllerBridge, ControllerContext } from '@browseros/controller-server'
-import { createControllerMcpServer } from './ControllerToolsAdapter.js'
+import {query} from '@anthropic-ai/claude-agent-sdk';
+import {
+  logger,
+  fetchBrowserOSConfig,
+  type BrowserOSConfig,
+  type Provider,
+} from '@browseros/common';
+import type {
+  ControllerBridge} from '@browseros/controller-server';
+import {
+  ControllerContext,
+} from '@browseros/controller-server';
+import type {ToolDefinition} from '@browseros/tools';
+import {allControllerTools} from '@browseros/tools/controller-based';
+
+import {AGENT_SYSTEM_PROMPT} from './Agent.prompt.js';
+import {BaseAgent} from './BaseAgent.js';
+import {ClaudeEventFormatter} from './ClaudeSDKAgent.formatter.js';
+import {createControllerMcpServer} from './ControllerToolsAdapter.js';
+import { type AgentConfig} from './types.js';
+import type {FormattedEvent} from './types.js';
 
 /**
  * Claude SDK specific default configuration
@@ -20,8 +31,8 @@ import { createControllerMcpServer } from './ControllerToolsAdapter.js'
 const CLAUDE_SDK_DEFAULTS = {
   maxTurns: 100,
   maxThinkingTokens: 10000,
-  permissionMode: 'bypassPermissions' as const
-}
+  permissionMode: 'bypassPermissions' as const,
+};
 
 /**
  * Claude SDK Agent implementation
@@ -36,30 +47,35 @@ const CLAUDE_SDK_DEFAULTS = {
  * Note: Requires external ControllerBridge (provided by main server)
  */
 export class ClaudeSDKAgent extends BaseAgent {
-  private abortController: AbortController | null = null
-  private gatewayConfig: BrowserOSConfig | null = null
-  private selectedProvider: Provider | null = null
+  private abortController: AbortController | null = null;
+  private gatewayConfig: BrowserOSConfig | null = null;
+  private selectedProvider: Provider | null = null;
 
   constructor(config: AgentConfig, controllerBridge: ControllerBridge) {
-    logger.info('🔧 Using shared ControllerBridge for controller connection')
+    logger.info('🔧 Using shared ControllerBridge for controller connection');
 
-    const controllerContext = new ControllerContext(controllerBridge)
+    const controllerContext = new ControllerContext(controllerBridge);
 
     // Get all controller tools from package and create SDK MCP server
-    const sdkMcpServer = createControllerMcpServer(allControllerTools, controllerContext)
+    const sdkMcpServer = createControllerMcpServer(
+      allControllerTools,
+      controllerContext,
+    );
 
-    logger.info(`✅ Created SDK MCP server with ${allControllerTools.length} controller tools`)
+    logger.info(
+      `✅ Created SDK MCP server with ${allControllerTools.length} controller tools`,
+    );
 
     // Pass Claude SDK specific defaults to BaseAgent (must call super before accessing this)
     super('claude-sdk', config, {
       systemPrompt: AGENT_SYSTEM_PROMPT,
-      mcpServers: { 'browseros-controller': sdkMcpServer },
+      mcpServers: {'browseros-controller': sdkMcpServer},
       maxTurns: CLAUDE_SDK_DEFAULTS.maxTurns,
       maxThinkingTokens: CLAUDE_SDK_DEFAULTS.maxThinkingTokens,
-      permissionMode: CLAUDE_SDK_DEFAULTS.permissionMode
-    })
+      permissionMode: CLAUDE_SDK_DEFAULTS.permissionMode,
+    });
 
-    logger.info('✅ ClaudeSDKAgent initialized with shared ControllerBridge')
+    logger.info('✅ ClaudeSDKAgent initialized with shared ControllerBridge');
   }
 
   /**
@@ -67,45 +83,50 @@ export class ClaudeSDKAgent extends BaseAgent {
    * Falls back to ANTHROPIC_API_KEY env var if config URL not set or fails
    */
   override async init(): Promise<void> {
-    const configUrl = process.env.BROWSEROS_CONFIG_URL
+    const configUrl = process.env.BROWSEROS_CONFIG_URL;
 
     if (configUrl) {
-      logger.info('🌐 Fetching config from BrowserOS Config URL', { configUrl })
+      logger.info('🌐 Fetching config from BrowserOS Config URL', {configUrl});
 
       try {
-        this.gatewayConfig = await fetchBrowserOSConfig(configUrl)
-        this.selectedProvider = this.gatewayConfig.providers.find(p => p.name === 'anthropic')
+        this.gatewayConfig = await fetchBrowserOSConfig(configUrl);
+        this.selectedProvider = this.gatewayConfig.providers.find(
+          p => p.name === 'anthropic',
+        );
 
         if (!this.selectedProvider) {
-          throw new Error('No anthropic provider found in config')
+          throw new Error('No anthropic provider found in config');
         }
 
-        this.config.apiKey = this.selectedProvider.apiKey
+        this.config.apiKey = this.selectedProvider.apiKey;
 
         logger.info('✅ Using API key from BrowserOS Config URL', {
-          model: this.selectedProvider.model
-        })
+          model: this.selectedProvider.model,
+        });
 
-        await super.init()
-        return
+        await super.init();
+        return;
       } catch (error) {
-        logger.warn('⚠️  Failed to fetch from config URL, falling back to ANTHROPIC_API_KEY', {
-          error: error instanceof Error ? error.message : String(error)
-        })
+        logger.warn(
+          '⚠️  Failed to fetch from config URL, falling back to ANTHROPIC_API_KEY',
+          {
+            error: error instanceof Error ? error.message : String(error),
+          },
+        );
       }
     }
 
-    const envApiKey = process.env.ANTHROPIC_API_KEY
+    const envApiKey = process.env.ANTHROPIC_API_KEY;
     if (envApiKey) {
-      this.config.apiKey = envApiKey
-      logger.info('✅ Using API key from ANTHROPIC_API_KEY env var')
-      await super.init()
-      return
+      this.config.apiKey = envApiKey;
+      logger.info('✅ Using API key from ANTHROPIC_API_KEY env var');
+      await super.init();
+      return;
     }
 
     throw new Error(
-      'No API key found. Set either BROWSEROS_CONFIG_URL or ANTHROPIC_API_KEY'
-    )
+      'No API key found. Set either BROWSEROS_CONFIG_URL or ANTHROPIC_API_KEY',
+    );
   }
 
   /**
@@ -113,82 +134,95 @@ export class ClaudeSDKAgent extends BaseAgent {
    * @param iterator - The async iterator
    * @yields Heartbeat events (FormattedEvent) while waiting, then the final iterator result (IteratorResult)
    */
-  private async *nextWithHeartbeat(iterator: AsyncIterator<any>): AsyncGenerator<any> {
-    const heartbeatInterval = 20000 // 20 seconds
-    let heartbeatTimer: NodeJS.Timeout | null = null
-    let abortHandler: (() => void) | null = null
+  private async *nextWithHeartbeat(
+    iterator: AsyncIterator<any>,
+  ): AsyncGenerator<any> {
+    const heartbeatInterval = 20000; // 20 seconds
+    let heartbeatTimer: NodeJS.Timeout | null = null;
+    let abortHandler: (() => void) | null = null;
 
     // Call iterator.next() once - this generator wraps a single next() call
-    const iteratorPromise = iterator.next()
+    const iteratorPromise = iterator.next();
 
     // Create abort promise
     const abortPromise = new Promise<never>((_, reject) => {
       if (this.abortController) {
         abortHandler = () => {
-          reject(new Error('Agent execution aborted by client'))
-        }
-        this.abortController.signal.addEventListener('abort', abortHandler, { once: true })
+          reject(new Error('Agent execution aborted by client'));
+        };
+        this.abortController.signal.addEventListener('abort', abortHandler, {
+          once: true,
+        });
       }
-    })
+    });
 
     try {
       // Loop until the iterator promise resolves, yielding heartbeats while waiting
       while (true) {
         // Check if execution was aborted
         if (this.abortController?.signal.aborted) {
-          logger.info('⚠️  Agent execution aborted during heartbeat wait')
-          return
+          logger.info('⚠️  Agent execution aborted during heartbeat wait');
+          return;
         }
 
         // Create timeout promise for this iteration
         const timeoutPromise = new Promise(resolve => {
-          heartbeatTimer = setTimeout(() => resolve({ type: 'heartbeat' }), heartbeatInterval)
-        })
+          heartbeatTimer = setTimeout(
+            () => resolve({type: 'heartbeat'}),
+            heartbeatInterval,
+          );
+        });
 
-        type RaceResult = { type: 'result'; result: any } | { type: 'heartbeat' }
-        let race: RaceResult
+        type RaceResult = {type: 'result'; result: any} | {type: 'heartbeat'};
+        let race: RaceResult;
 
         try {
           race = await Promise.race([
-            iteratorPromise.then(result => ({ type: 'result' as const, result })),
-            timeoutPromise.then(() => ({ type: 'heartbeat' as const })),
-            abortPromise
-          ])
+            iteratorPromise.then(result => ({type: 'result' as const, result})),
+            timeoutPromise.then(() => ({type: 'heartbeat' as const})),
+            abortPromise,
+          ]);
         } catch (abortError) {
           // Abort was triggered during wait
-          logger.info('⚠️  Agent execution aborted (caught during iterator wait)')
+          logger.info(
+            '⚠️  Agent execution aborted (caught during iterator wait)',
+          );
           // Cleanup iterator
           if (iterator.return) {
-            await iterator.return(undefined).catch(() => {})
+            await iterator.return(undefined).catch(() => {});
           }
-          return
+          return;
         }
 
         // Clear the timeout if it was set
         if (heartbeatTimer) {
-          clearTimeout(heartbeatTimer)
-          heartbeatTimer = null
+          clearTimeout(heartbeatTimer);
+          heartbeatTimer = null;
         }
 
         if (race.type === 'heartbeat') {
           // Heartbeat timeout occurred - yield processing event and continue waiting
-          yield ClaudeEventFormatter.createProcessingEvent()
+          yield ClaudeEventFormatter.createProcessingEvent();
           // Loop continues - will race the same iteratorPromise (still pending) vs new timeout
         } else {
           // Iterator result arrived - yield it and exit this generator
-          yield race.result
-          return
+          yield race.result;
+          return;
         }
       }
     } finally {
       // Clean up heartbeat timer
       if (heartbeatTimer) {
-        clearTimeout(heartbeatTimer)
+        clearTimeout(heartbeatTimer);
       }
 
       // Clean up abort listener if it wasn't triggered
-      if (abortHandler && this.abortController && !this.abortController.signal.aborted) {
-        this.abortController.signal.removeEventListener('abort', abortHandler)
+      if (
+        abortHandler &&
+        this.abortController &&
+        !this.abortController.signal.aborted
+      ) {
+        this.abortController.signal.removeEventListener('abort', abortHandler);
       }
     }
   }
@@ -201,13 +235,15 @@ export class ClaudeSDKAgent extends BaseAgent {
    */
   async *execute(message: string): AsyncGenerator<FormattedEvent> {
     if (!this.initialized) {
-      await this.init()
+      await this.init();
     }
 
-    this.startExecution()
-    this.abortController = new AbortController()
+    this.startExecution();
+    this.abortController = new AbortController();
 
-    logger.info('🤖 ClaudeSDKAgent executing', { message: message.substring(0, 100) })
+    logger.info('🤖 ClaudeSDKAgent executing', {
+      message: message.substring(0, 100),
+    });
 
     try {
       const options: any = {
@@ -218,58 +254,64 @@ export class ClaudeSDKAgent extends BaseAgent {
         systemPrompt: this.config.systemPrompt,
         mcpServers: this.config.mcpServers,
         permissionMode: this.config.permissionMode,
-        abortController: this.abortController
-      }
+        abortController: this.abortController,
+      };
 
       if (this.selectedProvider?.model) {
-        options.model = this.selectedProvider.model
-        logger.debug('Using model from gateway', { model: this.selectedProvider.model })
+        options.model = this.selectedProvider.model;
+        logger.debug('Using model from gateway', {
+          model: this.selectedProvider.model,
+        });
       }
 
       // Call Claude SDK
-      const iterator = query({ prompt: message, options })[Symbol.asyncIterator]()
+      const iterator = query({prompt: message, options})[
+        Symbol.asyncIterator
+      ]();
 
       // Stream events with heartbeat
       while (true) {
         // Check if execution was aborted
         if (this.abortController?.signal.aborted) {
-          logger.info('⚠️  Agent execution aborted by client')
-          break
+          logger.info('⚠️  Agent execution aborted by client');
+          break;
         }
 
-        let result: IteratorResult<any> | null = null
+        let result: IteratorResult<any> | null = null;
 
         // Iterate through heartbeat generator to get the actual result
         for await (const item of this.nextWithHeartbeat(iterator)) {
           if (item && item.done !== undefined) {
             // This is the final result
-            result = item
+            result = item;
           } else {
             // This is a heartbeat/processing event
-            yield item
+            yield item;
           }
         }
 
-        if (!result || result.done) break
+        if (!result || result.done) break;
 
-        const event = result.value
+        const event = result.value;
 
         // Update event time
-        this.updateEventTime()
+        this.updateEventTime();
 
         // Track tool executions (check for assistant message with tool_use content)
         if (event.type === 'assistant' && (event as any).message?.content) {
-          const toolUses = (event as any).message.content.filter((c: any) => c.type === 'tool_use')
+          const toolUses = (event as any).message.content.filter(
+            (c: any) => c.type === 'tool_use',
+          );
           if (toolUses.length > 0) {
-            this.updateToolsExecuted(toolUses.length)
+            this.updateToolsExecuted(toolUses.length);
           }
         }
 
         // Track turn count from result events
         if (event.type === 'result') {
-          const numTurns = (event as any).num_turns
+          const numTurns = (event as any).num_turns;
           if (numTurns) {
-            this.updateTurns(numTurns)
+            this.updateTurns(numTurns);
           }
 
           // Log raw result events for debugging
@@ -277,48 +319,49 @@ export class ClaudeSDKAgent extends BaseAgent {
             subtype: (event as any).subtype,
             is_error: (event as any).is_error,
             num_turns: numTurns,
-            result: (event as any).result ?
-              (typeof (event as any).result === 'string'
+            result: (event as any).result
+              ? typeof (event as any).result === 'string'
                 ? (event as any).result.substring(0, 200)
-                : JSON.stringify((event as any).result).substring(0, 200))
-              : 'N/A'
-          })
+                : JSON.stringify((event as any).result).substring(0, 200)
+              : 'N/A',
+          });
         }
 
         // Format the event using ClaudeEventFormatter
-        const formattedEvent = ClaudeEventFormatter.format(event)
+        const formattedEvent = ClaudeEventFormatter.format(event);
 
         // Yield formatted event if valid
         if (formattedEvent) {
           logger.debug('📤 ClaudeSDKAgent yielding event', {
-            type: formattedEvent.type
-          })
-          yield formattedEvent
+            type: formattedEvent.type,
+          });
+          yield formattedEvent;
         }
       }
 
       // Complete execution tracking
-      this.completeExecution()
+      this.completeExecution();
 
       logger.info('✅ ClaudeSDKAgent execution complete', {
         turns: this.metadata.turns,
         toolsExecuted: this.metadata.toolsExecuted,
-        duration: Date.now() - this.executionStartTime
-      })
-
+        duration: Date.now() - this.executionStartTime,
+      });
     } catch (error) {
       // Mark execution error
-      this.errorExecution(error instanceof Error ? error : new Error(String(error)))
+      this.errorExecution(
+        error instanceof Error ? error : new Error(String(error)),
+      );
 
       logger.error('❌ ClaudeSDKAgent execution failed', {
         error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
-      })
+        stack: error instanceof Error ? error.stack : undefined,
+      });
 
-      throw error
+      throw error;
     } finally {
       // Clear AbortController reference
-      this.abortController = null
+      this.abortController = null;
     }
   }
 
@@ -329,17 +372,17 @@ export class ClaudeSDKAgent extends BaseAgent {
    */
   async destroy(): Promise<void> {
     if (this.isDestroyed()) {
-      logger.debug('⚠️  ClaudeSDKAgent already destroyed')
-      return
+      logger.debug('⚠️  ClaudeSDKAgent already destroyed');
+      return;
     }
 
-    this.markDestroyed()
+    this.markDestroyed();
 
     // Abort the SDK query if it's running
     if (this.abortController) {
-      logger.debug('🛑 Aborting SDK query')
-      this.abortController.abort()
-      await new Promise(resolve => setTimeout(resolve, 500))
+      logger.debug('🛑 Aborting SDK query');
+      this.abortController.abort();
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     // DO NOT close ControllerBridge - it's shared and owned by main server
@@ -347,7 +390,7 @@ export class ClaudeSDKAgent extends BaseAgent {
     logger.debug('🗑️  ClaudeSDKAgent destroyed', {
       totalDuration: this.metadata.totalDuration,
       turns: this.metadata.turns,
-      toolsExecuted: this.metadata.toolsExecuted
-    })
+      toolsExecuted: this.metadata.toolsExecuted,
+    });
   }
 }

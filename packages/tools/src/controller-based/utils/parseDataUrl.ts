@@ -19,9 +19,7 @@ export function parseDataUrl(dataUrl: string): ParsedDataUrl {
   const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
 
   if (!match) {
-    throw new Error(
-      `Invalid data URL format: ${dataUrl.substring(0, 50)}...`
-    );
+    throw new Error(`Invalid data URL format: ${dataUrl.substring(0, 50)}...`);
   }
 
   const [, mimeType, data] = match;
@@ -36,5 +34,5 @@ export function parseDataUrl(dataUrl: string): ParsedDataUrl {
     throw new Error('Invalid base64 data in data URL');
   }
 
-  return { mimeType, data };
+  return {mimeType, data};
 }

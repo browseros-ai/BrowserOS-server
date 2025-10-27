@@ -19,7 +19,12 @@ export const getActiveTab = defineTool<z.ZodRawShape, Context, Response>({
   schema: {},
   handler: async (_request, response, context) => {
     const result = await context.executeAction('getActiveTab', {});
-    const data = result as {tabId: number; url: string; title: string; windowId: number};
+    const data = result as {
+      tabId: number;
+      url: string;
+      title: string;
+      windowId: number;
+    };
 
     response.appendResponseLine(`Active Tab: ${data.title}`);
     response.appendResponseLine(`URL: ${data.url}`);
@@ -57,7 +62,9 @@ export const listTabs = defineTool<z.ZodRawShape, Context, Response>({
       const activeMarker = tab.active ? ' [ACTIVE]' : '';
       response.appendResponseLine(`[${tab.id}]${activeMarker} ${tab.title}`);
       response.appendResponseLine(`    ${tab.url}`);
-      response.appendResponseLine(`    Window: ${tab.windowId} | Position: ${tab.index}`);
+      response.appendResponseLine(
+        `    Window: ${tab.windowId} | Position: ${tab.index}`,
+      );
     }
   },
 });
@@ -70,8 +77,14 @@ export const openTab = defineTool<z.ZodRawShape, Context, Response>({
     readOnlyHint: false,
   },
   schema: {
-    url: z.string().optional().describe('URL to open (optional, defaults to new tab page)'),
-    active: z.boolean().optional().describe('Whether to make the new tab active (default: true)'),
+    url: z
+      .string()
+      .optional()
+      .describe('URL to open (optional, defaults to new tab page)'),
+    active: z
+      .boolean()
+      .optional()
+      .describe('Whether to make the new tab active (default: true)'),
   },
   handler: async (request, response, context) => {
     const params = request.params as {url?: string; active?: boolean};
@@ -147,8 +160,14 @@ export const getLoadStatus = defineTool<z.ZodRawShape, Context, Response>({
     };
 
     response.appendResponseLine(`Tab ${tabId} load status:`);
-    response.appendResponseLine(`Resources Loading: ${data.isResourcesLoading ? 'Yes' : 'No'}`);
-    response.appendResponseLine(`DOM Content Loaded: ${data.isDOMContentLoaded ? 'Yes' : 'No'}`);
-    response.appendResponseLine(`Page Complete: ${data.isPageComplete ? 'Yes' : 'No'}`);
+    response.appendResponseLine(
+      `Resources Loading: ${data.isResourcesLoading ? 'Yes' : 'No'}`,
+    );
+    response.appendResponseLine(
+      `DOM Content Loaded: ${data.isDOMContentLoaded ? 'Yes' : 'No'}`,
+    );
+    response.appendResponseLine(
+      `Page Complete: ${data.isPageComplete ? 'Yes' : 'No'}`,
+    );
   },
 });

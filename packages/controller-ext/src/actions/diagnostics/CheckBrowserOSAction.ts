@@ -1,12 +1,11 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
 // Input schema - no input needed
 const CheckBrowserOSInputSchema = z.any();
@@ -29,25 +28,35 @@ type CheckBrowserOSOutput = z.infer<typeof CheckBrowserOSOutputSchema>;
  * 2. What APIs are available in the namespace
  * 3. Returns detailed diagnostic information
  */
-export class CheckBrowserOSAction extends ActionHandler<CheckBrowserOSInput, CheckBrowserOSOutput> {
+export class CheckBrowserOSAction extends ActionHandler<
+  CheckBrowserOSInput,
+  CheckBrowserOSOutput
+> {
   readonly inputSchema = CheckBrowserOSInputSchema;
 
   async execute(_input: CheckBrowserOSInput): Promise<CheckBrowserOSOutput> {
     try {
       console.log('[CheckBrowserOSAction] Starting diagnostic...');
       console.log('[CheckBrowserOSAction] typeof chrome:', typeof chrome);
-      console.log('[CheckBrowserOSAction] chrome exists:', chrome !== undefined);
+      console.log(
+        '[CheckBrowserOSAction] chrome exists:',
+        chrome !== undefined,
+      );
 
       // Check if chrome.browserOS exists
       const browserOSExists = typeof (chrome as any).browserOS !== 'undefined';
-      console.log('[CheckBrowserOSAction] typeof chrome.browserOS:', typeof (chrome as any).browserOS);
+      console.log(
+        '[CheckBrowserOSAction] typeof chrome.browserOS:',
+        typeof (chrome as any).browserOS,
+      );
       console.log('[CheckBrowserOSAction] browserOSExists:', browserOSExists);
 
       if (!browserOSExists) {
         console.log('[CheckBrowserOSAction] chrome.browserOS is NOT available');
         return {
           available: false,
-          error: 'chrome.browserOS is undefined - not running in BrowserOS Chrome',
+          error:
+            'chrome.browserOS is undefined - not running in BrowserOS Chrome',
         };
       }
 
@@ -69,7 +78,12 @@ export class CheckBrowserOSAction extends ActionHandler<CheckBrowserOSInput, Che
       };
     } catch (error) {
       console.error('[CheckBrowserOSAction] Error during diagnostic:', error);
-      const errorMsg = error instanceof Error ? error.message : (error ? String(error) : 'Unknown error');
+      const errorMsg =
+        error instanceof Error
+          ? error.message
+          : error
+            ? String(error)
+            : 'Unknown error';
       return {
         available: false,
         error: errorMsg,

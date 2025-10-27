@@ -1,10 +1,9 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { logger } from '@/utils/Logger';
+import {logger} from '@/utils/Logger';
 
 /**
  * HistoryAdapter - Wrapper for Chrome history API
@@ -28,9 +27,11 @@ export class HistoryAdapter {
     query: string,
     maxResults = 100,
     startTime?: number,
-    endTime?: number
+    endTime?: number,
   ): Promise<chrome.history.HistoryItem[]> {
-    logger.debug(`[HistoryAdapter] Searching history: "${query}" (max: ${maxResults})`);
+    logger.debug(
+      `[HistoryAdapter] Searching history: "${query}" (max: ${maxResults})`,
+    );
 
     try {
       const results = await chrome.history.search({
@@ -42,10 +43,12 @@ export class HistoryAdapter {
 
       logger.debug(`[HistoryAdapter] Found ${results.length} history items`);
       return results;
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[HistoryAdapter] Failed to search history: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[HistoryAdapter] Failed to search history: ${errorMessage}`,
+      );
       throw new Error(`Failed to search history: ${errorMessage}`);
     }
   }
@@ -57,11 +60,16 @@ export class HistoryAdapter {
    * @param hoursBack - How many hours back to search (default: 24)
    * @returns Array of recent history items
    */
-  async getRecentHistory(maxResults = 20, hoursBack = 24): Promise<chrome.history.HistoryItem[]> {
-    logger.debug(`[HistoryAdapter] Getting ${maxResults} recent history items (last ${hoursBack}h)`);
+  async getRecentHistory(
+    maxResults = 20,
+    hoursBack = 24,
+  ): Promise<chrome.history.HistoryItem[]> {
+    logger.debug(
+      `[HistoryAdapter] Getting ${maxResults} recent history items (last ${hoursBack}h)`,
+    );
 
     try {
-      const startTime = Date.now() - (hoursBack * 60 * 60 * 1000);
+      const startTime = Date.now() - hoursBack * 60 * 60 * 1000;
 
       const results = await chrome.history.search({
         text: '',
@@ -71,10 +79,12 @@ export class HistoryAdapter {
 
       logger.debug(`[HistoryAdapter] Retrieved ${results.length} recent items`);
       return results;
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[HistoryAdapter] Failed to get recent history: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[HistoryAdapter] Failed to get recent history: ${errorMessage}`,
+      );
       throw new Error(`Failed to get recent history: ${errorMessage}`);
     }
   }
@@ -89,12 +99,12 @@ export class HistoryAdapter {
     logger.debug(`[HistoryAdapter] Getting visits for: ${url}`);
 
     try {
-      const visits = await chrome.history.getVisits({ url });
+      const visits = await chrome.history.getVisits({url});
       logger.debug(`[HistoryAdapter] Found ${visits.length} visits for ${url}`);
       return visits;
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger.error(`[HistoryAdapter] Failed to get visits: ${errorMessage}`);
       throw new Error(`Failed to get visits: ${errorMessage}`);
     }
@@ -109,11 +119,11 @@ export class HistoryAdapter {
     logger.debug(`[HistoryAdapter] Adding URL to history: ${url}`);
 
     try {
-      await chrome.history.addUrl({ url });
+      await chrome.history.addUrl({url});
       logger.debug(`[HistoryAdapter] Added URL: ${url}`);
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger.error(`[HistoryAdapter] Failed to add URL: ${errorMessage}`);
       throw new Error(`Failed to add URL to history: ${errorMessage}`);
     }
@@ -128,11 +138,11 @@ export class HistoryAdapter {
     logger.debug(`[HistoryAdapter] Removing URL from history: ${url}`);
 
     try {
-      await chrome.history.deleteUrl({ url });
+      await chrome.history.deleteUrl({url});
       logger.debug(`[HistoryAdapter] Removed URL: ${url}`);
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger.error(`[HistoryAdapter] Failed to delete URL: ${errorMessage}`);
       throw new Error(`Failed to delete URL from history: ${errorMessage}`);
     }
@@ -145,15 +155,19 @@ export class HistoryAdapter {
    * @param endTime - End time in milliseconds since epoch
    */
   async deleteRange(startTime: number, endTime: number): Promise<void> {
-    logger.debug(`[HistoryAdapter] Deleting history range: ${new Date(startTime).toISOString()} to ${new Date(endTime).toISOString()}`);
+    logger.debug(
+      `[HistoryAdapter] Deleting history range: ${new Date(startTime).toISOString()} to ${new Date(endTime).toISOString()}`,
+    );
 
     try {
-      await chrome.history.deleteRange({ startTime, endTime });
+      await chrome.history.deleteRange({startTime, endTime});
       logger.debug('[HistoryAdapter] Deleted history range');
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[HistoryAdapter] Failed to delete history range: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[HistoryAdapter] Failed to delete history range: ${errorMessage}`,
+      );
       throw new Error(`Failed to delete history range: ${errorMessage}`);
     }
   }
@@ -169,10 +183,12 @@ export class HistoryAdapter {
     try {
       await chrome.history.deleteAll();
       logger.warn('[HistoryAdapter] Deleted all history');
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[HistoryAdapter] Failed to delete all history: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[HistoryAdapter] Failed to delete all history: ${errorMessage}`,
+      );
       throw new Error(`Failed to delete all history: ${errorMessage}`);
     }
   }
@@ -202,10 +218,12 @@ export class HistoryAdapter {
 
       logger.debug(`[HistoryAdapter] Found ${sorted.length} most visited URLs`);
       return sorted;
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[HistoryAdapter] Failed to get most visited: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[HistoryAdapter] Failed to get most visited: ${errorMessage}`,
+      );
       throw new Error(`Failed to get most visited URLs: ${errorMessage}`);
     }
   }

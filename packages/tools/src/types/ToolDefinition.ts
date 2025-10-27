@@ -15,7 +15,7 @@ import type {ToolCategories} from './ToolCategories.js';
 export interface ToolDefinition<
   Schema extends z.ZodRawShape = z.ZodRawShape,
   TContext = any,
-  TResponse = any
+  TResponse = any,
 > {
   /** Unique identifier for the tool */
   name: string;
@@ -58,7 +58,7 @@ export interface Request<Schema extends z.ZodRawShape> {
 export function defineTool<
   Schema extends z.ZodRawShape,
   TContext = any,
-  TResponse = any
+  TResponse = any,
 >(
   definition: ToolDefinition<Schema, TContext, TResponse>,
 ): ToolDefinition<Schema, TContext, TResponse> {

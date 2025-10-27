@@ -68,18 +68,18 @@ bun start
 
 ### Common Commands
 
-| Command | Description |
-|---------|-------------|
-| `bun start` | Start the server (port 9223) |
-| `bun test:all` | Run all tests across packages |
-| `bun test:common` | Test common package |
-| `bun test:tools` | Test tools package |
-| `bun test:mcp` | Test MCP package |
-| `bun test:server` | Test server package |
-| `bun run build:binary` | Compile to single binary |
-| `bun run format` | Format code (ESLint + Prettier) |
-| `bun run check-format` | Check code formatting |
-| `bun run clean` | Clean build artifacts |
+| Command                | Description                     |
+| ---------------------- | ------------------------------- |
+| `bun start`            | Start the server (port 9223)    |
+| `bun test:all`         | Run all tests across packages   |
+| `bun test:common`      | Test common package             |
+| `bun test:tools`       | Test tools package              |
+| `bun test:mcp`         | Test MCP package                |
+| `bun test:server`      | Test server package             |
+| `bun run build:binary` | Compile to single binary        |
+| `bun run format`       | Format code (ESLint + Prettier) |
+| `bun run check-format` | Check code formatting           |
+| `bun run clean`        | Clean build artifacts           |
 
 ### Running with Chrome
 
@@ -94,6 +94,7 @@ PUPPETEER_EXECUTABLE_PATH="/path/to/chrome" bun start
 #### Server Binary
 
 Development builds (single platform):
+
 ```bash
 bun run dev:server           # Current platform
 bun run dev:server:linux     # Linux x64
@@ -104,6 +105,7 @@ bun run dev:server:windows   # Windows x64
 ```
 
 Production builds (all platforms):
+
 ```bash
 bun run dist:server
 
@@ -118,6 +120,7 @@ bun run dist:server
 #### Extension
 
 Development build (with source maps):
+
 ```bash
 bun run dev:ext
 
@@ -128,6 +131,7 @@ bun run dev:ext
 ```
 
 Production build (minified):
+
 ```bash
 bun run dist:ext
 
@@ -139,34 +143,44 @@ bun run dist:ext
 ## Package Structure
 
 ### `@browseros/common`
+
 Shared utilities used by all packages:
+
 - `McpContext` - Browser context management
 - `Mutex` - Tool execution synchronization
 - Browser connection management
 - Logging utilities
 
 ### `@browseros/tools`
+
 Browser automation tools (26 total):
+
 - Pure functions, no server logic
 - Zod schemas for validation
 - Response formatters
 - Direct CDP integration
 
 ### `@browseros/mcp`
+
 MCP protocol implementation:
+
 - HTTP server with SSE transport
 - Tool registration with MCP SDK
 - Handles JSON-RPC protocol
 
 ### `@browseros/agent`
+
 Agent WebSocket server with Claude SDK integration:
+
 - Multi-session WebSocket server for concurrent agents
 - Direct tool execution via shared WebSocketManager (no HTTP overhead)
 - Claude SDK integration with in-process MCP
 - Automatic session management and cleanup
 
 ### `@browseros/server`
+
 Unified server orchestrating all components:
+
 - Starts HTTP MCP server and Agent WebSocket server
 - Single WebSocketManager shared by both MCP and Agent
 - CLI argument parsing with enable/disable flags
@@ -260,6 +274,7 @@ bun start --cdp-port=9222 --http-mcp-port=9223 --agent-port=3000 --extension-por
 ```
 
 ### Agent Testing
+
 ```
 node packages/agent/scripts/tests/test-client.ts
 ```
@@ -267,14 +282,17 @@ node packages/agent/scripts/tests/test-client.ts
 ### Environment Variables
 
 **Required for Agent:**
+
 - `ANTHROPIC_API_KEY` - Anthropic API key for Claude SDK (required for agent functionality)
 
 **Agent Configuration:**
+
 - `MAX_SESSIONS` - Maximum concurrent agent sessions (default: 5)
 - `SESSION_IDLE_TIMEOUT_MS` - Session idle timeout in milliseconds (default: 90000)
 - `EVENT_GAP_TIMEOUT_MS` - Max time between agent events in milliseconds (default: 60000)
 
 **Optional:**
+
 - `PUPPETEER_EXECUTABLE_PATH` - Path to Chrome executable
 - `DEBUG=mcp:*` - Enable debug logging
 - `LOG_LEVEL` - Logging level (debug, info, warn, error)

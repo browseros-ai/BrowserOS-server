@@ -1,25 +1,31 @@
-import { CodexOptions } from "./codexOptions";
-import { ThreadEvent, ThreadError, Usage } from "./events";
-import { CodexExec } from "./exec";
-import { ThreadItem } from "./items";
-import { ThreadOptions } from "./threadOptions";
-import { TurnOptions } from "./turnOptions";
-import { createOutputSchemaFile } from "./outputSchemaFile";
+
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+import type {CodexOptions} from './codexOptions';
+import type {ThreadEvent, ThreadError, Usage} from './events';
+import type {CodexExec} from './exec';
+import type {ThreadItem} from './items';
+import {createOutputSchemaFile} from './outputSchemaFile';
+import type {ThreadOptions} from './threadOptions';
+import type {TurnOptions} from './turnOptions';
 
 /** Completed turn. */
-export type Turn = {
+export interface Turn {
   items: ThreadItem[];
   finalResponse: string;
   usage: Usage | null;
-};
+}
 
 /** Alias for `Turn` to describe the result of `run()`. */
 export type RunResult = Turn;
 
 /** The result of the `runStreamed` method. */
-export type StreamedTurn = {
+export interface StreamedTurn {
   events: AsyncGenerator<ThreadEvent>;
-};
+}
 
 /** Alias for `StreamedTurn` to describe the result of `runStreamed()`. */
 export type RunStreamedResult = StreamedTurn;
@@ -27,11 +33,11 @@ export type RunStreamedResult = StreamedTurn;
 /** An input to send to the agent. */
 export type UserInput =
   | {
-      type: "text";
+      type: 'text';
       text: string;
     }
   | {
-      type: "local_image";
+      type: 'local_image';
       path: string;
     };
 
@@ -63,17 +69,22 @@ export class Thread {
   }
 
   /** Provides the input to the agent and streams events as they are produced during the turn. */
-  async runStreamed(input: Input, turnOptions: TurnOptions = {}): Promise<StreamedTurn> {
-    return { events: this.runStreamedInternal(input, turnOptions) };
+  async runStreamed(
+    input: Input,
+    turnOptions: TurnOptions = {},
+  ): Promise<StreamedTurn> {
+    return {events: this.runStreamedInternal(input, turnOptions)};
   }
 
   private async *runStreamedInternal(
     input: Input,
     turnOptions: TurnOptions = {},
   ): AsyncGenerator<ThreadEvent> {
-    const { schemaPath, cleanup } = await createOutputSchemaFile(turnOptions.outputSchema);
+    const {schemaPath, cleanup} = await createOutputSchemaFile(
+      turnOptions.outputSchema,
+    );
     const options = this._threadOptions;
-    const { prompt, images } = normalizeInput(input);
+    const {prompt, images} = normalizeInput(input);
     const generator = this._exec.run({
       input: prompt,
       baseUrl: this._options.baseUrl,
@@ -93,9 +104,9 @@ export class Thread {
         try {
           parsed = JSON.parse(item) as ThreadEvent;
         } catch (error) {
-          throw new Error(`Failed to parse item: ${item}`, { cause: error });
+          throw new Error(`Failed to parse item: ${item}`, {cause: error});
         }
-        if (parsed.type === "thread.started") {
+        if (parsed.type === 'thread.started') {
           this._id = parsed.thread_id;
         }
         yield parsed;
@@ -109,18 +120,18 @@ export class Thread {
   async run(input: Input, turnOptions: TurnOptions = {}): Promise<Turn> {
     const generator = this.runStreamedInternal(input, turnOptions);
     const items: ThreadItem[] = [];
-    let finalResponse: string = "";
+    let finalResponse = '';
     let usage: Usage | null = null;
     let turnFailure: ThreadError | null = null;
     for await (const event of generator) {
-      if (event.type === "item.completed") {
-        if (event.item.type === "agent_message") {
+      if (event.type === 'item.completed') {
+        if (event.item.type === 'agent_message') {
           finalResponse = event.item.text;
         }
         items.push(event.item);
-      } else if (event.type === "turn.completed") {
+      } else if (event.type === 'turn.completed') {
         usage = event.usage;
-      } else if (event.type === "turn.failed") {
+      } else if (event.type === 'turn.failed') {
         turnFailure = event.error;
         break;
       }
@@ -128,22 +139,22 @@ export class Thread {
     if (turnFailure) {
       throw new Error(turnFailure.message);
     }
-    return { items, finalResponse, usage };
+    return {items, finalResponse, usage};
   }
 }
 
-function normalizeInput(input: Input): { prompt: string; images: string[] } {
-  if (typeof input === "string") {
-    return { prompt: input, images: [] };
+function normalizeInput(input: Input): {prompt: string; images: string[]} {
+  if (typeof input === 'string') {
+    return {prompt: input, images: []};
   }
   const promptParts: string[] = [];
   const images: string[] = [];
   for (const item of input) {
-    if (item.type === "text") {
+    if (item.type === 'text') {
       promptParts.push(item.text);
-    } else if (item.type === "local_image") {
+    } else if (item.type === 'local_image') {
       images.push(item.path);
     }
   }
-  return { prompt: promptParts.join("\n\n"), images };
+  return {prompt: promptParts.join('\n\n'), images};
 }

@@ -1,13 +1,11 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { logger } from './Logger';
+import {logger} from './Logger';
 
-import type { ProtocolResponse } from '@/protocol/types';
-
+import type {ProtocolResponse} from '@/protocol/types';
 
 export class ResponseQueue {
   private queue: ProtocolResponse[] = [];
@@ -22,11 +20,15 @@ export class ResponseQueue {
     if (this.queue.length >= this.maxSize) {
       // Drop oldest response to prevent memory leak
       const dropped = this.queue.shift();
-      logger.warn(`Response queue full. Dropped oldest response: ${dropped?.id}`);
+      logger.warn(
+        `Response queue full. Dropped oldest response: ${dropped?.id}`,
+      );
     }
 
     this.queue.push(response);
-    logger.debug(`Response queued: ${response.id} (queue size: ${this.queue.length})`);
+    logger.debug(
+      `Response queued: ${response.id} (queue size: ${this.queue.length})`,
+    );
   }
 
   flush(send: (response: ProtocolResponse) => void): number {
@@ -42,7 +44,9 @@ export class ResponseQueue {
         sent++;
       } catch (error) {
         // Re-queue if send fails
-        logger.error(`Failed to send response ${response.id}: ${error}. Re-queueing.`);
+        logger.error(
+          `Failed to send response ${response.id}: ${error}. Re-queueing.`,
+        );
         this.queue.unshift(response);
         break;
       }

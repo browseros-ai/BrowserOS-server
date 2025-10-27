@@ -3,7 +3,7 @@
  * Copyright 2025 BrowserOS
  */
 
-import { FormattedEvent } from './types.js'
+import {FormattedEvent} from './types.js';
 
 /**
  * Codex SDK Event Formatter
@@ -23,18 +23,21 @@ export class CodexEventFormatter {
    * @returns FormattedEvent or null if event should not be displayed
    */
   static format(event: any): FormattedEvent | null {
-    const eventType = event.type
+    const eventType = event.type;
 
     if (eventType === 'thread.started') {
-      return new FormattedEvent('init', `🚀 Thread started: ${event.thread_id}`)
+      return new FormattedEvent(
+        'init',
+        `🚀 Thread started: ${event.thread_id}`,
+      );
     }
 
     if (eventType === 'turn.started') {
-      return new FormattedEvent('thinking', '💭 Agent processing...')
+      return new FormattedEvent('thinking', '💭 Agent processing...');
     }
 
     if (eventType === 'item.completed') {
-      return this.formatItem(event.item)
+      return this.formatItem(event.item);
     }
 
     // if (eventType === 'turn.completed') { // Deprecating this event as it doesnt provide much useful information
@@ -42,11 +45,11 @@ export class CodexEventFormatter {
     // }
 
     if (eventType === 'turn.failed') {
-      const errorMsg = event.error?.message || 'Unknown error'
-      return new FormattedEvent('error', `❌ Turn failed: ${errorMsg}`)
+      const errorMsg = event.error?.message || 'Unknown error';
+      return new FormattedEvent('error', `❌ Turn failed: ${errorMsg}`);
     }
 
-    return null
+    return null;
   }
 
   /**
@@ -54,51 +57,54 @@ export class CodexEventFormatter {
    */
   private static formatItem(item: any): FormattedEvent | null {
     if (!item?.type) {
-      return null
+      return null;
     }
 
     switch (item.type) {
       case 'agent_message':
-        return new FormattedEvent('completion', item.text || '')
+        return new FormattedEvent('completion', item.text || '');
 
       case 'reasoning': {
-        const text = item.text || item.content || ''
-        if (!text) return null
-        const truncated = text.length > 150 ? text.substring(0, 150) + '...' : text
-        return new FormattedEvent('thinking', `💭 ${truncated}`)
+        const text = item.text || item.content || '';
+        if (!text) return null;
+        const truncated =
+          text.length > 150 ? text.substring(0, 150) + '...' : text;
+        return new FormattedEvent('thinking', `💭 ${truncated}`);
       }
 
       case 'mcp_tool_call': {
-        const toolName = this.cleanToolName(item.tool || 'tool')
-        const serverInfo = item.server ? ` (${item.server})` : ''
-        return new FormattedEvent('tool_use', `🔧 ${toolName}${serverInfo}`)
+        const toolName = this.cleanToolName(item.tool || 'tool');
+        const serverInfo = item.server ? ` (${item.server})` : '';
+        return new FormattedEvent('tool_use', `🔧 ${toolName}${serverInfo}`);
       }
 
       case 'tool_use': {
-        const toolName = this.cleanToolName(item.name)
-        const args = this.formatToolArgs(item.input)
-        const argsText = args ? `\n   Args: ${args}` : ''
-        return new FormattedEvent('tool_use', `🔧 ${toolName}${argsText}`)
+        const toolName = this.cleanToolName(item.name);
+        const args = this.formatToolArgs(item.input);
+        const argsText = args ? `\n   Args: ${args}` : '';
+        return new FormattedEvent('tool_use', `🔧 ${toolName}${argsText}`);
       }
 
       case 'tool_result': {
         if (item.error) {
-          return new FormattedEvent('tool_result', `❌ Error: ${item.error}`)
+          return new FormattedEvent('tool_result', `❌ Error: ${item.error}`);
         }
 
-        const resultText = typeof item.content === 'string'
-          ? item.content
-          : JSON.stringify(item.content)
+        const resultText =
+          typeof item.content === 'string'
+            ? item.content
+            : JSON.stringify(item.content);
 
-        const truncated = resultText.length > 200
-          ? resultText.substring(0, 200) + '...'
-          : resultText
+        const truncated =
+          resultText.length > 200
+            ? resultText.substring(0, 200) + '...'
+            : resultText;
 
-        return new FormattedEvent('tool_result', `✓ ${truncated}`)
+        return new FormattedEvent('tool_result', `✓ ${truncated}`);
       }
 
       default:
-        return null
+        return null;
     }
   }
 
@@ -106,26 +112,26 @@ export class CodexEventFormatter {
    * Format Codex turn.completed event with usage statistics
    */
   private static formatTurnCompleted(event: any): FormattedEvent {
-    const usage = event.usage || {}
+    const usage = event.usage || {};
     const metadata = {
       turnCount: 1,
       isError: false,
-      duration: 0
-    }
+      duration: 0,
+    };
 
-    let message = '✅ Turn completed'
+    let message = '✅ Turn completed';
     if (usage.output_tokens) {
-      message += ` (${usage.output_tokens} tokens)`
+      message += ` (${usage.output_tokens} tokens)`;
     }
 
-    return new FormattedEvent('completion', message, metadata)
+    return new FormattedEvent('completion', message, metadata);
   }
 
   /**
    * Create heartbeat/processing event
    */
   static createProcessingEvent(): FormattedEvent {
-    return new FormattedEvent('thinking', '⏳ Processing...')
+    return new FormattedEvent('thinking', '⏳ Processing...');
   }
 
   /**
@@ -135,7 +141,7 @@ export class CodexEventFormatter {
     return name
       .replace(/^mcp__[^_]+__/, '')
       .replace(/^browseros-controller__/, '')
-      .replace(/_/g, ' ')
+      .replace(/_/g, ' ');
   }
 
   /**
@@ -143,33 +149,33 @@ export class CodexEventFormatter {
    */
   private static formatToolArgs(input: any): string {
     if (!input || typeof input !== 'object') {
-      return ''
+      return '';
     }
 
-    const keys = Object.keys(input)
+    const keys = Object.keys(input);
     if (keys.length === 0) {
-      return ''
+      return '';
     }
 
     if (keys.length === 1 && keys[0] === 'url') {
-      return input.url
+      return input.url;
     }
 
     if (keys.length === 1 && (keys[0] === 'function' || keys[0] === 'script')) {
-      const code = input[keys[0]]
+      const code = input[keys[0]];
       if (typeof code === 'string') {
-        return code.length > 50 ? code.substring(0, 50) + '...' : code
+        return code.length > 50 ? code.substring(0, 50) + '...' : code;
       }
     }
 
     const argPairs = keys.map(key => {
-      const value = input[key]
+      const value = input[key];
       if (typeof value === 'string') {
-        return `${key}="${value.length > 30 ? value.substring(0, 30) + '...' : value}"`
+        return `${key}="${value.length > 30 ? value.substring(0, 30) + '...' : value}"`;
       }
-      return `${key}=${JSON.stringify(value)}`
-    })
+      return `${key}=${JSON.stringify(value)}`;
+    });
 
-    return argPairs.join(', ')
+    return argPairs.join(', ');
   }
 }

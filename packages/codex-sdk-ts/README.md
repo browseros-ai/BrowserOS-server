@@ -15,11 +15,11 @@ Requires Node.js 18+.
 ## Quickstart
 
 ```typescript
-import { Codex } from "@openai/codex-sdk";
+import {Codex} from '@openai/codex-sdk';
 
 const codex = new Codex();
 const thread = codex.startThread();
-const turn = await thread.run("Diagnose the test failure and propose a fix");
+const turn = await thread.run('Diagnose the test failure and propose a fix');
 
 console.log(turn.finalResponse);
 console.log(turn.items);
@@ -28,7 +28,7 @@ console.log(turn.items);
 Call `run()` repeatedly on the same `Thread` instance to continue that conversation.
 
 ```typescript
-const nextTurn = await thread.run("Implement the fix");
+const nextTurn = await thread.run('Implement the fix');
 ```
 
 ### Streaming responses
@@ -36,15 +36,17 @@ const nextTurn = await thread.run("Implement the fix");
 `run()` buffers events until the turn finishes. To react to intermediate progress—tool calls, streaming responses, and file diffs—use `runStreamed()` instead, which returns an async generator of structured events.
 
 ```typescript
-const { events } = await thread.runStreamed("Diagnose the test failure and propose a fix");
+const {events} = await thread.runStreamed(
+  'Diagnose the test failure and propose a fix',
+);
 
 for await (const event of events) {
   switch (event.type) {
-    case "item.completed":
-      console.log("item", event.item);
+    case 'item.completed':
+      console.log('item', event.item);
       break;
-    case "turn.completed":
-      console.log("usage", event.usage);
+    case 'turn.completed':
+      console.log('usage', event.usage);
       break;
   }
 }
@@ -56,16 +58,18 @@ The Codex agent can produce a JSON response that conforms to a specified schema.
 
 ```typescript
 const schema = {
-  type: "object",
+  type: 'object',
   properties: {
-    summary: { type: "string" },
-    status: { type: "string", enum: ["ok", "action_required"] },
+    summary: {type: 'string'},
+    status: {type: 'string', enum: ['ok', 'action_required']},
   },
-  required: ["summary", "status"],
+  required: ['summary', 'status'],
   additionalProperties: false,
 } as const;
 
-const turn = await thread.run("Summarize repository status", { outputSchema: schema });
+const turn = await thread.run('Summarize repository status', {
+  outputSchema: schema,
+});
 console.log(turn.finalResponse);
 ```
 
@@ -74,11 +78,11 @@ You can also create a JSON schema from a [Zod schema](https://github.com/colinha
 ```typescript
 const schema = z.object({
   summary: z.string(),
-  status: z.enum(["ok", "action_required"]),
+  status: z.enum(['ok', 'action_required']),
 });
 
-const turn = await thread.run("Summarize repository status", {
-  outputSchema: zodToJsonSchema(schema, { target: "openAi" }),
+const turn = await thread.run('Summarize repository status', {
+  outputSchema: zodToJsonSchema(schema, {target: 'openAi'}),
 });
 console.log(turn.finalResponse);
 ```
@@ -89,9 +93,9 @@ Provide structured input entries when you need to include images alongside text.
 
 ```typescript
 const turn = await thread.run([
-  { type: "text", text: "Describe these screenshots" },
-  { type: "local_image", path: "./ui.png" },
-  { type: "local_image", path: "./diagram.jpg" },
+  {type: 'text', text: 'Describe these screenshots'},
+  {type: 'local_image', path: './ui.png'},
+  {type: 'local_image', path: './diagram.jpg'},
 ]);
 ```
 
@@ -102,7 +106,7 @@ Threads are persisted in `~/.codex/sessions`. If you lose the in-memory `Thread`
 ```typescript
 const savedThreadId = process.env.CODEX_THREAD_ID!;
 const thread = codex.resumeThread(savedThreadId);
-await thread.run("Implement the fix");
+await thread.run('Implement the fix');
 ```
 
 ### Working directory controls
@@ -111,7 +115,7 @@ Codex runs in the current working directory by default. To avoid unrecoverable e
 
 ```typescript
 const thread = codex.startThread({
-  workingDirectory: "/path/to/project",
+  workingDirectory: '/path/to/project',
   skipGitRepoCheck: true,
 });
 ```

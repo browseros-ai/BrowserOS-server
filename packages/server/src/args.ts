@@ -3,6 +3,7 @@
  * Copyright 2025 BrowserOS
  */
 import {Command, InvalidArgumentError} from 'commander';
+
 import {version} from '../../../package.json' assert {type: 'json'};
 
 export interface ServerPorts {

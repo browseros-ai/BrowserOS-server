@@ -1,48 +1,47 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { ActionRegistry } from '@/actions/ActionRegistry';
-import { CreateBookmarkAction } from '@/actions/bookmark/CreateBookmarkAction';
-import { GetBookmarksAction } from '@/actions/bookmark/GetBookmarksAction';
-import { RemoveBookmarkAction } from '@/actions/bookmark/RemoveBookmarkAction';
-import { CaptureScreenshotAction } from '@/actions/browser/CaptureScreenshotAction';
-import { ClearAction } from '@/actions/browser/ClearAction';
-import { ClickAction } from '@/actions/browser/ClickAction';
-import { ClickCoordinatesAction } from '@/actions/browser/ClickCoordinatesAction';
-import { GetAccessibilityTreeAction } from '@/actions/browser/GetAccessibilityTreeAction';
-import { GetInteractiveSnapshotAction } from '@/actions/browser/GetInteractiveSnapshotAction';
-import { GetPageLoadStatusAction } from '@/actions/browser/GetPageLoadStatusAction';
-import { SendKeysAction } from '@/actions/browser/SendKeysAction';
-import { GetSnapshotAction } from '@/actions/browser/GetSnapshotAction';
-import { TypeAtCoordinatesAction } from '@/actions/browser/TypeAtCoordinatesAction';
-import { InputTextAction } from '@/actions/browser/InputTextAction';
-import { ScrollToNodeAction } from '@/actions/browser/ScrollToNodeAction';
-import { ScrollDownAction } from '@/actions/browser/ScrollDownAction';
-import { ScrollUpAction } from '@/actions/browser/ScrollUpAction';
-import { ExecuteJavaScriptAction } from '@/actions/browser/ExecuteJavaScriptAction';
-import { CheckBrowserOSAction } from '@/actions/diagnostics/CheckBrowserOSAction';
-import { GetRecentHistoryAction } from '@/actions/history/GetRecentHistoryAction';
-import { SearchHistoryAction } from '@/actions/history/SearchHistoryAction';
-import { CloseTabAction } from '@/actions/tab/CloseTabAction';
-import { GetActiveTabAction } from '@/actions/tab/GetActiveTabAction';
-import { GetTabsAction } from '@/actions/tab/GetTabsAction';
-import { NavigateAction } from '@/actions/tab/NavigateAction';
-import { OpenTabAction } from '@/actions/tab/OpenTabAction';
-import { SwitchTabAction } from '@/actions/tab/SwitchTabAction';
-import { CONCURRENCY_CONFIG } from '@/config/constants';
-import type { ProtocolRequest, ProtocolResponse} from '@/protocol/types';
-import { ConnectionStatus } from '@/protocol/types';
-import { ConcurrencyLimiter } from '@/utils/ConcurrencyLimiter';
-import { getWebSocketPort } from '@/utils/ConfigHelper';
-import { KeepAlive } from '@/utils/KeepAlive';
-import { logger } from '@/utils/Logger';
-import { RequestTracker } from '@/utils/RequestTracker';
-import { RequestValidator } from '@/utils/RequestValidator';
-import { ResponseQueue } from '@/utils/ResponseQueue';
-import { WebSocketClient } from '@/websocket/WebSocketClient';
+import {ActionRegistry} from '@/actions/ActionRegistry';
+import {CreateBookmarkAction} from '@/actions/bookmark/CreateBookmarkAction';
+import {GetBookmarksAction} from '@/actions/bookmark/GetBookmarksAction';
+import {RemoveBookmarkAction} from '@/actions/bookmark/RemoveBookmarkAction';
+import {CaptureScreenshotAction} from '@/actions/browser/CaptureScreenshotAction';
+import {ClearAction} from '@/actions/browser/ClearAction';
+import {ClickAction} from '@/actions/browser/ClickAction';
+import {ClickCoordinatesAction} from '@/actions/browser/ClickCoordinatesAction';
+import {ExecuteJavaScriptAction} from '@/actions/browser/ExecuteJavaScriptAction';
+import {GetAccessibilityTreeAction} from '@/actions/browser/GetAccessibilityTreeAction';
+import {GetInteractiveSnapshotAction} from '@/actions/browser/GetInteractiveSnapshotAction';
+import {GetPageLoadStatusAction} from '@/actions/browser/GetPageLoadStatusAction';
+import {GetSnapshotAction} from '@/actions/browser/GetSnapshotAction';
+import {InputTextAction} from '@/actions/browser/InputTextAction';
+import {ScrollDownAction} from '@/actions/browser/ScrollDownAction';
+import {ScrollToNodeAction} from '@/actions/browser/ScrollToNodeAction';
+import {ScrollUpAction} from '@/actions/browser/ScrollUpAction';
+import {SendKeysAction} from '@/actions/browser/SendKeysAction';
+import {TypeAtCoordinatesAction} from '@/actions/browser/TypeAtCoordinatesAction';
+import {CheckBrowserOSAction} from '@/actions/diagnostics/CheckBrowserOSAction';
+import {GetRecentHistoryAction} from '@/actions/history/GetRecentHistoryAction';
+import {SearchHistoryAction} from '@/actions/history/SearchHistoryAction';
+import {CloseTabAction} from '@/actions/tab/CloseTabAction';
+import {GetActiveTabAction} from '@/actions/tab/GetActiveTabAction';
+import {GetTabsAction} from '@/actions/tab/GetTabsAction';
+import {NavigateAction} from '@/actions/tab/NavigateAction';
+import {OpenTabAction} from '@/actions/tab/OpenTabAction';
+import {SwitchTabAction} from '@/actions/tab/SwitchTabAction';
+import {CONCURRENCY_CONFIG} from '@/config/constants';
+import type {ProtocolRequest, ProtocolResponse} from '@/protocol/types';
+import {ConnectionStatus} from '@/protocol/types';
+import {ConcurrencyLimiter} from '@/utils/ConcurrencyLimiter';
+import {getWebSocketPort} from '@/utils/ConfigHelper';
+import {KeepAlive} from '@/utils/KeepAlive';
+import {logger} from '@/utils/Logger';
+import {RequestTracker} from '@/utils/RequestTracker';
+import {RequestValidator} from '@/utils/RequestValidator';
+import {ResponseQueue} from '@/utils/ResponseQueue';
+import {WebSocketClient} from '@/websocket/WebSocketClient';
 
 /**
  * BrowserOS Controller
@@ -65,7 +64,7 @@ class BrowserOSController {
     this.requestTracker = new RequestTracker();
     this.concurrencyLimiter = new ConcurrencyLimiter(
       CONCURRENCY_CONFIG.maxConcurrent,
-      CONCURRENCY_CONFIG.maxQueueSize
+      CONCURRENCY_CONFIG.maxQueueSize,
     );
     this.requestValidator = new RequestValidator();
     this.responseQueue = new ResponseQueue();
@@ -100,33 +99,59 @@ class BrowserOSController {
 
     // History actions
     this.actionRegistry.register('searchHistory', new SearchHistoryAction());
-    this.actionRegistry.register('getRecentHistory', new GetRecentHistoryAction());
+    this.actionRegistry.register(
+      'getRecentHistory',
+      new GetRecentHistoryAction(),
+    );
 
     // Browser actions - Interactive Elements (NEW!)
-    this.actionRegistry.register('getInteractiveSnapshot', new GetInteractiveSnapshotAction());
+    this.actionRegistry.register(
+      'getInteractiveSnapshot',
+      new GetInteractiveSnapshotAction(),
+    );
     this.actionRegistry.register('click', new ClickAction());
     this.actionRegistry.register('inputText', new InputTextAction());
     this.actionRegistry.register('clear', new ClearAction());
     this.actionRegistry.register('scrollToNode', new ScrollToNodeAction());
 
     // Browser actions - Visual & Screenshots
-    this.actionRegistry.register('captureScreenshot', new CaptureScreenshotAction());
+    this.actionRegistry.register(
+      'captureScreenshot',
+      new CaptureScreenshotAction(),
+    );
 
     // Browser actions - Scrolling
     this.actionRegistry.register('scrollDown', new ScrollDownAction());
     this.actionRegistry.register('scrollUp', new ScrollUpAction());
 
     // Browser actions - Advanced
-    this.actionRegistry.register('executeJavaScript', new ExecuteJavaScriptAction());
+    this.actionRegistry.register(
+      'executeJavaScript',
+      new ExecuteJavaScriptAction(),
+    );
     this.actionRegistry.register('sendKeys', new SendKeysAction());
-    this.actionRegistry.register('getPageLoadStatus', new GetPageLoadStatusAction());
+    this.actionRegistry.register(
+      'getPageLoadStatus',
+      new GetPageLoadStatusAction(),
+    );
     this.actionRegistry.register('getSnapshot', new GetSnapshotAction());
-    this.actionRegistry.register('getAccessibilityTree', new GetAccessibilityTreeAction());
-    this.actionRegistry.register('clickCoordinates', new ClickCoordinatesAction());
-    this.actionRegistry.register('typeAtCoordinates', new TypeAtCoordinatesAction());
+    this.actionRegistry.register(
+      'getAccessibilityTree',
+      new GetAccessibilityTreeAction(),
+    );
+    this.actionRegistry.register(
+      'clickCoordinates',
+      new ClickCoordinatesAction(),
+    );
+    this.actionRegistry.register(
+      'typeAtCoordinates',
+      new TypeAtCoordinatesAction(),
+    );
 
     const actions = this.actionRegistry.getAvailableActions();
-    logger.info(`Registered ${actions.length} action(s): ${actions.join(', ')}`);
+    logger.info(
+      `Registered ${actions.length} action(s): ${actions.join(', ')}`,
+    );
   }
 
   async start(): Promise<void> {
@@ -160,17 +185,23 @@ class BrowserOSController {
 
     if (rawMessage.action) {
       // This is a request from the server - process it
-      this._processRequest(rawMessage).catch((error) => {
-        logger.error(`Unhandled error processing request ${rawMessage.id}: ${error}`);
+      this._processRequest(rawMessage).catch(error => {
+        logger.error(
+          `Unhandled error processing request ${rawMessage.id}: ${error}`,
+        );
       });
     } else if (rawMessage.ok !== undefined) {
       // This is a response or notification from the server - just log it
-      logger.info(`Received server message: ${rawMessage.id} - ${rawMessage.ok ? 'success' : 'error'}`);
+      logger.info(
+        `Received server message: ${rawMessage.id} - ${rawMessage.ok ? 'success' : 'error'}`,
+      );
       if (rawMessage.data) {
         logger.debug(`Server data: ${JSON.stringify(rawMessage.data)}`);
       }
     } else {
-      logger.warn(`Received unknown message format: ${JSON.stringify(rawMessage)}`);
+      logger.warn(
+        `Received unknown message format: ${JSON.stringify(rawMessage)}`,
+      );
     }
   }
 
@@ -195,9 +226,9 @@ class BrowserOSController {
       // Step 4: Mark complete
       this.requestTracker.complete(validatedRequest.id);
       this.requestValidator.markComplete(validatedRequest.id);
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       logger.error(`Request processing failed: ${errorMessage}`);
 
       if (requestId) {
@@ -208,7 +239,7 @@ class BrowserOSController {
         this._sendResponse({
           id: requestId,
           ok: false,
-          error: errorMessage
+          error: errorMessage,
         });
       }
     }
@@ -220,7 +251,7 @@ class BrowserOSController {
     // Dispatch to action registry
     const actionResponse = await this.actionRegistry.dispatch(
       request.action,
-      request.payload
+      request.payload,
     );
 
     // Send response back to server
@@ -228,7 +259,7 @@ class BrowserOSController {
       id: request.id,
       ok: actionResponse.ok,
       data: actionResponse.data,
-      error: actionResponse.error
+      error: actionResponse.error,
     });
 
     const status = actionResponse.ok ? 'succeeded' : 'failed';
@@ -258,8 +289,10 @@ class BrowserOSController {
     if (status === ConnectionStatus.CONNECTED) {
       // Flush queued responses on reconnect
       if (!this.responseQueue.isEmpty()) {
-        logger.info(`Flushing ${this.responseQueue.size()} queued responses...`);
-        this.responseQueue.flush((response) => {
+        logger.info(
+          `Flushing ${this.responseQueue.size()} queued responses...`,
+        );
+        this.responseQueue.flush(response => {
           this.wsClient.send(response);
         });
       }
@@ -274,8 +307,8 @@ class BrowserOSController {
       concurrency: this.concurrencyLimiter.getStats(),
       validator: this.requestValidator.getStats(),
       responseQueue: {
-        size: this.responseQueue.size()
-      }
+        size: this.responseQueue.size(),
+      },
     };
   }
 

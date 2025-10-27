@@ -23,11 +23,16 @@ export const executeJavaScript = defineTool<z.ZodRawShape, Context, Response>({
   handler: async (request, response, context) => {
     const {tabId, code} = request.params as {tabId: number; code: string};
 
-    const result = await context.executeAction('executeJavaScript', {tabId, code});
+    const result = await context.executeAction('executeJavaScript', {
+      tabId,
+      code,
+    });
     const data = result as {result: any};
 
     response.appendResponseLine(`JavaScript executed in tab ${tabId}`);
-    response.appendResponseLine(`Result: ${JSON.stringify(data.result, null, 2)}`);
+    response.appendResponseLine(
+      `Result: ${JSON.stringify(data.result, null, 2)}`,
+    );
   },
 });
 
@@ -40,21 +45,23 @@ export const sendKeys = defineTool<z.ZodRawShape, Context, Response>({
   },
   schema: {
     tabId: z.coerce.number().describe('Tab ID to send keys to'),
-    key: z.enum([
-      'Enter',
-      'Delete',
-      'Backspace',
-      'Tab',
-      'Escape',
-      'ArrowUp',
-      'ArrowDown',
-      'ArrowLeft',
-      'ArrowRight',
-      'Home',
-      'End',
-      'PageUp',
-      'PageDown',
-    ]).describe('Keyboard key to send'),
+    key: z
+      .enum([
+        'Enter',
+        'Delete',
+        'Backspace',
+        'Tab',
+        'Escape',
+        'ArrowUp',
+        'ArrowDown',
+        'ArrowLeft',
+        'ArrowRight',
+        'Home',
+        'End',
+        'PageUp',
+        'PageDown',
+      ])
+      .describe('Keyboard key to send'),
   },
   handler: async (request, response, context) => {
     const {tabId, key} = request.params as {tabId: number; key: string};
@@ -76,9 +83,15 @@ export const checkAvailability = defineTool<z.ZodRawShape, Context, Response>({
   schema: {},
   handler: async (_request, response, context) => {
     const result = await context.executeAction('checkBrowserOS', {});
-    const data = result as {available: boolean; apis?: string[]; error?: string};
+    const data = result as {
+      available: boolean;
+      apis?: string[];
+      error?: string;
+    };
 
-    response.appendResponseLine(`BrowserOS APIs available: ${data.available ? 'Yes' : 'No'}`);
+    response.appendResponseLine(
+      `BrowserOS APIs available: ${data.available ? 'Yes' : 'No'}`,
+    );
 
     if (data.error) {
       response.appendResponseLine(`Error: ${data.error}`);

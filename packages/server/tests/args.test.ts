@@ -53,7 +53,7 @@ describe('args parsing', () => {
           '--agent-port=9225',
         ]);
       },
-      {name: 'CommanderError', message: /required option.*--http-mcp-port/i}
+      {name: 'CommanderError', message: /required option.*--http-mcp-port/i},
     );
   });
 
@@ -67,7 +67,7 @@ describe('args parsing', () => {
           '--http-mcp-port=9223',
         ]);
       },
-      {name: 'CommanderError', message: /required option.*--agent-port/i}
+      {name: 'CommanderError', message: /required option.*--agent-port/i},
     );
   });
 });

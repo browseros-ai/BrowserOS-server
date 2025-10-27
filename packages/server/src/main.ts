@@ -7,25 +7,30 @@
 import type http from 'node:http';
 
 import {
+  createAgentServer,
+  registerAgents,
+  type AgentServerConfig,
+} from '@browseros/agent';
+import {
   ensureBrowserConnected,
   McpContext,
   Mutex,
   logger,
   readVersion,
 } from '@browseros/common';
+import {
+  ControllerContext,
+  ControllerBridge,
+} from '@browseros/controller-server';
 import {createHttpMcpServer, shutdownMcpServer} from '@browseros/mcp';
 import {
   allCdpTools,
   allControllerTools,
   type ToolDefinition,
 } from '@browseros/tools';
-import {createAgentServer, registerAgents, type AgentServerConfig} from '@browseros/agent';
 
 import {parseArguments} from './args.js';
-import {
-  ControllerContext,
-  ControllerBridge,
-} from '@browseros/controller-server';
+
 
 const version = readVersion();
 const ports = parseArguments();

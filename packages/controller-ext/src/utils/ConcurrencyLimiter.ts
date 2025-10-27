@@ -1,10 +1,9 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { logger } from './Logger';
+import {logger} from './Logger';
 
 interface QueuedTask<T> {
   task: () => Promise<T>;
@@ -24,16 +23,20 @@ export class ConcurrencyLimiter {
 
   constructor(
     private maxConcurrent: number,
-    private maxQueueSize = 1000
+    private maxQueueSize = 1000,
   ) {
-    logger.info(`ConcurrencyLimiter initialized: max=${maxConcurrent}, queueSize=${maxQueueSize}`);
+    logger.info(
+      `ConcurrencyLimiter initialized: max=${maxConcurrent}, queueSize=${maxQueueSize}`,
+    );
   }
 
   async execute<T>(task: () => Promise<T>): Promise<T> {
     // If under limit, execute immediately
     if (this.inFlight < this.maxConcurrent) {
       this.inFlight++;
-      logger.debug(`Executing immediately (${this.inFlight}/${this.maxConcurrent})`);
+      logger.debug(
+        `Executing immediately (${this.inFlight}/${this.maxConcurrent})`,
+      );
 
       try {
         return await task();
@@ -45,17 +48,23 @@ export class ConcurrencyLimiter {
 
     // Otherwise, queue (with limit check)
     if (this.queue.length >= this.maxQueueSize) {
-      logger.error(`Queue full (${this.maxQueueSize} requests). Rejecting request.`);
-      throw new Error(`Controller overloaded. Queue full (${this.maxQueueSize} requests). Server should slow down.`);
+      logger.error(
+        `Queue full (${this.maxQueueSize} requests). Rejecting request.`,
+      );
+      throw new Error(
+        `Controller overloaded. Queue full (${this.maxQueueSize} requests). Server should slow down.`,
+      );
     }
 
-    logger.warn(`Queueing request (${this.queue.length + 1}/${this.maxQueueSize} queued)`);
+    logger.warn(
+      `Queueing request (${this.queue.length + 1}/${this.maxQueueSize} queued)`,
+    );
 
     return new Promise<T>((resolve, reject) => {
       this.queue.push({
         task,
         resolve,
-        reject
+        reject,
       });
     });
   }
@@ -65,7 +74,9 @@ export class ConcurrencyLimiter {
       const {task, resolve, reject} = this.queue.shift()!;
       this.inFlight++;
 
-      logger.debug(`Processing queued request (${this.queue.length} remaining)`);
+      logger.debug(
+        `Processing queued request (${this.queue.length} remaining)`,
+      );
 
       task()
         .then(resolve)
@@ -81,7 +92,8 @@ export class ConcurrencyLimiter {
     return {
       inFlight: this.inFlight,
       queued: this.queue.length,
-      utilization: this.maxConcurrent > 0 ? this.inFlight / this.maxConcurrent : 0
+      utilization:
+        this.maxConcurrent > 0 ? this.inFlight / this.maxConcurrent : 0,
     };
   }
 
@@ -90,8 +102,8 @@ export class ConcurrencyLimiter {
     const stats = this.getStats();
     logger.info(
       `Concurrency: ${stats.inFlight}/${this.maxConcurrent} in-flight, ` +
-      `${stats.queued} queued, ` +
-      `${Math.round(stats.utilization * 100)}% utilization`
+        `${stats.queued} queued, ` +
+        `${Math.round(stats.utilization * 100)}% utilization`,
     );
   }
 }

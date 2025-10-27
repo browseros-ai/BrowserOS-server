@@ -1,21 +1,20 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
-import { getBrowserOSAdapter } from '@/adapters/BrowserOSAdapter';
+import {getBrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
 
 // Input schema for typeAtCoordinates action
 const TypeAtCoordinatesInputSchema = z.object({
   tabId: z.number().int().positive().describe('Tab ID to type in'),
   x: z.number().int().nonnegative().describe('X coordinate in viewport pixels'),
   y: z.number().int().nonnegative().describe('Y coordinate in viewport pixels'),
-  text: z.string().min(1).describe('Text to type at the location')
+  text: z.string().min(1).describe('Text to type at the location'),
 });
 
 type TypeAtCoordinatesInput = z.infer<typeof TypeAtCoordinatesInputSchema>;
@@ -54,20 +53,25 @@ export interface TypeAtCoordinatesOutput {
  *   "text": "Hello World"
  * }
  */
-export class TypeAtCoordinatesAction extends ActionHandler<TypeAtCoordinatesInput, TypeAtCoordinatesOutput> {
+export class TypeAtCoordinatesAction extends ActionHandler<
+  TypeAtCoordinatesInput,
+  TypeAtCoordinatesOutput
+> {
   readonly inputSchema = TypeAtCoordinatesInputSchema;
   private browserOS = getBrowserOSAdapter();
 
-  async execute(input: TypeAtCoordinatesInput): Promise<TypeAtCoordinatesOutput> {
-    const { tabId, x, y, text } = input;
+  async execute(
+    input: TypeAtCoordinatesInput,
+  ): Promise<TypeAtCoordinatesOutput> {
+    const {tabId, x, y, text} = input;
 
     await this.browserOS.typeAtCoordinates(tabId, x, y, text);
 
     return {
       success: true,
       message: `Successfully typed "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}" at coordinates (${x}, ${y}) in tab ${tabId}`,
-      coordinates: { x, y },
-      textLength: text.length
+      coordinates: {x, y},
+      textLength: text.length,
     };
   }
 }

@@ -24,7 +24,9 @@ export async function getWebSocketPort(): Promise<number> {
       return pref.value;
     }
 
-    logger.warn(`Port preference not found, using default: ${WEBSOCKET_CONFIG.port}`);
+    logger.warn(
+      `Port preference not found, using default: ${WEBSOCKET_CONFIG.port}`,
+    );
     return WEBSOCKET_CONFIG.port;
   } catch (error) {
     logger.error(

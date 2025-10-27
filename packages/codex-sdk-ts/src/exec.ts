@@ -1,9 +1,15 @@
-import { spawn } from "node:child_process";
-import path from "node:path";
-import readline from "node:readline";
-import { fileURLToPath } from "node:url";
 
-import { SandboxMode } from "./threadOptions";
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+import {spawn} from 'node:child_process';
+import path from 'node:path';
+import readline from 'node:readline';
+import {fileURLToPath} from 'node:url';
+
+import type {SandboxMode} from './threadOptions';
 
 /** MCP Server Configuration */
 export interface McpServerConfig {
@@ -13,7 +19,7 @@ export interface McpServerConfig {
   url?: string;
 }
 
-export type CodexExecArgs = {
+export interface CodexExecArgs {
   input: string;
 
   baseUrl?: string;
@@ -32,10 +38,10 @@ export type CodexExecArgs = {
   outputSchemaFile?: string;
   // MCP servers for programmatic configuration
   mcpServers?: Record<string, McpServerConfig>;
-};
+}
 
-const INTERNAL_ORIGINATOR_ENV = "CODEX_INTERNAL_ORIGINATOR_OVERRIDE";
-const TYPESCRIPT_SDK_ORIGINATOR = "codex_sdk_ts";
+const INTERNAL_ORIGINATOR_ENV = 'CODEX_INTERNAL_ORIGINATOR_OVERRIDE';
+const TYPESCRIPT_SDK_ORIGINATOR = 'codex_sdk_ts';
 
 export class CodexExec {
   private executablePath: string;
@@ -44,61 +50,75 @@ export class CodexExec {
   }
 
   async *run(args: CodexExecArgs): AsyncGenerator<string> {
-    const commandArgs: string[] = ["exec", "--experimental-json"];
+    const commandArgs: string[] = ['exec', '--experimental-json'];
 
     if (args.model) {
-      commandArgs.push("--model", args.model);
+      commandArgs.push('--model', args.model);
     }
 
     if (args.sandboxMode) {
-      commandArgs.push("--sandbox", args.sandboxMode);
+      commandArgs.push('--sandbox', args.sandboxMode);
     }
 
     if (args.workingDirectory) {
-      commandArgs.push("--cd", args.workingDirectory);
+      commandArgs.push('--cd', args.workingDirectory);
     }
 
     if (args.skipGitRepoCheck) {
-      commandArgs.push("--skip-git-repo-check");
+      commandArgs.push('--skip-git-repo-check');
     }
 
     if (args.outputSchemaFile) {
-      commandArgs.push("--output-schema", args.outputSchemaFile);
+      commandArgs.push('--output-schema', args.outputSchemaFile);
     }
 
     if (args.images?.length) {
       for (const image of args.images) {
-        commandArgs.push("--image", image);
+        commandArgs.push('--image', image);
       }
     }
 
     if (args.threadId) {
-      commandArgs.push("resume", args.threadId);
+      commandArgs.push('resume', args.threadId);
     }
 
     // MCP Server Configuration Support
     // CRITICAL: Use mcp_servers (underscore) not mcp.servers (dot)
     // First, clear any global mcp_servers config, then add ours
-    if (args.mcpServers && typeof args.mcpServers === "object") {
+    if (args.mcpServers && typeof args.mcpServers === 'object') {
       // Clear global mcp_servers by setting it to empty object
-      commandArgs.push("-c", "mcp_servers={}");
+      commandArgs.push('-c', 'mcp_servers={}');
 
       // Now add each server using correct format: mcp_servers.servername.property
-      for (const [serverName, serverConfig] of Object.entries(args.mcpServers)) {
+      for (const [serverName, serverConfig] of Object.entries(
+        args.mcpServers,
+      )) {
         if ((serverConfig as any).url) {
           // HTTP MCP server - use correct mcp_servers format
           const url = (serverConfig as any).url;
-          commandArgs.push("-c", `mcp_servers.${serverName}.url=${JSON.stringify(url)}`);
+          commandArgs.push(
+            '-c',
+            `mcp_servers.${serverName}.url=${JSON.stringify(url)}`,
+          );
         } else if (serverConfig.command) {
           // Stdio MCP server - use correct mcp_servers format
-          commandArgs.push("-c", `mcp_servers.${serverName}.command=${JSON.stringify(serverConfig.command)}`);
+          commandArgs.push(
+            '-c',
+            `mcp_servers.${serverName}.command=${JSON.stringify(serverConfig.command)}`,
+          );
 
           if (serverConfig.args) {
-            commandArgs.push("-c", `mcp_servers.${serverName}.args=${JSON.stringify(serverConfig.args)}`);
+            commandArgs.push(
+              '-c',
+              `mcp_servers.${serverName}.args=${JSON.stringify(serverConfig.args)}`,
+            );
           }
 
           if (serverConfig.env) {
-            commandArgs.push("-c", `mcp_servers.${serverName}.env=${JSON.stringify(serverConfig.env)}`);
+            commandArgs.push(
+              '-c',
+              `mcp_servers.${serverName}.env=${JSON.stringify(serverConfig.env)}`,
+            );
           }
         }
       }
@@ -122,23 +142,23 @@ export class CodexExec {
     });
 
     let spawnError: unknown | null = null;
-    child.once("error", (err) => (spawnError = err));
+    child.once('error', err => (spawnError = err));
 
     if (!child.stdin) {
       child.kill();
-      throw new Error("Child process has no stdin");
+      throw new Error('Child process has no stdin');
     }
     child.stdin.write(args.input);
     child.stdin.end();
 
     if (!child.stdout) {
       child.kill();
-      throw new Error("Child process has no stdout");
+      throw new Error('Child process has no stdout');
     }
     const stderrChunks: Buffer[] = [];
 
     if (child.stderr) {
-      child.stderr.on("data", (data) => {
+      child.stderr.on('data', data => {
         stderrChunks.push(data);
       });
     }
@@ -155,13 +175,15 @@ export class CodexExec {
       }
 
       const exitCode = new Promise((resolve, reject) => {
-        child.once("exit", (code) => {
+        child.once('exit', code => {
           if (code === 0) {
             resolve(code);
           } else {
             const stderrBuffer = Buffer.concat(stderrChunks);
             reject(
-              new Error(`Codex Exec exited with code ${code}: ${stderrBuffer.toString("utf8")}`),
+              new Error(
+                `Codex Exec exited with code ${code}: ${stderrBuffer.toString('utf8')}`,
+              ),
             );
           }
         });
@@ -185,42 +207,42 @@ const scriptFileName = fileURLToPath(import.meta.url);
 const scriptDirName = path.dirname(scriptFileName);
 
 function findCodexPath() {
-  const { platform, arch } = process;
+  const {platform, arch} = process;
 
   let targetTriple = null;
   switch (platform) {
-    case "linux":
-    case "android":
+    case 'linux':
+    case 'android':
       switch (arch) {
-        case "x64":
-          targetTriple = "x86_64-unknown-linux-musl";
+        case 'x64':
+          targetTriple = 'x86_64-unknown-linux-musl';
           break;
-        case "arm64":
-          targetTriple = "aarch64-unknown-linux-musl";
+        case 'arm64':
+          targetTriple = 'aarch64-unknown-linux-musl';
           break;
         default:
           break;
       }
       break;
-    case "darwin":
+    case 'darwin':
       switch (arch) {
-        case "x64":
-          targetTriple = "x86_64-apple-darwin";
+        case 'x64':
+          targetTriple = 'x86_64-apple-darwin';
           break;
-        case "arm64":
-          targetTriple = "aarch64-apple-darwin";
+        case 'arm64':
+          targetTriple = 'aarch64-apple-darwin';
           break;
         default:
           break;
       }
       break;
-    case "win32":
+    case 'win32':
       switch (arch) {
-        case "x64":
-          targetTriple = "x86_64-pc-windows-msvc";
+        case 'x64':
+          targetTriple = 'x86_64-pc-windows-msvc';
           break;
-        case "arm64":
-          targetTriple = "aarch64-pc-windows-msvc";
+        case 'arm64':
+          targetTriple = 'aarch64-pc-windows-msvc';
           break;
         default:
           break;
@@ -234,10 +256,10 @@ function findCodexPath() {
     throw new Error(`Unsupported platform: ${platform} (${arch})`);
   }
 
-  const vendorRoot = path.join(scriptDirName, "..", "vendor");
+  const vendorRoot = path.join(scriptDirName, '..', 'vendor');
   const archRoot = path.join(vendorRoot, targetTriple);
-  const codexBinaryName = process.platform === "win32" ? "codex.exe" : "codex";
-  const binaryPath = path.join(archRoot, "codex", codexBinaryName);
+  const codexBinaryName = process.platform === 'win32' ? 'codex.exe' : 'codex';
+  const binaryPath = path.join(archRoot, 'codex', codexBinaryName);
 
   return binaryPath;
 }

@@ -18,12 +18,21 @@ export const searchHistory = defineTool<z.ZodRawShape, Context, Response>({
   },
   schema: {
     query: z.string().describe('Search query'),
-    maxResults: z.coerce.number().optional().describe('Maximum number of results to return (default: 100)'),
+    maxResults: z.coerce
+      .number()
+      .optional()
+      .describe('Maximum number of results to return (default: 100)'),
   },
   handler: async (request, response, context) => {
-    const {query, maxResults} = request.params as {query: string; maxResults?: number};
+    const {query, maxResults} = request.params as {
+      query: string;
+      maxResults?: number;
+    };
 
-    const result = await context.executeAction('searchHistory', {query, maxResults});
+    const result = await context.executeAction('searchHistory', {
+      query,
+      maxResults,
+    });
     const data = result as {
       items: Array<{
         id: string;
@@ -36,7 +45,9 @@ export const searchHistory = defineTool<z.ZodRawShape, Context, Response>({
       count: number;
     };
 
-    response.appendResponseLine(`Found ${data.count} history items matching "${query}":`);
+    response.appendResponseLine(
+      `Found ${data.count} history items matching "${query}":`,
+    );
     response.appendResponseLine('');
 
     for (const item of data.items) {
@@ -62,7 +73,10 @@ export const getRecentHistory = defineTool<z.ZodRawShape, Context, Response>({
     readOnlyHint: true,
   },
   schema: {
-    count: z.coerce.number().optional().describe('Number of recent items to retrieve (default: 20)'),
+    count: z.coerce
+      .number()
+      .optional()
+      .describe('Number of recent items to retrieve (default: 20)'),
   },
   handler: async (request, response, context) => {
     const {count} = request.params as {count?: number};
@@ -79,7 +93,9 @@ export const getRecentHistory = defineTool<z.ZodRawShape, Context, Response>({
       count: number;
     };
 
-    response.appendResponseLine(`Retrieved ${data.count} recent history items:`);
+    response.appendResponseLine(
+      `Retrieved ${data.count} recent history items:`,
+    );
     response.appendResponseLine('');
 
     for (const item of data.items) {

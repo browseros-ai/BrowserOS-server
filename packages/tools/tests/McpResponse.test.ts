@@ -5,7 +5,12 @@
 import assert from 'node:assert';
 import {describe, it} from 'node:test';
 
-import {getMockRequest, getMockResponse, html, withBrowser} from '@browseros/common/tests/utils';
+import {
+  getMockRequest,
+  getMockResponse,
+  html,
+  withBrowser,
+} from '@browseros/common/tests/utils';
 
 describe('McpResponse', () => {
   it('list pages', async () => {

@@ -17,7 +17,7 @@ import type {
   PredefinedNetworkConditions,
 } from 'puppeteer-core';
 
-import {logger} from './logger.js';
+import type {logger} from './logger.js';
 import {NetworkCollector, PageCollector} from './PageCollector.js';
 // These will be injected from tools package
 import type {TraceResult} from './types.js';

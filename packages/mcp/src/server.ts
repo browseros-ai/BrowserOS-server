@@ -4,8 +4,8 @@
  */
 import http from 'node:http';
 
-import type {McpContext, Mutex} from '@browseros/common';
-import {logger, metrics} from '@browseros/common';
+import type {McpContext, Mutex,logger} from '@browseros/common';
+import { metrics} from '@browseros/common';
 import type {ToolDefinition} from '@browseros/tools';
 import {McpResponse} from '@browseros/tools';
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -32,7 +32,8 @@ export interface McpServerConfig {
  * This is the pure MCP logic, separated from HTTP transport
  */
 function createMcpServerWithTools(config: McpServerConfig): McpServer {
-  const {version, tools, context, controllerContext, toolMutex, logger} = config;
+  const {version, tools, context, controllerContext, toolMutex, logger} =
+    config;
 
   const server = new McpServer(
     {
@@ -64,11 +65,14 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
         // Serialize tool execution with mutex
         const guard = await toolMutex.acquire();
         try {
-          logger.info(`${tool.name} request: ${JSON.stringify(params, null, '  ')}`);
+          logger.info(
+            `${tool.name} request: ${JSON.stringify(params, null, '  ')}`,
+          );
 
           // Detect if this is a controller tool (browser_* tools)
           const isControllerTool = tool.name.startsWith('browser_');
-          const contextForResponse = isControllerTool && controllerContext ? controllerContext : context;
+          const contextForResponse =
+            isControllerTool && controllerContext ? controllerContext : context;
 
           // Create response handler and execute tool
           const response = new McpResponse();
@@ -76,7 +80,10 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
 
           // Process and return response
           try {
-            const content = await response.handle(tool.name, contextForResponse);
+            const content = await response.handle(
+              tool.name,
+              contextForResponse,
+            );
 
             // Log successful tool execution (non-blocking)
             metrics.log('tool_executed', {
@@ -95,7 +102,8 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
               tool_name: tool.name,
               duration_ms: Math.round(performance.now() - startTime),
               success: false,
-              error_message: error instanceof Error ? error.message : 'Unknown error',
+              error_message:
+                error instanceof Error ? error.message : 'Unknown error',
             });
 
             return {
@@ -248,8 +256,7 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
       res.writeHead(200, {'Content-Type': 'application/json'});
       res.end(JSON.stringify({success: true}));
     } catch (error) {
-      const errorMsg =
-        error instanceof Error ? error.message : 'Invalid JSON';
+      const errorMsg = error instanceof Error ? error.message : 'Invalid JSON';
       res.writeHead(400, {'Content-Type': 'application/json'});
       res.end(JSON.stringify({error: errorMsg}));
     }
@@ -269,7 +276,9 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
 
     // Security check for all other endpoints
     if (!isLocalhostRequest(req)) {
-      logger.warn(`Rejected non-localhost request from ${req.socket.remoteAddress}`);
+      logger.warn(
+        `Rejected non-localhost request from ${req.socket.remoteAddress}`,
+      );
       res.writeHead(403, {'Content-Type': 'application/json'});
       res.end(
         JSON.stringify({error: 'Forbidden: Only localhost access allowed'}),

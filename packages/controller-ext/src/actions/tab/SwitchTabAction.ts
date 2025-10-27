@@ -1,14 +1,13 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
-import { TabAdapter } from '@/adapters/TabAdapter';
+import {TabAdapter} from '@/adapters/TabAdapter';
 
 // Input schema
 const SwitchTabInputSchema = z.object({
@@ -47,7 +46,10 @@ type SwitchTabOutput = z.infer<typeof SwitchTabOutputSchema>;
  * }
  * // Returns: { tabId: 123, url: "https://google.com", title: "Google" }
  */
-export class SwitchTabAction extends ActionHandler<SwitchTabInput, SwitchTabOutput> {
+export class SwitchTabAction extends ActionHandler<
+  SwitchTabInput,
+  SwitchTabOutput
+> {
   readonly inputSchema = SwitchTabInputSchema;
   private tabAdapter = new TabAdapter();
 

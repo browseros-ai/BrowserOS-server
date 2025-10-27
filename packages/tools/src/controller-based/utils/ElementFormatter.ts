@@ -47,7 +47,10 @@ export class ElementFormatter {
   /**
    * Format an array of elements
    */
-  formatElements(elements: InteractiveNode[], hideHiddenElements = false): string {
+  formatElements(
+    elements: InteractiveNode[],
+    hideHiddenElements = false,
+  ): string {
     const SKIP_OUT_OF_VIEWPORT = hideHiddenElements;
     const SORT_BY_NODEID = true;
     const MAX_ELEMENTS = 0; // 0 means no limit
@@ -56,7 +59,7 @@ export class ElementFormatter {
 
     if (SKIP_OUT_OF_VIEWPORT) {
       filteredElements = filteredElements.filter(
-        (node) => node.attributes?.in_viewport !== 'false',
+        node => node.attributes?.in_viewport !== 'false',
       );
     }
 
@@ -77,7 +80,9 @@ export class ElementFormatter {
     }
 
     if (SKIP_OUT_OF_VIEWPORT) {
-      lines.push('--- IMPORTANT: OUT OF VIEWPORT ELEMENTS, SCROLL TO INTERACT ---');
+      lines.push(
+        '--- IMPORTANT: OUT OF VIEWPORT ELEMENTS, SCROLL TO INTERACT ---',
+      );
     }
 
     return lines.join('\n');
@@ -123,7 +128,8 @@ export class ElementFormatter {
     }
 
     if (SHOW_TAG) {
-      const tag = node.attributes?.['html-tag'] || node.attributes?.role || 'div';
+      const tag =
+        node.attributes?.['html-tag'] || node.attributes?.role || 'div';
       parts.push(`<${tag}>`);
     }
 
@@ -201,7 +207,7 @@ export class ElementFormatter {
     if (!path) return '';
     const PATH_DEPTH = 3;
 
-    const parts = path.split(' > ').filter((p) => p && p !== 'root');
+    const parts = path.split(' > ').filter(p => p && p !== 'root');
     const lastParts = parts.slice(-PATH_DEPTH);
 
     return lastParts.length > 0 ? lastParts.join('>') : '';

@@ -1,14 +1,13 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { z } from 'zod';
+import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
+import {ActionHandler} from '../ActionHandler';
 
-import { TabAdapter } from '@/adapters/TabAdapter';
+import {TabAdapter} from '@/adapters/TabAdapter';
 
 // Input schema
 const CloseTabInputSchema = z.object({
@@ -46,7 +45,10 @@ type CloseTabOutput = z.infer<typeof CloseTabOutputSchema>;
  * }
  * // Returns: { success: true, message: "Closed tab 123" }
  */
-export class CloseTabAction extends ActionHandler<CloseTabInput, CloseTabOutput> {
+export class CloseTabAction extends ActionHandler<
+  CloseTabInput,
+  CloseTabOutput
+> {
   readonly inputSchema = CloseTabInputSchema;
   private tabAdapter = new TabAdapter();
 
