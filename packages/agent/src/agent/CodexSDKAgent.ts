@@ -26,8 +26,7 @@ import type {FormattedEvent} from './types.js';
  * System-level environment configuration
  * Only binary path - everything else comes from AgentConfig
  */
-const DEFAULT_CODEX_BINARY_PATH =
-  '/Users/shadowfax/code/browser-pivot/browseros-codex-fork/codex-rs/target/release/codex';
+const DEFAULT_CODEX_BINARY_PATH = '/opt/homebrew/bin/codex';
 
 /**
  * Codex SDK specific default configuration
