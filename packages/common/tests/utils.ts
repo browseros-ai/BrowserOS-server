@@ -27,19 +27,29 @@ export async function killProcessOnPort(port: number): Promise<void> {
 
     if (pids) {
       const pidList = pids.replace(/\n/g, ', ');
-      console.log(`Killing process(es) ${pidList} on port ${port}...`);
+      console.log(`Terminating process(es) ${pidList} on port ${port}...`);
 
-      execSync(`kill -9 ${pids.replace(/\n/g, ' ')}`, {
-        stdio: 'ignore',
-      });
+      // First try SIGTERM for graceful shutdown
+      try {
+        execSync(`kill -15 ${pids.replace(/\n/g, ' ')}`, {
+          stdio: 'ignore',
+        });
+        // Give it a moment to shut down
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch {
+        // If SIGTERM fails, try SIGKILL as last resort
+        execSync(`kill -9 ${pids.replace(/\n/g, ' ')}`, {
+          stdio: 'ignore',
+        });
+      }
 
-      console.log(`Killed process on port ${port}`);
+      console.log(`Terminated process on port ${port}`);
     }
   } catch {
     console.log(`No process found on port ${port}`);
   }
 
-  console.log('Waiting 1 seconds for port to be released...');
+  console.log('Waiting 1 second for port to be released...');
   await new Promise(resolve => setTimeout(resolve, 1000));
 }
 

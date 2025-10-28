@@ -22,6 +22,7 @@ import {StreamableHTTPClientTransport} from '@modelcontextprotocol/sdk/client/st
 const CDP_PORT = parseInt(process.env.CDP_PORT || '9001');
 const HTTP_MCP_PORT = parseInt(process.env.HTTP_MCP_PORT || '9002');
 const AGENT_PORT = parseInt(process.env.AGENT_PORT || '9003');
+const EXTENSION_PORT = parseInt(process.env.EXTENSION_PORT || '9004');
 const BASE_URL = `http://127.0.0.1:${HTTP_MCP_PORT}`;
 
 let serverProcess: ReturnType<typeof spawn> | null = null;
@@ -69,6 +70,7 @@ describe('MCP Server Integration Tests', () => {
 
     // Check if MCP server port is already in use
     await killProcessOnPort(HTTP_MCP_PORT);
+    await killProcessOnPort(EXTENSION_PORT);
 
     const portAvailable = await isPortAvailable(HTTP_MCP_PORT);
     if (!portAvailable) {
@@ -90,6 +92,8 @@ describe('MCP Server Integration Tests', () => {
         HTTP_MCP_PORT.toString(),
         '--agent-port',
         AGENT_PORT.toString(),
+        '--extension-port',
+        EXTENSION_PORT.toString(),
       ],
       {
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -184,29 +188,29 @@ describe('MCP Server Integration Tests', () => {
       console.log(`Found ${result.tools.length} tools`);
     });
 
-    it('calls list_pages tool successfully', async () => {
+    it('calls browser_list_tabs tool successfully', async () => {
       assert.ok(mcpClient, 'MCP client should be connected');
 
       const result = await mcpClient.callTool({
-        name: 'list_pages',
+        name: 'browser_list_tabs',
         arguments: {},
       });
 
       assert.ok(result.content, 'Should return content');
       assert.ok(Array.isArray(result.content), 'Content should be an array');
 
-      if (result.isError) {
-        console.log(
-          'list_pages returned error (might be expected):',
-          result.content,
-        );
-      } else {
-        console.log(
-          'list_pages returned:',
-          result.content.length,
-          'content items',
-        );
-      }
+      const textContent = result.content.find(
+        item => item.type === 'text' && typeof item.text === 'string',
+      );
+      assert.ok(textContent, 'Should include text content');
+      console.log('browser_list_tabs content:', textContent?.text ?? '');
+      // Just verify the API works and returns a response (extension connection status may vary)
+      assert.ok(textContent.text, 'Response should contain text');
+      console.log(
+        'browser_list_tabs returned:',
+        result.content.length,
+        'content items',
+      );
     });
 
     it('handles invalid tool name gracefully', async () => {
