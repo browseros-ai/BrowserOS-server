@@ -106,59 +106,24 @@ export class CodexSDKAgent extends BaseAgent {
       codexExecutablePath: this.codexExecutablePath,
     });
 
-    const configUrl = process.env.BROWSEROS_CONFIG_URL;
-
-    if (configUrl) {
-      logger.info('🌐 Fetching config from BrowserOS Config URL', {configUrl});
-
-      try {
-        this.gatewayConfig = await fetchBrowserOSConfig(configUrl);
-        this.selectedProvider = this.gatewayConfig.providers.find(
-          p => p.name === 'openai',
-        );
-
-        if (!this.selectedProvider) {
-          throw new Error('No openai provider found in config');
-        }
-
-        this.config.apiKey = this.selectedProvider.apiKey;
-
-        logger.info('✅ Using API key from BrowserOS Config URL', {
-          model: this.selectedProvider.model,
-        });
-      } catch (error) {
-        logger.warn(
-          '⚠️  Failed to fetch from config URL, falling back to OPENAI_API_KEY',
-          {
-            error: error instanceof Error ? error.message : String(error),
-          },
-        );
-      }
-    }
-
-    if (!this.config.apiKey) {
-      const envApiKey = process.env.OPENAI_API_KEY;
-      if (envApiKey) {
-        this.config.apiKey = envApiKey;
-        logger.info('✅ Using API key from OPENAI_API_KEY env var');
-      } else {
-        throw new Error(
-          'No API key found. Set either BROWSEROS_CONFIG_URL or OPENAI_API_KEY',
-        );
-      }
-    }
-
     await super.init();
+
+    const baseUrl = process.env.BROWSEROS_GATEWAY_URL;
+    if (!baseUrl) {
+      throw new Error('BROWSEROS_GATEWAY_URL environment variable is required');
+    }
 
     // Initialize Codex instance with binary path and API key from config
     this.codex = new Codex({
       codexPathOverride: this.codexExecutablePath,
       apiKey: this.config.apiKey,
+      baseUrl,
     });
 
     logger.info('✅ Codex SDK initialized', {
       binaryPath: this.codexExecutablePath,
       model: this.selectedProvider?.model,
+      baseUrl,
     });
   }
 
