@@ -19,7 +19,7 @@ import {allControllerTools} from '@browseros/tools/controller-based';
 import {AGENT_SYSTEM_PROMPT} from './Agent.prompt.js';
 import {BaseAgent} from './BaseAgent.js';
 import {CodexEventFormatter} from './CodexSDKAgent.formatter.js';
-import { type AgentConfig} from './types.js';
+import {type AgentConfig} from './types.js';
 import type {FormattedEvent} from './types.js';
 
 /**
@@ -43,7 +43,7 @@ const CODEX_SDK_DEFAULTS = {
 function buildMcpServerConfig(config: AgentConfig): McpServerConfig {
   const port = config.mcpServerPort || CODEX_SDK_DEFAULTS.mcpServerPort;
   const mcpServerUrl = `http://${CODEX_SDK_DEFAULTS.mcpServerHost}:${port}/mcp`;
-  return { url: mcpServerUrl } as McpServerConfig;
+  return {url: mcpServerUrl} as McpServerConfig;
 }
 
 /**
@@ -105,59 +105,24 @@ export class CodexSDKAgent extends BaseAgent {
       codexExecutablePath: this.codexExecutablePath,
     });
 
-    const configUrl = process.env.BROWSEROS_CONFIG_URL;
-
-    if (configUrl) {
-      logger.info('🌐 Fetching config from BrowserOS Config URL', {configUrl});
-
-      try {
-        this.gatewayConfig = await fetchBrowserOSConfig(configUrl);
-        this.selectedProvider = this.gatewayConfig.providers.find(
-          p => p.name === 'openai',
-        );
-
-        if (!this.selectedProvider) {
-          throw new Error('No openai provider found in config');
-        }
-
-        this.config.apiKey = this.selectedProvider.apiKey;
-
-        logger.info('✅ Using API key from BrowserOS Config URL', {
-          model: this.selectedProvider.model,
-        });
-      } catch (error) {
-        logger.warn(
-          '⚠️  Failed to fetch from config URL, falling back to OPENAI_API_KEY',
-          {
-            error: error instanceof Error ? error.message : String(error),
-          },
-        );
-      }
-    }
-
-    if (!this.config.apiKey) {
-      const envApiKey = process.env.OPENAI_API_KEY;
-      if (envApiKey) {
-        this.config.apiKey = envApiKey;
-        logger.info('✅ Using API key from OPENAI_API_KEY env var');
-      } else {
-        throw new Error(
-          'No API key found. Set either BROWSEROS_CONFIG_URL or OPENAI_API_KEY',
-        );
-      }
-    }
-
     await super.init();
+
+    const baseUrl = process.env.BROWSEROS_GATEWAY_URL;
+    if (!baseUrl) {
+      throw new Error('BROWSEROS_GATEWAY_URL environment variable is required');
+    }
 
     // Initialize Codex instance with binary path and API key from config
     this.codex = new Codex({
       codexPathOverride: this.codexExecutablePath,
       apiKey: this.config.apiKey,
+      baseUrl,
     });
 
     logger.info('✅ Codex SDK initialized', {
       binaryPath: this.codexExecutablePath,
       model: this.selectedProvider?.model,
+      baseUrl,
     });
   }
 
@@ -308,12 +273,12 @@ export class CodexSDKAgent extends BaseAgent {
       const modelName = this.selectedProvider?.model || 'o4-mini';
       const thread = this.codex.startThread({
         mcpServers: this.config.mcpServers,
-        model: modelName
+        model: modelName,
       } as any);
 
       logger.debug('📡 Started Codex thread with MCP servers', {
         mcpServerCount: Object.keys(this.config.mcpServers || {}).length,
-        model: modelName
+        model: modelName,
       });
 
       // Get streaming events from thread
@@ -363,14 +328,23 @@ export class CodexSDKAgent extends BaseAgent {
           const event = result.value;
 
           // Log raw Codex event for debugging
-          if (event.item && event.item.type === 'mcp_tool_call') {
-            // Full item dump for mcp_tool_call to see structure
+          if (event.type === 'error') {
+            logger.error('❌ Codex error event', {
+              error: event.error || event,
+              message: (event as any).message,
+              code: (event as any).code,
+            });
+          } else if (event.type === 'turn.failed') {
+            logger.error('❌ Turn failed', {
+              reason: (event as any).reason || event.error,
+              fullEvent: JSON.stringify(event).substring(0, 500),
+            });
+          } else if (event.item && event.item.type === 'mcp_tool_call') {
             logger.info('📥 Codex MCP tool event', {
               type: event.type,
               fullItem: JSON.stringify(event.item, null, 2).substring(0, 500),
             });
           } else if (event.item && event.item.type === 'reasoning') {
-            // Show reasoning text (truncated)
             logger.info('📥 Codex reasoning event', {
               type: event.type,
               text: (event.item.text || '').substring(0, 100),
