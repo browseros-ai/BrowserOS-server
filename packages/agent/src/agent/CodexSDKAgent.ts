@@ -107,22 +107,34 @@ export class CodexSDKAgent extends BaseAgent {
 
     await super.init();
 
+    const codexConfig: any = {
+      codexPathOverride: this.codexExecutablePath,
+      apiKey: this.config.apiKey,
+    };
+
+    const openaiApiKey = process.env.OPENAI_API_KEY;
     const baseUrl = process.env.BROWSEROS_GATEWAY_URL;
-    if (!baseUrl) {
-      throw new Error('BROWSEROS_GATEWAY_URL environment variable is required');
+
+    if (!openaiApiKey && !baseUrl) {
+      throw new Error(
+        'Either OPENAI_API_KEY or BROWSEROS_GATEWAY_URL environment variable is required',
+      );
+    }
+
+    // override apiKey if not to use the default gateway from browseros
+    if (!openaiApiKey) {
+      codexConfig.apiKey = 'default-key';
+      codexConfig.baseUrl = baseUrl;
     }
 
     // Initialize Codex instance with binary path and API key from config
-    this.codex = new Codex({
-      codexPathOverride: this.codexExecutablePath,
-      apiKey: this.config.apiKey,
-      baseUrl,
-    });
+    this.codex = new Codex(codexConfig);
 
     logger.info('✅ Codex SDK initialized', {
       binaryPath: this.codexExecutablePath,
       model: this.selectedProvider?.model,
-      baseUrl,
+      baseUrl: baseUrl || undefined,
+      usingOpenaiApiKey: !!openaiApiKey,
     });
   }
 
