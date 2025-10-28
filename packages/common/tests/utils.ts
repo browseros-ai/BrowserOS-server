@@ -67,7 +67,7 @@ export async function withBrowser(
   );
 
   const response = new McpResponse();
-  const context = await McpContext.from(cachedBrowser, Logger);
+  const context = await McpContext.from(cachedBrowser, logger);
 
   await cb(response, context);
 }
