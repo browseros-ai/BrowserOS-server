@@ -19,14 +19,15 @@ import {allControllerTools} from '@browseros/tools/controller-based';
 import {AGENT_SYSTEM_PROMPT} from './Agent.prompt.js';
 import {BaseAgent} from './BaseAgent.js';
 import {CodexEventFormatter} from './CodexSDKAgent.formatter.js';
-import { type AgentConfig} from './types.js';
+import {type AgentConfig} from './types.js';
 import type {FormattedEvent} from './types.js';
 
 /**
  * System-level environment configuration
  * Only binary path - everything else comes from AgentConfig
  */
-const DEFAULT_CODEX_BINARY_PATH = '/opt/homebrew/bin/codex';
+const DEFAULT_CODEX_BINARY_PATH =
+  '/Users/shadowfax/code/browser-pivot/browseros-codex-fork/codex-rs/target/release/codex';
 
 /**
  * Codex SDK specific default configuration
@@ -43,7 +44,7 @@ const CODEX_SDK_DEFAULTS = {
 function buildMcpServerConfig(config: AgentConfig): McpServerConfig {
   const port = config.mcpServerPort || CODEX_SDK_DEFAULTS.mcpServerPort;
   const mcpServerUrl = `http://${CODEX_SDK_DEFAULTS.mcpServerHost}:${port}/mcp`;
-  return { url: mcpServerUrl } as McpServerConfig;
+  return {url: mcpServerUrl} as McpServerConfig;
 }
 
 /**
@@ -308,12 +309,12 @@ export class CodexSDKAgent extends BaseAgent {
       const modelName = this.selectedProvider?.model || 'o4-mini';
       const thread = this.codex.startThread({
         mcpServers: this.config.mcpServers,
-        model: modelName
+        model: modelName,
       } as any);
 
       logger.debug('📡 Started Codex thread with MCP servers', {
         mcpServerCount: Object.keys(this.config.mcpServers || {}).length,
-        model: modelName
+        model: modelName,
       });
 
       // Get streaming events from thread
@@ -363,14 +364,23 @@ export class CodexSDKAgent extends BaseAgent {
           const event = result.value;
 
           // Log raw Codex event for debugging
-          if (event.item && event.item.type === 'mcp_tool_call') {
-            // Full item dump for mcp_tool_call to see structure
+          if (event.type === 'error') {
+            logger.error('❌ Codex error event', {
+              error: event.error || event,
+              message: (event as any).message,
+              code: (event as any).code,
+            });
+          } else if (event.type === 'turn.failed') {
+            logger.error('❌ Turn failed', {
+              reason: (event as any).reason || event.error,
+              fullEvent: JSON.stringify(event).substring(0, 500),
+            });
+          } else if (event.item && event.item.type === 'mcp_tool_call') {
             logger.info('📥 Codex MCP tool event', {
               type: event.type,
               fullItem: JSON.stringify(event.item, null, 2).substring(0, 500),
             });
           } else if (event.item && event.item.type === 'reasoning') {
-            // Show reasoning text (truncated)
             logger.info('📥 Codex reasoning event', {
               type: event.type,
               text: (event.item.text || '').substring(0, 100),
