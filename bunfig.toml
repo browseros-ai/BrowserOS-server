@@ -1,0 +1,12 @@
+# Bun configuration
+
+[test]
+# Increase timeout to 30 seconds to account for:
+# - BrowserOS cold start (10-15 seconds)
+# - Slow integration tests
+# - Browser automation overhead
+timeout = 30000
+
+# Run tests serially to avoid port conflicts and race conditions
+# (Note: Tests already use mutex for browser access)
+# preload = []
