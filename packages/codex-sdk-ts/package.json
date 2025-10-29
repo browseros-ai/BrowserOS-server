@@ -35,16 +35,15 @@
   "sideEffects": false,
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "tsup",
-    "build:watch": "tsup --watch",
-    "lint": "pnpm eslint \"src/**/*.ts\" \"tests/**/*.ts\"",
-    "lint:fix": "pnpm eslint --fix \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "build": "bun build ./src/index.ts --outdir ./dist --format esm --target=node --sourcemap=linked && tsc --declaration --emitDeclarationOnly --outDir ./dist",
+    "lint": "bun eslint \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "lint:fix": "bun eslint --fix \"src/**/*.ts\" \"tests/**/*.ts\"",
     "test": "jest",
     "test:watch": "jest --watch",
     "coverage": "jest --coverage",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
-    "prepare": "pnpm run build"
+    "prepare": "bun run build"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
@@ -63,5 +62,10 @@
     "typescript-eslint": "^8.45.0",
     "zod": "^3.24.2",
     "zod-to-json-schema": "^3.24.6"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.20.0",
+    "mitt": "^3.0.1",
+    "proxy-agent": "^6.5.0"
   }
 }
