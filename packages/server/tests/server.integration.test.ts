@@ -7,13 +7,10 @@
  */
 import assert from 'node:assert';
 import {spawn} from 'node:child_process';
-import {describe, it, before, after} from 'node:test';
+import {describe, it, beforeAll, afterAll} from 'bun:test';
 import {URL} from 'node:url';
 
-import {
-  ensureBrowserOS,
-  cleanupBrowserOS,
-} from '@browseros/common/tests/browseros';
+import {ensureBrowserOS} from '@browseros/common/tests/browseros';
 import {killProcessOnPort} from '@browseros/common/tests/utils.js';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StreamableHTTPClientTransport} from '@modelcontextprotocol/sdk/client/streamableHttp.js';
@@ -64,7 +61,7 @@ async function waitForServer(maxAttempts = 30): Promise<void> {
 }
 
 describe('MCP Server Integration Tests', () => {
-  before(async () => {
+  beforeAll(async () => {
     // Start BrowserOS (or reuse if already running)
     await ensureBrowserOS({cdpPort: CDP_PORT});
 
@@ -130,7 +127,7 @@ describe('MCP Server Integration Tests', () => {
     console.log('MCP client connected\n');
   });
 
-  after(async () => {
+  afterAll(async () => {
     // Close MCP client
     if (mcpTransport) {
       console.log('\nClosing MCP client...');
@@ -161,8 +158,10 @@ describe('MCP Server Integration Tests', () => {
       serverProcess = null;
     }
 
-    // Cleanup BrowserOS
-    await cleanupBrowserOS();
+    // Note: We do NOT cleanup BrowserOS here because:
+    // 1. It's shared across all tests in the suite
+    // 2. Other tests may run after this and need the browser
+    // 3. Process exit will handle final cleanup
   });
 
   describe('Health endpoint', () => {

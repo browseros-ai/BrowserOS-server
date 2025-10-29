@@ -48,8 +48,16 @@ export class McpResponse implements Response {
     this.#includePages = value;
   }
 
+  get includePages(): boolean {
+    return this.#includePages;
+  }
+
   setIncludeSnapshot(value: boolean): void {
     this.#includeSnapshot = value;
+  }
+
+  get includeSnapshot(): boolean {
+    return this.#includeSnapshot;
   }
 
   setIncludeNetworkRequests(
@@ -78,14 +86,30 @@ export class McpResponse implements Response {
     };
   }
 
+  get includeNetworkRequests(): boolean {
+    return this.#networkRequestsOptions?.include ?? false;
+  }
+
+  get networkRequestsPageIdx(): number | undefined {
+    return this.#networkRequestsOptions?.pagination?.pageIdx;
+  }
+
   setIncludeConsoleData(value: boolean): void {
     this.#includeConsoleData = value;
+  }
+
+  get includeConsoleData(): boolean {
+    return this.#includeConsoleData;
   }
 
   attachNetworkRequest(url: string): void {
     this.#attachedNetworkRequestData = {
       networkRequestUrl: url,
     };
+  }
+
+  get attachedNetworkRequestUrl(): string | undefined {
+    return this.#attachedNetworkRequestData?.networkRequestUrl;
   }
 
   appendResponseLine(value: string): void {
@@ -98,6 +122,10 @@ export class McpResponse implements Response {
 
   get responseLines(): readonly string[] {
     return this.#textResponseLines;
+  }
+
+  resetResponseLineForTesting(): void {
+    this.#textResponseLines = [];
   }
 
   get images(): ImageContentData[] {
