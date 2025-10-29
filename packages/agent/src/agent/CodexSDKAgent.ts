@@ -22,11 +22,6 @@ import {CodexEventFormatter} from './CodexSDKAgent.formatter.js';
 import {type AgentConfig} from './types.js';
 import type {FormattedEvent} from './types.js';
 
-/**
- * System-level environment configuration
- * Only binary path - everything else comes from AgentConfig
- */
-const DEFAULT_CODEX_BINARY_PATH = '/opt/homebrew/bin/codex';
 
 /**
  * Codex SDK specific default configuration
@@ -81,7 +76,6 @@ export class CodexSDKAgent extends BaseAgent {
 
     logger.info('🔧 CodexSDKAgent initializing', {
       mcpServerUrl: mcpServerConfig.url,
-      defaultCodexBinaryPath: DEFAULT_CODEX_BINARY_PATH,
       toolCount: allControllerTools.length,
     });
 
@@ -139,23 +133,42 @@ export class CodexSDKAgent extends BaseAgent {
   }
 
   private resolveCodexExecutablePath(): string {
-    const currentBinaryDirectory = dirname(process.execPath);
     const codexBinaryName =
       process.platform === 'win32' ? 'codex.exe' : 'codex';
-    const bundledCodexPath = join(currentBinaryDirectory, codexBinaryName);
 
+    // 1. Check resourcesDir if provided
+    if (this.config.resourcesDir) {
+      const resourcesCodexPath = join(
+        this.config.resourcesDir,
+        'bin',
+        codexBinaryName,
+      );
+      try {
+        accessSync(resourcesCodexPath, fsConstants.X_OK);
+        return resourcesCodexPath;
+      } catch {
+        // Ignore failures; fall back to next option
+      }
+    }
+
+    // 2. Check bundled codex in current binary directory
+    const currentBinaryDirectory = dirname(process.execPath);
+    const bundledCodexPath = join(currentBinaryDirectory, codexBinaryName);
     try {
       accessSync(bundledCodexPath, fsConstants.X_OK);
       return bundledCodexPath;
     } catch {
-      // Ignore failures; fall back to env/default below
+      // Ignore failures; fall back to env var
     }
 
+    // 3. Check CODEX_BINARY_PATH env var
     if (process.env.CODEX_BINARY_PATH) {
       return process.env.CODEX_BINARY_PATH;
     }
 
-    return DEFAULT_CODEX_BINARY_PATH;
+    throw new Error(
+      'Codex binary not found. Set --resources-dir or CODEX_BINARY_PATH',
+    );
   }
 
   /**
