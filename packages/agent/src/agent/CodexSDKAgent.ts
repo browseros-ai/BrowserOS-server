@@ -69,7 +69,7 @@ export class CodexSDKAgent extends BaseAgent {
   private codex: Codex | null = null;
   private gatewayConfig: BrowserOSConfig | null = null;
   private selectedProvider: Provider | null = null;
-  private codexExecutablePath: string = DEFAULT_CODEX_BINARY_PATH;
+  private codexExecutablePath: string | null = null;
 
   constructor(config: AgentConfig, _controllerBridge: ControllerBridge) {
     const mcpServerConfig = buildMcpServerConfig(config);
@@ -106,19 +106,18 @@ export class CodexSDKAgent extends BaseAgent {
       apiKey: this.config.apiKey,
     };
 
-    const openaiApiKey = process.env.OPENAI_API_KEY;
     const baseUrl = process.env.BROWSEROS_GATEWAY_URL;
+    const openaiApiKey = process.env.OPENAI_API_KEY;
 
-    if (!openaiApiKey && !baseUrl) {
-      throw new Error(
-        'Either OPENAI_API_KEY or BROWSEROS_GATEWAY_URL environment variable is required',
-      );
-    }
-
-    // override apiKey if not to use the default gateway from browseros
-    if (!openaiApiKey) {
+    if (baseUrl) {
       codexConfig.apiKey = 'default-key';
       codexConfig.baseUrl = baseUrl;
+    } else if (openaiApiKey) {
+      codexConfig.apiKey = openaiApiKey;
+    } else {
+      throw new Error(
+        'Either BROWSEROS_GATEWAY_URL or OPENAI_API_KEY environment variable is required',
+      );
     }
 
     // Initialize Codex instance with binary path and API key from config
@@ -127,7 +126,8 @@ export class CodexSDKAgent extends BaseAgent {
     logger.info('✅ Codex SDK initialized', {
       binaryPath: this.codexExecutablePath,
       model: this.selectedProvider?.model,
-      baseUrl: baseUrl || undefined,
+      baseUrl: codexConfig.baseUrl || undefined,
+      usingGateway: !!baseUrl,
       usingOpenaiApiKey: !!openaiApiKey,
     });
   }
