@@ -118,6 +118,9 @@ export class CodexSDKAgent extends BaseAgent {
 
         logger.info('✅ Using API key from BrowserOS Config URL', {
           model: this.selectedProvider.model,
+          hasApiKey: !!this.selectedProvider.apiKey,
+          hasBaseUrl: !!this.selectedProvider.baseUrl,
+          baseUrl: this.selectedProvider.baseUrl,
         });
 
         await super.init();
@@ -337,6 +340,9 @@ export class CodexSDKAgent extends BaseAgent {
       const thread = this.codex.startThread({
         mcpServers: this.config.mcpServers,
         model: modelName,
+        skipGitRepoCheck: true,
+        sandboxMode: 'read-only',
+        workingDirectory: this.config.resourcesDir || this.config.cwd,
       } as any);
 
       logger.debug('📡 Started Codex thread with MCP servers', {
