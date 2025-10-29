@@ -2,6 +2,8 @@
  * @license
  * Copyright 2025 BrowserOS
  */
+import fs from 'node:fs';
+import path from 'node:path';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -16,9 +18,14 @@ const RESET = '\x1b[0m';
 
 class Logger {
   private level: LogLevel;
+  private logFilePath?: string;
 
   constructor(level: LogLevel = 'info') {
     this.level = level;
+  }
+
+  setLogFile(logDir: string) {
+    this.logFilePath = path.join(logDir, 'browseros-server.log');
   }
 
   private format(level: LogLevel, message: string, meta?: object): string {
@@ -26,6 +33,12 @@ class Logger {
     const color = COLORS[level];
     const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
     return `${color}[${timestamp}] [${level.toUpperCase()}]${RESET} ${message}${metaStr}`;
+  }
+
+  private formatPlain(level: LogLevel, message: string, meta?: object): string {
+    const timestamp = new Date().toISOString();
+    const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
+    return `[${timestamp}] [${level.toUpperCase()}] ${message}${metaStr}`;
   }
 
   private log(level: LogLevel, message: string, meta?: object) {
@@ -40,6 +53,15 @@ class Logger {
         break;
       default:
         console.log(formatted);
+    }
+
+    if (this.logFilePath) {
+      const plainFormatted = this.formatPlain(level, message, meta);
+      try {
+        fs.appendFileSync(this.logFilePath, plainFormatted + '\n');
+      } catch (error) {
+        console.error(`Failed to write to log file: ${error}`);
+      }
     }
   }
 

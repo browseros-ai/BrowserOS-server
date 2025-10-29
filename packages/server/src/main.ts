@@ -35,6 +35,10 @@ import {parseArguments} from './args.js';
 const version = readVersion();
 const ports = parseArguments();
 
+if (ports.resourcesDir) {
+  logger.setLogFile(ports.resourcesDir);
+}
+
 void (async () => {
   logger.info(`Starting BrowserOS Server v${version}`);
 
