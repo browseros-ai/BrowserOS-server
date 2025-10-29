@@ -3,19 +3,47 @@
  * Copyright 2025 BrowserOS
  */
 
-import {describe, it, expect, vi, beforeEach} from 'vitest';
+import {describe, it, expect, beforeEach, afterEach} from 'bun:test';
 
+import type {FormattedEvent} from '../utils/EventFormatter.js';
+
+import {BaseAgent} from '../agent/BaseAgent.js';
+import type {AgentConfig} from '../agent/types.js';
+import {AgentFactory} from '../agent/AgentFactory.js';
 import {SessionManager} from './SessionManager.js';
+
+// Test agent implementation
+class TestAgent extends BaseAgent {
+  constructor(config: AgentConfig) {
+    super('test-agent', config);
+  }
+
+  async *execute(message: string): AsyncGenerator<FormattedEvent> {
+    yield {type: 'test', content: message, metadata: {}} as any;
+  }
+
+  async destroy(): Promise<void> {
+    this.markDestroyed();
+  }
+}
 
 describe('SessionManager-unit-test', () => {
   let sessionManager: SessionManager;
 
   beforeEach(() => {
+    // Register test agent
+    AgentFactory.register('test-agent', TestAgent as any, 'Test agent');
+
     // Create fresh instance for each test
     sessionManager = new SessionManager({
       maxSessions: 5,
       idleTimeoutMs: 60000,
     });
+  });
+
+  afterEach(() => {
+    // Clean up agent registry
+    AgentFactory.clear();
   });
 
   // Unit Test 1 - Creation and initialization
@@ -46,7 +74,7 @@ describe('SessionManager-unit-test', () => {
 
     // Create session
     const session = sessionManager.createSession(
-      {id: crypto.randomUUID()},
+      {id: crypto.randomUUID(), agentType: 'test-agent'},
       agentConfig,
     );
 
@@ -72,7 +100,10 @@ describe('SessionManager-unit-test', () => {
     };
 
     // Create session
-    sessionManager.createSession({id: sessionId}, agentConfig);
+    sessionManager.createSession(
+      {id: sessionId, agentType: 'test-agent'},
+      agentConfig,
+    );
     const session = sessionManager['sessions'].get(sessionId);
 
     // Initial state should be IDLE
@@ -109,7 +140,10 @@ describe('SessionManager-unit-test', () => {
       idleTimeoutMs: 100, // 100ms
     });
 
-    shortTimeoutManager.createSession({id: sessionId}, agentConfig);
+    shortTimeoutManager.createSession(
+      {id: sessionId, agentType: 'test-agent'},
+      agentConfig,
+    );
 
     // Mark as idle
     shortTimeoutManager.markIdle(sessionId);
@@ -143,16 +177,16 @@ describe('SessionManager-unit-test', () => {
     };
 
     // Create first session
-    smallManager.createSession(undefined, agentConfig);
+    smallManager.createSession({agentType: 'test-agent'}, agentConfig);
     expect(smallManager.isAtCapacity()).toBe(false);
 
     // Create second session
-    smallManager.createSession(undefined, agentConfig);
+    smallManager.createSession({agentType: 'test-agent'}, agentConfig);
     expect(smallManager.isAtCapacity()).toBe(true);
 
     // Try to create third session (should throw)
     expect(() => {
-      smallManager.createSession(undefined, agentConfig);
+      smallManager.createSession({agentType: 'test-agent'}, agentConfig);
     }).toThrow('Server at capacity');
   });
 });

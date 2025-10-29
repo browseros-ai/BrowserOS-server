@@ -3,7 +3,7 @@
  * Copyright 2025 BrowserOS
  */
 
-import {describe, it, expect, beforeEach} from 'vitest';
+import {describe, it, expect, beforeEach} from 'bun:test';
 
 import type {FormattedEvent} from '../utils/EventFormatter.js';
 

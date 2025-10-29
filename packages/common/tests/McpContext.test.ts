@@ -3,7 +3,7 @@
  * Copyright 2025 BrowserOS
  */
 import assert from 'node:assert';
-import {describe, it} from 'node:test';
+import {describe, it} from 'bun:test';
 
 import sinon from 'sinon';
 
