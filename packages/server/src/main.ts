@@ -31,7 +31,6 @@ import {
 
 import {parseArguments} from './args.js';
 
-
 const version = readVersion();
 const ports = parseArguments();
 
@@ -187,10 +186,11 @@ async function startAgentServer(
 
   const agentConfig: AgentServerConfig = {
     port: ports.agentPort,
-    apiKey: process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || '',
-    cwd: process.cwd(),
-    resourcesDir: ports.resourcesDir,
+    resourcesDir: ports.resourcesDir || process.cwd(),
     mcpServerPort: ports.httpMcpPort,
+    apiKey: process.env.BROWSEROS_API_KEY,
+    baseUrl: process.env.BROWSEROS_LLM_BASE_URL,
+    modelName: process.env.BROWSEROS_LLM_MODEL_NAME,
     maxSessions: parseInt(process.env.MAX_SESSIONS || '5'),
     idleTimeoutMs: parseInt(process.env.SESSION_IDLE_TIMEOUT_MS || '90000'),
     eventGapTimeoutMs: parseInt(process.env.EVENT_GAP_TIMEOUT_MS || '60000'),
@@ -200,7 +200,7 @@ async function startAgentServer(
 
   logger.info(`[Agent Server] Listening on ws://127.0.0.1:${ports.agentPort}`);
   logger.info(
-    `[Agent Server] Max sessions: ${agentConfig.maxSessions}, Idle timeout: ${agentConfig.idleTimeoutMs}ms`,
+    `[Agent Server] Config: resourcesDir=${agentConfig.resourcesDir}, model=${agentConfig.modelName || 'default'}, sessions=${agentConfig.maxSessions}`,
   );
 
   return agentServer;

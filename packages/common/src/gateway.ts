@@ -9,6 +9,7 @@ export interface Provider {
   name: string;
   model: string;
   apiKey: string;
+  baseUrl?: string;
 }
 
 export interface BrowserOSConfig {

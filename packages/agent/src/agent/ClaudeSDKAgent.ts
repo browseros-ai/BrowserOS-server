@@ -31,7 +31,6 @@ import type {FormattedEvent} from './types.js';
 const CLAUDE_SDK_DEFAULTS = {
   maxTurns: 100,
   maxThinkingTokens: 10000,
-  permissionMode: 'bypassPermissions' as const,
 };
 
 /**
@@ -72,7 +71,6 @@ export class ClaudeSDKAgent extends BaseAgent {
       mcpServers: {'browseros-controller': sdkMcpServer},
       maxTurns: CLAUDE_SDK_DEFAULTS.maxTurns,
       maxThinkingTokens: CLAUDE_SDK_DEFAULTS.maxThinkingTokens,
-      permissionMode: CLAUDE_SDK_DEFAULTS.permissionMode,
     });
 
     logger.info('✅ ClaudeSDKAgent initialized with shared ControllerBridge');
@@ -90,18 +88,20 @@ export class ClaudeSDKAgent extends BaseAgent {
 
       try {
         this.gatewayConfig = await fetchBrowserOSConfig(configUrl);
-        this.selectedProvider = this.gatewayConfig.providers.find(
-          p => p.name === 'anthropic',
-        );
+        this.selectedProvider =
+          this.gatewayConfig.providers.find(p => p.name === 'anthropic') || null;
 
         if (!this.selectedProvider) {
           throw new Error('No anthropic provider found in config');
         }
 
         this.config.apiKey = this.selectedProvider.apiKey;
+        this.config.baseUrl = this.selectedProvider.baseUrl;
+        this.config.modelName = this.selectedProvider.model;
 
-        logger.info('✅ Using API key from BrowserOS Config URL', {
-          model: this.selectedProvider.model,
+        logger.info('✅ Using config from BrowserOS Config URL', {
+          model: this.config.modelName,
+          baseUrl: this.config.baseUrl,
         });
 
         await super.init();
@@ -250,17 +250,23 @@ export class ClaudeSDKAgent extends BaseAgent {
         apiKey: this.config.apiKey,
         maxTurns: this.config.maxTurns,
         maxThinkingTokens: this.config.maxThinkingTokens,
-        cwd: this.config.cwd,
+        cwd: this.config.resourcesDir,
         systemPrompt: this.config.systemPrompt,
         mcpServers: this.config.mcpServers,
-        permissionMode: this.config.permissionMode,
         abortController: this.abortController,
       };
 
-      if (this.selectedProvider?.model) {
-        options.model = this.selectedProvider.model;
-        logger.debug('Using model from gateway', {
-          model: this.selectedProvider.model,
+      if (this.config.modelName) {
+        options.model = this.config.modelName;
+        logger.debug('Using model from config', {
+          model: this.config.modelName,
+        });
+      }
+
+      if (this.config.baseUrl) {
+        options.baseUrl = this.config.baseUrl;
+        logger.debug('Using custom base URL', {
+          baseUrl: this.config.baseUrl,
         });
       }
 

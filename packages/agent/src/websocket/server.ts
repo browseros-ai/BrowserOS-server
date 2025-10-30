@@ -33,13 +33,14 @@ type WebSocketData = z.infer<typeof WebSocketDataSchema>;
  */
 export const ServerConfigSchema = z.object({
   port: z.number().int().min(1).max(65535),
-  apiKey: z.string().min(1, 'API key is required'),
-  cwd: z.string().min(1, 'Working directory is required'),
-  resourcesDir: z.string().optional(),
-  mcpServerPort: z.number().positive().optional(), // MCP server port (defaults to 9100)
+  resourcesDir: z.string().min(1, 'Resources directory is required'),
+  mcpServerPort: z.number().positive().optional(),
+  apiKey: z.string().optional(),
+  baseUrl: z.string().url().optional(),
+  modelName: z.string().optional(),
   maxSessions: z.number().int().positive(),
-  idleTimeoutMs: z.number().positive(), // Time to wait after agent completion before cleanup
-  eventGapTimeoutMs: z.number().positive(), // Max time between consecutive SDK events
+  idleTimeoutMs: z.number().positive(),
+  eventGapTimeoutMs: z.number().positive(),
 });
 
 export type ServerConfig = z.infer<typeof ServerConfigSchema>;
@@ -183,12 +184,13 @@ export function createServer(
         const {sessionId, createdAt} = ws.data;
 
         try {
-          // Build agent config with MCP server settings
+          // Build agent config from server config
           const agentConfig = {
-            apiKey: config.apiKey,
-            cwd: config.cwd,
             resourcesDir: config.resourcesDir,
             mcpServerPort: config.mcpServerPort,
+            apiKey: config.apiKey,
+            baseUrl: config.baseUrl,
+            modelName: config.modelName,
           };
 
           // Create session with agent

@@ -7,12 +7,7 @@ import {accessSync, constants as fsConstants} from 'node:fs';
 import {dirname, join} from 'node:path';
 
 import {Codex, type McpServerConfig} from '@browseros/codex-sdk-ts';
-import {
-  logger,
-  fetchBrowserOSConfig,
-  type BrowserOSConfig,
-  type Provider,
-} from '@browseros/common';
+import {logger} from '@browseros/common';
 import type {ControllerBridge} from '@browseros/controller-server';
 import {allControllerTools} from '@browseros/tools/controller-based';
 
@@ -57,23 +52,20 @@ function buildMcpServerConfig(config: AgentConfig): McpServerConfig {
  * - Heartbeat mechanism for long-running operations
  * - Thread-based execution model
  * - Metadata tracking
- * - Config fetching from BrowserOS Config URL
  *
  * Environment Variables:
- * - CODEX_BINARY_PATH: Optional override when no bundled codex binary is found (default fallback: /opt/homebrew/bin/codex)
- * - BROWSEROS_CONFIG_URL: URL to fetch provider config (optional)
- * - OPENAI_API_KEY: OpenAI API key fallback (used if config URL not set or fails)
+ * - CODEX_BINARY_PATH: Optional override when no bundled codex binary is found
  *
  * Configuration (via AgentConfig):
- * - apiKey: OpenAI API key
+ * - resourcesDir: Resources directory (required)
  * - mcpServerPort: MCP server port (optional, defaults to 9100)
- * - cwd: Working directory
+ * - apiKey: OpenAI API key (required)
+ * - baseUrl: Custom LLM endpoint (optional)
+ * - modelName: Model to use (optional, defaults to 'o4-mini')
  */
 export class CodexSDKAgent extends BaseAgent {
   private abortController: AbortController | null = null;
   private codex: Codex | null = null;
-  private gatewayConfig: BrowserOSConfig | null = null;
-  private selectedProvider: Provider | null = null;
   private codexExecutablePath: string | null = null;
   private codexConfigPath: string | null = null;
 
@@ -87,7 +79,7 @@ export class CodexSDKAgent extends BaseAgent {
 
     super('codex-sdk', config, {
       systemPrompt: AGENT_SYSTEM_PROMPT,
-      mcpServers: {'browseros-controller': mcpServerConfig},
+      mcpServers: {'browseros-mcp': mcpServerConfig},
       maxTurns: CODEX_SDK_DEFAULTS.maxTurns,
     });
 
@@ -95,8 +87,7 @@ export class CodexSDKAgent extends BaseAgent {
   }
 
   /**
-   * Initialize agent - fetch config from BrowserOS Config URL if configured
-   * Falls back to OPENAI_API_KEY env var if config URL not set or fails
+   * Initialize agent - use config passed in constructor
    */
   override async init(): Promise<void> {
     this.codexExecutablePath = this.resolveCodexExecutablePath();
@@ -105,69 +96,30 @@ export class CodexSDKAgent extends BaseAgent {
       codexExecutablePath: this.codexExecutablePath,
     });
 
-    const configUrl = process.env.BROWSEROS_CONFIG_URL;
-
-    if (configUrl) {
-      logger.info('🌐 Fetching config from BrowserOS Config URL', {configUrl});
-
-      try {
-        this.gatewayConfig = await fetchBrowserOSConfig(configUrl);
-        this.selectedProvider = this.gatewayConfig.providers.find(
-          p => p.name === 'openai',
-        );
-
-        if (!this.selectedProvider) {
-          throw new Error('No openai provider found in config');
-        }
-
-        this.config.apiKey = this.selectedProvider.apiKey;
-
-        logger.info('✅ Using API key from BrowserOS Config URL', {
-          model: this.selectedProvider.model,
-          hasApiKey: !!this.selectedProvider.apiKey,
-          hasBaseUrl: !!this.selectedProvider.baseUrl,
-          baseUrl: this.selectedProvider.baseUrl,
-        });
-
-        await super.init();
-        this.generateCodexConfig();
-        this.initializeCodex();
-        return;
-      } catch (error) {
-        logger.warn(
-          '⚠️  Failed to fetch from config URL, falling back to OPENAI_API_KEY',
-          {
-            error: error instanceof Error ? error.message : String(error),
-          },
-        );
-      }
+    if (!this.config.apiKey) {
+      throw new Error('API key is required in AgentConfig');
     }
 
-    const envApiKey = process.env.OPENAI_API_KEY;
-    if (envApiKey) {
-      this.config.apiKey = envApiKey;
-      logger.info('✅ Using API key from OPENAI_API_KEY env var');
-      await super.init();
-      this.generateCodexConfig();
-      this.initializeCodex();
-      return;
-    }
+    logger.info('✅ Using config from AgentConfig', {
+      model: this.config.modelName,
+      hasApiKey: !!this.config.apiKey,
+      baseUrl: this.config.baseUrl,
+    });
 
-    throw new Error(
-      'No API key found. Set either BROWSEROS_CONFIG_URL or OPENAI_API_KEY',
-    );
+    await super.init();
+    this.generateCodexConfig();
+    this.initializeCodex();
   }
 
   private generateCodexConfig(): void {
     const outputDir = getResourcesDir(this.config.resourcesDir);
     const port = this.config.mcpServerPort || CODEX_SDK_DEFAULTS.mcpServerPort;
-    const modelName = this.selectedProvider?.model || 'default';
-    const gatewayUrl =
-      process.env.BROWSEROS_GATEWAY_URL || 'https://llm.browseros.com/openai/';
+    const modelName = this.config.modelName || 'o4-mini';
+    const baseUrl = this.config.baseUrl;
 
     const codexConfig: BrowserOSCodexConfig = {
       model_name: modelName,
-      base_url: gatewayUrl,
+      base_url: baseUrl,
       api_key_env: 'BROWSEROS_API_KEY',
       wire_api: 'chat',
       base_instructions_file: 'browseros_prompt.md',
@@ -186,6 +138,8 @@ export class CodexSDKAgent extends BaseAgent {
     logger.info('✅ Generated Codex configuration files', {
       outputDir,
       configPath: this.codexConfigPath,
+      modelName,
+      baseUrl,
     });
   }
 
@@ -201,7 +155,8 @@ export class CodexSDKAgent extends BaseAgent {
 
     logger.info('✅ Codex SDK initialized', {
       binaryPath: this.codexExecutablePath,
-      model: this.selectedProvider?.model || 'o4-mini',
+      model: this.config.modelName || 'o4-mini',
+      baseUrl: this.config.baseUrl,
     });
   }
 
@@ -368,11 +323,11 @@ export class CodexSDKAgent extends BaseAgent {
       });
 
       // Start thread with browseros config or MCP servers
-      const modelName = this.selectedProvider?.model || 'o4-mini';
+      const modelName = this.config.modelName;
       const threadOptions: any = {
         skipGitRepoCheck: true,
         sandboxMode: 'read-only',
-        workingDirectory: this.config.resourcesDir || this.config.cwd,
+        workingDirectory: this.config.resourcesDir,
       };
 
       // Use TOML config if available, otherwise fall back to direct MCP server config

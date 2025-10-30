@@ -30,8 +30,8 @@ describe('BaseAgent-unit-test', () => {
   // Unit Test 1 - Constructor and config merging with defaults
   it('tests that configs merge correctly with defaults', () => {
     const userConfig: AgentConfig = {
+      resourcesDir: '/test/resources',
       apiKey: 'test-key',
-      cwd: '/test',
       maxTurns: 50,
       // systemPrompt not provided, should use default
     };
@@ -45,19 +45,18 @@ describe('BaseAgent-unit-test', () => {
     const agent = new TestAgent(userConfig, agentDefaults);
 
     // Verify config merging priority: user > agent defaults > base defaults
+    expect(agent['config'].resourcesDir).toBe('/test/resources');
     expect(agent['config'].apiKey).toBe('test-key');
-    expect(agent['config'].cwd).toBe('/test');
     expect(agent['config'].maxTurns).toBe(50); // User overrides agent default
     expect(agent['config'].systemPrompt).toBe('Agent-specific prompt'); // Agent default used
     expect(agent['config'].maxThinkingTokens).toBe(5000); // Agent default used
-    expect(agent['config'].permissionMode).toBe(DEFAULT_CONFIG.permissionMode); // Base default used
   });
 
   // Unit Test 2 - Metadata initialization and state tracking
   it('tests that metadata initializes with correct state', () => {
     const config: AgentConfig = {
+      resourcesDir: '/test/resources',
       apiKey: 'test-key',
-      cwd: '/test',
     };
 
     const agent = new TestAgent(config);
@@ -75,8 +74,8 @@ describe('BaseAgent-unit-test', () => {
   // Unit Test 3 - Execution state transitions
   it('tests that execution state tracks correctly', () => {
     const config: AgentConfig = {
+      resourcesDir: '/test/resources',
       apiKey: 'test-key',
-      cwd: '/test',
     };
 
     const agent = new TestAgent(config);
@@ -100,8 +99,8 @@ describe('BaseAgent-unit-test', () => {
   // Unit Test 4 - Metadata update methods
   it('tests that metadata updates through helper methods', () => {
     const config: AgentConfig = {
+      resourcesDir: '/test/resources',
       apiKey: 'test-key',
-      cwd: '/test',
     };
 
     const agent = new TestAgent(config);
@@ -128,8 +127,8 @@ describe('BaseAgent-unit-test', () => {
   // Unit Test 5 - Error state handling
   it('tests that error state handles correctly', () => {
     const config: AgentConfig = {
+      resourcesDir: '/test/resources',
       apiKey: 'test-key',
-      cwd: '/test',
     };
 
     const agent = new TestAgent(config);
@@ -152,8 +151,8 @@ describe('BaseAgent-unit-test', () => {
   // Unit Test 6 - Destroyed state tracking
   it('tests that destroyed state tracks correctly', async () => {
     const config: AgentConfig = {
+      resourcesDir: '/test/resources',
       apiKey: 'test-key',
-      cwd: '/test',
     };
 
     const agent = new TestAgent(config);

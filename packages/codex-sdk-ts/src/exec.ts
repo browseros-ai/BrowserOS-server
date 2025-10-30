@@ -142,9 +142,6 @@ export class CodexExec {
 
     // When using --browseros config, set BROWSEROS_API_KEY from apiKey
     if (args.browserosConfigPath && args.apiKey) {
-      // Clear global mcp_servers by setting it to empty object
-      commandArgs.push('-c', 'mcp_servers={}');
-
       env.BROWSEROS_API_KEY = args.apiKey;
     } else if (args.apiKey) {
       // Otherwise use legacy env vars

@@ -29,6 +29,7 @@ class TestAgent extends BaseAgent {
 
 describe('SessionManager-unit-test', () => {
   let sessionManager: SessionManager;
+  let mockControllerBridge: any;
 
   beforeEach(() => {
     // Register test agent
@@ -64,8 +65,8 @@ describe('SessionManager-unit-test', () => {
   // Unit Test 2 - Session creation and state management
   it('tests that session creates and updates state correctly', () => {
     const agentConfig = {
+      resourcesDir: '/test/resources',
       apiKey: 'test-key',
-      cwd: '/test',
     };
 
     // Check initial state
@@ -95,8 +96,8 @@ describe('SessionManager-unit-test', () => {
   it('tests that session state transitions handle correctly', () => {
     const sessionId = crypto.randomUUID();
     const agentConfig = {
+      resourcesDir: '/test/resources',
       apiKey: 'test-key',
-      cwd: '/test',
     };
 
     // Create session
@@ -130,15 +131,18 @@ describe('SessionManager-unit-test', () => {
   it('tests that idle sessions identify correctly', async () => {
     const sessionId = crypto.randomUUID();
     const agentConfig = {
+      resourcesDir: '/test/resources',
       apiKey: 'test-key',
-      cwd: '/test',
     };
 
     // Create session with short idle timeout
-    const shortTimeoutManager = new SessionManager({
-      maxSessions: 5,
-      idleTimeoutMs: 100, // 100ms
-    });
+    const shortTimeoutManager = new SessionManager(
+      {
+        maxSessions: 5,
+        idleTimeoutMs: 100, // 100ms
+      },
+      mockControllerBridge,
+    );
 
     shortTimeoutManager.createSession(
       {id: sessionId, agentType: 'test-agent'},
@@ -166,14 +170,17 @@ describe('SessionManager-unit-test', () => {
 
   // Unit Test 5 - Capacity management
   it('tests that capacity limits enforce correctly', () => {
-    const smallManager = new SessionManager({
-      maxSessions: 2,
-      idleTimeoutMs: 60000,
-    });
+    const smallManager = new SessionManager(
+      {
+        maxSessions: 2,
+        idleTimeoutMs: 60000,
+      },
+      mockControllerBridge,
+    );
 
     const agentConfig = {
+      resourcesDir: '/test/resources',
       apiKey: 'test-key',
-      cwd: '/test',
     };
 
     // Create first session
