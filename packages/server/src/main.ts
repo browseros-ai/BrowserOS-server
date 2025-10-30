@@ -17,6 +17,8 @@ import {
   Mutex,
   logger,
   readVersion,
+  fetchBrowserOSConfig,
+  getLLMConfigFromProvider,
 } from '@browseros/common';
 import {
   ControllerContext,
@@ -177,6 +179,69 @@ function startMcpServer(config: {
   return mcpServer;
 }
 
+/**
+ * Get LLM configuration - either all env vars OR all config values (no mixing)
+ * Environment variables take precedence: if any env var is set, use all env vars
+ * Otherwise, fetch and use 'default' provider from BROWSEROS_CONFIG_URL
+ */
+async function getLLMConfig(): Promise<{
+  apiKey?: string;
+  baseUrl?: string;
+  modelName?: string;
+}> {
+  // Check if any environment variable is set
+  const envApiKey = process.env.BROWSEROS_API_KEY;
+  const envBaseUrl = process.env.BROWSEROS_LLM_BASE_URL;
+  const envModelName = process.env.BROWSEROS_LLM_MODEL_NAME;
+  const hasAnyEnvVar =
+    envApiKey !== undefined ||
+    envBaseUrl !== undefined ||
+    envModelName !== undefined;
+
+  // If any env var is set, use all env vars (no mixing with config)
+  if (hasAnyEnvVar) {
+    logger.info('✅ Using LLM config from environment variables');
+    return {
+      apiKey: envApiKey,
+      baseUrl: envBaseUrl,
+      modelName: envModelName,
+    };
+  }
+
+  // No env vars set, try to fetch from config URL
+  const configUrl = process.env.BROWSEROS_CONFIG_URL;
+  if (configUrl) {
+    try {
+      logger.info('🌐 Fetching LLM config from BrowserOS Config URL', {
+        configUrl,
+      });
+      const config = await fetchBrowserOSConfig(configUrl);
+      const llmConfig = getLLMConfigFromProvider(config, 'default');
+
+      logger.info('✅ Using LLM config from BrowserOS Config (default provider)');
+      return {
+        apiKey: llmConfig.apiKey,
+        baseUrl: llmConfig.baseUrl,
+        modelName: llmConfig.modelName,
+      };
+    } catch (error) {
+      logger.warn(
+        '⚠️  Failed to fetch config from URL, no LLM config available',
+        {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      );
+    }
+  }
+
+  // No env vars and no config available
+  return {
+    apiKey: undefined,
+    baseUrl: undefined,
+    modelName: undefined,
+  };
+}
+
 async function startAgentServer(
   ports: ReturnType<typeof parseArguments>,
   controllerBridge: ControllerBridge,
@@ -184,13 +249,15 @@ async function startAgentServer(
   // Register all available agents (Codex SDK, Claude SDK, etc.)
   registerAgents();
 
+  const llmConfig = await getLLMConfig();
+
   const agentConfig: AgentServerConfig = {
     port: ports.agentPort,
     resourcesDir: ports.resourcesDir || process.cwd(),
     mcpServerPort: ports.httpMcpPort,
-    apiKey: process.env.BROWSEROS_API_KEY,
-    baseUrl: process.env.BROWSEROS_LLM_BASE_URL,
-    modelName: process.env.BROWSEROS_LLM_MODEL_NAME,
+    apiKey: llmConfig.apiKey,
+    baseUrl: llmConfig.baseUrl,
+    modelName: llmConfig.modelName,
     maxSessions: parseInt(process.env.MAX_SESSIONS || '5'),
     idleTimeoutMs: parseInt(process.env.SESSION_IDLE_TIMEOUT_MS || '90000'),
     eventGapTimeoutMs: parseInt(process.env.EVENT_GAP_TIMEOUT_MS || '120000'),

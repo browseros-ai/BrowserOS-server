@@ -16,6 +16,13 @@ export interface BrowserOSConfig {
   providers: Provider[];
 }
 
+export interface LLMConfig {
+  modelName: string;
+  baseUrl?: string;
+  apiKey: string;
+  provider: Provider;
+}
+
 export async function fetchBrowserOSConfig(
   configUrl: string,
 ): Promise<BrowserOSConfig> {
@@ -62,4 +69,30 @@ export async function fetchBrowserOSConfig(
     });
     throw error;
   }
+}
+
+/**
+ * Get LLM config from a provider in the BrowserOS config
+ * @param config - BrowserOS config containing providers
+ * @param providerName - Name of the provider to use (defaults to 'default')
+ * @returns LLM config with modelName, baseUrl, apiKey, and provider
+ */
+export function getLLMConfigFromProvider(
+  config: BrowserOSConfig,
+  providerName: string = 'default',
+): LLMConfig {
+  const provider = config.providers.find(p => p.name === providerName);
+
+  if (!provider) {
+    throw new Error(
+      `Provider '${providerName}' not found in config. Available providers: ${config.providers.map(p => p.name).join(', ')}`,
+    );
+  }
+
+  return {
+    modelName: provider.model,
+    baseUrl: provider.baseUrl,
+    apiKey: provider.apiKey,
+    provider,
+  };
 }
