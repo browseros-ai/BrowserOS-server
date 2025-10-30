@@ -9,7 +9,7 @@ import {withMcpServer} from '@browseros/common/tests/utils';
 
 describe('MCP Console Tools', () => {
   it(
-    'list_console_messages returns console data',
+    'tests that list_console_messages returns console data',
     async () => {
       await withMcpServer(async client => {
         const result = await client.callTool({
