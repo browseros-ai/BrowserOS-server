@@ -95,6 +95,7 @@ export class Thread {
       sandboxMode: options?.sandboxMode,
       workingDirectory: options?.workingDirectory,
       skipGitRepoCheck: options?.skipGitRepoCheck,
+      browserosConfigPath: options?.browserosConfigPath,
       outputSchemaFile: schemaPath,
       mcpServers: options?.mcpServers,
     });

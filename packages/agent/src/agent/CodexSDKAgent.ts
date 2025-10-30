@@ -19,9 +19,14 @@ import {allControllerTools} from '@browseros/tools/controller-based';
 import {AGENT_SYSTEM_PROMPT} from './Agent.prompt.js';
 import {BaseAgent} from './BaseAgent.js';
 import {CodexEventFormatter} from './CodexSDKAgent.formatter.js';
+import {
+  type BrowserOSCodexConfig,
+  getResourcesDir,
+  writeBrowserOSCodexConfig,
+  writePromptFile,
+} from './CodexSDKAgent.config.js';
 import {type AgentConfig} from './types.js';
 import type {FormattedEvent} from './types.js';
-
 
 /**
  * Codex SDK specific default configuration
@@ -70,6 +75,7 @@ export class CodexSDKAgent extends BaseAgent {
   private gatewayConfig: BrowserOSConfig | null = null;
   private selectedProvider: Provider | null = null;
   private codexExecutablePath: string | null = null;
+  private codexConfigPath: string | null = null;
 
   constructor(config: AgentConfig, _controllerBridge: ControllerBridge) {
     const mcpServerConfig = buildMcpServerConfig(config);
@@ -124,6 +130,7 @@ export class CodexSDKAgent extends BaseAgent {
         });
 
         await super.init();
+        this.generateCodexConfig();
         this.initializeCodex();
         return;
       } catch (error) {
@@ -141,6 +148,7 @@ export class CodexSDKAgent extends BaseAgent {
       this.config.apiKey = envApiKey;
       logger.info('✅ Using API key from OPENAI_API_KEY env var');
       await super.init();
+      this.generateCodexConfig();
       this.initializeCodex();
       return;
     }
@@ -148,6 +156,37 @@ export class CodexSDKAgent extends BaseAgent {
     throw new Error(
       'No API key found. Set either BROWSEROS_CONFIG_URL or OPENAI_API_KEY',
     );
+  }
+
+  private generateCodexConfig(): void {
+    const outputDir = getResourcesDir(this.config.resourcesDir);
+    const port = this.config.mcpServerPort || CODEX_SDK_DEFAULTS.mcpServerPort;
+    const modelName = this.selectedProvider?.model || 'default';
+    const gatewayUrl =
+      process.env.BROWSEROS_GATEWAY_URL || 'https://llm.browseros.com/openai/';
+
+    const codexConfig: BrowserOSCodexConfig = {
+      model_name: modelName,
+      base_url: gatewayUrl,
+      api_key_env: 'BROWSEROS_API_KEY',
+      wire_api: 'chat',
+      base_instructions_file: 'browseros_prompt.md',
+      mcp_servers: {
+        browseros: {
+          url: `http://127.0.0.1:${port}/mcp`,
+          startup_timeout_sec: 30.0,
+          tool_timeout_sec: 120.0,
+        },
+      },
+    };
+
+    writePromptFile(AGENT_SYSTEM_PROMPT, outputDir);
+    this.codexConfigPath = writeBrowserOSCodexConfig(codexConfig, outputDir);
+
+    logger.info('✅ Generated Codex configuration files', {
+      outputDir,
+      configPath: this.codexConfigPath,
+    });
   }
 
   private initializeCodex(): void {
@@ -165,13 +204,6 @@ export class CodexSDKAgent extends BaseAgent {
       model: this.selectedProvider?.model || 'o4-mini',
     });
   }
-
-  // private configureBaseUrl(codexConfig: any): void {
-  //   if (this.selectedProvider?.baseUrl) {
-  //     codexConfig.baseUrl = this.selectedProvider.baseUrl;
-  //     codexConfig.apiKey = 'default-key';
-  //   }
-  // }
 
   private resolveCodexExecutablePath(): string {
     const codexBinaryName =
@@ -335,27 +367,37 @@ export class CodexSDKAgent extends BaseAgent {
         servers: Object.keys(this.config.mcpServers || {}),
       });
 
-      // Start thread with MCP servers and model (pass as Record, not array)
+      // Start thread with browseros config or MCP servers
       const modelName = this.selectedProvider?.model || 'o4-mini';
-      const thread = this.codex.startThread({
-        mcpServers: this.config.mcpServers,
-        model: modelName,
+      const threadOptions: any = {
         skipGitRepoCheck: true,
         sandboxMode: 'read-only',
         workingDirectory: this.config.resourcesDir || this.config.cwd,
-      } as any);
+      };
 
-      logger.debug('📡 Started Codex thread with MCP servers', {
-        mcpServerCount: Object.keys(this.config.mcpServers || {}).length,
-        model: modelName,
-      });
+      // Use TOML config if available, otherwise fall back to direct MCP server config
+      if (this.codexConfigPath) {
+        threadOptions.browserosConfigPath = this.codexConfigPath;
+        logger.debug('📡 Starting Codex thread with browseros config', {
+          configPath: this.codexConfigPath,
+        });
+      } else {
+        threadOptions.mcpServers = this.config.mcpServers;
+        threadOptions.model = modelName;
+        logger.debug('📡 Starting Codex thread with MCP servers', {
+          mcpServerCount: Object.keys(this.config.mcpServers || {}).length,
+          model: modelName,
+        });
+      }
+
+      const thread = this.codex.startThread(threadOptions);
 
       // Get streaming events from thread
-      // Pass system prompt as first message, then user message
       const messages: Array<{type: 'text'; text: string}> = [];
 
-      // Add system prompt if configured
-      if (this.config.systemPrompt) {
+      // When using TOML config, system prompt comes from base_instructions_file
+      // Otherwise, add it as first message
+      if (!this.codexConfigPath && this.config.systemPrompt) {
         messages.push({type: 'text' as const, text: this.config.systemPrompt});
       }
 
