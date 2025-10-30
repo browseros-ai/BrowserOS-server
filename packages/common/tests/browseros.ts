@@ -64,12 +64,18 @@ async function waitForCdp(cdpPort: number, maxAttempts = 30): Promise<void> {
  */
 export async function ensureBrowserOS(options?: {
   cdpPort?: number;
+  httpMcpPort?: number;
+  agentPort?: number;
+  extensionPort?: number;
   binaryPath?: string;
 }): Promise<{
   cdpPort: number;
   tempUserDataDir: string;
 }> {
-  const cdpPort = options?.cdpPort ?? parseInt(process.env.CDP_PORT || '9001');
+  const cdpPort = options?.cdpPort ?? parseInt(process.env.CDP_PORT || '9005');
+  const httpMcpPort = options?.httpMcpPort ?? parseInt(process.env.HTTP_MCP_PORT || '9105');
+  const agentPort = options?.agentPort ?? parseInt(process.env.AGENT_PORT || '9205');
+  const extensionPort = options?.extensionPort ?? parseInt(process.env.EXTENSION_PORT || '9305');
   const binaryPath =
     options?.binaryPath ??
     process.env.BROWSEROS_BINARY ??
@@ -121,6 +127,9 @@ export async function ensureBrowserOS(options?: {
       '--enable-logging=stderr',
       `--user-data-dir=${tempUserDataDir}`,
       `--remote-debugging-port=${cdpPort}`,
+      `--browseros-mcp-port=${httpMcpPort}`,
+      `--browseros-agent-port=${agentPort}`,
+      `--browseros-extension-port=${extensionPort}`,
       '--disable-browseros-server',
     ],
     {
@@ -129,12 +138,14 @@ export async function ensureBrowserOS(options?: {
   );
 
   browserosProcess.stdout?.on('data', data => {
-    const output = data.toString().trim();
+    // Uncomment for debugging
+    // const output = data.toString().trim();
     // if (output) console.log(`[BROWSEROS] ${output}`);
   });
 
   browserosProcess.stderr?.on('data', data => {
-    const output = data.toString().trim();
+    // Uncomment for debugging
+    // const output = data.toString().trim();
     // if (output) console.log(`[BROWSEROS] ${output}`);
   });
 

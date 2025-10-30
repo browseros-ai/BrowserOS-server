@@ -50,12 +50,12 @@ export async function ensureServer(
   options?: Partial<ServerConfig>,
 ): Promise<ServerConfig> {
   const config: ServerConfig = {
-    cdpPort: options?.cdpPort ?? parseInt(process.env.CDP_PORT || '9001'),
+    cdpPort: options?.cdpPort ?? parseInt(process.env.CDP_PORT || '9005'),
     httpMcpPort:
-      options?.httpMcpPort ?? parseInt(process.env.HTTP_MCP_PORT || '9100'),
-    agentPort: options?.agentPort ?? parseInt(process.env.AGENT_PORT || '9002'),
+      options?.httpMcpPort ?? parseInt(process.env.HTTP_MCP_PORT || '9105'),
+    agentPort: options?.agentPort ?? parseInt(process.env.AGENT_PORT || '9205'),
     extensionPort:
-      options?.extensionPort ?? parseInt(process.env.EXTENSION_PORT || '9200'),
+      options?.extensionPort ?? parseInt(process.env.EXTENSION_PORT || '9305'),
   };
 
   // Fast path: already running with same config
@@ -75,7 +75,12 @@ export async function ensureServer(
   }
 
   // Ensure BrowserOS is running first
-  await ensureBrowserOS({cdpPort: config.cdpPort});
+  await ensureBrowserOS({
+    cdpPort: config.cdpPort,
+    httpMcpPort: config.httpMcpPort,
+    agentPort: config.agentPort,
+    extensionPort: config.extensionPort,
+  });
 
   // Check if server already running (from previous test run)
   if (await isServerAvailable(config.httpMcpPort)) {
