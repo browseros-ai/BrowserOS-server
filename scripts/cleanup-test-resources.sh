@@ -8,11 +8,16 @@ set -e
 echo "🧹 Cleaning up BrowserOS test resources..."
 echo ""
 
-# Kill BrowserOS processes on test ports
-for port in 9000 9001 9002 9003 9004; do
+# Kill BrowserOS and Server processes on test ports
+# Ports:
+#   9001 - BrowserOS CDP
+#   9002 - Agent WebSocket
+#   9100 - MCP HTTP Server
+#   9200 - Controller Extension WebSocket
+for port in 9000 9001 9002 9003 9004 9100 9200; do
   pid=$(lsof -ti :$port 2>/dev/null || true)
   if [ -n "$pid" ]; then
-    echo "  Killing BrowserOS on port $port (PID: $pid)..."
+    echo "  Killing process on port $port (PID: $pid)..."
     kill -9 $pid 2>/dev/null || true
   fi
 done

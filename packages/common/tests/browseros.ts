@@ -119,7 +119,6 @@ export async function ensureBrowserOS(options?: {
       '--use-mock-keychain',
       '--show-component-extension-options',
       '--enable-logging=stderr',
-      '--headless=new',
       `--user-data-dir=${tempUserDataDir}`,
       `--remote-debugging-port=${cdpPort}`,
       '--disable-browseros-server',
