@@ -102,8 +102,6 @@ export class CodexSDKAgent extends BaseAgent {
 
     logger.info('✅ Using config from AgentConfig', {
       model: this.config.modelName,
-      hasApiKey: !!this.config.apiKey,
-      baseUrl: this.config.baseUrl,
     });
 
     await super.init();
@@ -147,16 +145,14 @@ export class CodexSDKAgent extends BaseAgent {
     const codexConfig: any = {
       codexPathOverride: this.codexExecutablePath,
       apiKey: this.config.apiKey,
+      // Note: baseUrl is not passed here because when using browseros config,
+      // it's already specified in the TOML file (base_url field)
     };
-
-    // this.configureBaseUrl(codexConfig);
 
     this.codex = new Codex(codexConfig);
 
     logger.info('✅ Codex SDK initialized', {
       binaryPath: this.codexExecutablePath,
-      model: this.config.modelName || 'o4-mini',
-      baseUrl: this.config.baseUrl,
     });
   }
 
@@ -326,7 +322,6 @@ export class CodexSDKAgent extends BaseAgent {
       const modelName = this.config.modelName;
       const threadOptions: any = {
         skipGitRepoCheck: true,
-        sandboxMode: 'read-only',
         workingDirectory: this.config.resourcesDir,
       };
 
