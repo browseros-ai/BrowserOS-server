@@ -3,19 +3,17 @@
  * Copyright 2025 BrowserOS
  */
 import assert from 'node:assert';
-import {describe, it} from 'node:test';
+import {describe, it} from 'bun:test';
 
 import {withBrowser} from '@browseros/common/tests/utils';
 
 import {consoleTool} from '../../src/cdp-based/console.js';
 
 describe('console', () => {
-  describe('list_console_messages', () => {
-    it('list messages', async () => {
-      await withBrowser(async (response, context) => {
-        await consoleTool.handler({params: {}}, response, context);
-        assert.ok(response.includeConsoleData);
-      });
+  it('list_console_messages - list messages', async () => {
+    await withBrowser(async (response, context) => {
+      await consoleTool.handler({params: {}}, response, context);
+      assert.ok(response.includeConsoleData);
     });
   });
 });

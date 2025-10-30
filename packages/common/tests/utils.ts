@@ -5,6 +5,7 @@
 import {execSync} from 'node:child_process';
 
 import {McpResponse} from '@browseros/tools';
+import {Mutex} from 'async-mutex';
 import type {Browser} from 'puppeteer';
 import puppeteer from 'puppeteer';
 import type {HTTPRequest, HTTPResponse} from 'puppeteer-core';
@@ -14,6 +15,7 @@ import {McpContext} from '../src/McpContext.js';
 
 import {ensureBrowserOS} from './browseros.js';
 
+const browserMutex = new Mutex();
 let cachedBrowser: Browser | undefined;
 
 export async function killProcessOnPort(port: number): Promise<void> {
@@ -53,33 +55,51 @@ export async function killProcessOnPort(port: number): Promise<void> {
   await new Promise(resolve => setTimeout(resolve, 1000));
 }
 
+/**
+ * Test helper that provides an isolated browser context for each test.
+ *
+ * Lifecycle:
+ * - First test: Starts BrowserOS (10-15s)
+ * - Subsequent tests: Reuses existing browser (fast)
+ * - After suite exits: BrowserOS stays running (ready for next run)
+ *
+ * Cleanup:
+ * - Run `bun run test:cleanup` when you need to kill BrowserOS
+ * - This is intentional - keeping it running speeds up development
+ */
 export async function withBrowser(
   cb: (response: McpResponse, context: McpContext) => Promise<void>,
   options: {debug?: boolean} = {},
 ): Promise<void> {
-  const {cdpPort} = await ensureBrowserOS();
+  return await browserMutex.runExclusive(async () => {
+    const {cdpPort} = await ensureBrowserOS();
 
-  if (!cachedBrowser || !cachedBrowser.connected) {
-    cachedBrowser = await puppeteer.connect({
-      browserURL: `http://127.0.0.1:${cdpPort}`,
-    });
-  }
+    if (!cachedBrowser || !cachedBrowser.connected) {
+      cachedBrowser = await puppeteer.connect({
+        browserURL: `http://127.0.0.1:${cdpPort}`,
+      });
+    }
 
-  const newPage = await cachedBrowser.newPage();
-
-  const pages = await cachedBrowser.pages();
-  await Promise.all(
-    pages.map(async page => {
-      if (page !== newPage) {
-        await page.close();
+    // Close all existing pages first
+    const existingPages = await cachedBrowser.pages();
+    for (const page of existingPages) {
+      try {
+        if (!page.isClosed()) {
+          await page.close();
+        }
+      } catch (error) {
+        // Ignore errors when closing pages that are already closed
       }
-    }),
-  );
+    }
 
-  const response = new McpResponse();
-  const context = await McpContext.from(cachedBrowser, logger);
+    // Create a fresh new page
+    await cachedBrowser.newPage();
 
-  await cb(response, context);
+    const response = new McpResponse();
+    const context = await McpContext.from(cachedBrowser, logger);
+
+    await cb(response, context);
+  });
 }
 
 export function getMockRequest(

@@ -242,8 +242,10 @@ export class McpContext {
   };
 
   setSelectedPageIdx(idx: number): void {
-    const oldPage = this.getSelectedPage();
-    oldPage.off('dialog', this.#dialogHandler);
+    const oldPage = this.#pages[this.#selectedPageIdx];
+    if (oldPage && !oldPage.isClosed()) {
+      oldPage.off('dialog', this.#dialogHandler);
+    }
     this.#selectedPageIdx = idx;
     const newPage = this.getSelectedPage();
     newPage.on('dialog', this.#dialogHandler);
