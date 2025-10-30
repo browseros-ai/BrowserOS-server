@@ -193,7 +193,7 @@ async function startAgentServer(
     modelName: process.env.BROWSEROS_LLM_MODEL_NAME,
     maxSessions: parseInt(process.env.MAX_SESSIONS || '5'),
     idleTimeoutMs: parseInt(process.env.SESSION_IDLE_TIMEOUT_MS || '90000'),
-    eventGapTimeoutMs: parseInt(process.env.EVENT_GAP_TIMEOUT_MS || '60000'),
+    eventGapTimeoutMs: parseInt(process.env.EVENT_GAP_TIMEOUT_MS || '120000'),
   };
 
   const agentServer = createAgentServer(agentConfig, controllerBridge);
