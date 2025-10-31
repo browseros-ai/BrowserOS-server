@@ -17,9 +17,8 @@
     "browserOS",
     "alarms"
   ],
-  "host_permissions": [
-    "<all_urls>"
-  ],
+  "update_url": "https://cdn.browseros.com/extensions/update-manifest.xml",
+  "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -37,3 +36,4 @@
     "128": "assets/icon128.png"
   }
 }
+
