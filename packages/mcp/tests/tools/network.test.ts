@@ -9,7 +9,7 @@ import {withMcpServer} from '@browseros/common/tests/utils';
 
 describe('MCP Network Tools', () => {
   it(
-    'list_network_requests returns network data',
+    'tests that list_network_requests returns network data',
     async () => {
       await withMcpServer(async client => {
         const result = await client.callTool({
