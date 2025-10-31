@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "start": "bun run build:codex-sdk-ts && bun --env-file=.env packages/server/src/index.ts",
+    "start:debug": "bun run build:codex-sdk-ts && bun --inspect-brk --env-file=.env packages/server/src/index.ts",
     "build:codex-sdk-ts": "bun run --filter @browseros/codex-sdk-ts prepare",
     "test": "bun test; bun run test:cleanup",
     "test:all": "bun test --workspace",
