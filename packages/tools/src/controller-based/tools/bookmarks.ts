@@ -96,7 +96,7 @@ export const removeBookmark = defineTool<z.ZodRawShape, Context, Response>({
   handler: async (request, response, context) => {
     const {bookmarkId} = request.params as {bookmarkId: string};
 
-    await context.executeAction('removeBookmark', {bookmarkId});
+    await context.executeAction('removeBookmark', {id: bookmarkId});
 
     response.appendResponseLine(`Removed bookmark ${bookmarkId}`);
   },
