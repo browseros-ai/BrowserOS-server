@@ -12,6 +12,7 @@ export interface ServerPorts {
   agentPort: number;
   extensionPort: number;
   mcpServerEnabled: boolean;
+  resourcesDir?: string;
   // Future: httpsMcpPort?: number;
 }
 
@@ -63,6 +64,7 @@ export function parseArguments(argv = process.argv): ServerPorts {
     .option('--http-mcp-port <port>', 'MCP HTTP server port', parsePort)
     .option('--agent-port <port>', 'Agent communication port', parsePort)
     .option('--extension-port <port>', 'Extension WebSocket port', parsePort)
+    .option('--resources-dir <path>', 'Resources directory path')
     .option('--disable-mcp-server', 'Disable MCP server', false)
     .exitOverride()
     .parse(argv);
@@ -105,5 +107,6 @@ export function parseArguments(argv = process.argv): ServerPorts {
     agentPort: agentPort!,
     extensionPort: extensionPort!,
     mcpServerEnabled: !options.disableMcpServer,
+    resourcesDir: options.resourcesDir,
   };
 }

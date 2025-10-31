@@ -24,7 +24,6 @@ export const DEFAULT_CONFIG = {
   maxThinkingTokens: 10000,
   systemPrompt: DEFAULT_SYSTEM_PROMPT,
   mcpServers: {},
-  permissionMode: 'bypassPermissions' as const,
 };
 
 /**
@@ -68,9 +67,11 @@ export abstract class BaseAgent {
   ) {
     // Merge config with agent-specific defaults, then with base defaults
     this.config = {
-      apiKey: config.apiKey,
-      cwd: config.cwd,
+      resourcesDir: config.resourcesDir,
       mcpServerPort: config.mcpServerPort ?? agentDefaults?.mcpServerPort,
+      apiKey: config.apiKey ?? agentDefaults?.apiKey,
+      baseUrl: config.baseUrl ?? agentDefaults?.baseUrl,
+      modelName: config.modelName ?? agentDefaults?.modelName,
       maxTurns:
         config.maxTurns ?? agentDefaults?.maxTurns ?? DEFAULT_CONFIG.maxTurns,
       maxThinkingTokens:
@@ -85,11 +86,6 @@ export abstract class BaseAgent {
         config.mcpServers ??
         agentDefaults?.mcpServers ??
         DEFAULT_CONFIG.mcpServers,
-      permissionMode:
-        config.permissionMode ??
-        agentDefaults?.permissionMode ??
-        DEFAULT_CONFIG.permissionMode,
-      customOptions: config.customOptions ?? agentDefaults?.customOptions ?? {},
     } as Required<AgentConfig>;
 
     // Initialize metadata
@@ -104,7 +100,9 @@ export abstract class BaseAgent {
 
     logger.debug(`🤖 ${agentType} agent created`, {
       agentType,
-      cwd: this.config.cwd,
+      resourcesDir: this.config.resourcesDir,
+      modelName: this.config.modelName,
+      baseUrl: this.config.baseUrl,
       maxTurns: this.config.maxTurns,
       maxThinkingTokens: this.config.maxThinkingTokens,
       usingDefaultMcp: !config.mcpServers,

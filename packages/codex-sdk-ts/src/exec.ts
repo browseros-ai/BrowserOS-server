@@ -1,4 +1,3 @@
-
 /**
  * @license
  * Copyright 2025 BrowserOS
@@ -36,6 +35,8 @@ export interface CodexExecArgs {
   skipGitRepoCheck?: boolean;
   // --output-schema
   outputSchemaFile?: string;
+  // --browseros
+  browserosConfigPath?: string;
   // MCP servers for programmatic configuration
   mcpServers?: Record<string, McpServerConfig>;
 }
@@ -51,6 +52,10 @@ export class CodexExec {
 
   async *run(args: CodexExecArgs): AsyncGenerator<string> {
     const commandArgs: string[] = ['exec', '--experimental-json'];
+
+    if (args.browserosConfigPath) {
+      commandArgs.push('--browseros', args.browserosConfigPath);
+    }
 
     if (args.model) {
       commandArgs.push('--model', args.model);
@@ -83,9 +88,13 @@ export class CodexExec {
     }
 
     // MCP Server Configuration Support
-    // CRITICAL: Use mcp_servers (underscore) not mcp.servers (dot)
-    // First, clear any global mcp_servers config, then add ours
-    if (args.mcpServers && typeof args.mcpServers === 'object') {
+    // CRITICAL: Only use -c flags if NOT using --browseros config file
+    // When --browseros is set, all config (including MCP servers) comes from TOML
+    if (
+      !args.browserosConfigPath &&
+      args.mcpServers &&
+      typeof args.mcpServers === 'object'
+    ) {
       // Clear global mcp_servers by setting it to empty object
       commandArgs.push('-c', 'mcp_servers={}');
 
@@ -130,10 +139,15 @@ export class CodexExec {
     if (!env[INTERNAL_ORIGINATOR_ENV]) {
       env[INTERNAL_ORIGINATOR_ENV] = TYPESCRIPT_SDK_ORIGINATOR;
     }
-    if (args.baseUrl) {
-      env.OPENAI_BASE_URL = args.baseUrl;
-    }
-    if (args.apiKey) {
+
+    // When using --browseros config, set BROWSEROS_API_KEY from apiKey
+    if (args.browserosConfigPath && args.apiKey) {
+      env.BROWSEROS_API_KEY = args.apiKey;
+    } else if (args.apiKey) {
+      // Otherwise use legacy env vars
+      if (args.baseUrl) {
+        env.OPENAI_BASE_URL = args.baseUrl;
+      }
       env.CODEX_API_KEY = args.apiKey;
     }
 

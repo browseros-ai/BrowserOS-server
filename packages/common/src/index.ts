@@ -22,4 +22,5 @@ export type {
   TextSnapshot,
 } from './McpContext.js';
 export type {TraceResult} from './types.js';
-export type {BrowserOSConfig} from './gateway.js';
+export type {BrowserOSConfig, Provider, LLMConfig} from './gateway.js';
+export {getLLMConfigFromProvider} from './gateway.js';

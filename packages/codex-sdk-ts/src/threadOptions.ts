@@ -18,5 +18,6 @@ export interface ThreadOptions {
   sandboxMode?: SandboxMode;
   workingDirectory?: string;
   skipGitRepoCheck?: boolean;
+  browserosConfigPath?: string;
   mcpServers?: Record<string, McpServerConfig>;
 }
