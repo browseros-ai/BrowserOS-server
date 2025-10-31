@@ -20,8 +20,7 @@ import {
   writeBrowserOSCodexConfig,
   writePromptFile,
 } from './CodexSDKAgent.config.js';
-import {type AgentConfig} from './types.js';
-import type {FormattedEvent} from './types.js';
+import {type AgentConfig, FormattedEvent} from './types.js';
 
 /**
  * Codex SDK specific default configuration
@@ -359,6 +358,9 @@ export class CodexSDKAgent extends BaseAgent {
       // Create iterator for streaming
       const iterator = events[Symbol.asyncIterator]();
 
+      // Track last agent message for completion
+      let lastAgentMessage: string | null = null;
+
       try {
         // Stream events with heartbeat and abort handling
         while (true) {
@@ -388,55 +390,35 @@ export class CodexSDKAgent extends BaseAgent {
 
           const event = result.value;
 
-          // Log raw Codex event for debugging
-          if (event.type === 'error') {
-            logger.error('❌ Codex error event', {
-              error: event.error || event,
-              message: (event as any).message,
-              code: (event as any).code,
-            });
-          } else if (event.type === 'turn.failed') {
-            logger.error('❌ Turn failed', {
-              reason: (event as any).reason || event.error,
-              fullEvent: JSON.stringify(event).substring(0, 500),
-            });
-          } else if (event.item && event.item.type === 'mcp_tool_call') {
-            logger.info('📥 Codex MCP tool event', {
-              type: event.type,
-              fullItem: JSON.stringify(event.item, null, 2).substring(0, 500),
-            });
-          } else if (event.item && event.item.type === 'reasoning') {
-            logger.info('📥 Codex reasoning event', {
-              type: event.type,
-              text: (event.item.text || '').substring(0, 100),
-            });
+          // Log Codex events for debugging
+          const eventData = JSON.stringify(event).substring(0, 100);
+          if (event.type === 'error' || event.type === 'turn.failed') {
+            logger.error('Codex event', {type: event.type, data: eventData});
           } else {
-            logger.info('📥 Codex event received', {
-              type: event.type,
-              itemType:
-                event.type === 'item.completed' || event.type === 'item.started'
-                  ? event.item?.type
-                  : undefined,
-              hasItem: !!event.item,
-            });
+            logger.debug('Codex event', {type: event.type, data: eventData});
           }
 
           // Update event time
           this.updateEventTime();
 
-          // Track tool executions from item.completed events with tool_use type
+          // Track last agent_message for completion
           if (
             event.type === 'item.completed' &&
-            event.item?.type === 'tool_use'
+            event.item?.type === 'agent_message'
           ) {
-            this.updateToolsExecuted(1);
-            logger.debug('🔧 Tool use detected', {
-              toolName: event.item.name,
-              toolId: event.item.id,
-            });
+            lastAgentMessage = event.item.text || null;
           }
 
-          // Track turn count from turn.completed events
+          // Track tool executions from item.completed events with mcp_tool_call type
+          if (
+            event.type === 'item.completed' &&
+            event.item?.type === 'mcp_tool_call' &&
+            event.item.status === 'completed'
+          ) {
+            this.updateToolsExecuted(1);
+          }
+
+          // Handle turn completion - re-emit last agent message as completion
           if (event.type === 'turn.completed') {
             this.updateTurns(1);
 
@@ -448,6 +430,15 @@ export class CodexSDKAgent extends BaseAgent {
                 outputTokens: event.usage.output_tokens,
               });
             }
+
+            // Re-emit last agent message as completion event
+            if (lastAgentMessage) {
+              logger.info('✅ Emitting final completion message');
+              yield new FormattedEvent('completion', lastAgentMessage);
+            }
+
+            // Break the loop - turn is complete
+            break;
           }
 
           // Format the event using CodexEventFormatter
@@ -455,7 +446,7 @@ export class CodexSDKAgent extends BaseAgent {
 
           // Yield formatted event if valid
           if (formattedEvent) {
-            logger.info('📤 CodexSDKAgent yielding event', {
+            logger.debug('📤 CodexSDKAgent yielding event', {
               type: formattedEvent.type,
               originalType: event.type,
             });
