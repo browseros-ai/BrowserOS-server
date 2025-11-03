@@ -52,7 +52,7 @@ export const WEBSOCKET_CONFIG: WebSocketConfig = {
 };
 
 export const CONCURRENCY_CONFIG: ConcurrencyConfig = {
-  maxConcurrent: 100,
+  maxConcurrent: 1,
   maxQueueSize: 1000,
 };
 
