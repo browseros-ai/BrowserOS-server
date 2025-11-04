@@ -17,17 +17,13 @@ export interface McpServerConfig {
 
 export interface BrowserOSCodexConfig {
   model_name: string;
-  base_url: string;
+  base_url?: string;
   api_key_env: string;
   wire_api: 'chat' | 'responses';
   base_instructions_file: string;
   mcp_servers: {
     [key: string]: McpServerConfig;
   };
-}
-
-export function getResourcesDir(resourcesDir?: string): string {
-  return resourcesDir || process.cwd();
 }
 
 export function generateBrowserOSCodexToml(

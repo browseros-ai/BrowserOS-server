@@ -76,15 +76,13 @@ export const AgentConfigSchema = z.object({
 
   /**
    * Base URL for custom LLM endpoints
-   * Optional - used for self-hosted or alternative LLM providers
    */
-  baseUrl: z.string().url().optional(),
+  baseUrl: z.string().url(),
 
   /**
    * Model name/identifier to use
-   * Optional - defaults to agent-specific models (e.g., 'o4-mini', 'claude-3-5-sonnet')
    */
-  modelName: z.string().optional(),
+  modelName: z.string(),
 
   /**
    * Maximum conversation turns before stopping

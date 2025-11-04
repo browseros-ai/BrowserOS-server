@@ -180,36 +180,21 @@ function startMcpServer(config: {
   return mcpServer;
 }
 
-/**
- * Get LLM configuration - either all env vars OR all config values (no mixing)
- * Environment variables take precedence: if any env var is set, use all env vars
- * Otherwise, fetch and use 'default' provider from BROWSEROS_CONFIG_URL
- */
+// get LLM configuration for agent server
 async function getLLMConfig(): Promise<{
   apiKey?: string;
-  baseUrl?: string;
-  modelName?: string;
+  baseUrl: string;
+  modelName: string;
 }> {
-  // Check if any environment variable is set
   const envApiKey = process.env.BROWSEROS_API_KEY;
   const envBaseUrl = process.env.BROWSEROS_LLM_BASE_URL;
   const envModelName = process.env.BROWSEROS_LLM_MODEL_NAME;
-  const hasAnyEnvVar =
-    envApiKey !== undefined ||
-    envBaseUrl !== undefined ||
-    envModelName !== undefined;
 
-  // If any env var is set, use all env vars (no mixing with config)
-  if (hasAnyEnvVar) {
-    logger.info('✅ Using LLM config from environment variables');
-    return {
-      apiKey: envApiKey,
-      baseUrl: envBaseUrl,
-      modelName: envModelName,
-    };
-  }
+  let configApiKey: string | undefined;
+  let configBaseUrl: string | undefined;
+  let configModelName: string | undefined;
 
-  // No env vars set, try to fetch from config URL
+  // Try to fetch from config URL
   const configUrl = process.env.BROWSEROS_CONFIG_URL;
   if (configUrl) {
     try {
@@ -219,27 +204,40 @@ async function getLLMConfig(): Promise<{
       const config = await fetchBrowserOSConfig(configUrl);
       const llmConfig = getLLMConfigFromProvider(config, 'default');
 
-      logger.info('✅ Using LLM config from BrowserOS Config (default provider)');
-      return {
-        apiKey: llmConfig.apiKey,
-        baseUrl: llmConfig.baseUrl,
-        modelName: llmConfig.modelName,
-      };
+      configApiKey = llmConfig.apiKey;
+      configBaseUrl = llmConfig.baseUrl;
+      configModelName = llmConfig.modelName;
+
+      logger.info('✅ Loaded config from BrowserOS Config (default provider)');
     } catch (error) {
-      logger.warn(
-        '⚠️  Failed to fetch config from URL, no LLM config available',
-        {
-          error: error instanceof Error ? error.message : String(error),
-        },
-      );
+      logger.warn('⚠️  Failed to fetch config from URL', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
-  // No env vars and no config available
+  // Apply env var overrides (env takes precedence)
+  const apiKey = envApiKey ?? configApiKey;
+  const baseUrl = envBaseUrl ?? configBaseUrl;
+  const modelName = envModelName ?? configModelName;
+
+  // Validate required fields
+  if (!baseUrl || !modelName) {
+    throw new Error(
+      'LLM configuration required: baseUrl and modelName must be set via BROWSEROS_LLM_BASE_URL and BROWSEROS_LLM_MODEL_NAME environment variables, or via BROWSEROS_CONFIG_URL',
+    );
+  }
+
+  logger.info('✅ Using LLM config', {
+    baseUrl,
+    modelName,
+    apiKeySource: envApiKey ? 'env' : configApiKey ? 'config' : 'none',
+  });
+
   return {
-    apiKey: undefined,
-    baseUrl: undefined,
-    modelName: undefined,
+    apiKey,
+    baseUrl,
+    modelName,
   };
 }
 
