@@ -31,13 +31,13 @@ class Logger {
   private format(level: LogLevel, message: string, meta?: object): string {
     const timestamp = new Date().toISOString();
     const color = COLORS[level];
-    const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
+    const metaStr = meta ? `\n${JSON.stringify(meta, null, 2)}` : '';
     return `${color}[${timestamp}] [${level.toUpperCase()}]${RESET} ${message}${metaStr}`;
   }
 
   private formatPlain(level: LogLevel, message: string, meta?: object): string {
     const timestamp = new Date().toISOString();
-    const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
+    const metaStr = meta ? `\n${JSON.stringify(meta, null, 2)}` : '';
     return `[${timestamp}] [${level.toUpperCase()}] ${message}${metaStr}`;
   }
 
