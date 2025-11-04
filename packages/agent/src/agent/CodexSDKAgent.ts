@@ -159,7 +159,12 @@ export class CodexSDKAgent extends BaseAgent {
     const codexBinaryName =
       process.platform === 'win32' ? 'codex.exe' : 'codex';
 
-    // 1. Check resourcesDir if provided
+    // Check CODEX_BINARY_PATH env var first
+    if (process.env.CODEX_BINARY_PATH) {
+      return process.env.CODEX_BINARY_PATH;
+    }
+
+    // Check resourcesDir if provided
     if (this.config.resourcesDir) {
       const resourcesCodexPath = join(
         this.config.resourcesDir,
@@ -174,23 +179,18 @@ export class CodexSDKAgent extends BaseAgent {
       }
     }
 
-    // 2. Check bundled codex in current binary directory
+    // Check bundled codex in current binary directory
     const currentBinaryDirectory = dirname(process.execPath);
     const bundledCodexPath = join(currentBinaryDirectory, codexBinaryName);
     try {
       accessSync(bundledCodexPath, fsConstants.X_OK);
       return bundledCodexPath;
     } catch {
-      // Ignore failures; fall back to env var
-    }
-
-    // 3. Check CODEX_BINARY_PATH env var
-    if (process.env.CODEX_BINARY_PATH) {
-      return process.env.CODEX_BINARY_PATH;
+      // Ignore failures; fall through to error
     }
 
     throw new Error(
-      'Codex binary not found. Set --resources-dir or CODEX_BINARY_PATH',
+      'Codex binary not found. Set CODEX_BINARY_PATH or --resources-dir',
     );
   }
 
