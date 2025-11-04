@@ -109,7 +109,7 @@ export class CodexSDKAgent extends BaseAgent {
   }
 
   private generateCodexConfig(): void {
-    const outputDir = getResourcesDir(this.config.resourcesDir);
+    const outputDir = getResourcesDir(this.config.executionDir);
     const port = this.config.mcpServerPort || CODEX_SDK_DEFAULTS.mcpServerPort;
     const modelName = this.config.modelName || 'o4-mini';
     const baseUrl = this.config.baseUrl;
@@ -321,7 +321,7 @@ export class CodexSDKAgent extends BaseAgent {
       const modelName = this.config.modelName;
       const threadOptions: any = {
         skipGitRepoCheck: true,
-        workingDirectory: this.config.resourcesDir,
+        workingDirectory: this.config.executionDir,
       };
 
       // Use TOML config if available, otherwise fall back to direct MCP server config

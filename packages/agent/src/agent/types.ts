@@ -52,10 +52,16 @@ export class FormattedEvent {
  */
 export const AgentConfigSchema = z.object({
   /**
-   * Resources directory path - used for binary storage, logs, and working directory
-   * Required - serves as the primary directory for all agent operations
+   * Resources directory path - used for binary storage and static resources
+   * Required - serves as the primary directory for binaries
    */
   resourcesDir: z.string().min(1, 'Resources directory is required'),
+
+  /**
+   * Execution directory path - used for logs, configs, and working directory
+   * Always set (normalized to resourcesDir if not explicitly provided)
+   */
+  executionDir: z.string().min(1),
 
   /**
    * MCP server port (optional, defaults to 9100)

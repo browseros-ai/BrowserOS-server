@@ -66,6 +66,7 @@ describe('SessionManager-unit-test', () => {
   it('tests that session creates and updates state correctly', () => {
     const agentConfig = {
       resourcesDir: '/test/resources',
+      executionDir: '/test/execution',
       apiKey: 'test-key',
     };
 
@@ -97,6 +98,7 @@ describe('SessionManager-unit-test', () => {
     const sessionId = crypto.randomUUID();
     const agentConfig = {
       resourcesDir: '/test/resources',
+      executionDir: '/test/execution',
       apiKey: 'test-key',
     };
 
@@ -132,6 +134,7 @@ describe('SessionManager-unit-test', () => {
     const sessionId = crypto.randomUUID();
     const agentConfig = {
       resourcesDir: '/test/resources',
+      executionDir: '/test/execution',
       apiKey: 'test-key',
     };
 
@@ -180,6 +183,7 @@ describe('SessionManager-unit-test', () => {
 
     const agentConfig = {
       resourcesDir: '/test/resources',
+      executionDir: '/test/execution',
       apiKey: 'test-key',
     };
 

@@ -96,8 +96,12 @@ export class ClaudeSDKAgent extends BaseAgent {
         }
 
         this.config.apiKey = this.selectedProvider.apiKey;
-        this.config.baseUrl = this.selectedProvider.baseUrl;
-        this.config.modelName = this.selectedProvider.model;
+        if (this.selectedProvider.baseUrl) {
+          this.config.baseUrl = this.selectedProvider.baseUrl;
+        }
+        if (this.selectedProvider.model) {
+          this.config.modelName = this.selectedProvider.model;
+        }
 
         logger.info('✅ Using config from BrowserOS Config URL', {
           model: this.config.modelName,
@@ -250,7 +254,7 @@ export class ClaudeSDKAgent extends BaseAgent {
         apiKey: this.config.apiKey,
         maxTurns: this.config.maxTurns,
         maxThinkingTokens: this.config.maxThinkingTokens,
-        cwd: this.config.resourcesDir,
+        cwd: this.config.executionDir,
         systemPrompt: this.config.systemPrompt,
         mcpServers: this.config.mcpServers,
         abortController: this.abortController,
