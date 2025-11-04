@@ -31,6 +31,7 @@ describe('BaseAgent-unit-test', () => {
   it('tests that configs merge correctly with defaults', () => {
     const userConfig: AgentConfig = {
       resourcesDir: '/test/resources',
+      executionDir: '/test/execution',
       apiKey: 'test-key',
       maxTurns: 50,
       // systemPrompt not provided, should use default
@@ -56,6 +57,7 @@ describe('BaseAgent-unit-test', () => {
   it('tests that metadata initializes with correct state', () => {
     const config: AgentConfig = {
       resourcesDir: '/test/resources',
+      executionDir: '/test/execution',
       apiKey: 'test-key',
     };
 
@@ -75,6 +77,7 @@ describe('BaseAgent-unit-test', () => {
   it('tests that execution state tracks correctly', () => {
     const config: AgentConfig = {
       resourcesDir: '/test/resources',
+      executionDir: '/test/execution',
       apiKey: 'test-key',
     };
 
@@ -100,6 +103,7 @@ describe('BaseAgent-unit-test', () => {
   it('tests that metadata updates through helper methods', () => {
     const config: AgentConfig = {
       resourcesDir: '/test/resources',
+      executionDir: '/test/execution',
       apiKey: 'test-key',
     };
 
@@ -128,6 +132,7 @@ describe('BaseAgent-unit-test', () => {
   it('tests that error state handles correctly', () => {
     const config: AgentConfig = {
       resourcesDir: '/test/resources',
+      executionDir: '/test/execution',
       apiKey: 'test-key',
     };
 
@@ -152,6 +157,7 @@ describe('BaseAgent-unit-test', () => {
   it('tests that destroyed state tracks correctly', async () => {
     const config: AgentConfig = {
       resourcesDir: '/test/resources',
+      executionDir: '/test/execution',
       apiKey: 'test-key',
     };
 

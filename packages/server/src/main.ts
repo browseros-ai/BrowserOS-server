@@ -36,8 +36,9 @@ import {parseArguments} from './args.js';
 const version = readVersion();
 const ports = parseArguments();
 
-if (ports.resourcesDir) {
-  logger.setLogFile(ports.resourcesDir);
+const logDir = ports.executionDir || ports.resourcesDir;
+if (logDir) {
+  logger.setLogFile(logDir);
 }
 
 void (async () => {
@@ -251,9 +252,13 @@ async function startAgentServer(
 
   const llmConfig = await getLLMConfig();
 
+  const resourcesDir = ports.resourcesDir || process.cwd();
+  const executionDir = ports.executionDir || resourcesDir;
+
   const agentConfig: AgentServerConfig = {
     port: ports.agentPort,
-    resourcesDir: ports.resourcesDir || process.cwd(),
+    resourcesDir,
+    executionDir,
     mcpServerPort: ports.httpMcpPort,
     apiKey: llmConfig.apiKey,
     baseUrl: llmConfig.baseUrl,

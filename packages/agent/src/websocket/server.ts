@@ -34,6 +34,7 @@ type WebSocketData = z.infer<typeof WebSocketDataSchema>;
 export const ServerConfigSchema = z.object({
   port: z.number().int().min(1).max(65535),
   resourcesDir: z.string().min(1, 'Resources directory is required'),
+  executionDir: z.string().optional(),
   mcpServerPort: z.number().positive().optional(),
   apiKey: z.string().optional(),
   baseUrl: z.string().url().optional(),
@@ -185,8 +186,10 @@ export function createServer(
 
         try {
           // Build agent config from server config
+          // Normalize executionDir: if not provided, use resourcesDir
           const agentConfig = {
             resourcesDir: config.resourcesDir,
+            executionDir: config.executionDir || config.resourcesDir,
             mcpServerPort: config.mcpServerPort,
             apiKey: config.apiKey,
             baseUrl: config.baseUrl,
