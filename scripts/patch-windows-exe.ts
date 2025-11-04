@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { spawn } from 'child_process';
+import {spawn} from 'child_process';
 
 const exePath = process.argv[2];
 
@@ -30,12 +30,12 @@ if (!fs.existsSync(rceditPath)) {
 }
 
 const metadata = {
-  'ProductName': 'BrowserOS sidecar',
-  'FileDescription': 'BrowserOS sidecar',
-  'CompanyName': 'BrowserOS',
-  'LegalCopyright': 'Copyright (C) 2025 BrowserOS',
-  'InternalName': 'browseros-server',
-  'OriginalFilename': path.basename(exePath),
+  ProductName: 'BrowserOS Agent',
+  FileDescription: 'BrowserOS Agent',
+  CompanyName: 'BrowserOS',
+  LegalCopyright: 'Copyright (C) 2025 BrowserOS',
+  InternalName: 'browseros-server',
+  OriginalFilename: path.basename(exePath),
 };
 
 const args = [exePath];
@@ -48,7 +48,7 @@ const command = isWindows ? rceditPath : 'wine';
 const commandArgs = isWindows ? args : [rceditPath, ...args];
 
 const spawnOptions = {
-  env: { ...process.env, WINEDEBUG: '-all' },
+  env: {...process.env, WINEDEBUG: '-all'},
   stdio: 'inherit' as const,
 };
 
@@ -57,14 +57,16 @@ const child = spawn(command, commandArgs, spawnOptions);
 child.on('error', (error: NodeJS.ErrnoException) => {
   if (error.code === 'ENOENT' && !isWindows) {
     console.error('\x1b[31mError: Wine is not installed\x1b[0m');
-    console.error('\x1b[31mInstall Wine with: brew install --cask wine-stable\x1b[0m');
+    console.error(
+      '\x1b[31mInstall Wine with: brew install --cask wine-stable\x1b[0m',
+    );
     process.exit(1);
   }
   console.error('Failed to patch Windows executable:', error);
   process.exit(1);
 });
 
-child.on('exit', (code) => {
+child.on('exit', code => {
   if (code === 0) {
     console.log('✓ Successfully patched Windows executable metadata');
     process.exit(0);
