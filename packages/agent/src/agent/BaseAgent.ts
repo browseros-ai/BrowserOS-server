@@ -68,10 +68,11 @@ export abstract class BaseAgent {
     // Merge config with agent-specific defaults, then with base defaults
     this.config = {
       resourcesDir: config.resourcesDir,
+      executionDir: config.executionDir,
       mcpServerPort: config.mcpServerPort ?? agentDefaults?.mcpServerPort,
       apiKey: config.apiKey ?? agentDefaults?.apiKey,
-      baseUrl: config.baseUrl ?? agentDefaults?.baseUrl,
-      modelName: config.modelName ?? agentDefaults?.modelName,
+      baseUrl: config.baseUrl,
+      modelName: config.modelName,
       maxTurns:
         config.maxTurns ?? agentDefaults?.maxTurns ?? DEFAULT_CONFIG.maxTurns,
       maxThinkingTokens:

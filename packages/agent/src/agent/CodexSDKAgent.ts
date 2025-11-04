@@ -16,7 +16,6 @@ import {BaseAgent} from './BaseAgent.js';
 import {CodexEventFormatter} from './CodexSDKAgent.formatter.js';
 import {
   type BrowserOSCodexConfig,
-  getResourcesDir,
   writeBrowserOSCodexConfig,
   writePromptFile,
 } from './CodexSDKAgent.config.js';
@@ -109,14 +108,14 @@ export class CodexSDKAgent extends BaseAgent {
   }
 
   private generateCodexConfig(): void {
-    const outputDir = getResourcesDir(this.config.executionDir);
+    const outputDir = this.config.executionDir;
     const port = this.config.mcpServerPort || CODEX_SDK_DEFAULTS.mcpServerPort;
-    const modelName = this.config.modelName || 'o4-mini';
+    const modelName = this.config.modelName;
     const baseUrl = this.config.baseUrl;
 
     const codexConfig: BrowserOSCodexConfig = {
       model_name: modelName,
-      base_url: baseUrl,
+      ...(baseUrl && {base_url: baseUrl}),
       api_key_env: 'BROWSEROS_API_KEY',
       wire_api: 'chat',
       base_instructions_file: 'browseros_prompt.md',
