@@ -198,7 +198,7 @@ async function getLLMConfig(): Promise<{
   const configUrl = process.env.BROWSEROS_CONFIG_URL;
   if (configUrl) {
     try {
-      logger.info('🌐 Fetching LLM config from BrowserOS Config URL', {
+      logger.info('Fetching LLM config from BrowserOS Config URL', {
         configUrl,
       });
       const config = await fetchBrowserOSConfig(configUrl);
@@ -208,9 +208,9 @@ async function getLLMConfig(): Promise<{
       configBaseUrl = llmConfig.baseUrl;
       configModelName = llmConfig.modelName;
 
-      logger.info('✅ Loaded config from BrowserOS Config (default provider)');
+      logger.info('Loaded config from BrowserOS Config (default provider)');
     } catch (error) {
-      logger.warn('⚠️  Failed to fetch config from URL', {
+      logger.warn('Failed to fetch config from URL', {
         error: error instanceof Error ? error.message : String(error),
       });
     }
@@ -228,7 +228,7 @@ async function getLLMConfig(): Promise<{
     );
   }
 
-  logger.info('✅ Using LLM config', {
+  logger.info('Using LLM config', {
     baseUrl,
     modelName,
     apiKeySource: envApiKey ? 'env' : configApiKey ? 'config' : 'none',
