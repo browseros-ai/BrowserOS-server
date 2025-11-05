@@ -94,23 +94,23 @@ export function createServer(
   // Track WebSocket connections (needed to close idle sessions)
   const wsConnections = new Map<string, ServerWebSocket<WebSocketData>>();
 
-  // Cleanup idle sessions callback (now async)
-  const cleanupIdle = async () => {
-    const idleSessionIds = sessionManager.findIdleSessions();
+  // Cleanup idle sessions callback (now async) -> commenting out for now as we should let BrowserOS agent handle this
+  // const cleanupIdle = async () => {
+  //   const idleSessionIds = sessionManager.findIdleSessions();
 
-    for (const sessionId of idleSessionIds) {
-      const ws = wsConnections.get(sessionId);
-      if (ws) {
-        logger.info('🧹 Closing idle session', {sessionId});
-        ws.close(1001, 'Idle timeout');
-        wsConnections.delete(sessionId);
-      }
-      await sessionManager.deleteSession(sessionId);
-    }
-  };
+  //   for (const sessionId of idleSessionIds) {
+  //     const ws = wsConnections.get(sessionId);
+  //     if (ws) {
+  //       logger.info('🧹 Closing idle session', {sessionId});
+  //       ws.close(1001, 'Idle timeout');
+  //       wsConnections.delete(sessionId);
+  //     }
+  //     await sessionManager.deleteSession(sessionId);
+  //   }
+  // };
 
-  // Run cleanup check with the timer
-  setInterval(cleanupIdle, 60000);
+  // // Run cleanup check with the timer
+  // setInterval(cleanupIdle, 60000);
 
   const server = Bun.serve<WebSocketData>({
     port: config.port,
