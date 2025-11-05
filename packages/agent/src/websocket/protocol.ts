@@ -17,12 +17,28 @@ import {z} from 'zod';
 // ============================================================================
 
 /**
- * Message sent from client to server
+ * Regular message from client
  */
-export const ClientMessageSchema = z.object({
+export const ClientRegularMessageSchema = z.object({
   type: z.literal('message'),
   content: z.string().min(1, 'Message content cannot be empty'),
 });
+
+/**
+ * Cancel message from client
+ */
+export const ClientCancelMessageSchema = z.object({
+  type: z.literal('cancel'),
+  sessionId: z.string().optional(),
+});
+
+/**
+ * Discriminated union of all client message types
+ */
+export const ClientMessageSchema = z.discriminatedUnion('type', [
+  ClientRegularMessageSchema,
+  ClientCancelMessageSchema,
+]);
 
 export type ClientMessage = z.infer<typeof ClientMessageSchema>;
 
@@ -64,6 +80,17 @@ export const AgentEventSchema = z.object({
 export type AgentEvent = z.infer<typeof AgentEventSchema>;
 
 /**
+ * Cancelled event (acknowledgment of cancel request)
+ */
+export const CancelledEventSchema = z.object({
+  type: z.literal('cancelled'),
+  sessionId: z.string(),
+  message: z.string().optional(),
+});
+
+export type CancelledEvent = z.infer<typeof CancelledEventSchema>;
+
+/**
  * Error event
  */
 export const ErrorEventSchema = z.object({
@@ -80,6 +107,7 @@ export type ErrorEvent = z.infer<typeof ErrorEventSchema>;
 export const ServerEventSchema = z.union([
   ConnectionEventSchema,
   AgentEventSchema,
+  CancelledEventSchema,
   ErrorEventSchema,
 ]);
 

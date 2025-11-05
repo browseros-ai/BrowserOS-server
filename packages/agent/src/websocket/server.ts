@@ -244,15 +244,6 @@ export function createServer(
             return;
           }
 
-          // Try to mark session as processing (reject if already processing)
-          if (!sessionManager.markProcessing(sessionId)) {
-            sendError(
-              ws,
-              'Session is already processing a message. Please wait.',
-            );
-            return;
-          }
-
           // Parse message
           const messageStr =
             typeof message === 'string'
@@ -266,8 +257,37 @@ export function createServer(
           const clientMessage = tryParseClientMessage(parsedData);
 
           if (!clientMessage) {
-            sessionManager.markIdle(sessionId); // Mark idle before returning
             sendError(ws, 'Invalid message format');
+            return;
+          }
+
+          // Handle cancel message
+          if (clientMessage.type === 'cancel') {
+            logger.info('🛑 Cancel request received', {sessionId});
+
+            const success = sessionManager.cancelExecution(sessionId);
+
+            // Send cancelled acknowledgment
+            const cancelledEvent = {
+              type: 'cancelled',
+              sessionId,
+              message: success
+                ? 'Execution cancelled'
+                : 'No active execution to cancel',
+            };
+            ws.send(JSON.stringify(cancelledEvent));
+
+            logger.info(success ? '✅ Cancel successful' : '⚠️  Nothing to cancel', {sessionId});
+            return;
+          }
+
+          // Handle regular message
+          // Try to mark session as processing (reject if already processing)
+          if (!sessionManager.markProcessing(sessionId)) {
+            sendError(
+              ws,
+              'Session is already processing a message. Please wait.',
+            );
             return;
           }
 
@@ -408,8 +428,10 @@ async function processMessage(
       try {
         result = await Promise.race([iterator.next(), timeoutPromise]);
       } catch (timeoutError) {
-        // Cleanup iterator
-        if (iterator.return) await iterator.return(undefined);
+        // Cleanup iterator (fire-and-forget - session will be deleted anyway)
+        if (iterator.return) {
+          iterator.return(undefined).catch(() => {});
+        }
         throw new Error(
           `Event gap timeout: No activity for ${config.eventGapTimeoutMs / 1000}s`,
         );

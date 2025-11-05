@@ -191,9 +191,9 @@ export class ClaudeSDKAgent extends BaseAgent {
           logger.info(
             '⚠️  Agent execution aborted (caught during iterator wait)',
           );
-          // Cleanup iterator
+          // Cleanup iterator (fire-and-forget to avoid blocking)
           if (iterator.return) {
-            await iterator.return(undefined).catch(() => {});
+            iterator.return(undefined).catch(() => {});
           }
           return;
         }
@@ -373,6 +373,26 @@ export class ClaudeSDKAgent extends BaseAgent {
       // Clear AbortController reference
       this.abortController = null;
     }
+  }
+
+  /**
+   * Abort current execution
+   * Triggers abort signal to stop the current task gracefully
+   */
+  abort(): void {
+    if (this.abortController) {
+      logger.info('🛑 Aborting ClaudeSDKAgent execution');
+      this.abortController.abort();
+    } else {
+      logger.warn('⚠️  Cancel not fully supported - no active execution');
+    }
+  }
+
+  /**
+   * Check if agent is currently executing
+   */
+  isExecuting(): boolean {
+    return this.metadata.state === 'executing' && this.abortController !== null;
   }
 
   /**

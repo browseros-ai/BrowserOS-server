@@ -132,6 +132,19 @@ export abstract class BaseAgent {
   abstract destroy(): Promise<void>;
 
   /**
+   * Abort current execution
+   * Triggers the abort signal to stop the current task
+   * Must be implemented by concrete agent classes
+   */
+  abstract abort(): void;
+
+  /**
+   * Check if agent is currently executing
+   * Must be implemented by concrete agent classes
+   */
+  abstract isExecuting(): boolean;
+
+  /**
    * Get current agent metadata
    */
   getMetadata(): AgentMetadata {
