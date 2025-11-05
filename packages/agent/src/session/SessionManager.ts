@@ -92,7 +92,7 @@ export class SessionManager {
     this.config = config;
     this.controllerBridge = controllerBridge;
 
-    logger.info('📦 SessionManager initialized', {
+    logger.info('SessionManager initialized', {
       maxSessions: config.maxSessions,
       idleTimeoutMs: config.idleTimeoutMs,
       sharedControllerBridge: true,
@@ -145,7 +145,7 @@ export class SessionManager {
         );
         this.agents.set(sessionId, agent);
 
-        logger.info('✅ Session created with agent', {
+        logger.info('Session created with agent', {
           sessionId,
           agentType,
           totalSessions: this.sessions.size,
@@ -154,7 +154,7 @@ export class SessionManager {
         // Cleanup session if agent creation fails
         this.sessions.delete(sessionId);
 
-        logger.error('❌ Failed to create agent for session', {
+        logger.error('Failed to create agent for session', {
           sessionId,
           error: error instanceof Error ? error.message : String(error),
         });
@@ -162,7 +162,7 @@ export class SessionManager {
         throw error;
       }
     } else {
-      logger.info('✅ Session created without agent', {
+      logger.info('Session created without agent', {
         sessionId,
         totalSessions: this.sessions.size,
       });
@@ -201,7 +201,7 @@ export class SessionManager {
   updateActivity(sessionId: string): void {
     const session = this.sessions.get(sessionId);
     if (!session) {
-      logger.warn('⚠️  Attempted to update activity for non-existent session', {
+      logger.warn('Attempted to update activity for non-existent session', {
         sessionId,
       });
       return;
@@ -209,7 +209,7 @@ export class SessionManager {
 
     session.lastActivity = Date.now();
 
-    logger.debug('🔄 Session activity updated', {
+    logger.debug('Session activity updated', {
       sessionId,
       messageCount: session.messageCount,
     });
@@ -227,7 +227,7 @@ export class SessionManager {
 
     // Reject if already processing (prevent concurrent message handling)
     if (session.state === SessionState.PROCESSING) {
-      logger.warn('⚠️  Session already processing message', {sessionId});
+      logger.warn('Session already processing message', {sessionId});
       return false;
     }
 
@@ -236,7 +236,7 @@ export class SessionManager {
     // ❌ Removed: session.lastActivity = Date.now()
     // Idle timer starts from markIdle(), not here
 
-    logger.debug('⚙️  Session marked as processing', {
+    logger.debug('Session marked as processing', {
       sessionId,
       messageCount: session.messageCount,
     });
@@ -257,7 +257,7 @@ export class SessionManager {
     session.state = SessionState.IDLE;
     session.lastActivity = Date.now(); // ✅ Idle timer starts here
 
-    logger.debug('💤 Session marked as idle', {sessionId});
+    logger.debug('Session marked as idle', {sessionId});
   }
 
   /**
@@ -319,9 +319,9 @@ export class SessionManager {
       try {
         await agent.destroy();
         this.agents.delete(sessionId);
-        logger.debug('🗑️  Agent destroyed', {sessionId});
+        logger.debug('Agent destroyed', {sessionId});
       } catch (error) {
-        logger.error('❌ Failed to destroy agent', {
+        logger.error('Failed to destroy agent', {
           sessionId,
           error: error instanceof Error ? error.message : String(error),
         });
@@ -332,7 +332,7 @@ export class SessionManager {
     // Delete session
     this.sessions.delete(sessionId);
 
-    logger.info('🗑️  Session deleted', {
+    logger.info('Session deleted', {
       sessionId,
       remainingSessions: this.sessions.size,
       messageCount: session.messageCount,
@@ -380,7 +380,7 @@ export class SessionManager {
       ) {
         idleSessionIds.push(sessionId);
 
-        logger.info('⏱️  Idle session detected', {
+        logger.info('Idle session detected', {
           sessionId,
           idleTimeMs: idleTime,
           threshold: this.config.idleTimeoutMs,
@@ -397,17 +397,17 @@ export class SessionManager {
    */
   startCleanup(intervalMs = 60000): () => void {
     if (this.cleanupTimerId) {
-      logger.warn('⚠️  Cleanup timer already running');
+      logger.warn('Cleanup timer already running');
       return () => {};
     }
 
-    logger.info('🧹 Starting periodic session cleanup', {intervalMs});
+    logger.info('Starting periodic session cleanup', {intervalMs});
 
     this.cleanupTimerId = setInterval(() => {
       const idleSessionIds = this.findIdleSessions();
 
       if (idleSessionIds.length > 0) {
-        logger.info('🧹 Cleanup found idle sessions', {
+        logger.info('Cleanup found idle sessions', {
           count: idleSessionIds.length,
           sessionIds: idleSessionIds,
         });
@@ -422,7 +422,7 @@ export class SessionManager {
       if (this.cleanupTimerId) {
         clearInterval(this.cleanupTimerId);
         this.cleanupTimerId = undefined;
-        logger.info('🛑 Session cleanup stopped');
+        logger.info('Session cleanup stopped');
       }
     };
   }
@@ -468,7 +468,7 @@ export class SessionManager {
    * Now async to support agent cleanup
    */
   async shutdown(): Promise<void> {
-    logger.info('🛑 SessionManager shutting down', {
+    logger.info('SessionManager shutting down', {
       activeSessions: this.sessions.size,
       activeAgents: this.agents.size,
     });
@@ -484,7 +484,7 @@ export class SessionManager {
     for (const [sessionId, agent] of this.agents) {
       destroyPromises.push(
         agent.destroy().catch(error => {
-          logger.error('❌ Failed to destroy agent during shutdown', {
+          logger.error('Failed to destroy agent during shutdown', {
             sessionId,
             error: error instanceof Error ? error.message : String(error),
           });
@@ -498,6 +498,6 @@ export class SessionManager {
     // Clear all sessions
     this.sessions.clear();
 
-    logger.info('✅ SessionManager shutdown complete');
+    logger.info('SessionManager shutdown complete');
   }
 }

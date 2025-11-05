@@ -16,7 +16,6 @@ import {BaseAgent} from './BaseAgent.js';
 import {CodexEventFormatter} from './CodexSDKAgent.formatter.js';
 import {
   type BrowserOSCodexConfig,
-  getResourcesDir,
   writeBrowserOSCodexConfig,
   writePromptFile,
 } from './CodexSDKAgent.config.js';
@@ -110,14 +109,14 @@ export class CodexSDKAgent extends BaseAgent {
   }
 
   private generateCodexConfig(): void {
-    const outputDir = getResourcesDir(this.config.executionDir);
+    const outputDir = this.config.executionDir;
     const port = this.config.mcpServerPort || CODEX_SDK_DEFAULTS.mcpServerPort;
-    const modelName = this.config.modelName || 'o4-mini';
+    const modelName = this.config.modelName;
     const baseUrl = this.config.baseUrl;
 
     const codexConfig: BrowserOSCodexConfig = {
       model_name: modelName,
-      base_url: baseUrl,
+      ...(baseUrl && {base_url: baseUrl}),
       api_key_env: 'BROWSEROS_API_KEY',
       wire_api: 'chat',
       base_instructions_file: 'browseros_prompt.md',
@@ -160,12 +159,12 @@ export class CodexSDKAgent extends BaseAgent {
     const codexBinaryName =
       process.platform === 'win32' ? 'codex.exe' : 'codex';
 
-     // 1. Check CODEX_BINARY_PATH env var
-     if (process.env.CODEX_BINARY_PATH) {
+    // Check CODEX_BINARY_PATH env var first
+    if (process.env.CODEX_BINARY_PATH) {
       return process.env.CODEX_BINARY_PATH;
     }
 
-    // 2. Check resourcesDir if provided
+    // Check resourcesDir if provided
     if (this.config.resourcesDir) {
       const resourcesCodexPath = join(
         this.config.resourcesDir,
@@ -180,18 +179,18 @@ export class CodexSDKAgent extends BaseAgent {
       }
     }
 
-    // 3. Check bundled codex in current binary directory
+    // Check bundled codex in current binary directory
     const currentBinaryDirectory = dirname(process.execPath);
     const bundledCodexPath = join(currentBinaryDirectory, codexBinaryName);
     try {
       accessSync(bundledCodexPath, fsConstants.X_OK);
       return bundledCodexPath;
     } catch {
-      // Ignore failures; fall back to env var
+      // Ignore failures; fall through to error
     }
 
     throw new Error(
-      'Codex binary not found. Set --resources-dir or CODEX_BINARY_PATH',
+      'Codex binary not found. Set CODEX_BINARY_PATH or --resources-dir',
     );
   }
 
