@@ -261,6 +261,45 @@ export class SessionManager {
   }
 
   /**
+   * Cancel current execution for a session
+   * Triggers abort on the agent if it's executing
+   * CRITICAL: Does NOT mark session as idle - let processMessage() handle that
+   *
+   * @param sessionId - Session ID
+   * @returns true if cancel was triggered, false if not executing or agent not found
+   */
+  cancelExecution(sessionId: string): boolean {
+    const agent = this.agents.get(sessionId);
+    if (!agent) {
+      logger.warn('⚠️  Cancel requested but no agent found', {sessionId});
+      return false;
+    }
+
+    // Defensive: check abort support
+    if (typeof agent.abort !== 'function') {
+      logger.warn('⚠️  Agent does not support cancel', {
+        sessionId,
+        agentType: agent.getMetadata().type,
+      });
+      return false;
+    }
+
+    if (!agent.isExecuting()) {
+      logger.debug('⚠️  Cancel requested but agent not executing', {sessionId});
+      return false;
+    }
+
+    logger.info('🛑 Cancelling execution', {sessionId});
+    agent.abort();
+
+    // CRITICAL: Do NOT mark idle here!
+    // Let the original processMessage() call mark idle when it completes
+    // Otherwise we get race condition: new messages can start while execute() is still in finally block
+
+    return true;
+  }
+
+  /**
    * Delete a session and its agent
    *
    * Now async to support agent cleanup

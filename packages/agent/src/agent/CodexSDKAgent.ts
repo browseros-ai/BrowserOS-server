@@ -6,7 +6,7 @@
 import {accessSync, constants as fsConstants} from 'node:fs';
 import {dirname, join} from 'node:path';
 
-import {Codex, type McpServerConfig} from '@browseros/codex-sdk-ts';
+import {Codex, Thread, type McpServerConfig} from '@browseros/codex-sdk-ts';
 import {logger} from '@browseros/common';
 import type {ControllerBridge} from '@browseros/controller-server';
 import {allControllerTools} from '@browseros/tools/controller-based';
@@ -66,6 +66,7 @@ export class CodexSDKAgent extends BaseAgent {
   private codex: Codex | null = null;
   private codexExecutablePath: string | null = null;
   private codexConfigPath: string | null = null;
+  private currentThread: Thread | null = null;
 
   constructor(config: AgentConfig, _controllerBridge: ControllerBridge) {
     const mcpServerConfig = buildMcpServerConfig(config);
@@ -338,7 +339,17 @@ export class CodexSDKAgent extends BaseAgent {
         });
       }
 
-      const thread = this.codex.startThread(threadOptions);
+      // Reuse existing thread for follow-up messages, or create new one
+      // CRITICAL: Check both existence AND thread ID (ID is null if cancelled before thread.started event)
+      if (!this.currentThread || !this.currentThread.id) {
+        this.currentThread = this.codex.startThread(threadOptions);
+        logger.info('🆕 Created new thread for session');
+      } else {
+        logger.info('♻️  Reusing existing thread for follow-up message', {
+          threadId: this.currentThread.id,
+        });
+      }
+      const thread = this.currentThread;
 
       // Get streaming events from thread
       const messages: Array<{type: 'text'; text: string}> = [];
@@ -368,6 +379,9 @@ export class CodexSDKAgent extends BaseAgent {
             logger.info(
               '⚠️  Agent execution aborted by client (breaking loop)',
             );
+            // Clear thread - next message will create fresh thread
+            this.currentThread = null;
+            logger.debug('🔄 Cleared thread reference due to abort');
             break;
           }
 
@@ -454,9 +468,14 @@ export class CodexSDKAgent extends BaseAgent {
         }
       } finally {
         // CRITICAL: Close iterator to trigger SIGKILL in forked SDK's finally block
+        // Fire-and-forget to avoid blocking markIdle() - subprocess cleanup can happen async
         if (iterator.return) {
           logger.debug('🔒 Closing iterator to terminate Codex subprocess');
-          await iterator.return(undefined);
+          iterator.return(undefined).catch((error) => {
+            logger.warn('⚠️  Iterator cleanup error (non-fatal)', {
+              error: error instanceof Error ? error.message : String(error),
+            });
+          });
         }
       }
 
@@ -469,6 +488,10 @@ export class CodexSDKAgent extends BaseAgent {
         duration: Date.now() - this.executionStartTime,
       });
     } catch (error) {
+      // Clear thread on error - next call will create fresh thread
+      this.currentThread = null;
+      logger.debug('🔄 Cleared thread reference due to error');
+
       // Mark execution error
       this.errorExecution(
         error instanceof Error ? error : new Error(String(error)),
@@ -487,6 +510,24 @@ export class CodexSDKAgent extends BaseAgent {
   }
 
   /**
+   * Abort current execution
+   * Triggers abort signal to stop the current task gracefully
+   */
+  abort(): void {
+    if (this.abortController) {
+      logger.info('🛑 Aborting CodexSDKAgent execution');
+      this.abortController.abort();
+    }
+  }
+
+  /**
+   * Check if agent is currently executing
+   */
+  isExecuting(): boolean {
+    return this.metadata.state === 'executing' && this.abortController !== null;
+  }
+
+  /**
    * Cleanup agent resources
    *
    * Immediately kills the Codex subprocess using SIGKILL.
@@ -499,6 +540,9 @@ export class CodexSDKAgent extends BaseAgent {
     }
 
     this.markDestroyed();
+
+    // Clear thread reference
+    this.currentThread = null;
 
     // Trigger abort controller for cleanup
     if (this.abortController) {
