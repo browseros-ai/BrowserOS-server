@@ -155,13 +155,31 @@ export class CodexSDKAgent extends BaseAgent {
     });
   }
 
+  private isExecutableFile(path: string): boolean {
+    try {
+      accessSync(path, fsConstants.X_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   private resolveCodexExecutablePath(): string {
     const codexBinaryName =
       process.platform === 'win32' ? 'codex.exe' : 'codex';
 
     // Check CODEX_BINARY_PATH env var first
     if (process.env.CODEX_BINARY_PATH) {
-      return process.env.CODEX_BINARY_PATH;
+      const envPath = process.env.CODEX_BINARY_PATH;
+      if (this.isExecutableFile(envPath)) {
+        return envPath;
+      }
+      logger.warn(
+        'CODEX_BINARY_PATH set but file not found or not executable',
+        {
+          path: envPath,
+        },
+      );
     }
 
     // Check resourcesDir if provided
@@ -171,22 +189,16 @@ export class CodexSDKAgent extends BaseAgent {
         'bin',
         codexBinaryName,
       );
-      try {
-        accessSync(resourcesCodexPath, fsConstants.X_OK);
+      if (this.isExecutableFile(resourcesCodexPath)) {
         return resourcesCodexPath;
-      } catch {
-        // Ignore failures; fall back to next option
       }
     }
 
     // Check bundled codex in current binary directory
     const currentBinaryDirectory = dirname(process.execPath);
     const bundledCodexPath = join(currentBinaryDirectory, codexBinaryName);
-    try {
-      accessSync(bundledCodexPath, fsConstants.X_OK);
+    if (this.isExecutableFile(bundledCodexPath)) {
       return bundledCodexPath;
-    } catch {
-      // Ignore failures; fall through to error
     }
 
     throw new Error(
