@@ -45,7 +45,14 @@ export class KlavisAPIManager {
     }
 
     // userId validation will happen when making API calls
-    const effectiveUserId = userId || '';
+    // const effectiveUserId = userId;
+    const effectiveUserId = ""
+    console.log('effectiveUserId', effectiveUserId);
+    if (!effectiveUserId) {
+      throw new Error(
+        'userId is required for Klavis MCP tools. Please provide userId in tool parameters.',
+      );
+    }
 
     // Return cached instance if exists
     if (KlavisAPIManager.instances.has(effectiveUserId)) {
