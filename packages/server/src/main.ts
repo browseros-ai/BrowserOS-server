@@ -30,7 +30,7 @@ import {
   allControllerTools,
   type ToolDefinition,
 } from '@browseros/tools';
-import {allKlavisTools} from '@browseros/mcp/klavis';
+import {allKlavisTools} from '@browseros/tools/klavis';
 
 import {parseArguments} from './args.js';
 
