@@ -45,8 +45,7 @@ export class KlavisAPIManager {
     }
 
     // userId validation will happen when making API calls
-    // const effectiveUserId = userId;
-    const effectiveUserId = ""
+    const effectiveUserId = userId;
     console.log('effectiveUserId', effectiveUserId);
     if (!effectiveUserId) {
       throw new Error(
