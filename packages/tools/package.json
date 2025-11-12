@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./cdp-based": "./src/cdp-based/index.ts",
     "./controller-based": "./src/controller-based/index.ts",
+    "./klavis": "./src/klavis/index.ts",
     "./response": "./src/response/index.ts",
     "./formatters": "./src/formatters/index.ts",
     "./types": "./src/types/index.ts"
