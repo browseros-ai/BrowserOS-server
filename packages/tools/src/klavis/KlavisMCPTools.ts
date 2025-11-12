@@ -95,7 +95,7 @@ const mcpListTools: ToolDefinition = {
   },
   schema: {
     instanceId: z.string().describe('MCP server instance ID'),
-    userId: z.string().optional().describe('Your Klavis user ID for MCP integration'),
+    userId: z.string().describe('Your Klavis user ID for MCP integration'),
   },
   handler: async (request, response, _context) => {
     const {instanceId, userId} = request.params;
