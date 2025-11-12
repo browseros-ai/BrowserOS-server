@@ -3,376 +3,162 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {ActionRegistry} from '@/actions/ActionRegistry';
-import {CreateBookmarkAction} from '@/actions/bookmark/CreateBookmarkAction';
-import {GetBookmarksAction} from '@/actions/bookmark/GetBookmarksAction';
-import {RemoveBookmarkAction} from '@/actions/bookmark/RemoveBookmarkAction';
-import {CaptureScreenshotAction} from '@/actions/browser/CaptureScreenshotAction';
-import {ClearAction} from '@/actions/browser/ClearAction';
-import {ClickAction} from '@/actions/browser/ClickAction';
-import {ClickCoordinatesAction} from '@/actions/browser/ClickCoordinatesAction';
-import {ExecuteJavaScriptAction} from '@/actions/browser/ExecuteJavaScriptAction';
-import {GetAccessibilityTreeAction} from '@/actions/browser/GetAccessibilityTreeAction';
-import {GetInteractiveSnapshotAction} from '@/actions/browser/GetInteractiveSnapshotAction';
-import {GetPageLoadStatusAction} from '@/actions/browser/GetPageLoadStatusAction';
-import {GetSnapshotAction} from '@/actions/browser/GetSnapshotAction';
-import {InputTextAction} from '@/actions/browser/InputTextAction';
-import {ScrollDownAction} from '@/actions/browser/ScrollDownAction';
-import {ScrollToNodeAction} from '@/actions/browser/ScrollToNodeAction';
-import {ScrollUpAction} from '@/actions/browser/ScrollUpAction';
-import {SendKeysAction} from '@/actions/browser/SendKeysAction';
-import {TypeAtCoordinatesAction} from '@/actions/browser/TypeAtCoordinatesAction';
-import {CheckBrowserOSAction} from '@/actions/diagnostics/CheckBrowserOSAction';
-import {GetRecentHistoryAction} from '@/actions/history/GetRecentHistoryAction';
-import {SearchHistoryAction} from '@/actions/history/SearchHistoryAction';
-import {CloseTabAction} from '@/actions/tab/CloseTabAction';
-import {GetActiveTabAction} from '@/actions/tab/GetActiveTabAction';
-import {GetTabsAction} from '@/actions/tab/GetTabsAction';
-import {NavigateAction} from '@/actions/tab/NavigateAction';
-import {OpenTabAction} from '@/actions/tab/OpenTabAction';
-import {SwitchTabAction} from '@/actions/tab/SwitchTabAction';
-import {CONCURRENCY_CONFIG} from '@/config/constants';
-import type {ProtocolRequest, ProtocolResponse} from '@/protocol/types';
-import {ConnectionStatus} from '@/protocol/types';
-import {ConcurrencyLimiter} from '@/utils/ConcurrencyLimiter';
 import {getWebSocketPort} from '@/utils/ConfigHelper';
 import {KeepAlive} from '@/utils/KeepAlive';
 import {logger} from '@/utils/Logger';
-import {RequestTracker} from '@/utils/RequestTracker';
-import {RequestValidator} from '@/utils/RequestValidator';
-import {ResponseQueue} from '@/utils/ResponseQueue';
-import {WebSocketClient} from '@/websocket/WebSocketClient';
 
-/**
- * BrowserOS Controller
- *
- * Main controller class that orchestrates all components.
- * Message flow: WebSocket → Validator → Tracker → Limiter → Action → Response/Queue → WebSocket
- */
-class BrowserOSController {
-  private wsClient: WebSocketClient;
-  private requestTracker: RequestTracker;
-  private concurrencyLimiter: ConcurrencyLimiter;
-  private requestValidator: RequestValidator;
-  private responseQueue: ResponseQueue;
-  private actionRegistry: ActionRegistry;
+import {BrowserOSController} from './BrowserOSController';
 
-  constructor(port: number) {
-    logger.info('Initializing BrowserOS Controller...');
+const STATS_LOG_INTERVAL_MS = 30000;
 
-    // Initialize all components
-    this.requestTracker = new RequestTracker();
-    this.concurrencyLimiter = new ConcurrencyLimiter(
-      CONCURRENCY_CONFIG.maxConcurrent,
-      CONCURRENCY_CONFIG.maxQueueSize,
-    );
-    this.requestValidator = new RequestValidator();
-    this.responseQueue = new ResponseQueue();
-    this.wsClient = new WebSocketClient(port);
-    this.actionRegistry = new ActionRegistry();
+type ControllerState = {
+  controller: BrowserOSController | null;
+  initPromise: Promise<BrowserOSController> | null;
+  statsTimer: ReturnType<typeof setInterval> | null;
+};
 
-    // Register actions
-    this._registerActions();
+type BrowserOSGlobals = typeof globalThis & {
+  __browserosControllerState?: ControllerState;
+  __browserosController?: BrowserOSController | null;
+};
 
-    // Wire up event handlers
-    this._setupWebSocketHandlers();
-  }
-
-  private _registerActions(): void {
-    logger.info('Registering actions...');
-
-    // Diagnostic actions
-    this.actionRegistry.register('checkBrowserOS', new CheckBrowserOSAction());
-
-    // Tab actions
-    this.actionRegistry.register('getActiveTab', new GetActiveTabAction());
-    this.actionRegistry.register('getTabs', new GetTabsAction());
-    this.actionRegistry.register('openTab', new OpenTabAction());
-    this.actionRegistry.register('closeTab', new CloseTabAction());
-    this.actionRegistry.register('switchTab', new SwitchTabAction());
-    this.actionRegistry.register('navigate', new NavigateAction());
-
-    // Bookmark actions
-    this.actionRegistry.register('getBookmarks', new GetBookmarksAction());
-    this.actionRegistry.register('createBookmark', new CreateBookmarkAction());
-    this.actionRegistry.register('removeBookmark', new RemoveBookmarkAction());
-
-    // History actions
-    this.actionRegistry.register('searchHistory', new SearchHistoryAction());
-    this.actionRegistry.register(
-      'getRecentHistory',
-      new GetRecentHistoryAction(),
-    );
-
-    // Browser actions - Interactive Elements (NEW!)
-    this.actionRegistry.register(
-      'getInteractiveSnapshot',
-      new GetInteractiveSnapshotAction(),
-    );
-    this.actionRegistry.register('click', new ClickAction());
-    this.actionRegistry.register('inputText', new InputTextAction());
-    this.actionRegistry.register('clear', new ClearAction());
-    this.actionRegistry.register('scrollToNode', new ScrollToNodeAction());
-
-    // Browser actions - Visual & Screenshots
-    this.actionRegistry.register(
-      'captureScreenshot',
-      new CaptureScreenshotAction(),
-    );
-
-    // Browser actions - Scrolling
-    this.actionRegistry.register('scrollDown', new ScrollDownAction());
-    this.actionRegistry.register('scrollUp', new ScrollUpAction());
-
-    // Browser actions - Advanced
-    this.actionRegistry.register(
-      'executeJavaScript',
-      new ExecuteJavaScriptAction(),
-    );
-    this.actionRegistry.register('sendKeys', new SendKeysAction());
-    this.actionRegistry.register(
-      'getPageLoadStatus',
-      new GetPageLoadStatusAction(),
-    );
-    this.actionRegistry.register('getSnapshot', new GetSnapshotAction());
-    this.actionRegistry.register(
-      'getAccessibilityTree',
-      new GetAccessibilityTreeAction(),
-    );
-    this.actionRegistry.register(
-      'clickCoordinates',
-      new ClickCoordinatesAction(),
-    );
-    this.actionRegistry.register(
-      'typeAtCoordinates',
-      new TypeAtCoordinatesAction(),
-    );
-
-    const actions = this.actionRegistry.getAvailableActions();
-    logger.info(
-      `Registered ${actions.length} action(s): ${actions.join(', ')}`,
-    );
-  }
-
-  async start(): Promise<void> {
-    logger.info('Starting BrowserOS Controller...');
-    await this.wsClient.connect();
-  }
-
-  stop(): void {
-    logger.info('Stopping BrowserOS Controller...');
-    this.wsClient.disconnect();
-    this.requestTracker.destroy();
-    this.requestValidator.destroy();
-    this.responseQueue.clear();
-  }
-
-  private _setupWebSocketHandlers(): void {
-    // Handle incoming messages
-    this.wsClient.onMessage((message: ProtocolResponse) => {
-      this._handleIncomingMessage(message);
-    });
-
-    // Handle connection status changes
-    this.wsClient.onStatusChange((status: ConnectionStatus) => {
-      this._handleStatusChange(status);
-    });
-  }
-
-  private _handleIncomingMessage(message: ProtocolResponse): void {
-    // Check if this is a request (has 'action' field) or a response/notification
-    const rawMessage = message as any;
-
-    if (rawMessage.action) {
-      // This is a request from the server - process it
-      this._processRequest(rawMessage).catch(error => {
-        logger.error(
-          `Unhandled error processing request ${rawMessage.id}: ${error}`,
-        );
-      });
-    } else if (rawMessage.ok !== undefined) {
-      // This is a response or notification from the server - just log it
-      logger.info(
-        `Received server message: ${rawMessage.id} - ${rawMessage.ok ? 'success' : 'error'}`,
-      );
-      if (rawMessage.data) {
-        logger.debug(`Server data: ${JSON.stringify(rawMessage.data)}`);
-      }
-    } else {
-      logger.warn(
-        `Received unknown message format: ${JSON.stringify(rawMessage)}`,
-      );
-    }
-  }
-
-  private async _processRequest(request: unknown): Promise<void> {
-    let validatedRequest: ProtocolRequest;
-    let requestId: string | undefined;
-
-    try {
-      // Step 1: Validate request (checks schema + duplicate IDs)
-      validatedRequest = this.requestValidator.validate(request);
-      requestId = validatedRequest.id;
-
-      // Step 2: Start tracking
-      this.requestTracker.start(validatedRequest.id, validatedRequest.action);
-
-      // Step 3: Execute with concurrency control
-      await this.concurrencyLimiter.execute(async () => {
-        this.requestTracker.markExecuting(validatedRequest.id);
-        await this._executeAction(validatedRequest);
-      });
-
-      // Step 4: Mark complete
-      this.requestTracker.complete(validatedRequest.id);
-      this.requestValidator.markComplete(validatedRequest.id);
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      logger.error(`Request processing failed: ${errorMessage}`);
-
-      if (requestId) {
-        this.requestTracker.complete(requestId, errorMessage);
-        this.requestValidator.markComplete(requestId);
-
-        // Send error response
-        this._sendResponse({
-          id: requestId,
-          ok: false,
-          error: errorMessage,
-        });
-      }
-    }
-  }
-
-  private async _executeAction(request: ProtocolRequest): Promise<void> {
-    logger.info(`Executing action: ${request.action} [${request.id}]`);
-
-    // Dispatch to action registry
-    const actionResponse = await this.actionRegistry.dispatch(
-      request.action,
-      request.payload,
-    );
-
-    // Send response back to server
-    this._sendResponse({
-      id: request.id,
-      ok: actionResponse.ok,
-      data: actionResponse.data,
-      error: actionResponse.error,
-    });
-
-    const status = actionResponse.ok ? 'succeeded' : 'failed';
-    logger.info(`Action ${status}: ${request.action} [${request.id}]`);
-  }
-
-  private _sendResponse(response: ProtocolResponse): void {
-    try {
-      if (this.wsClient.isConnected()) {
-        // Send immediately if connected
-        this.wsClient.send(response);
-      } else {
-        // Queue if disconnected
-        logger.warn(`Not connected. Queueing response: ${response.id}`);
-        this.responseQueue.enqueue(response);
-      }
-    } catch (error) {
-      logger.error(`Failed to send response ${response.id}: ${error}`);
-      // Queue on failure
-      this.responseQueue.enqueue(response);
-    }
-  }
-
-  private _handleStatusChange(status: ConnectionStatus): void {
-    logger.info(`Connection status changed: ${status}`);
-
-    if (status === ConnectionStatus.CONNECTED) {
-      // Flush queued responses on reconnect
-      if (!this.responseQueue.isEmpty()) {
-        logger.info(
-          `Flushing ${this.responseQueue.size()} queued responses...`,
-        );
-        this.responseQueue.flush(response => {
-          this.wsClient.send(response);
-        });
-      }
-    }
-  }
-
-  // Diagnostic methods for monitoring
-  getStats() {
-    return {
-      connection: this.wsClient.getStatus(),
-      requests: this.requestTracker.getStats(),
-      concurrency: this.concurrencyLimiter.getStats(),
-      validator: this.requestValidator.getStats(),
-      responseQueue: {
-        size: this.responseQueue.size(),
-      },
+const globals = globalThis as BrowserOSGlobals;
+const controllerState: ControllerState =
+  globals.__browserosControllerState ??
+  (() => {
+    const state: ControllerState = {
+      controller: globals.__browserosController ?? null,
+      initPromise: null,
+      statsTimer: null,
     };
+    globals.__browserosControllerState = state;
+    return state;
+  })();
+
+function setDebugController(controller: BrowserOSController | null): void {
+  globals.__browserosController = controller;
+}
+
+function startStatsTimer(): void {
+  if (controllerState.statsTimer) {
+    return;
   }
 
-  logStats(): void {
-    const stats = this.getStats();
-    logger.info('=== Controller Stats ===');
-    logger.info(`Connection: ${stats.connection}`);
-    logger.info(`Requests: ${JSON.stringify(stats.requests)}`);
-    logger.info(`Concurrency: ${JSON.stringify(stats.concurrency)}`);
-    logger.info(`Validator: ${JSON.stringify(stats.validator)}`);
-    logger.info(`Response Queue: ${stats.responseQueue.size} queued`);
+  controllerState.statsTimer = setInterval(() => {
+    controllerState.controller?.logStats();
+  }, STATS_LOG_INTERVAL_MS);
+}
+
+function stopStatsTimer(): void {
+  if (!controllerState.statsTimer) {
+    return;
+  }
+
+  clearInterval(controllerState.statsTimer);
+  controllerState.statsTimer = null;
+}
+
+async function getOrCreateController(): Promise<BrowserOSController> {
+  if (controllerState.controller) {
+    return controllerState.controller;
+  }
+
+  if (!controllerState.initPromise) {
+    controllerState.initPromise = (async () => {
+      try {
+        await KeepAlive.start();
+        const port = await getWebSocketPort();
+        const controller = new BrowserOSController(port);
+        await controller.start();
+
+        controllerState.controller = controller;
+        setDebugController(controller);
+        startStatsTimer();
+
+        return controller;
+      } catch (error) {
+        controllerState.controller = null;
+        setDebugController(null);
+        stopStatsTimer();
+        try {
+          await KeepAlive.stop();
+        } catch {
+          // ignore
+        }
+        throw error;
+      } finally {
+        controllerState.initPromise = null;
+      }
+    })();
+  }
+
+  const initPromise = controllerState.initPromise;
+  if (!initPromise) {
+    throw new Error('Controller init promise missing');
+  }
+  return initPromise;
+}
+
+async function shutdownController(reason: string): Promise<void> {
+  logger.info(`[BrowserOS Controller] Shutdown requested: ${reason}`);
+
+  if (controllerState.initPromise) {
+    try {
+      await controllerState.initPromise;
+    } catch {
+      // ignore start errors during shutdown
+    }
+  }
+
+  const controller = controllerState.controller;
+  if (!controller) {
+    try {
+      await KeepAlive.stop();
+    } catch {
+      // ignore
+    }
+    stopStatsTimer();
+    setDebugController(null);
+    return;
+  }
+
+  controller.stop();
+  controllerState.controller = null;
+  setDebugController(null);
+  stopStatsTimer();
+
+  try {
+    await KeepAlive.stop();
+  } catch {
+    // ignore
   }
 }
 
-// Global controller instance
-let controller: BrowserOSController | null = null;
+function ensureControllerRunning(trigger: string): void {
+  getOrCreateController().catch(error => {
+    const message =
+      error instanceof Error ? error.message : JSON.stringify(error);
+    logger.error(
+      `[BrowserOS Controller] Failed to start (trigger=${trigger}): ${message}`,
+    );
+  });
+}
 
-// Initialize on extension load
 logger.info('[BrowserOS Controller] Extension loaded');
 
 chrome.runtime.onInstalled.addListener(() => {
   logger.info('[BrowserOS Controller] Extension installed');
 });
 
-chrome.runtime.onStartup.addListener(async () => {
-  logger.info('[BrowserOS Controller] Browser started');
-
-  await KeepAlive.start();
-
-  if (!controller) {
-    const port = await getWebSocketPort();
-    controller = new BrowserOSController(port);
-    await controller.start();
-  }
+chrome.runtime.onStartup.addListener(() => {
+  logger.info('[BrowserOS Controller] Browser startup event');
+  ensureControllerRunning('runtime.onStartup');
 });
 
-// Start immediately (service worker context)
-(async () => {
-  // Start KeepAlive to prevent service worker from being terminated
-  await KeepAlive.start();
+// Immediately attempt to start the controller when the service worker initializes
+ensureControllerRunning('service-worker-init');
 
-  if (!controller) {
-    const port = await getWebSocketPort();
-    controller = new BrowserOSController(port);
-    await controller.start();
-
-    // Log stats every 30 seconds
-    setInterval(() => {
-      if (controller) {
-        controller.logStats();
-      }
-    }, 30000);
-  }
-})();
-
-// Cleanup on unload
-chrome.runtime.onSuspend?.addListener(async () => {
+chrome.runtime.onSuspend?.addListener(() => {
   logger.info('[BrowserOS Controller] Extension suspending');
-  if (controller) {
-    controller.stop();
-    controller = null;
-  }
-  await KeepAlive.stop();
+  void shutdownController('runtime.onSuspend');
 });
-
-// Export for debugging in console
-(globalThis as any).__browserosController = controller;
