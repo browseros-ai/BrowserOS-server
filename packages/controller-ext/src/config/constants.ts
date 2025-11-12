@@ -12,10 +12,7 @@ export interface WebSocketConfig {
   readonly host: string;
   readonly port: number;
   readonly path: string;
-  readonly reconnectDelay: number;
-  readonly maxReconnectDelay: number;
-  readonly reconnectMultiplier: number;
-  readonly maxReconnectAttempts: number;
+  readonly reconnectIntervalMs: number;
   readonly heartbeatInterval: number;
   readonly heartbeatTimeout: number;
   readonly connectionTimeout: number;
@@ -39,10 +36,7 @@ export const WEBSOCKET_CONFIG: WebSocketConfig = {
   port: 9225,
   path: '/controller',
 
-  reconnectDelay: 1000,
-  maxReconnectDelay: 30000,
-  reconnectMultiplier: 1.5,
-  maxReconnectAttempts: Infinity,
+  reconnectIntervalMs: 30000,
 
   heartbeatInterval: 20000,
   heartbeatTimeout: 5000,

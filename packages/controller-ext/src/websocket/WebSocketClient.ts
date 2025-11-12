@@ -11,7 +11,6 @@ import {logger} from '@/utils/Logger';
 export class WebSocketClient {
   private ws: WebSocket | null = null;
   private status: ConnectionStatus = ConnectionStatus.DISCONNECTED;
-  private reconnectAttempts = 0;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private heartbeatTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
@@ -130,7 +129,6 @@ export class WebSocketClient {
 
   private _handleOpen(): void {
     logger.info('WebSocket connected');
-    this.reconnectAttempts = 0;
     this.lastPongReceived = Date.now();
     this.pendingPing = false;
     this._setStatus(ConnectionStatus.CONNECTED);
@@ -188,21 +186,8 @@ export class WebSocketClient {
 
     this._setStatus(ConnectionStatus.RECONNECTING);
 
-    // Calculate delay with exponential backoff
-    const baseDelay = Math.min(
-      WEBSOCKET_CONFIG.reconnectDelay *
-        Math.pow(WEBSOCKET_CONFIG.reconnectMultiplier, this.reconnectAttempts),
-      WEBSOCKET_CONFIG.maxReconnectDelay,
-    );
-
-    // Add jitter: ±20% random variation to prevent thundering herd
-    const jitter = baseDelay * 0.2 * (Math.random() * 2 - 1);
-    const delay = Math.max(0, baseDelay + jitter);
-
-    this.reconnectAttempts++;
-    logger.warn(
-      `Reconnecting in ${Math.round(delay)}ms (attempt ${this.reconnectAttempts})`,
-    );
+    const delay = WEBSOCKET_CONFIG.reconnectIntervalMs;
+    logger.warn(`Reconnecting in ${Math.round(delay)}ms`);
 
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
