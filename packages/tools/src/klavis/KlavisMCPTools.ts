@@ -31,7 +31,7 @@ const mcpGetInstances: ToolDefinition = {
     readOnlyHint: true,
   },
   schema: {
-    userId: z.string().optional().describe('Your Klavis user ID for MCP integration'),
+    userId: z.string().describe('Your Klavis user ID for MCP integration'),
   },
   handler: async (request, response, _context) => {
     const {userId} = request.params;
