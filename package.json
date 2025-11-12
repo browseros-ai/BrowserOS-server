@@ -1,6 +1,6 @@
 {
   "name": "browseros-server",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "Unified BrowserOS server with MCP and Agent support",
   "private": true,
   "type": "module",
