@@ -27,8 +27,8 @@ interface PendingRequest {
 
 export class ControllerBridge {
   private wss: WebSocketServer;
-  private client: WebSocket | null = null;
-  private connected = false;
+  private clients = new Map<string, WebSocket>();
+  private primaryClientId: string | null = null;
   private requestCounter = 0;
   private pendingRequests = new Map<string, PendingRequest>();
   private logger: typeof logger;
@@ -46,9 +46,8 @@ export class ControllerBridge {
     });
 
     this.wss.on('connection', (ws: WebSocket) => {
-      this.logger.info('Extension connected');
-      this.client = ws;
-      this.connected = true;
+      const clientId = this.registerClient(ws);
+      this.logger.info('Extension connected', {clientId});
 
       ws.on('message', (data: Buffer) => {
         try {
@@ -57,35 +56,28 @@ export class ControllerBridge {
 
           // Handle ping/pong for heartbeat
           if (parsed.type === 'ping') {
-            this.logger.debug('Received ping, sending pong');
+            this.logger.debug('Received ping, sending pong', {clientId});
             ws.send(JSON.stringify({type: 'pong'}));
             return;
           }
 
           this.logger.debug(
-            `Received message: ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}`,
+            `Received message from ${clientId}: ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}`,
           );
           const response = parsed as ControllerResponse;
           this.handleResponse(response);
         } catch (error) {
-          this.logger.error(`Error parsing message: ${error}`);
+          this.logger.error(`Error parsing message from ${clientId}: ${error}`);
         }
       });
 
       ws.on('close', () => {
-        this.logger.info('Extension disconnected');
-        this.connected = false;
-        this.client = null;
-
-        for (const [id, pending] of this.pendingRequests.entries()) {
-          clearTimeout(pending.timeout);
-          pending.reject(new Error('Connection closed'));
-          this.pendingRequests.delete(id);
-        }
+        this.logger.info('Extension disconnected', {clientId});
+        this.handleClientDisconnect(clientId);
       });
 
       ws.on('error', (error: Error) => {
-        this.logger.error(`WebSocket error: ${error.message}`);
+        this.logger.error(`WebSocket error for ${clientId}: ${error.message}`);
       });
     });
 
@@ -95,7 +87,7 @@ export class ControllerBridge {
   }
 
   isConnected(): boolean {
-    return this.connected && this.client !== null;
+    return this.primaryClientId !== null;
   }
 
   async sendRequest(
@@ -104,6 +96,11 @@ export class ControllerBridge {
     timeoutMs = 30000,
   ): Promise<unknown> {
     if (!this.isConnected()) {
+      throw new Error('Extension not connected');
+    }
+
+    const client = this.getPrimaryClient();
+    if (!client) {
       throw new Error('Extension not connected');
     }
 
@@ -120,8 +117,8 @@ export class ControllerBridge {
       const request: ControllerRequest = {id, action, payload};
       try {
         const message = JSON.stringify(request);
-        this.logger.debug(`Sending request: ${message}`);
-        this.client!.send(message);
+        this.logger.debug(`Sending request to ${this.primaryClientId}: ${message}`);
+        client.send(message);
       } catch (error) {
         clearTimeout(timeout);
         this.pendingRequests.delete(id);
@@ -152,15 +149,75 @@ export class ControllerBridge {
 
   async close(): Promise<void> {
     return new Promise(resolve => {
-      if (this.client) {
-        this.client.close();
-        this.client = null;
+      for (const [id, pending] of this.pendingRequests.entries()) {
+        clearTimeout(pending.timeout);
+        pending.reject(new Error('ControllerBridge closing'));
+        this.pendingRequests.delete(id);
       }
+
+      for (const ws of this.clients.values()) {
+        try {
+          ws.close();
+        } catch {
+          // ignore
+        }
+      }
+      this.clients.clear();
+      this.primaryClientId = null;
 
       this.wss.close(() => {
         this.logger.info('WebSocket server closed');
         resolve();
       });
     });
+  }
+
+  private registerClient(ws: WebSocket): string {
+    const clientId = `client-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+    this.clients.set(clientId, ws);
+
+    if (!this.primaryClientId) {
+      this.primaryClientId = clientId;
+      this.logger.info('Primary controller assigned', {clientId});
+    } else {
+      this.logger.info('Controller connected in standby mode', {clientId, primaryClientId: this.primaryClientId});
+    }
+
+    return clientId;
+  }
+
+  private getPrimaryClient(): WebSocket | null {
+    if (!this.primaryClientId) {
+      return null;
+    }
+    return this.clients.get(this.primaryClientId) ?? null;
+  }
+
+  private handleClientDisconnect(clientId: string): void {
+    const wasPrimary = this.primaryClientId === clientId;
+    this.clients.delete(clientId);
+
+    if (wasPrimary) {
+      this.primaryClientId = null;
+
+      for (const [id, pending] of this.pendingRequests.entries()) {
+        clearTimeout(pending.timeout);
+        pending.reject(new Error('Primary connection closed'));
+        this.pendingRequests.delete(id);
+      }
+
+      this.promoteNextPrimary();
+    }
+  }
+
+  private promoteNextPrimary(): void {
+    const nextEntry = this.clients.keys().next();
+    if (nextEntry.done) {
+      this.logger.warn('No controller connections available to promote');
+      return;
+    }
+
+    this.primaryClientId = nextEntry.value;
+    this.logger.info('Promoted controller to primary', {clientId: this.primaryClientId});
   }
 }
