@@ -7,7 +7,7 @@
     "declaration": true,
     "declarationMap": true
   },
-  "include": ["src/**/*", "tests/**/*", "../tools/src/klavis"],
+  "include": ["src/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist/**/*"],
   "references": [{"path": "../common"}, {"path": "../tools"}]
 }

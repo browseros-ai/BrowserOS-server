@@ -28,7 +28,6 @@ enum SessionState {
  */
 const SessionSchema = z.object({
   id: z.string().uuid(),
-  userId: z.string().optional(), // Klavis user ID for MCP integration
   state: z.nativeEnum(SessionState),
   createdAt: z.number().positive(),
   lastActivity: z.number().positive(),
@@ -55,7 +54,6 @@ type SessionMetrics = z.infer<typeof SessionMetricsSchema>;
  */
 const CreateSessionOptionsSchema = z.object({
   id: z.string().uuid().optional(), // Optional: specify sessionId (useful for testing)
-  userId: z.string().optional(), // Optional: Klavis user ID for MCP integration
   agentType: z.string().min(1).optional(), // Optional: agent type (defaults to 'codex-sdk')
 });
 
@@ -124,7 +122,6 @@ export class SessionManager {
 
     const session: Session = {
       id: sessionId,
-      userId: options?.userId,
       state: SessionState.IDLE,
       createdAt: now,
       lastActivity: now,
@@ -196,16 +193,6 @@ export class SessionManager {
    */
   getAgent(sessionId: string): BaseAgent | undefined {
     return this.agents.get(sessionId);
-  }
-
-  /**
-   * Get user ID for a session
-   *
-   * @param sessionId - Session ID
-   * @returns User ID or undefined if not set
-   */
-  getUserId(sessionId: string): string | undefined {
-    return this.sessions.get(sessionId)?.userId;
   }
 
   /**
