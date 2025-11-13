@@ -320,7 +320,7 @@ export class CodexSDKAgent extends BaseAgent {
     this.abortController = new AbortController();
 
     logger.info('🤖 CodexSDKAgent executing', {
-      message: message.substring(0, 100),
+      message,
     });
 
     try {
@@ -415,12 +415,11 @@ export class CodexSDKAgent extends BaseAgent {
 
           const event = result.value;
 
-          // Log Codex events for debugging
-          const eventData = JSON.stringify(event).substring(0, 100);
+          // Log Codex events for debugging (console view truncates automatically)
           if (event.type === 'error' || event.type === 'turn.failed') {
-            logger.error('Codex event', {type: event.type, data: eventData});
+            logger.error('Codex event', event);
           } else {
-            logger.debug('Codex event', {type: event.type, data: eventData});
+            logger.debug('Codex event', event);
           }
 
           // Update event time

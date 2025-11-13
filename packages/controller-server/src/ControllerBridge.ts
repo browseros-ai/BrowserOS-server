@@ -61,9 +61,10 @@ export class ControllerBridge {
             return;
           }
 
-          this.logger.debug(
-            `Received message from ${clientId}: ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}`,
-          );
+          this.logger.debug('Received message from controller client', {
+            clientId,
+            message,
+          });
           const response = parsed as ControllerResponse;
           this.handleResponse(response);
         } catch (error) {

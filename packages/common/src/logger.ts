@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+type FormatOptions = {useColor?: boolean; truncateStrings?: boolean};
 
 const COLORS = {
   debug: '\x1b[36m',
@@ -15,6 +16,7 @@ const COLORS = {
 };
 
 const RESET = '\x1b[0m';
+const CONSOLE_META_CHAR_LIMIT = 100;
 
 class Logger {
   private level: LogLevel;
@@ -28,21 +30,45 @@ class Logger {
     this.logFilePath = path.join(logDir, 'browseros-server.log');
   }
 
-  private format(level: LogLevel, message: string, meta?: object): string {
+  private format(
+    level: LogLevel,
+    message: string,
+    meta?: object,
+    {useColor = true, truncateStrings = false}: FormatOptions = {},
+  ): string {
     const timestamp = new Date().toISOString();
-    const color = COLORS[level];
-    const metaStr = meta ? `\n${JSON.stringify(meta, null, 2)}` : '';
-    return `${color}[${timestamp}] [${level.toUpperCase()}]${RESET} ${message}${metaStr}`;
+    const prefix = useColor
+      ? `${COLORS[level]}[${timestamp}] [${level.toUpperCase()}]${RESET}`
+      : `[${timestamp}] [${level.toUpperCase()}]`;
+    const metaStr = meta
+      ? `\n${this.stringifyMeta(meta, truncateStrings)}`
+      : '';
+    return `${prefix} ${message}${metaStr}`;
   }
 
-  private formatPlain(level: LogLevel, message: string, meta?: object): string {
-    const timestamp = new Date().toISOString();
-    const metaStr = meta ? `\n${JSON.stringify(meta, null, 2)}` : '';
-    return `[${timestamp}] [${level.toUpperCase()}] ${message}${metaStr}`;
+  private stringifyMeta(meta: object, truncateStrings: boolean): string {
+    return JSON.stringify(
+      meta,
+      (key, value) => {
+        if (
+          truncateStrings &&
+          typeof value === 'string' &&
+          value.length > CONSOLE_META_CHAR_LIMIT
+        ) {
+          const extra = value.length - CONSOLE_META_CHAR_LIMIT;
+          return `${value.slice(0, CONSOLE_META_CHAR_LIMIT)}... (+${extra} chars)`;
+        }
+        return value;
+      },
+      2,
+    );
   }
 
   private log(level: LogLevel, message: string, meta?: object) {
-    const formatted = this.format(level, message, meta);
+    const formatted = this.format(level, message, meta, {
+      useColor: true,
+      truncateStrings: true,
+    });
 
     switch (level) {
       case 'error':
@@ -56,7 +82,10 @@ class Logger {
     }
 
     if (this.logFilePath) {
-      const plainFormatted = this.formatPlain(level, message, meta);
+      const plainFormatted = this.format(level, message, meta, {
+        useColor: false,
+        truncateStrings: false,
+      });
       try {
         fs.appendFileSync(this.logFilePath, plainFormatted + '\n');
       } catch (error) {
