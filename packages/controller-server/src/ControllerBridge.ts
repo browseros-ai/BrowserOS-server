@@ -60,10 +60,15 @@ export class ControllerBridge {
             ws.send(JSON.stringify({type: 'pong'}));
             return;
           }
+          if (parsed.type === 'focused') {
+            this.handleFocusEvent(clientId, parsed.windowId);
+            return;
+          }
 
-          this.logger.debug(
-            `Received message from ${clientId}: ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}`,
-          );
+          this.logger.debug('Received message from controller client', {
+            clientId,
+            message,
+          });
           const response = parsed as ControllerResponse;
           this.handleResponse(response);
         } catch (error) {
@@ -117,7 +122,9 @@ export class ControllerBridge {
       const request: ControllerRequest = {id, action, payload};
       try {
         const message = JSON.stringify(request);
-        this.logger.debug(`Sending request to ${this.primaryClientId}: ${message}`);
+        this.logger.debug(
+          `Sending request to ${this.primaryClientId}: ${message}`,
+        );
         client.send(message);
       } catch (error) {
         clearTimeout(timeout);
@@ -180,7 +187,10 @@ export class ControllerBridge {
       this.primaryClientId = clientId;
       this.logger.info('Primary controller assigned', {clientId});
     } else {
-      this.logger.info('Controller connected in standby mode', {clientId, primaryClientId: this.primaryClientId});
+      this.logger.info('Controller connected in standby mode', {
+        clientId,
+        primaryClientId: this.primaryClientId,
+      });
     }
 
     return clientId;
@@ -218,6 +228,26 @@ export class ControllerBridge {
     }
 
     this.primaryClientId = nextEntry.value;
-    this.logger.info('Promoted controller to primary', {clientId: this.primaryClientId});
+    this.logger.info('Promoted controller to primary', {
+      clientId: this.primaryClientId,
+    });
+  }
+
+  private handleFocusEvent(clientId: string, windowId?: number): void {
+    if (this.primaryClientId === clientId) {
+      this.logger.debug('Focus event from current primary', {
+        clientId,
+        windowId,
+      });
+      return;
+    }
+
+    const previousPrimary = this.primaryClientId;
+    this.primaryClientId = clientId;
+    this.logger.info('Primary controller reassigned due to focus event', {
+      clientId,
+      previousPrimary,
+      windowId,
+    });
   }
 }

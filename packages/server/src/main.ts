@@ -5,6 +5,8 @@
  * Main server orchestration
  */
 import type http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
 
 import {
   createAgentServer,
@@ -37,10 +39,7 @@ import {parseArguments} from './args.js';
 const version = readVersion();
 const ports = parseArguments();
 
-const logDir = ports.executionDir || ports.resourcesDir;
-if (logDir) {
-  logger.setLogFile(logDir);
-}
+configureLogDirectory(ports.executionDir);
 
 void (async () => {
   logger.info(`Starting BrowserOS Server v${version}`);
@@ -252,13 +251,10 @@ async function startAgentServer(
 
   const llmConfig = await getLLMConfig();
 
-  const resourcesDir = ports.resourcesDir || process.cwd();
-  const executionDir = ports.executionDir || resourcesDir;
-
   const agentConfig: AgentServerConfig = {
     port: ports.agentPort,
-    resourcesDir,
-    executionDir,
+    resourcesDir: ports.resourcesDir,
+    executionDir: ports.executionDir,
     mcpServerPort: ports.httpMcpPort,
     apiKey: llmConfig.apiKey,
     baseUrl: llmConfig.baseUrl,
@@ -308,4 +304,21 @@ function createShutdownHandler(
     logger.info('Server shutdown complete');
     process.exit(0);
   };
+}
+
+function configureLogDirectory(logDirCandidate: string): void {
+  const resolvedDir = path.isAbsolute(logDirCandidate)
+    ? logDirCandidate
+    : path.resolve(process.cwd(), logDirCandidate);
+
+  try {
+    fs.mkdirSync(resolvedDir, {recursive: true});
+    logger.setLogFile(resolvedDir);
+  } catch (error) {
+    console.warn(
+      `Failed to configure log directory ${resolvedDir}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
 }

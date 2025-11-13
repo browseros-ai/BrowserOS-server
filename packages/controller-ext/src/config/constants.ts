@@ -53,5 +53,5 @@ export const CONCURRENCY_CONFIG: ConcurrencyConfig = {
 export const LOGGING_CONFIG: LoggingConfig = {
   enabled: true,
   level: 'info',
-  prefix: '[BrowserOS Controller]',
+  prefix: '',
 };

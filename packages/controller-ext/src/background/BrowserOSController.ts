@@ -111,6 +111,18 @@ export class BrowserOSController {
     return this.wsClient.isConnected();
   }
 
+  notifyWindowFocused(windowId?: number): void {
+    try {
+      this.wsClient.send({type: 'focused', windowId});
+      logger.debug('Sent focused event', {windowId});
+    } catch (error) {
+      logger.warn('Failed to send focused event', {
+        windowId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
   private registerActions(): void {
     logger.info('Registering actions...');
 

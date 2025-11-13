@@ -68,18 +68,10 @@ export class WebSocketClient {
     this._setStatus(ConnectionStatus.DISCONNECTED);
   }
 
-  send(message: ProtocolRequest | ProtocolResponse): void {
-    if (this.status !== ConnectionStatus.CONNECTED) {
-      throw new Error('WebSocket not connected');
-    }
-
-    if (!this.ws) {
-      throw new Error('WebSocket instance is null');
-    }
-
-    const messageStr = JSON.stringify(message);
-    logger.debug(`Sending: ${messageStr.substring(0, 100)}...`);
-    this.ws.send(messageStr);
+  send(
+    message: ProtocolRequest | ProtocolResponse | Record<string, unknown>,
+  ): void {
+    this._sendSerialized(message);
   }
 
   onMessage(handler: (msg: ProtocolResponse) => void): void {
@@ -220,8 +212,7 @@ export class WebSocketClient {
 
       // Send ping
       try {
-        const pingMessage = JSON.stringify({type: 'ping'});
-        this.ws.send(pingMessage);
+        this._sendSerialized({type: 'ping'});
         this.pendingPing = true;
         logger.debug('Sent heartbeat ping');
 
@@ -281,5 +272,21 @@ export class WebSocketClient {
 
     // Emit to all status handlers
     this.statusHandlers.forEach(handler => handler(status));
+  }
+
+  private _sendSerialized(
+    message: ProtocolRequest | ProtocolResponse | Record<string, unknown>,
+  ): void {
+    if (this.status !== ConnectionStatus.CONNECTED) {
+      throw new Error('WebSocket not connected');
+    }
+
+    if (!this.ws) {
+      throw new Error('WebSocket instance is null');
+    }
+
+    const messageStr = JSON.stringify(message);
+    logger.debug(`Sending: ${messageStr.substring(0, 100)}...`);
+    this.ws.send(messageStr);
   }
 }

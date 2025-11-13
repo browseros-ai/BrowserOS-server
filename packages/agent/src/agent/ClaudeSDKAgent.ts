@@ -245,9 +245,7 @@ export class ClaudeSDKAgent extends BaseAgent {
     this.startExecution();
     this.abortController = new AbortController();
 
-    logger.info('🤖 ClaudeSDKAgent executing', {
-      message: message.substring(0, 100),
-    });
+    logger.info('🤖 ClaudeSDKAgent executing', {message});
 
     try {
       const options: any = {
@@ -329,11 +327,7 @@ export class ClaudeSDKAgent extends BaseAgent {
             subtype: (event as any).subtype,
             is_error: (event as any).is_error,
             num_turns: numTurns,
-            result: (event as any).result
-              ? typeof (event as any).result === 'string'
-                ? (event as any).result.substring(0, 200)
-                : JSON.stringify((event as any).result).substring(0, 200)
-              : 'N/A',
+            result: (event as any).result ?? 'N/A',
           });
         }
 
