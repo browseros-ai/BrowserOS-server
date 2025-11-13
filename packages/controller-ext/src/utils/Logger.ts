@@ -14,44 +14,45 @@ export class Logger {
     this.prefix = prefix;
   }
 
-  log(message: string, level: LogLevel = 'info'): void {
+  log(message: string, level: LogLevel = 'info', data?: object): void {
     if (!LOGGING_CONFIG.enabled) return;
 
     const timestamp = new Date().toISOString();
     const logMessage = `${this.prefix} [${timestamp}] ${message}`;
+    const formattedData = data ? `\n${JSON.stringify(data, null, 2)}` : '';
 
     switch (level) {
       case 'debug':
-        if (LOGGING_CONFIG.level === 'debug') console.log(logMessage);
+        if (LOGGING_CONFIG.level === 'debug') console.log(logMessage + formattedData);
         break;
       case 'info':
         if (['debug', 'info'].includes(LOGGING_CONFIG.level))
-          console.info(logMessage);
+          console.info(logMessage + formattedData);
         break;
       case 'warn':
         if (['debug', 'info', 'warn'].includes(LOGGING_CONFIG.level))
-          console.warn(logMessage);
+          console.warn(logMessage + formattedData);
         break;
       case 'error':
-        console.error(logMessage);
+        console.error(logMessage + formattedData);
         break;
     }
   }
 
-  debug(message: string): void {
-    this.log(message, 'debug');
+  debug(message: string, data?: object): void {
+    this.log(message, 'debug', data);
   }
 
-  info(message: string): void {
-    this.log(message, 'info');
+  info(message: string, data?: object): void {
+    this.log(message, 'info', data);
   }
 
-  warn(message: string): void {
-    this.log(message, 'warn');
+  warn(message: string, data?: object): void {
+    this.log(message, 'warn', data);
   }
 
-  error(message: string): void {
-    this.log(message, 'error');
+  error(message: string, data?: object): void {
+    this.log(message, 'error', data);
   }
 }
 

@@ -100,7 +100,7 @@ async function getOrCreateController(): Promise<BrowserOSController> {
 }
 
 async function shutdownController(reason: string): Promise<void> {
-  logger.info(`[BrowserOS Controller] Shutdown requested: ${reason}`);
+  logger.info('Controller shutdown requested', {reason});
 
   if (controllerState.initPromise) {
     try {
@@ -138,27 +138,42 @@ function ensureControllerRunning(trigger: string): void {
   getOrCreateController().catch(error => {
     const message =
       error instanceof Error ? error.message : JSON.stringify(error);
-    logger.error(
-      `[BrowserOS Controller] Failed to start (trigger=${trigger}): ${message}`,
-    );
+    logger.error('Controller failed to start', {trigger, error: message});
   });
 }
 
-logger.info('[BrowserOS Controller] Extension loaded');
+logger.info('Extension loaded');
 
 chrome.runtime.onInstalled.addListener(() => {
-  logger.info('[BrowserOS Controller] Extension installed');
+  logger.info('Extension installed');
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  logger.info('[BrowserOS Controller] Browser startup event');
+  logger.info('Browser startup event');
   ensureControllerRunning('runtime.onStartup');
 });
 
 // Immediately attempt to start the controller when the service worker initializes
 ensureControllerRunning('service-worker-init');
 
+chrome.windows.onFocusChanged.addListener(windowId => {
+  if (windowId === chrome.windows.WINDOW_ID_NONE) {
+    return;
+  }
+
+  notifyWindowFocused(windowId).catch(error => {
+    const message =
+      error instanceof Error ? error.message : JSON.stringify(error);
+    logger.warn('Failed to notify focus change', {windowId, error: message});
+  });
+});
+
 chrome.runtime.onSuspend?.addListener(() => {
-  logger.info('[BrowserOS Controller] Extension suspending');
+  logger.info('Extension suspending');
   void shutdownController('runtime.onSuspend');
 });
+
+async function notifyWindowFocused(windowId: number): Promise<void> {
+  const controller = await getOrCreateController();
+  controller.notifyWindowFocused(windowId);
+}
