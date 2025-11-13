@@ -2,6 +2,7 @@
  * @license
  * Copyright 2025 BrowserOS
  */
+import path from 'node:path';
 import {Command, InvalidArgumentError} from 'commander';
 
 import {version} from '../../../package.json' assert {type: 'json'};
@@ -12,8 +13,8 @@ export interface ServerPorts {
   agentPort: number;
   extensionPort: number;
   mcpServerEnabled: boolean;
-  resourcesDir?: string;
-  executionDir?: string;
+  resourcesDir: string;
+  executionDir: string;
   // Future: httpsMcpPort?: number;
 }
 
@@ -90,9 +91,15 @@ export function parseArguments(argv = process.argv): ServerPorts {
       ? parsePort(process.env.EXTENSION_PORT)
       : undefined);
 
-  const executionDir =
-    options.executionDir ??
-    (process.env.EXECUTION_DIR ? process.env.EXECUTION_DIR : undefined);
+  const cwd = process.cwd();
+  const resolvedResourcesDir = resolvePath(
+    options.resourcesDir ?? process.env.RESOURCES_DIR,
+    cwd,
+  );
+  const resolvedExecutionDir = resolvePath(
+    options.executionDir ?? process.env.EXECUTION_DIR,
+    resolvedResourcesDir,
+  );
 
   const missing: string[] = [];
   if (!httpMcpPort) missing.push('HTTP_MCP_PORT');
@@ -113,7 +120,12 @@ export function parseArguments(argv = process.argv): ServerPorts {
     agentPort: agentPort!,
     extensionPort: extensionPort!,
     mcpServerEnabled: !options.disableMcpServer,
-    resourcesDir: options.resourcesDir,
-    executionDir,
+    resourcesDir: resolvedResourcesDir,
+    executionDir: resolvedExecutionDir,
   };
+}
+
+function resolvePath(target: string | undefined, baseDir: string): string {
+  if (!target) return baseDir;
+  return path.isAbsolute(target) ? target : path.resolve(baseDir, target);
 }
