@@ -134,6 +134,7 @@ export class GeminiAgent extends BaseAgent {
       cwd: this.config.executionDir,
       debugMode: false,
       model: DEFAULT_GEMINI_FLASH_MODEL,
+      excludeTools: ['run_shell_command', 'write_file', 'replace'],
       mcpServers: {
         'browseros-mcp': new MCPServerConfig(
           undefined,
@@ -200,6 +201,7 @@ export class GeminiAgent extends BaseAgent {
       let currentMessages: any[] = [{role: 'user', parts: [{text: message}]}];
       let turnCount = 0;
       const maxTurns = this.config.maxTurns || GEMINI_AGENT_DEFAULTS.maxTurns;
+      let lastResponse = '';
 
       while (true) {
         turnCount++;
@@ -242,6 +244,11 @@ export class GeminiAgent extends BaseAgent {
             for (const evt of eventsToYield) {
               logger.debug('📤 GeminiAgent yielding event', {type: evt.type});
               yield evt;
+
+              // Track last response text from thinking events (agent's actual response)
+              if (evt.type === 'thinking' && evt.content && evt.content !== 'Thinking...') {
+                lastResponse = evt.content;
+              }
             }
           }
 
@@ -342,10 +349,10 @@ export class GeminiAgent extends BaseAgent {
       this.updateTurns(turnCount);
       this.completeExecution();
 
-      // Emit final completion event
+      // Emit final completion event with last response
       yield new FormattedEvent(
         'completion',
-        `Conversation completed in ${turnCount} turn${turnCount === 1 ? '' : 's'}`,
+        lastResponse || `Conversation completed in ${turnCount} turn${turnCount === 1 ? '' : 's'}`,
       );
 
       logger.info('✅ GeminiAgent execution complete', {

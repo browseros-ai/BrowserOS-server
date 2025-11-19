@@ -50,7 +50,7 @@ export class GeminiEventFormatter {
         return this.formatMaxTurns(event);
 
       case 'chat_compressed':
-        return this.formatChatCompressed(event);
+        return this.formatChatCompressed();
 
       default:
         return null;
@@ -88,10 +88,14 @@ export class GeminiEventFormatter {
   }
 
   /**
-   * Format Finished event - don't emit anything (completion happens at end of conversation)
+   * Format Finished event - emit accumulated content as thinking event
    */
-  private formatFinished(event: any): null {
-    // Clear text buffer but don't emit completion per turn
+  private formatFinished(event: any): FormattedEvent | null {
+    if (this.textBuffer.trim()) {
+      const response = new FormattedEvent('thinking', this.textBuffer);
+      this.textBuffer = '';
+      return response;
+    }
     this.textBuffer = '';
     return null;
   }
@@ -129,7 +133,7 @@ export class GeminiEventFormatter {
   /**
    * Format ChatCompressed event
    */
-  private formatChatCompressed(_event: any): FormattedEvent {
+  private formatChatCompressed(): FormattedEvent {
     return new FormattedEvent('thinking', 'Chat history compressed');
   }
 
