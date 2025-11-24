@@ -53,6 +53,7 @@
     "mitt": "^3.0.1",
     "proxy-agent": "^6.5.0",
     "puppeteer-core": "24.23.0",
+    "semver": "^7.7.3",
     "smol-toml": "^1.4.2"
   },
   "devDependencies": {

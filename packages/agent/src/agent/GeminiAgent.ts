@@ -24,6 +24,8 @@ import {AGENT_SYSTEM_PROMPT} from './Agent.prompt.js';
 import {BaseAgent} from './BaseAgent.js';
 import {GeminiEventFormatter} from './GeminiAgent.formatter.js';
 import {type AgentConfig, FormattedEvent} from './types.js';
+import {VercelAIContentGenerator} from './adapters/vercel-ai/index.js';
+import type {VercelAIConfig} from './adapters/vercel-ai/types.js';
 
 const GEMINI_AGENT_DEFAULTS = {
   maxTurns: 100,
@@ -48,8 +50,16 @@ export class GeminiAgent extends BaseAgent {
   private selectedProvider: Provider | null = null;
   private promptId: string = '';
 
+  // Vercel AI multi-provider support
+  private useVercelAI: boolean = false;
+  private vercelProvider: 'anthropic' | 'openai' | 'google' | null = null;
+
   constructor(config: AgentConfig, controllerBridge: ControllerBridge) {
-    logger.info('🔧 GeminiAgent using remote MCP connection');
+    logger.info('🔧 GeminiAgent constructor called', {
+      resourcesDir: config.resourcesDir,
+      executionDir: config.executionDir,
+      mcpServerPort: config.mcpServerPort || 9100,
+    });
 
     super('gemini-sdk', config, {
       systemPrompt: AGENT_SYSTEM_PROMPT,
@@ -57,84 +67,88 @@ export class GeminiAgent extends BaseAgent {
       maxThinkingTokens: GEMINI_AGENT_DEFAULTS.maxThinkingTokens,
     });
 
-    logger.info('✅ GeminiAgent initialized');
+    logger.info('✅ GeminiAgent base initialized (Vercel AI multi-provider ready)');
   }
 
   /**
-   * Initialize agent - fetch config from BrowserOS Config URL if configured
-   * Falls back to GEMINI_API_KEY env var if config URL not set or fails
+   * Initialize agent - detect Vercel AI provider from environment variables
+   * Supports: ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_API_KEY
    */
   override async init(): Promise<void> {
-    const envApiKey = process.env.GEMINI_API_KEY;
-    if (envApiKey) {
-      this.config.apiKey = envApiKey;
-      logger.info('✅ Using API key from GEMINI_API_KEY env var');
-      await this.initializeGeminiClient();
-      await super.init();
-      return;
+    logger.info('🔍 Detecting Vercel AI provider from environment...');
+
+    // Detect Vercel AI provider from environment variables
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    const openaiKey = process.env.OPENAI_API_KEY;
+    const googleKey = process.env.GOOGLE_API_KEY;
+
+    logger.debug('Environment check:', {
+      hasAnthropicKey: !!anthropicKey,
+      hasOpenAIKey: !!openaiKey,
+      hasGoogleKey: !!googleKey,
+    });
+
+    if (anthropicKey) {
+      this.useVercelAI = true;
+      this.vercelProvider = 'anthropic';
+      this.config.apiKey = anthropicKey;
+      this.config.modelName = 'claude-sonnet-4-5';
+      logger.info('✅ Detected Anthropic Claude provider', {
+        provider: 'anthropic',
+        model: this.config.modelName,
+        apiKeyPrefix: anthropicKey.substring(0, 7) + '...',
+      });
+    } else if (openaiKey) {
+      this.useVercelAI = true;
+      this.vercelProvider = 'openai';
+      this.config.apiKey = openaiKey;
+      this.config.modelName = 'gpt-4o';
+      logger.info('✅ Detected OpenAI GPT provider', {
+        provider: 'openai',
+        model: this.config.modelName,
+        apiKeyPrefix: openaiKey.substring(0, 7) + '...',
+      });
+    } else if (googleKey) {
+      this.useVercelAI = true;
+      this.vercelProvider = 'google';
+      this.config.apiKey = googleKey;
+      this.config.modelName = 'gemini-2.0-flash-exp';
+      logger.info('✅ Detected Google Gemini provider', {
+        provider: 'google',
+        model: this.config.modelName,
+        apiKeyPrefix: googleKey.substring(0, 7) + '...',
+      });
+    } else {
+      logger.error('❌ No API key found in environment');
+      throw new Error(
+        'No API key found. Set one of: ANTHROPIC_API_KEY, OPENAI_API_KEY, or GOOGLE_API_KEY',
+      );
     }
-    
-    const configUrl = process.env.BROWSEROS_CONFIG_URL;
 
-    if (configUrl) {
-      logger.info('🌐 Fetching config from BrowserOS Config URL', {configUrl});
-
-      try {
-        this.gatewayConfig = await fetchBrowserOSConfig(configUrl);
-        this.selectedProvider =
-          this.gatewayConfig.providers.find(
-            p => p.name === 'google' || p.name === 'gemini',
-          ) || null;
-
-        if (!this.selectedProvider) {
-          throw new Error('No google/gemini provider found in config');
-        }
-
-        this.config.apiKey = this.selectedProvider.apiKey;
-        if (this.selectedProvider.baseUrl) {
-          this.config.baseUrl = this.selectedProvider.baseUrl;
-        }
-        if (this.selectedProvider.model) {
-          this.config.modelName = this.selectedProvider.model;
-        }
-
-        logger.info('✅ Using config from BrowserOS Config URL', {
-          model: this.config.modelName,
-          baseUrl: this.config.baseUrl,
-        });
-
-        await this.initializeGeminiClient();
-        await super.init();
-        return;
-      } catch (error) {
-        logger.warn(
-          '⚠️  Failed to fetch from config URL, falling back to GEMINI_API_KEY',
-          {
-            error: error instanceof Error ? error.message : String(error),
-          },
-        );
-      }
-    }
-
-    throw new Error(
-      'No API key found. Set either BROWSEROS_CONFIG_URL or GEMINI_API_KEY',
-    );
+    await this.initializeGeminiClient();
+    await super.init();
   }
 
   /**
-   * Initialize Gemini Config and Client
+   * Initialize Gemini Config and Client with Vercel AI ContentGenerator
    */
   private async initializeGeminiClient(): Promise<void> {
     const mcpServerPort = this.config.mcpServerPort || 9100;
     const sessionId = `gemini-${Date.now()}`;
+
+    // Build model string for Vercel AI: "provider/model-name"
+    const modelString = this.useVercelAI
+      ? `${this.vercelProvider}/${this.config.modelName}`
+      : DEFAULT_GEMINI_FLASH_MODEL;
 
     this.geminiConfig = new GeminiConfig({
       sessionId,
       targetDir: this.config.executionDir,
       cwd: this.config.executionDir,
       debugMode: false,
-      model: DEFAULT_GEMINI_FLASH_MODEL,
+      model: modelString,
       excludeTools: ['run_shell_command', 'write_file', 'replace'],
+      compressionThreshold: 1000000, // Disable aggressive compression (1M tokens threshold)
       mcpServers: {
         'browseros-mcp': new MCPServerConfig(
           undefined,
@@ -153,11 +167,52 @@ export class GeminiAgent extends BaseAgent {
 
     await this.geminiConfig.initialize();
 
-    if (this.config.apiKey) {
-      process.env.GEMINI_API_KEY = this.config.apiKey;
-    }
+    if (this.useVercelAI) {
+      logger.info('🔧 Configuring Vercel AI ContentGenerator...');
 
-    await this.geminiConfig.refreshAuth(AuthType.USE_GEMINI);
+      // Inject Vercel AI ContentGenerator
+      const vercelConfig: VercelAIConfig = {
+        model: modelString,
+        apiKeys: {},
+      };
+
+      // Set API key for the detected provider
+      if (this.vercelProvider === 'anthropic') {
+        vercelConfig.apiKeys!.anthropic = this.config.apiKey;
+      } else if (this.vercelProvider === 'openai') {
+        vercelConfig.apiKeys!.openai = this.config.apiKey;
+      } else if (this.vercelProvider === 'google') {
+        vercelConfig.apiKeys!.google = this.config.apiKey;
+      }
+
+      logger.debug('Vercel AI Config:', {
+        model: vercelConfig.model,
+        provider: this.vercelProvider,
+        hasApiKey: !!vercelConfig.apiKeys![this.vercelProvider!],
+        apiKeyLength: this.config.apiKey?.length,
+      });
+
+      const contentGenerator = new VercelAIContentGenerator(vercelConfig);
+      logger.debug('✅ VercelAIContentGenerator instance created');
+
+      // Type assertion needed as contentGenerator is private in Config
+      (this.geminiConfig as any).contentGenerator = contentGenerator;
+      logger.debug('✅ ContentGenerator injected into GeminiConfig');
+
+      logger.info('✅ Vercel AI mode configured successfully', {
+        provider: this.vercelProvider,
+        model: this.config.modelName,
+        fullModelString: modelString,
+      });
+    } else {
+      // Native Gemini mode
+      logger.info('🔧 Configuring Native Gemini mode...');
+      if (this.config.apiKey) {
+        process.env.GEMINI_API_KEY = this.config.apiKey;
+      }
+      await this.geminiConfig.refreshAuth(AuthType.USE_GEMINI);
+      logger.info('✅ Native Gemini auth configured');
+    }
 
     this.geminiClient = this.geminiConfig.getGeminiClient();
 
@@ -170,7 +225,8 @@ export class GeminiAgent extends BaseAgent {
     this.promptId = `prompt-${Date.now()}`;
 
     logger.info('✅ GeminiClient initialized', {
-      model: DEFAULT_GEMINI_FLASH_MODEL,
+      mode: this.useVercelAI ? 'Vercel AI' : 'Native Gemini',
+      model: this.config.modelName,
       mcpPort: mcpServerPort,
     });
   }
@@ -193,10 +249,18 @@ export class GeminiAgent extends BaseAgent {
     this.startExecution();
     this.abortController = new AbortController();
 
-    logger.info('🤖 GeminiAgent executing', {message});
+    logger.info('🤖 GeminiAgent executing', {
+      message: message.substring(0, 100) + (message.length > 100 ? '...' : ''),
+      mode: this.useVercelAI ? 'Vercel AI' : 'Native Gemini',
+      provider: this.vercelProvider || 'gemini',
+      model: this.config.modelName,
+    });
 
     try {
-      yield new FormattedEvent('init', 'Starting execution with Gemini');
+      const initMessage = this.useVercelAI
+        ? `Starting execution with ${this.vercelProvider?.toUpperCase()} via Vercel AI`
+        : 'Starting execution with Gemini';
+      yield new FormattedEvent('init', initMessage);
 
       let currentMessages: any[] = [{role: 'user', parts: [{text: message}]}];
       let turnCount = 0;
@@ -246,7 +310,13 @@ export class GeminiAgent extends BaseAgent {
               yield evt;
 
               // Track last response text from thinking events (agent's actual response)
-              if (evt.type === 'thinking' && evt.content && evt.content !== 'Thinking...') {
+              // Exclude system messages like "Thinking..." and "Chat history compressed"
+              if (
+                evt.type === 'thinking' &&
+                evt.content &&
+                evt.content !== 'Thinking...' &&
+                evt.content !== 'Chat history compressed'
+              ) {
                 lastResponse = evt.content;
               }
             }
@@ -356,8 +426,12 @@ export class GeminiAgent extends BaseAgent {
       );
 
       logger.info('✅ GeminiAgent execution complete', {
+        mode: this.useVercelAI ? 'Vercel AI' : 'Native Gemini',
+        provider: this.vercelProvider || 'gemini',
+        model: this.config.modelName,
         turns: turnCount,
         toolsExecuted: this.metadata.toolsExecuted,
+        duration: Date.now() - this.executionStartTime,
       });
     } catch (error) {
       let errorMessage = 'Unknown error occurred';
