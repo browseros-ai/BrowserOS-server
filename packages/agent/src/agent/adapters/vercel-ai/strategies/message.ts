@@ -12,13 +12,22 @@
 import type {
   CoreMessage,
   VercelContentPart,
+  LanguageModelV2ToolResultOutput,
 } from '../types.js';
 import type { Content, ContentUnion } from '@google/genai';
 import {
   isTextPart,
   isFunctionCallPart,
   isFunctionResponsePart,
+  isInlineDataPart,
 } from '../utils/type-guards.js';
+
+// Utility to convert base64 string to Uint8Array for image handling
+function convertBase64ToUint8Array(base64String: string): Uint8Array {
+  const base64Url = base64String.replace(/-/g, '+').replace(/_/g, '/');
+  const latin1string = atob(base64Url);
+  return Uint8Array.from(latin1string, (byte) => byte.codePointAt(0)!);
+}
 
 export class MessageConversionStrategy {
   /**
@@ -29,6 +38,7 @@ export class MessageConversionStrategy {
    */
   geminiToVercel(contents: readonly Content[]): CoreMessage[] {
     const messages: CoreMessage[] = [];
+    const seenToolResultIds = new Set<string>();  // Track seen tool result IDs to prevent duplicates
 
     console.log(`\n[MessageConversion] === Converting ${contents.length} Gemini content(s) to Vercel messages ===`);
 
@@ -51,6 +61,10 @@ export class MessageConversionStrategy {
         name?: string;
         response?: Record<string, unknown>;
       }> = [];
+      const imageParts: Array<{
+        mimeType: string;
+        data: string;
+      }> = [];
 
       for (const part of content.parts || []) {
         if (isTextPart(part)) {
@@ -61,17 +75,45 @@ export class MessageConversionStrategy {
         } else if (isFunctionResponsePart(part)) {
           functionResponses.push(part.functionResponse);
           console.log(`  ├─ Found functionResponse: ${part.functionResponse.name}, id=${part.functionResponse.id}`);
+        } else if (isInlineDataPart(part)) {
+          imageParts.push(part.inlineData);
+          console.log(`  ├─ Found inlineData: ${part.inlineData.mimeType}`);
         }
-        // Skip inlineData, fileData for now (not implemented)
+        // Skip fileData for now (not implemented)
       }
 
       const textContent = textParts.join('\n');
 
-      console.log(`  ├─ Text parts: ${textParts.length}, functionCalls: ${functionCalls.length}, functionResponses: ${functionResponses.length}`);
+      console.log(`  ├─ Text parts: ${textParts.length}, functionCalls: ${functionCalls.length}, functionResponses: ${functionResponses.length}, images: ${imageParts.length}`);
 
-      // CASE 1: Simple text message
+      // CASE 1: Simple text message (possibly with images)
       if (functionCalls.length === 0 && functionResponses.length === 0) {
-        if (textContent) {
+        if (imageParts.length > 0) {
+          // Multi-part message with text and images
+          console.log(`  └─ CASE 1: Multi-part message (text + ${imageParts.length} images)`);
+
+          const contentParts: VercelContentPart[] = [];
+
+          if (textContent) {
+            contentParts.push({
+              type: 'text',
+              text: textContent,
+            });
+          }
+
+          for (const img of imageParts) {
+            contentParts.push({
+              type: 'image',
+              image: img.data,  // Pass raw base64 string
+              mediaType: img.mimeType,
+            });
+          }
+
+          messages.push({
+            role: role as 'user' | 'assistant',
+            content: contentParts,
+          } as CoreMessage);
+        } else if (textContent) {
           console.log(`  └─ CASE 1: Simple text message`);
           messages.push({
             role: role as 'user' | 'assistant',
@@ -83,16 +125,109 @@ export class MessageConversionStrategy {
 
       // CASE 2: Tool results (user providing tool execution results)
       if (functionResponses.length > 0) {
-        console.log(`  └─ CASE 2: Tool results (${functionResponses.length} results)`);
-        const toolResultParts: VercelContentPart[] = functionResponses.map(
+        console.log(`  └─ CASE 2: Tool results (${functionResponses.length} results, ${imageParts.length} images)`);
+
+        // Filter out duplicate tool results based on ID
+        const uniqueResponses = functionResponses.filter((fr) => {
+          const id = fr.id || '';
+          if (seenToolResultIds.has(id)) {
+            console.log(`     ⚠️  Skipping duplicate tool result: ${fr.name}, id=${id}`);
+            return false;
+          }
+          seenToolResultIds.add(id);
+          return true;
+        });
+
+        // If all tool results were duplicates, skip this message entirely
+        if (uniqueResponses.length === 0) {
+          console.log(`     └─ All tool results were duplicates, skipping message`);
+          continue;
+        }
+
+        console.log(`     ├─ Unique tool results: ${uniqueResponses.length} / ${functionResponses.length}`);
+
+        // If there are NO images → standard tool message
+        if (imageParts.length === 0) {
+          const toolResultParts: VercelContentPart[] = uniqueResponses.map(
+            (fr) => {
+              // Convert Gemini response to AI SDK v5 structured output format
+              let output: LanguageModelV2ToolResultOutput;
+              const response = fr.response || {};
+
+              // Check for error first
+              if (typeof response === 'object' && 'error' in response && response.error) {
+                output = {
+                  type: typeof response.error === 'string' ? 'error-text' : 'error-json',
+                  value: response.error
+                };
+              } else if (typeof response === 'object' && 'output' in response) {
+                // Gemini's explicit output format: {output: value}
+                output = {
+                  type: typeof response.output === 'string' ? 'text' : 'json',
+                  value: response.output
+                };
+              } else {
+                // Whole response is the output
+                output = {
+                  type: typeof response === 'string' ? 'text' : 'json',
+                  value: response
+                };
+              }
+
+              return {
+                type: 'tool-result' as const,
+                toolCallId: fr.id || this.generateToolCallId(),
+                toolName: fr.name || 'unknown',
+                output: output,
+              };
+            },
+          );
+
+          messages.push({
+            role: 'tool',
+            content: toolResultParts,
+          } as unknown as CoreMessage);
+          console.log(`     ├─ Created tool message with ${toolResultParts.length} tool results`);
+          continue;
+        }
+
+        // If there ARE images → create TWO messages:
+        // 1. Tool message (satisfies OpenAI requirement that tool_calls must be followed by tool messages)
+        // 2. User message with images (tool messages don't support images)
+        console.log(`     ├─ Images detected → Creating TOOL message + USER message`);
+
+        // Message 1: Tool message with tool results (no images)
+        const toolResultParts: VercelContentPart[] = uniqueResponses.map(
           (fr) => {
-            // Pass the Gemini response directly to Vercel AI SDK
-            // The response can contain "output" or "error" keys per Gemini spec
+            // Convert Gemini response to AI SDK v5 structured output format
+            let output: LanguageModelV2ToolResultOutput;
+            const response = fr.response || {};
+
+            // Check for error first
+            if (typeof response === 'object' && 'error' in response && response.error) {
+              output = {
+                type: typeof response.error === 'string' ? 'error-text' : 'error-json',
+                value: response.error
+              };
+            } else if (typeof response === 'object' && 'output' in response) {
+              // Gemini's explicit output format: {output: value}
+              output = {
+                type: typeof response.output === 'string' ? 'text' : 'json',
+                value: response.output
+              };
+            } else {
+              // Whole response is the output
+              output = {
+                type: typeof response === 'string' ? 'text' : 'json',
+                value: response
+              };
+            }
+
             return {
               type: 'tool-result' as const,
               toolCallId: fr.id || this.generateToolCallId(),
               toolName: fr.name || 'unknown',
-              result: fr.response || {}, // Direct value, not wrapped
+              output: output,
             };
           },
         );
@@ -101,6 +236,32 @@ export class MessageConversionStrategy {
           role: 'tool',
           content: toolResultParts,
         } as unknown as CoreMessage);
+        console.log(`     ├─ Created tool message with ${toolResultParts.length} tool results`);
+
+        // Message 2: User message with images
+        const userContentParts: VercelContentPart[] = [];
+
+        // Add explanatory text
+        userContentParts.push({
+          type: 'text',
+          text: `Here are the screenshots from the tool execution:`,
+        });
+
+        // Add images as raw base64 string (will be converted to data URL by OpenAI provider)
+        for (const img of imageParts) {
+          userContentParts.push({
+            type: 'image',
+            image: img.data,  // Pass raw base64 string
+            mediaType: img.mimeType,
+          });
+          console.log(`     ├─ Added image: ${img.mimeType}`);
+        }
+
+        messages.push({
+          role: 'user',
+          content: userContentParts,
+        } as CoreMessage);
+        console.log(`     └─ Created user message with ${userContentParts.length} parts (${imageParts.length} images)`);
         continue;
       }
 
@@ -119,17 +280,17 @@ export class MessageConversionStrategy {
         }
 
         // Add tool calls
-        // CRITICAL: Use 'args' property (not 'input') - this is what ToolCallPart expects
+        // CRITICAL: Use 'input' property - this is what ToolCallPart expects per AI SDK v5
         for (const fc of functionCalls) {
           const toolCall = {
             type: 'tool-call' as const,
             toolCallId: fc.id || this.generateToolCallId(),
             toolName: fc.name || 'unknown',
-            args: fc.args || {}, // Use 'args' - matches ToolCallPart interface
+            input: fc.args || {}, // Use 'input' - matches ToolCallPart interface
           };
           contentParts.push(toolCall);
           console.log(`     ├─ Added tool-call: ${toolCall.toolName}, id=${toolCall.toolCallId}`);
-          console.log(`        └─ args:`, JSON.stringify(toolCall.args));
+          console.log(`        └─ input:`, JSON.stringify(toolCall.input));
         }
 
         const assistantMessage = {

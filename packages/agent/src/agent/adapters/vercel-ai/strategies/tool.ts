@@ -187,7 +187,7 @@ export class ToolConversionStrategy {
 
       vercelTools[func.name] = {
         description: func.description || '',
-        parameters: wrappedParams,
+        inputSchema: wrappedParams,
       };
     }
 
@@ -225,17 +225,17 @@ export class ToolConversionStrategy {
       const validated = parsed.data;
 
       // Convert to Gemini format
-      // SDK uses 'args' property matching ToolCallPart interface
+      // SDK uses 'input' property matching ToolCallPart interface (AI SDK v5)
       // CRITICAL: FunctionCall.args must be Record<string, unknown>
       // Arrays violate this type contract and must be converted to {}
       return {
         id: validated.toolCallId,
         name: validated.toolName,
         args:
-          typeof validated.args === 'object' &&
-          validated.args !== null &&
-          !Array.isArray(validated.args)
-            ? (validated.args as Record<string, unknown>)
+          typeof validated.input === 'object' &&
+          validated.input !== null &&
+          !Array.isArray(validated.input)
+            ? (validated.input as Record<string, unknown>)
             : {},
       };
     });

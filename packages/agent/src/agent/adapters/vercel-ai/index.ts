@@ -8,7 +8,7 @@
  * Multi-provider LLM adapter using Vercel AI SDK
  */
 
-import { streamText, generateText } from 'ai';
+import { streamText, generateText, convertToModelMessages } from 'ai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
@@ -18,6 +18,7 @@ import { createAzure } from '@ai-sdk/azure';
 import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
 
 import type { ContentGenerator } from '@google/gemini-cli-core';
+import type { HonoSSEStream } from './types.js';
 import type {
   GenerateContentParameters,
   GenerateContentResponse,
@@ -41,6 +42,7 @@ import type { VercelAIConfig } from './types.js';
 export class VercelAIContentGenerator implements ContentGenerator {
   private providerRegistry: Map<string, (modelId: string) => unknown>;
   private model: string;
+  private honoStream?: HonoSSEStream;
 
   // Conversion strategies
   private toolStrategy: ToolConversionStrategy;
@@ -49,6 +51,7 @@ export class VercelAIContentGenerator implements ContentGenerator {
 
   constructor(config: VercelAIConfig) {
     this.model = config.model;
+    this.honoStream = config.honoStream;
     this.providerRegistry = new Map();
 
     // Initialize conversion strategies
@@ -138,6 +141,47 @@ export class VercelAIContentGenerator implements ContentGenerator {
     );
     const providerInstance = this.getProvider(provider);
 
+    // DEEP DEBUG: Log messages being sent to LLM
+    console.log('\n[VercelAI→OpenAI] === MESSAGES BEING SENT TO LLM ===');
+    console.log(`Total messages: ${messages.length}`);
+    for (let i = 0; i < messages.length; i++) {
+      const msg = messages[i];
+      console.log(`\nMessage #${i + 1}:`);
+      console.log(`  Role: ${msg.role}`);
+
+      if (typeof msg.content === 'string') {
+        console.log(`  Content (string): ${msg.content.substring(0, 200)}${msg.content.length > 200 ? '...' : ''}`);
+      } else if (Array.isArray(msg.content)) {
+        console.log(`  Content (array): ${msg.content.length} parts`);
+        for (let j = 0; j < msg.content.length; j++) {
+          const part = msg.content[j];
+          console.log(`    Part #${j + 1}:`);
+          console.log(`      Type: ${(part as any).type}`);
+          if ((part as any).type === 'text') {
+            console.log(`      Text: ${(part as any).text?.substring(0, 100)}...`);
+          } else if ((part as any).type === 'image') {
+            const img = (part as any).image || '';
+            const imgDesc = img instanceof Uint8Array
+              ? `Uint8Array[${img.length} bytes]`
+              : typeof img === 'string'
+              ? `${img.substring(0, 50)}... [${img.length} chars]`
+              : `${img}`;
+            console.log(`      Image: ${imgDesc}`);
+          } else if ((part as any).type === 'tool-result') {
+            console.log(`      ToolCallId: ${(part as any).toolCallId}`);
+            console.log(`      ToolName: ${(part as any).toolName}`);
+            console.log(`      Output: ${JSON.stringify((part as any).output).substring(0, 100)}...`);
+          } else if ((part as any).type === 'tool-call') {
+            console.log(`      ToolCallId: ${(part as any).toolCallId}`);
+            console.log(`      ToolName: ${(part as any).toolName}`);
+          }
+        }
+      } else {
+        console.log(`  Content (other): ${typeof msg.content}`);
+      }
+    }
+    console.log('[VercelAI→OpenAI] === END MESSAGES ===\n');
+
     // Call Vercel AI SDK
     const result = streamText({
       model: providerInstance(modelName) as Parameters<
@@ -152,20 +196,25 @@ export class VercelAIContentGenerator implements ContentGenerator {
 
     // Convert stream to Gemini format using strategy
     // Pass function to get usage after stream completes
-    return this.responseStrategy.streamToGemini(result.fullStream, async () => {
-      try {
-        const usage = await result.usage;
-        return {
-          promptTokens: (usage as { promptTokens?: number }).promptTokens,
-          completionTokens: (usage as { completionTokens?: number })
-            .completionTokens,
-          totalTokens: (usage as { totalTokens?: number }).totalTokens,
-        };
-      } catch (error) {
-        console.error('[VercelAI] Error getting usage:', error);
-        return undefined;
-      }
-    });
+    // Pass honoStream for dual output (raw Vercel chunks to SSE + Gemini events)
+    return this.responseStrategy.streamToGemini(
+      result.fullStream,
+      async () => {
+        try {
+          const usage = await result.usage;
+          return {
+            promptTokens: (usage as { promptTokens?: number }).promptTokens,
+            completionTokens: (usage as { completionTokens?: number })
+              .completionTokens,
+            totalTokens: (usage as { totalTokens?: number }).totalTokens,
+          };
+        } catch (error) {
+          console.error('[VercelAI] Error getting usage:', error);
+          return undefined;
+        }
+      },
+      this.honoStream,
+    );
   }
 
   /**

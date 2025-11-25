@@ -19,6 +19,7 @@ export { jsonSchema };
 
 // Vercel AI SDK
 export type { CoreMessage } from 'ai';
+export type { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider';
 
 // Gemini SDK
 export type {
@@ -36,12 +37,12 @@ export type {
 
 /**
  * Tool call from generateText result
- * Per SDK docs: uses 'args' property matching ToolCallPart interface
+ * Per SDK docs: uses 'input' property matching ToolCallPart interface
  */
 export const VercelToolCallSchema = z.object({
   toolCallId: z.string(),
   toolName: z.string(),
-  args: z.unknown(), // Matches ToolCallPart interface
+  input: z.unknown(), // Matches ToolCallPart interface
 });
 
 export type VercelToolCall = z.infer<typeof VercelToolCallSchema>;
@@ -94,22 +95,22 @@ export type VercelGenerateTextResult = z.infer<
 
 /**
  * Text delta chunk from fullStream
- * Note: Property name is 'textDelta' in the actual Vercel AI SDK stream
+ * Note: In AI SDK v5, property name is 'text' (was 'textDelta' in v4)
  */
 export const VercelTextDeltaChunkSchema = z.object({
   type: z.literal('text-delta'),
-  textDelta: z.string(),
+  text: z.string(),
 });
 
 /**
  * Tool call chunk from fullStream
- * Note: SDK uses 'args' property matching ToolCallPart interface
+ * Note: SDK uses 'input' property matching ToolCallPart interface
  */
 export const VercelToolCallChunkSchema = z.object({
   type: z.literal('tool-call'),
   toolCallId: z.string(),
   toolName: z.string(),
-  args: z.unknown(), // SDK uses 'args' for both stream chunks and result.toolCalls
+  input: z.unknown(), // SDK uses 'input' for both stream chunks and result.toolCalls
 });
 
 /**
@@ -147,24 +148,40 @@ export interface VercelTextPart {
 
 /**
  * Tool call part in assistant message
- * Uses 'args' property per ToolCallPart interface
+ * Uses 'input' property per ToolCallPart interface
  */
 export interface VercelToolCallPart {
   readonly type: 'tool-call';
   readonly toolCallId: string;
   readonly toolName: string;
-  readonly args: unknown; // SDK uses 'args' for message parts
+  readonly input: unknown; // SDK uses 'input' for message parts
 }
 
 /**
  * Tool result part in tool message
- * Matches Vercel AI SDK's ToolResultPart interface
+ * Matches Vercel AI SDK v5's ToolResultPart interface
+ * Note: output must be structured in v5 (not a raw value)
  */
 export interface VercelToolResultPart {
   readonly type: 'tool-result';
   readonly toolCallId: string;
   readonly toolName: string;
-  readonly result: unknown; // Direct value from tool execution
+  readonly output: LanguageModelV2ToolResultOutput; // v5 requires structured output
+}
+
+/**
+ * Image part in message content
+ * Matches Vercel AI SDK's ImagePart interface
+ *
+ * Image data can be:
+ * - Base64 data URL: "data:image/png;base64,..."
+ * - Regular URL: URL object or string
+ * - Binary data: Uint8Array, ArrayBuffer, or Buffer
+ */
+export interface VercelImagePart {
+  readonly type: 'image';
+  readonly image: string | URL | Uint8Array | ArrayBuffer | Buffer;
+  readonly mediaType?: string;
 }
 
 /**
@@ -173,22 +190,31 @@ export interface VercelToolResultPart {
 export type VercelContentPart =
   | VercelTextPart
   | VercelToolCallPart
-  | VercelToolResultPart;
+  | VercelToolResultPart
+  | VercelImagePart;
 
 // === Tool Definition (What We Build for Vercel) ===
 
 /**
  * Vercel tool definition
- * parameters must be wrapped with jsonSchema() function
- * Note: AI SDK v4 uses 'parameters', v5 uses 'inputSchema'
+ * inputSchema must be wrapped with jsonSchema() function
+ * Note: AI SDK v5 uses 'inputSchema' (v4 used 'parameters')
  */
 export interface VercelTool {
   readonly description: string;
-  readonly parameters: ReturnType<typeof jsonSchema>;
+  readonly inputSchema: ReturnType<typeof jsonSchema>;
   readonly execute?: (args: Record<string, unknown>) => Promise<unknown>;
 }
 
 // === Helper Types ===
+
+/**
+ * Hono Stream interface for direct streaming
+ * Minimal interface to avoid Hono dependency in adapter
+ */
+export interface HonoSSEStream {
+  write(data: string): Promise<any>;
+}
 
 /**
  * Configuration for Vercel AI adapter
@@ -209,4 +235,5 @@ export interface VercelAIConfig {
   awsAccessKeyId?: string;
   awsSecretAccessKey?: string;
   awsSessionToken?: string;
+  honoStream?: HonoSSEStream;
 }

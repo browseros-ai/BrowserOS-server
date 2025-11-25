@@ -16,6 +16,7 @@ import type {
   FunctionCall,
   VercelFinishReason,
   VercelUsage,
+  HonoSSEStream,
 } from '../types.js';
 import {
   VercelGenerateTextResultSchema,
@@ -92,14 +93,17 @@ export class ResponseConversionStrategy {
 
   /**
    * Convert Vercel stream to Gemini async generator
+   * DUAL OUTPUT: Emits raw Vercel chunks to Hono SSE + converts to Gemini format
    *
    * @param stream - AsyncIterable of Vercel stream chunks
    * @param getUsage - Function to get usage metadata after stream completes
+   * @param honoStream - Optional Hono SSE stream for direct frontend streaming
    * @returns AsyncGenerator yielding Gemini responses
    */
   async *streamToGemini(
     stream: AsyncIterable<unknown>,
     getUsage: () => Promise<VercelUsage | undefined>,
+    honoStream?: HonoSSEStream,
   ): AsyncGenerator<GenerateContentResponse> {
     let textAccumulator = '';
     const toolCallsMap = new Map<
@@ -172,13 +176,24 @@ export class ResponseConversionStrategy {
       const chunk = parsed.data;
 
       if (chunk.type === 'text-delta') {
-        // Yield text immediately as it arrives
-        const delta = chunk.textDelta;
+        const delta = chunk.text;
         textAccumulator += delta;
 
         console.log(
           `[VercelAI→Gemini] ✅ Chunk #${chunkCount}: text-delta ("${delta}") → Yielding Gemini text part`,
         );
+
+        // Emit v5 SSE format to frontend: text-delta event
+        // v5 uses 'text' property, not 'textDelta' (v4)
+        if (honoStream) {
+          try {
+            const sseData = `data: ${JSON.stringify({ type: 'text-delta', text: delta })}\n\n`;
+            await honoStream.write(sseData);
+            console.log(`[VercelAI→Hono] Emitted SSE v5: text-delta("${delta}")`);
+          } catch (error) {
+            console.error('[VercelAI→Hono] Failed to write text:', error);
+          }
+        }
 
         yield Object.setPrototypeOf(
           {
@@ -195,29 +210,32 @@ export class ResponseConversionStrategy {
           GenerateContentResponse.prototype,
         );
       } else if (chunk.type === 'tool-call') {
-        // Accumulate tool calls
-        // NOTE: SDK uses 'args' property matching ToolCallPart interface
         console.log(
-          `[VercelAI→Gemini] ✅ Chunk #${chunkCount}: tool-call (${chunk.toolName}) → Accumulated (will yield at end)`,
+          `[VercelAI→Gemini] ✅ Chunk #${chunkCount}: tool-call (${chunk.toolName})`,
         );
         console.log(`  ├─ ID: ${chunk.toolCallId}`);
+        console.log(`  └─ Input:`, JSON.stringify(chunk.input, null, 2));
 
-        // INVESTIGATION: Log the raw chunk to see what we actually receive
-        console.log(`  ├─ Raw chunk:`, JSON.stringify(chunk, null, 2));
-
-        if (chunk.args !== undefined) {
-          console.log(
-            `  └─ Args:`,
-            JSON.stringify(chunk.args, null, 2).split('\n').join('\n     '),
-          );
-        } else {
-          console.log(`  └─ Args: undefined (may come in separate chunks)`);
+        // Emit v5 SSE format to frontend: tool-call event
+        if (honoStream) {
+          try {
+            const sseData = `data: ${JSON.stringify({
+              type: 'tool-call',
+              toolCallId: chunk.toolCallId,
+              toolName: chunk.toolName,
+              input: chunk.input,
+            })}\n\n`;
+            await honoStream.write(sseData);
+            console.log(`[VercelAI→Hono] Emitted SSE: tool-call(${chunk.toolName})`);
+          } catch (error) {
+            console.error('[VercelAI→Hono] Failed to write tool_call:', error);
+          }
         }
 
         toolCallsMap.set(chunk.toolCallId, {
           toolCallId: chunk.toolCallId,
           toolName: chunk.toolName,
-          args: chunk.args,
+          input: chunk.input,
         });
       } else if (chunk.type === 'finish') {
         console.log(
@@ -245,6 +263,29 @@ export class ResponseConversionStrategy {
       );
       // Fallback estimation
       usage = this.estimateUsage(textAccumulator);
+    }
+
+    // Emit final finish event in v5 SSE format
+    if (honoStream && (finishReason || usage)) {
+      try {
+        const finishData: any = { type: 'finish' };
+        if (finishReason) {
+          finishData.finishReason = finishReason;
+        }
+        if (usage) {
+          finishData.usage = {
+            promptTokens: usage.promptTokens || 0,
+            completionTokens: usage.completionTokens || 0,
+            totalTokens: usage.totalTokens || 0,
+          };
+        }
+
+        const sseData = `data: ${JSON.stringify(finishData)}\n\n`;
+        await honoStream.write(sseData);
+        console.log(`[VercelAI→Hono] Emitted SSE: finish`, finishData);
+      } catch (error) {
+        console.error('[VercelAI→Hono] Failed to write finish:', error);
+      }
     }
 
     // Yield final response with tool calls and metadata
