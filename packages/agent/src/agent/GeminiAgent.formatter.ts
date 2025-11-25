@@ -9,7 +9,7 @@ import {FormattedEvent} from './types.js';
  * Gemini CLI Event Formatter
  *
  * Maps GeminiEventType to FormattedEvent:
- * - Content: Accumulate text chunks, emit as 'response'
+ * - Content: Accumulate text chunks (don't emit response events)
  * - ToolCallRequest: Emit as 'tool_use'
  * - Thought: Emit as 'thinking'
  * - Finished: Emit as 'completion' with usage metadata
