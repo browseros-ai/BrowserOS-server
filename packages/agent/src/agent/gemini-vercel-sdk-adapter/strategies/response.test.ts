@@ -45,8 +45,8 @@ describe('ResponseConversionStrategy', () => {
         text: 'Hello world',
         finishReason: 'stop' as const,
         usage: {
-          inputTokens: 10,
-          outputTokens: 5,
+          promptTokens: 10,
+          completionTokens: 5,
           totalTokens: 15,
         },
       };
@@ -68,8 +68,8 @@ describe('ResponseConversionStrategy', () => {
       const vercelResult = {
         text: 'Test',
         usage: {
-          inputTokens: 100,
-          outputTokens: 50,
+          promptTokens: 100,
+          completionTokens: 50,
           totalTokens: 150,
         },
       };
@@ -91,7 +91,7 @@ describe('ResponseConversionStrategy', () => {
             {
               toolCallId: 'call_123',
               toolName: 'get_weather',
-              args: { location: 'Tokyo' },
+              input: { location: 'Tokyo' },
             },
           ],
           finishReason: 'tool-calls' as const,
@@ -117,7 +117,7 @@ describe('ResponseConversionStrategy', () => {
             {
               toolCallId: 'call_456',
               toolName: 'search',
-              args: { query: 'test' },
+              input: { query: 'test' },
             },
           ],
         };
@@ -143,7 +143,7 @@ describe('ResponseConversionStrategy', () => {
           {
             toolCallId: 'call_789',
             toolName: 'get_weather',
-            args: { location: 'Paris' },
+            input: { location: 'Paris' },
           },
         ],
       };
@@ -163,8 +163,8 @@ describe('ResponseConversionStrategy', () => {
       const vercelResult = {
         text: '',
         toolCalls: [
-          { toolCallId: 'call_1', toolName: 'tool1', args: { arg: 'val1' } },
-          { toolCallId: 'call_2', toolName: 'tool2', args: { arg: 'val2' } },
+          { toolCallId: 'call_1', toolName: 'tool1', input: { arg: 'val1' } },
+          { toolCallId: 'call_2', toolName: 'tool2', input: { arg: 'val2' } },
         ],
       };
 
@@ -201,8 +201,8 @@ describe('ResponseConversionStrategy', () => {
       const vercelResult = {
         text: 'Test',
         usage: {
-          inputTokens: undefined,
-          outputTokens: 5,
+          promptTokens: undefined,
+          completionTokens: 5,
           totalTokens: undefined,
         },
       };
@@ -227,7 +227,7 @@ describe('ResponseConversionStrategy', () => {
     t('tests that tool-calls finish reason maps to STOP', () => {
       const result = strategy.vercelToGemini({
         text: '',
-        toolCalls: [{ toolCallId: 'call_1', toolName: 'tool', args: {} }],
+        toolCalls: [{ toolCallId: 'call_1', toolName: 'tool', input: {} }],
         finishReason: 'tool-calls' as const,
       });
       expect(result.candidates![0].finishReason!).toBe(FinishReason.STOP);
@@ -313,8 +313,8 @@ describe('ResponseConversionStrategy', () => {
       'tests that stream with text-delta chunks yields immediately',
       async () => {
         const stream = (async function* () {
-          yield { type: 'text-delta', textDelta: 'Hello' };
-          yield { type: 'text-delta', textDelta: ' world' };
+          yield { type: 'text-delta', text: 'Hello' };
+          yield { type: 'text-delta', text: ' world' };
           yield { type: 'finish', finishReason: 'stop' as const };
         })();
 
@@ -344,7 +344,7 @@ describe('ResponseConversionStrategy', () => {
             type: 'tool-call',
             toolCallId: 'call_123',
             toolName: 'get_weather',
-            args: { location: 'Tokyo' },
+            input: { location: 'Tokyo' },
           };
           yield { type: 'finish', finishReason: 'tool-calls' as const };
         })();
@@ -372,13 +372,13 @@ describe('ResponseConversionStrategy', () => {
             type: 'tool-call',
             toolCallId: 'call_1',
             toolName: 'tool1',
-            args: { arg: 'val1' },
+            input: { arg: 'val1' },
           };
           yield {
             type: 'tool-call',
             toolCallId: 'call_2',
             toolName: 'tool2',
-            args: { arg: 'val2' },
+            input: { arg: 'val2' },
           };
           yield { type: 'finish', finishReason: 'tool-calls' as const };
         })();
@@ -397,12 +397,12 @@ describe('ResponseConversionStrategy', () => {
 
     t('tests that stream with text and tool calls yields both', async () => {
       const stream = (async function* () {
-        yield { type: 'text-delta', textDelta: 'Searching...' };
+        yield { type: 'text-delta', text: 'Searching...' };
         yield {
           type: 'tool-call',
           toolCallId: 'call_search',
           toolName: 'search',
-          args: { query: 'test' },
+          input: { query: 'test' },
         };
         yield { type: 'finish', finishReason: 'tool-calls' as const };
       })();
@@ -428,7 +428,7 @@ describe('ResponseConversionStrategy', () => {
       async () => {
         const stream = (async function* () {
           yield { type: 'start' } as unknown; // Unknown type
-          yield { type: 'text-delta', textDelta: 'Hello' };
+          yield { type: 'text-delta', text: 'Hello' };
           yield { type: 'step-finish' } as unknown; // Unknown type
           yield { type: 'finish', finishReason: 'stop' as const };
         })();
@@ -447,7 +447,7 @@ describe('ResponseConversionStrategy', () => {
 
     t('tests that stream with empty text-delta still yields', async () => {
       const stream = (async function* () {
-        yield { type: 'text-delta', textDelta: '' };
+        yield { type: 'text-delta', text: '' };
         yield { type: 'finish', finishReason: 'stop' as const };
       })();
 
@@ -464,7 +464,7 @@ describe('ResponseConversionStrategy', () => {
 
     t('tests that stream without finish reason still completes', async () => {
       const stream = (async function* () {
-        yield { type: 'text-delta', textDelta: 'Test' };
+        yield { type: 'text-delta', text: 'Test' };
         // No finish chunk
       })();
 
@@ -482,7 +482,7 @@ describe('ResponseConversionStrategy', () => {
       'tests that stream with getUsage error uses estimation fallback',
       async () => {
         const stream = (async function* () {
-          yield { type: 'text-delta', textDelta: 'Test message here' };
+          yield { type: 'text-delta', text: 'Test message here' };
           yield { type: 'finish', finishReason: 'stop' as const };
         })();
 
@@ -525,13 +525,13 @@ describe('ResponseConversionStrategy', () => {
       'tests that stream usage metadata is included in final chunk',
       async () => {
         const stream = (async function* () {
-          yield { type: 'text-delta', textDelta: 'Test' };
+          yield { type: 'text-delta', text: 'Test' };
           yield { type: 'finish', finishReason: 'stop' as const };
         })();
 
         const getUsage = async () => ({
-          inputTokens: 10,
-          outputTokens: 5,
+          promptTokens: 10,
+          completionTokens: 5,
           totalTokens: 15,
         });
 

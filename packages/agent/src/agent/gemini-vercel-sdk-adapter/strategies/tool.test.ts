@@ -84,7 +84,7 @@ describe('ToolConversionStrategy', () => {
         expect(result!['get_weather'].description).toBe(
           'Get weather for a location',
         );
-        expect(result!['get_weather'].parameters).toBeDefined();
+        expect(result!['get_weather'].inputSchema).toBeDefined();
       },
     );
 
@@ -125,7 +125,7 @@ describe('ToolConversionStrategy', () => {
         const result = strategy.geminiToVercel(tools);
 
         expect(result!['no_params_tool']).toBeDefined();
-        expect(result!['no_params_tool'].parameters).toBeDefined();
+        expect(result!['no_params_tool'].inputSchema).toBeDefined();
       },
     );
 
@@ -208,7 +208,7 @@ describe('ToolConversionStrategy', () => {
 
         const result = strategy.geminiToVercel(tools);
 
-        expect(result!['test_tool'].parameters).toBeDefined();
+        expect(result!['test_tool'].inputSchema).toBeDefined();
       },
     );
 
@@ -234,9 +234,9 @@ describe('ToolConversionStrategy', () => {
 
         const result = strategy.geminiToVercel(tools);
 
-        // parameters should be defined (wrapped with jsonSchema())
-        expect(result!['test_tool'].parameters).toBeDefined();
-        expect(typeof result!['test_tool'].parameters).toBe('object');
+        // inputSchema should be defined (wrapped with jsonSchema())
+        expect(result!['test_tool'].inputSchema).toBeDefined();
+        expect(typeof result!['test_tool'].inputSchema).toBe('object');
       },
     );
 
@@ -267,7 +267,7 @@ describe('ToolConversionStrategy', () => {
       const result = strategy.geminiToVercel(tools);
 
       expect(result!['nested_tool']).toBeDefined();
-      expect(result!['nested_tool'].parameters).toBeDefined();
+      expect(result!['nested_tool'].inputSchema).toBeDefined();
     });
 
     t('tests that array type parameters convert correctly', () => {
@@ -312,7 +312,7 @@ describe('ToolConversionStrategy', () => {
         {
           toolCallId: 'call_123',
           toolName: 'get_weather',
-          args: { location: 'Tokyo', units: 'celsius' },
+          input: { location: 'Tokyo', units: 'celsius' },
         },
       ];
 
@@ -329,7 +329,7 @@ describe('ToolConversionStrategy', () => {
         {
           toolCallId: 'call_456',
           toolName: 'simple_tool',
-          args: {},
+          input: {},
         },
       ];
 
@@ -348,7 +348,7 @@ describe('ToolConversionStrategy', () => {
           {
             toolCallId: 'call_arr',
             toolName: 'invalid_array_tool',
-            args: [1, 2, 3],
+            input: [1, 2, 3],
           },
         ];
 
@@ -366,7 +366,7 @@ describe('ToolConversionStrategy', () => {
         {
           toolCallId: 'call_null',
           toolName: 'null_tool',
-          args: null,
+          input: null,
         },
       ];
 
@@ -382,7 +382,7 @@ describe('ToolConversionStrategy', () => {
           {
             toolCallId: 'call_undef',
             toolName: 'undef_tool',
-            args: undefined,
+            input: undefined,
           },
         ];
 
@@ -397,7 +397,7 @@ describe('ToolConversionStrategy', () => {
         {
           toolCallId: 'call_str',
           toolName: 'str_tool',
-          args: 'not an object',
+          input: 'not an object',
         },
       ];
 
@@ -411,7 +411,7 @@ describe('ToolConversionStrategy', () => {
         {
           toolCallId: 'call_num',
           toolName: 'num_tool',
-          args: 42,
+          input: 42,
         },
       ];
 
@@ -427,7 +427,7 @@ describe('ToolConversionStrategy', () => {
           {
             toolCallId: 'call_bool',
             toolName: 'bool_tool',
-            args: true,
+            input: true,
           },
         ];
 
@@ -442,7 +442,7 @@ describe('ToolConversionStrategy', () => {
         {
           toolCallId: 'call_nested',
           toolName: 'nested_tool',
-          args: {
+          input: {
             user: {
               name: 'Alice',
               address: {
@@ -471,9 +471,9 @@ describe('ToolConversionStrategy', () => {
 
     t('tests that multiple tool calls all convert', () => {
       const toolCalls = [
-        { toolCallId: 'call_1', toolName: 'tool1', args: { arg: 'val1' } },
-        { toolCallId: 'call_2', toolName: 'tool2', args: { arg: 'val2' } },
-        { toolCallId: 'call_3', toolName: 'tool3', args: {} },
+        { toolCallId: 'call_1', toolName: 'tool1', input: { arg: 'val1' } },
+        { toolCallId: 'call_2', toolName: 'tool2', input: { arg: 'val2' } },
+        { toolCallId: 'call_3', toolName: 'tool3', input: {} },
       ];
 
       const result = strategy.vercelToGemini(toolCalls);
@@ -489,7 +489,7 @@ describe('ToolConversionStrategy', () => {
         {
           toolCallId: 'call_123-abc_XYZ.v2',
           toolName: 'test_tool',
-          args: {},
+          input: {},
         },
       ];
 
@@ -506,7 +506,7 @@ describe('ToolConversionStrategy', () => {
         const toolCalls = [
           {
             toolName: 'missing_id_tool',
-            args: { test: true },
+            input: { test: true },
           } as unknown,
         ];
 
@@ -526,7 +526,7 @@ describe('ToolConversionStrategy', () => {
         const toolCalls = [
           {
             toolCallId: 'call_no_name',
-            args: { test: true },
+            input: { test: true },
           } as unknown,
         ];
 
@@ -558,12 +558,12 @@ describe('ToolConversionStrategy', () => {
       'tests that mix of valid and invalid tool calls all return valid structures',
       () => {
         const toolCalls = [
-          { toolCallId: 'call_1', toolName: 'valid_tool', args: { test: 1 } },
+          { toolCallId: 'call_1', toolName: 'valid_tool', input: { test: 1 } },
           { invalid: 'data' } as unknown,
           {
             toolCallId: 'call_2',
             toolName: 'another_valid',
-            args: { test: 2 },
+            input: { test: 2 },
           },
         ];
 
