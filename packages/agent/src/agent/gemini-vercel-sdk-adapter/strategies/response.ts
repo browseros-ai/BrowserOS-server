@@ -65,26 +65,22 @@ export class ResponseConversionStrategy {
     // Handle usage metadata
     const usageMetadata = this.convertUsage(validated.usage);
 
-    // Create response with Object.setPrototypeOf pattern
-    // This allows setting readonly functionCalls property
-    return Object.setPrototypeOf(
-      {
-        candidates: [
-          {
-            content: {
-              role: 'model',
-              parts,
-            },
-            finishReason: this.mapFinishReason(validated.finishReason),
-            index: 0,
+    // Create response - testing without Object.setPrototypeOf
+    return {
+      candidates: [
+        {
+          content: {
+            role: 'model',
+            parts,
           },
-        ],
-        // CRITICAL: Top-level functionCalls for turn.ts compatibility
-        ...(functionCalls && functionCalls.length > 0 ? { functionCalls } : {}),
-        usageMetadata,
-      },
-      GenerateContentResponse.prototype,
-    );
+          finishReason: this.mapFinishReason(validated.finishReason),
+          index: 0,
+        },
+      ],
+      // CRITICAL: Top-level functionCalls for turn.ts compatibility
+      ...(functionCalls && functionCalls.length > 0 ? { functionCalls } : {}),
+      usageMetadata,
+    } as GenerateContentResponse;
   }
 
   /**
@@ -149,20 +145,17 @@ export class ResponseConversionStrategy {
           }
         }
 
-        yield Object.setPrototypeOf(
-          {
-            candidates: [
-              {
-                content: {
-                  role: 'model',
-                  parts: [{ text: delta }],
-                },
-                index: 0,
+        yield {
+          candidates: [
+            {
+              content: {
+                role: 'model',
+                parts: [{ text: delta }],
               },
-            ],
-          },
-          GenerateContentResponse.prototype,
-        );
+              index: 0,
+            },
+          ],
+        } as GenerateContentResponse;
       } else if (chunk.type === 'tool-call') {
         // Emit v5 SSE format to frontend: tool-call event
         if (honoStream) {
@@ -238,26 +231,23 @@ export class ResponseConversionStrategy {
 
       const usageMetadata = this.convertUsage(usage);
 
-      yield Object.setPrototypeOf(
-        {
-          candidates: [
-            {
-              content: {
-                role: 'model',
-                parts: parts.length > 0 ? parts : [{ text: '' }],
-              },
-              finishReason: this.mapFinishReason(finishReason),
-              index: 0,
+      yield {
+        candidates: [
+          {
+            content: {
+              role: 'model',
+              parts: parts.length > 0 ? parts : [{ text: '' }],
             },
-          ],
-          // Top-level functionCalls
-          ...(functionCalls && functionCalls.length > 0
-            ? { functionCalls }
-            : {}),
-          usageMetadata,
-        },
-        GenerateContentResponse.prototype,
-      );
+            finishReason: this.mapFinishReason(finishReason),
+            index: 0,
+          },
+        ],
+        // Top-level functionCalls
+        ...(functionCalls && functionCalls.length > 0
+          ? { functionCalls }
+          : {}),
+        usageMetadata,
+      } as GenerateContentResponse;
     }
   }
 
@@ -322,20 +312,17 @@ export class ResponseConversionStrategy {
    * Create empty response for error cases
    */
   private createEmptyResponse(): GenerateContentResponse {
-    return Object.setPrototypeOf(
-      {
-        candidates: [
-          {
-            content: {
-              role: 'model',
-              parts: [{ text: '' }],
-            },
-            finishReason: FinishReason.OTHER,
-            index: 0,
+    return {
+      candidates: [
+        {
+          content: {
+            role: 'model',
+            parts: [{ text: '' }],
           },
-        ],
-      },
-      GenerateContentResponse.prototype,
-    );
+          finishReason: FinishReason.OTHER,
+          index: 0,
+        },
+      ],
+    } as GenerateContentResponse;
   }
 }

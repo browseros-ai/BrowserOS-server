@@ -20,83 +20,6 @@ import type { ToolListUnion } from '@google/genai';
 
 export class ToolConversionStrategy {
   /**
-   * Normalize schema for OpenAI strict mode compliance
-   * OpenAI requires:
-   * 1. additionalProperties: false on ALL objects
-   * 2. required: [...] array listing ALL properties (makes everything required)
-   */
-  private normalizeForOpenAI(schema: Record<string, unknown>): Record<string, unknown> {
-    const result = { ...schema };
-
-    // Apply OpenAI requirements for object types
-    if (result.type === 'object') {
-      // 1. Add additionalProperties: false
-      if (result.additionalProperties === undefined) {
-        result.additionalProperties = false;
-      }
-
-      // 2. Add required array with ALL property keys
-      if (result.properties && typeof result.properties === 'object') {
-        const propertyKeys = Object.keys(result.properties);
-        if (propertyKeys.length > 0) {
-          // Merge with existing required array (if any) and ensure all keys are included
-          const existingRequired = Array.isArray(result.required) ? result.required : [];
-          const allRequired = Array.from(new Set([...existingRequired, ...propertyKeys]));
-          result.required = allRequired;
-        }
-      }
-    }
-
-    // Recursively process properties
-    if (result.properties && typeof result.properties === 'object') {
-      const newProperties: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(result.properties)) {
-        if (value && typeof value === 'object') {
-          newProperties[key] = this.normalizeForOpenAI(value as Record<string, unknown>);
-        } else {
-          newProperties[key] = value;
-        }
-      }
-      result.properties = newProperties;
-    }
-
-    // Recursively process items (for arrays)
-    if (result.items && typeof result.items === 'object' && !Array.isArray(result.items)) {
-      result.items = this.normalizeForOpenAI(result.items as Record<string, unknown>);
-    }
-
-    // Recursively process anyOf, allOf, oneOf
-    if (Array.isArray(result.anyOf)) {
-      result.anyOf = result.anyOf.map(item => {
-        if (item && typeof item === 'object') {
-          return this.normalizeForOpenAI(item as Record<string, unknown>);
-        }
-        return item;
-      });
-    }
-
-    if (Array.isArray(result.allOf)) {
-      result.allOf = result.allOf.map(item => {
-        if (item && typeof item === 'object') {
-          return this.normalizeForOpenAI(item as Record<string, unknown>);
-        }
-        return item;
-      });
-    }
-
-    if (Array.isArray(result.oneOf)) {
-      result.oneOf = result.oneOf.map(item => {
-        if (item && typeof item === 'object') {
-          return this.normalizeForOpenAI(item as Record<string, unknown>);
-        }
-        return item;
-      });
-    }
-
-    return result;
-  }
-
-  /**
    * Convert Gemini tool definitions to Vercel format
    *
    * @param tools - Array of Gemini Tool/CallableTool objects
@@ -167,7 +90,7 @@ export class ToolConversionStrategy {
         ...rawParameters,
       };
 
-      const normalizedParameters = this.normalizeForOpenAI(parametersWithType);
+      const normalizedParameters = parametersWithType;
 
       const wrappedParams = jsonSchema(
         normalizedParameters as Parameters<typeof jsonSchema>[0],
