@@ -19,6 +19,7 @@ import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
 
 import type { ContentGenerator } from '@google/gemini-cli-core';
 import type { HonoSSEStream } from './types.js';
+import { AIProvider } from './types.js';
 import type {
   GenerateContentParameters,
   GenerateContentResponse,
@@ -177,79 +178,89 @@ export class VercelAIContentGenerator implements ContentGenerator {
    * Register providers based on config
    */
   private registerProviders(config: VercelAIConfig): void {
-    if (config.apiKeys?.anthropic) {
+    const providers = config.providers || {};
+
+    const anthropicConfig = providers[AIProvider.ANTHROPIC];
+    if (anthropicConfig?.apiKey) {
       this.providerRegistry.set(
-        'anthropic',
-        createAnthropic({ apiKey: config.apiKeys.anthropic }),
+        AIProvider.ANTHROPIC,
+        createAnthropic({ apiKey: anthropicConfig.apiKey }),
       );
     }
 
-    if (config.apiKeys?.openai) {
+    const openaiConfig = providers[AIProvider.OPENAI];
+    if (openaiConfig?.apiKey) {
       this.providerRegistry.set(
-        'openai',
+        AIProvider.OPENAI,
         createOpenAI({
-          apiKey: config.apiKeys.openai,
-          compatibility: 'strict', // Enable streaming token usage
+          apiKey: openaiConfig.apiKey,
+          compatibility: 'strict',
         }),
       );
     }
 
-    if (config.apiKeys?.google) {
+    const googleConfig = providers[AIProvider.GOOGLE];
+    if (googleConfig?.apiKey) {
       this.providerRegistry.set(
-        'google',
-        createGoogleGenerativeAI({ apiKey: config.apiKeys.google }),
+        AIProvider.GOOGLE,
+        createGoogleGenerativeAI({ apiKey: googleConfig.apiKey }),
       );
     }
 
-    if (config.apiKeys?.openrouter) {
+    const openrouterConfig = providers[AIProvider.OPENROUTER];
+    if (openrouterConfig?.apiKey) {
       this.providerRegistry.set(
-        'openrouter',
-        createOpenRouter({ apiKey: config.apiKeys.openrouter }),
+        AIProvider.OPENROUTER,
+        createOpenRouter({ apiKey: openrouterConfig.apiKey }),
       );
     }
 
-    if (config.apiKeys?.azure && config.azureResourceName) {
+    const azureConfig = providers[AIProvider.AZURE];
+    if (azureConfig?.apiKey && azureConfig.resourceName) {
       this.providerRegistry.set(
-        'azure',
+        AIProvider.AZURE,
         createAzure({
-          resourceName: config.azureResourceName,
-          apiKey: config.apiKeys.azure,
+          resourceName: azureConfig.resourceName,
+          apiKey: azureConfig.apiKey,
         }),
       );
     }
 
-    if (config.lmstudioBaseUrl !== undefined) {
+    const lmstudioConfig = providers[AIProvider.LMSTUDIO];
+    if (lmstudioConfig !== undefined) {
       this.providerRegistry.set(
-        'lmstudio',
+        AIProvider.LMSTUDIO,
         createOpenAICompatible({
           name: 'lmstudio',
-          baseURL: config.lmstudioBaseUrl || 'http://localhost:1234/v1',
+          baseURL: lmstudioConfig.baseUrl || 'http://localhost:1234/v1',
         }),
       );
     }
 
-    if (config.ollamaBaseUrl !== undefined) {
+    const ollamaConfig = providers[AIProvider.OLLAMA];
+    if (ollamaConfig !== undefined) {
       this.providerRegistry.set(
-        'ollama',
+        AIProvider.OLLAMA,
         createOpenAICompatible({
           name: 'ollama',
-          baseURL: config.ollamaBaseUrl || 'http://localhost:11434/v1',
+          baseURL: ollamaConfig.baseUrl || 'http://localhost:11434/v1',
         }),
       );
     }
 
+    const bedrockConfig = providers[AIProvider.BEDROCK];
     if (
-      config.awsAccessKeyId &&
-      config.awsSecretAccessKey &&
-      config.awsRegion
+      bedrockConfig?.accessKeyId &&
+      bedrockConfig.secretAccessKey &&
+      bedrockConfig.region
     ) {
       this.providerRegistry.set(
-        'bedrock',
+        AIProvider.BEDROCK,
         createAmazonBedrock({
-          region: config.awsRegion,
-          accessKeyId: config.awsAccessKeyId,
-          secretAccessKey: config.awsSecretAccessKey,
-          sessionToken: config.awsSessionToken,
+          region: bedrockConfig.region,
+          accessKeyId: bedrockConfig.accessKeyId,
+          secretAccessKey: bedrockConfig.secretAccessKey,
+          sessionToken: bedrockConfig.sessionToken,
         }),
       );
     }
@@ -288,10 +299,14 @@ export class VercelAIContentGenerator implements ContentGenerator {
       throw new Error(
         `Provider "${provider}" not configured. ` +
           `Available providers: ${available || 'none'}. ` +
-          `Add API key in config.apiKeys.${provider}`,
+          `Configure it in config.providers.${provider}`,
       );
     }
 
     return providerInstance;
   }
 }
+
+// Re-export types for consumers
+export { AIProvider };
+export type { VercelAIConfig, ProviderConfig, HonoSSEStream } from './types.js';

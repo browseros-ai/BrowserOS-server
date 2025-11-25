@@ -217,23 +217,39 @@ export interface HonoSSEStream {
 }
 
 /**
+ * Supported AI providers
+ */
+export enum AIProvider {
+  ANTHROPIC = 'anthropic',
+  OPENAI = 'openai',
+  GOOGLE = 'google',
+  OPENROUTER = 'openrouter',
+  AZURE = 'azure',
+  OLLAMA = 'ollama',
+  LMSTUDIO = 'lmstudio',
+  BEDROCK = 'bedrock',
+}
+
+/**
+ * Provider-specific configuration
+ */
+export interface ProviderConfig {
+  apiKey?: string;
+  baseUrl?: string;
+  // Azure-specific
+  resourceName?: string;
+  // AWS Bedrock-specific
+  region?: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
+  sessionToken?: string;
+}
+
+/**
  * Configuration for Vercel AI adapter
  */
 export interface VercelAIConfig {
   model: string;
-  apiKeys?: {
-    anthropic?: string;
-    openai?: string;
-    google?: string;
-    openrouter?: string;
-    azure?: string;
-  };
-  azureResourceName?: string;
-  ollamaBaseUrl?: string;
-  lmstudioBaseUrl?: string;
-  awsRegion?: string;
-  awsAccessKeyId?: string;
-  awsSecretAccessKey?: string;
-  awsSessionToken?: string;
+  providers?: Partial<Record<AIProvider, ProviderConfig>>;
   honoStream?: HonoSSEStream;
 }
