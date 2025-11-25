@@ -235,7 +235,7 @@ export class GeminiAgent extends BaseAgent {
    * Execute a task using Gemini CLI and stream formatted events
    *
    * @param message - User's natural language request
-   * @yields Formatteint instances
+   * @yields FormattedEvent instances
    */
   async *execute(message: string): AsyncGenerator<FormattedEvent> {
     if (!this.initialized) {
