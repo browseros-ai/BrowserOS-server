@@ -6,6 +6,7 @@
 import {AgentFactory} from './AgentFactory.js';
 import {ClaudeSDKAgent} from './ClaudeSDKAgent.js';
 import {CodexSDKAgent} from './CodexSDKAgent.js';
+import {GeminiAgent} from './GeminiAgent.js';
 
 /**
  * Register all available agents
@@ -24,5 +25,11 @@ export function registerAgents(): void {
     'claude-sdk',
     ClaudeSDKAgent,
     'Claude SDK agent for Anthropic Claude integration',
+  );
+
+  AgentFactory.register(
+    'gemini-sdk',
+    GeminiAgent,
+    'Gemini CLI agent for Google Gemini integration',
   );
 }

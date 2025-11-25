@@ -6,6 +6,10 @@
  * Main entry point for BrowserOS unified server
  */
 
+// Force file-based storage for gemini-cli (avoid macOS Keychain password prompt)
+process.env.GEMINI_FORCE_FILE_STORAGE = 'true';
+process.env.GEMINI_FORCE_ENCRYPTED_FILE_STORAGE = 'true';
+
 // Runtime check for Bun
 if (typeof Bun === 'undefined') {
   console.error('Error: This application requires Bun runtime.');

@@ -18,6 +18,7 @@ import type {AgentConfig} from '../agent/types.js';
 enum SessionState {
   IDLE = 'idle', // Connected, waiting for messages
   PROCESSING = 'processing', // Actively processing a message
+  CANCELLING = 'cancelling', // Cancellation in progress
   CLOSING = 'closing', // Cleanup initiated
   CLOSED = 'closed', // Fully closed
 }
@@ -87,12 +88,14 @@ export class SessionManager {
   private config: SessionConfig;
   private controllerBridge: ControllerBridge;
   private cleanupTimerId?: Timer;
+  private cancelTimeouts: Map<string, Timer>;
 
   constructor(config: SessionConfig, controllerBridge: ControllerBridge) {
     this.sessions = new Map();
     this.agents = new Map();
     this.config = config;
     this.controllerBridge = controllerBridge;
+    this.cancelTimeouts = new Map();
 
     logger.info('SessionManager initialized', {
       maxSessions: config.maxSessions,
@@ -140,7 +143,7 @@ export class SessionManager {
     if (agentConfig) {
       try {
         // Use factory to create agent (defaults to 'codex-sdk' if not specified)
-        const agentType = options?.agentType || 'codex-sdk';
+        const agentType = options?.agentType || 'gemini-sdk';
         const agent = AgentFactory.create(
           agentType,
           agentConfig,
@@ -244,6 +247,12 @@ export class SessionManager {
       return false;
     }
 
+    // Reject if cancellation in progress
+    if (session.state === SessionState.CANCELLING) {
+      logger.warn('Session is currently cancelling', {sessionId});
+      return false;
+    }
+
     session.state = SessionState.PROCESSING;
     session.messageCount++;
     // ❌ Removed: session.lastActivity = Date.now()
@@ -260,6 +269,8 @@ export class SessionManager {
   /**
    * Mark session as idle (done processing)
    * Updates lastActivity - starts the idle timeout countdown
+   *
+   * Note: Does NOT transition from CANCELLING to IDLE - the safety timeout handles that
    */
   markIdle(sessionId: string): void {
     const session = this.sessions.get(sessionId);
@@ -267,21 +278,49 @@ export class SessionManager {
       return;
     }
 
-    session.state = SessionState.IDLE;
-    session.lastActivity = Date.now(); // ✅ Idle timer starts here
-
-    logger.debug('Session marked as idle', {sessionId});
+    // Only mark idle if currently PROCESSING (not CANCELLING)
+    // CANCELLING state must wait for the safety timeout to transition
+    if (session.state === SessionState.PROCESSING) {
+      session.state = SessionState.IDLE;
+      session.lastActivity = Date.now(); // ✅ Idle timer starts here
+      logger.debug('Session marked as idle', {sessionId});
+    } else if (session.state === SessionState.CANCELLING) {
+      logger.debug('markIdle skipped: waiting for cancel timeout', {
+        sessionId,
+        currentState: session.state,
+      });
+    } else {
+      logger.debug('markIdle skipped: not PROCESSING', {
+        sessionId,
+        currentState: session.state,
+      });
+    }
   }
 
   /**
    * Cancel current execution for a session
    * Triggers abort on the agent if it's executing
-   * CRITICAL: Does NOT mark session as idle - let processMessage() handle that
+   * Transitions session to CANCELLING state with safety timeout
    *
    * @param sessionId - Session ID
    * @returns true if cancel was triggered, false if not executing or agent not found
    */
   cancelExecution(sessionId: string): boolean {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      logger.warn('⚠️  Cancel requested for non-existent session', {sessionId});
+      return false;
+    }
+
+    // Only cancel if PROCESSING
+    if (session.state !== SessionState.PROCESSING) {
+      logger.debug('⚠️  Cancel requested but session not processing', {
+        sessionId,
+        currentState: session.state,
+      });
+      return false;
+    }
+
     const agent = this.agents.get(sessionId);
     if (!agent) {
       logger.warn('⚠️  Cancel requested but no agent found', {sessionId});
@@ -302,12 +341,28 @@ export class SessionManager {
       return false;
     }
 
-    logger.info('🛑 Cancelling execution', {sessionId});
+    // Transition to CANCELLING state
+    session.state = SessionState.CANCELLING;
+    logger.info('🛑 Session transitioning to CANCELLING', {sessionId});
+
+    // Abort the agent
     agent.abort();
 
-    // CRITICAL: Do NOT mark idle here!
-    // Let the original processMessage() call mark idle when it completes
-    // Otherwise we get race condition: new messages can start while execute() is still in finally block
+    // Safety timeout: Force IDLE if cleanup hangs
+    const timeout = setTimeout(() => {
+      const currentSession = this.sessions.get(sessionId);
+      if (currentSession && currentSession.state === SessionState.CANCELLING) {
+        logger.warn('⚠️  Cancellation timeout - forcing IDLE', {
+          sessionId,
+          durationMs: 5000,
+        });
+        currentSession.state = SessionState.IDLE;
+        currentSession.lastActivity = Date.now();
+      }
+      this.cancelTimeouts.delete(sessionId);
+    }, 5000); // 5 second timeout
+
+    this.cancelTimeouts.set(sessionId, timeout);
 
     return true;
   }
@@ -476,6 +531,13 @@ export class SessionManager {
   }
 
   /**
+   * Get session state
+   */
+  getSessionState(sessionId: string): SessionState | null {
+    return this.sessions.get(sessionId)?.state || null;
+  }
+
+  /**
    * Shutdown - cleanup all sessions and agents
    *
    * Now async to support agent cleanup
@@ -491,6 +553,12 @@ export class SessionManager {
       clearInterval(this.cleanupTimerId);
       this.cleanupTimerId = undefined;
     }
+
+    // Clear all cancel timeouts
+    for (const timeout of this.cancelTimeouts.values()) {
+      clearTimeout(timeout);
+    }
+    this.cancelTimeouts.clear();
 
     // Destroy all agents (NEW)
     const destroyPromises: Array<Promise<void>> = [];

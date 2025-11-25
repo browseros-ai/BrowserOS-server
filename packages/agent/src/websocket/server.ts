@@ -282,12 +282,14 @@ export function createServer(
           }
 
           // Handle regular message
-          // Try to mark session as processing (reject if already processing)
+          // Try to mark session as processing (reject if already processing or cancelling)
           if (!sessionManager.markProcessing(sessionId)) {
-            sendError(
-              ws,
-              'Session is already processing a message. Please wait.',
-            );
+            const sessionState = sessionManager.getSessionState(sessionId);
+            const errorMessage =
+              sessionState === 'cancelling'
+                ? 'Cancellation in progress. Please wait a moment and try again.'
+                : 'Session is already processing a message. Please wait.';
+            sendError(ws, errorMessage);
             return;
           }
 
