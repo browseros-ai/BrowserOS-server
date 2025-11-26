@@ -11,27 +11,8 @@
 
 import { z } from 'zod';
 import { jsonSchema } from 'ai';
-
-// Re-export for use in strategies
-export { jsonSchema };
-
-// === Re-export SDK Types ===
-
 // Vercel AI SDK
-export type { CoreMessage } from 'ai';
-export type { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider';
-
-// Gemini SDK
-export type {
-  Part,
-  FunctionCall,
-  FunctionDeclaration,
-  FunctionResponse,
-  Tool,
-  Content,
-  GenerateContentResponse,
-  FinishReason,
-} from '@google/genai';
+import type { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider';
 
 // === Vercel SDK Runtime Shapes (What We Receive) ===
 
@@ -228,28 +209,25 @@ export enum AIProvider {
   OLLAMA = 'ollama',
   LMSTUDIO = 'lmstudio',
   BEDROCK = 'bedrock',
+  BROWSEROS = 'browseros',
 }
 
 /**
- * Provider-specific configuration
+ * Zod schema for Vercel AI adapter configuration
+ * Single source of truth - use z.infer for the type
  */
-export interface ProviderConfig {
-  apiKey?: string;
-  baseUrl?: string;
+export const VercelAIConfigSchema = z.object({
+  provider: z.nativeEnum(AIProvider),
+  model: z.string().min(1, 'Model name is required'),
+  apiKey: z.string().optional(),
+  baseUrl: z.string().optional(),
   // Azure-specific
-  resourceName?: string;
+  resourceName: z.string().optional(),
   // AWS Bedrock-specific
-  region?: string;
-  accessKeyId?: string;
-  secretAccessKey?: string;
-  sessionToken?: string;
-}
+  region: z.string().optional(),
+  accessKeyId: z.string().optional(),
+  secretAccessKey: z.string().optional(),
+  sessionToken: z.string().optional(),
+});
 
-/**
- * Configuration for Vercel AI adapter
- */
-export interface VercelAIConfig {
-  model: string;
-  providers?: Partial<Record<AIProvider, ProviderConfig>>;
-  honoStream?: HonoSSEStream;
-}
+export type VercelAIConfig = z.infer<typeof VercelAIConfigSchema>;

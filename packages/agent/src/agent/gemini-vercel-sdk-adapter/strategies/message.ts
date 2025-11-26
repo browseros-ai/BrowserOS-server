@@ -10,10 +10,10 @@
  */
 
 import type {
-  CoreMessage,
   VercelContentPart,
-  LanguageModelV2ToolResultOutput,
 } from '../types.js';
+import type { CoreMessage } from 'ai';
+import type { LanguageModelV2ToolResultOutput, JSONValue } from '@ai-sdk/provider';
 import type { Content, ContentUnion } from '@google/genai';
 import {
   isTextPart,
@@ -247,22 +247,21 @@ export class MessageConversionStrategy {
 
       // Check for error first
       if (typeof response === 'object' && 'error' in response && response.error) {
-        output = {
-          type: typeof response.error === 'string' ? 'error-text' : 'error-json',
-          value: response.error,
-        };
+        const errorValue = response.error;
+        output = typeof errorValue === 'string'
+          ? { type: 'error-text', value: errorValue }
+          : { type: 'error-json', value: errorValue as JSONValue };
       } else if (typeof response === 'object' && 'output' in response) {
         // Gemini's explicit output format: {output: value}
-        output = {
-          type: typeof response.output === 'string' ? 'text' : 'json',
-          value: response.output,
-        };
+        const outputValue = response.output;
+        output = typeof outputValue === 'string'
+          ? { type: 'text', value: outputValue }
+          : { type: 'json', value: outputValue as JSONValue };
       } else {
         // Whole response is the output
-        output = {
-          type: typeof response === 'string' ? 'text' : 'json',
-          value: response,
-        };
+        output = typeof response === 'string'
+          ? { type: 'text', value: response }
+          : { type: 'json', value: response as JSONValue };
       }
 
       return {

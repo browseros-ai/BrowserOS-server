@@ -10,10 +10,9 @@
  * Handles both streaming and non-streaming responses
  */
 
-import { GenerateContentResponse, FinishReason } from '@google/genai';
+import { GenerateContentResponse, FinishReason, Part, FunctionCall } from '@google/genai'
+import { formatDataStreamPart } from '@ai-sdk/ui-utils';
 import type {
-  Part,
-  FunctionCall,
   VercelFinishReason,
   VercelUsage,
   HonoSSEStream,
@@ -103,7 +102,7 @@ export class ResponseConversionStrategy {
       {
         toolCallId: string;
         toolName: string;
-        args: unknown;
+        input: unknown;
       }
     >();
 
@@ -134,12 +133,10 @@ export class ResponseConversionStrategy {
         const delta = chunk.text;
         textAccumulator += delta;
 
-        // Emit v5 SSE format to frontend: text-delta event
-        // v5 uses 'text' property, not 'textDelta' (v4)
+        // Emit AI SDK format: 0:"text"
         if (honoStream) {
           try {
-            const sseData = `data: ${JSON.stringify({ type: 'text-delta', text: delta })}\n\n`;
-            await honoStream.write(sseData);
+            await honoStream.write(formatDataStreamPart('text', delta));
           } catch {
             // Failed to write to stream
           }
@@ -157,16 +154,14 @@ export class ResponseConversionStrategy {
           ],
         } as GenerateContentResponse;
       } else if (chunk.type === 'tool-call') {
-        // Emit v5 SSE format to frontend: tool-call event
+        // Emit AI SDK format: 9:{"toolCallId":"...","toolName":"...","args":{...}}
         if (honoStream) {
           try {
-            const sseData = `data: ${JSON.stringify({
-              type: 'tool-call',
+            await honoStream.write(formatDataStreamPart('tool_call', {
               toolCallId: chunk.toolCallId,
               toolName: chunk.toolName,
-              input: chunk.input,
-            })}\n\n`;
-            await honoStream.write(sseData);
+              args: chunk.input,
+            }));
           } catch {
             // Failed to write to stream
           }
@@ -189,28 +184,6 @@ export class ResponseConversionStrategy {
     } catch {
       // Fallback estimation
       usage = this.estimateUsage(textAccumulator);
-    }
-
-    // Emit final finish event in v5 SSE format
-    if (honoStream && (finishReason || usage)) {
-      try {
-        const finishData: any = { type: 'finish' };
-        if (finishReason) {
-          finishData.finishReason = finishReason;
-        }
-        if (usage) {
-          finishData.usage = {
-            promptTokens: usage.promptTokens || 0,
-            completionTokens: usage.completionTokens || 0,
-            totalTokens: usage.totalTokens || 0,
-          };
-        }
-
-        const sseData = `data: ${JSON.stringify(finishData)}\n\n`;
-        await honoStream.write(sseData);
-      } catch {
-        // Failed to write to stream
-      }
     }
 
     // Yield final response with tool calls and metadata

@@ -10,13 +10,13 @@
  */
 
 import type {
-  FunctionCall,
-  FunctionDeclaration,
   VercelTool,
 } from '../types.js';
-import { jsonSchema, VercelToolCallSchema } from '../types.js';
+
+import { jsonSchema } from 'ai';
 import { ConversionError } from '../errors.js';
-import type { ToolListUnion } from '@google/genai';
+import type { ToolListUnion, FunctionDeclaration, FunctionCall } from '@google/genai';
+import { VercelToolCallSchema } from '../types.js';
 
 export class ToolConversionStrategy {
   /**
