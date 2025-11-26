@@ -34,18 +34,22 @@
     "@ai-sdk/google": "^2.0.43",
     "@ai-sdk/openai": "^2.0.72",
     "@ai-sdk/openai-compatible": "^1.0.27",
+    "@ai-sdk/provider": "2.0.0",
+    "@ai-sdk/ui-utils": "^1.2.11",
     "@anthropic-ai/claude-agent-sdk": "^0.1.11",
     "@browseros/common": "workspace:*",
     "@browseros/server": "workspace:*",
     "@browseros/tools": "workspace:*",
     "@google/gemini-cli-core": "^0.16.0",
+    "@hono/node-server": "^1.19.6",
     "@openrouter/ai-sdk-provider": "~1.2.5",
     "ai": "^5.0.101",
     "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.14"
   },
   "optionalDependencies": {
     "chrome-devtools-mcp": "latest"

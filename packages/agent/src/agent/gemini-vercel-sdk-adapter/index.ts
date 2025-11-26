@@ -122,6 +122,7 @@ export class VercelAIContentGenerator implements ContentGenerator {
       tools,
       temperature: request.config?.temperature,
       topP: request.config?.topP,
+      abortSignal: request.config?.abortSignal,
     });
 
     return this.responseStrategy.streamToGemini(
