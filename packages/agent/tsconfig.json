@@ -8,6 +8,6 @@
     "declarationMap": true
   },
   "include": ["src/**/*"],
-  "exclude": ["dist/**/*", "node_modules"],
+  "exclude": ["dist/**/*", "node_modules", "src/**/*.backup", "src/**/*.backup/**/*", "src/*.backup/**/*", "src/agent.backup/**/*", "src/http-server.backup/**/*", "src/session.backup/**/*", "src/websocket.backup/**/*"],
   "references": [{"path": "../controller-server"}, {"path": "../tools"}]
 }

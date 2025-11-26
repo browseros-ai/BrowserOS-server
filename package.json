@@ -58,6 +58,8 @@
     "smol-toml": "^1.4.2"
   },
   "devDependencies": {
+    "@ai-sdk/provider": "2.0.0",
+    "@ai-sdk/ui-utils": "^1.2.11",
     "@eslint/js": "^9.35.0",
     "@modelcontextprotocol/sdk": "1.20.0",
     "@stylistic/eslint-plugin": "^5.4.0",
@@ -69,6 +71,7 @@
     "@types/sinon": "^17.0.4",
     "@typescript-eslint/eslint-plugin": "^8.43.0",
     "@typescript-eslint/parser": "^8.43.0",
+    "ai": "^5.0.102",
     "async-mutex": "^0.5.0",
     "chrome-devtools-frontend": "1.0.1524741",
     "commander": "^14.0.1",
