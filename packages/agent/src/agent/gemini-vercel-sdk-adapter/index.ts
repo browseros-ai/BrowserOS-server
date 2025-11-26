@@ -8,7 +8,7 @@
  * Multi-provider LLM adapter using Vercel AI SDK
  */
 
-import { streamText, generateText, convertToModelMessages } from 'ai';
+import { streamText, generateText } from 'ai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
@@ -41,7 +41,7 @@ import type { VercelAIConfig } from './types.js';
  * Implements ContentGenerator interface using strategy pattern for conversions
  */
 export class VercelAIContentGenerator implements ContentGenerator {
-  private providerRegistry: Map<string, (modelId: string) => unknown>;
+  private providerInstance: (modelId: string) => unknown;
   private model: string;
   private honoStream?: HonoSSEStream;
 
@@ -52,16 +52,22 @@ export class VercelAIContentGenerator implements ContentGenerator {
 
   constructor(config: VercelAIConfig) {
     this.model = config.model;
-    this.honoStream = config.honoStream;
-    this.providerRegistry = new Map();
 
     // Initialize conversion strategies
     this.toolStrategy = new ToolConversionStrategy();
     this.messageStrategy = new MessageConversionStrategy();
     this.responseStrategy = new ResponseConversionStrategy(this.toolStrategy);
 
-    // Register providers based on config
-    this.registerProviders(config);
+    // Register the single provider from config
+    this.providerInstance = this.createProvider(config);
+  }
+
+  /**
+   * Set/override the Hono SSE stream for the current request
+   * This allows reusing the same ContentGenerator across multiple requests
+   */
+  setHonoStream(stream: HonoSSEStream | undefined): void {
+    this.honoStream = stream;
   }
 
   /**
@@ -79,13 +85,8 @@ export class VercelAIContentGenerator implements ContentGenerator {
       request.config?.systemInstruction,
     );
 
-    const { provider, modelName } = this.parseModel(
-      request.model || this.model,
-    );
-    const providerInstance = this.getProvider(provider);
-
     const result = await generateText({
-      model: providerInstance(modelName) as Parameters<
+      model: this.providerInstance(this.model) as Parameters<
         typeof generateText
       >[0]['model'],
       messages,
@@ -112,13 +113,8 @@ export class VercelAIContentGenerator implements ContentGenerator {
       request.config?.systemInstruction,
     );
 
-    const { provider, modelName } = this.parseModel(
-      request.model || this.model,
-    );
-    const providerInstance = this.getProvider(provider);
-
     const result = streamText({
-      model: providerInstance(modelName) as Parameters<
+      model: this.providerInstance(this.model) as Parameters<
         typeof streamText
       >[0]['model'],
       messages,
@@ -175,138 +171,88 @@ export class VercelAIContentGenerator implements ContentGenerator {
   }
 
   /**
-   * Register providers based on config
+   * Create provider instance based on config
    */
-  private registerProviders(config: VercelAIConfig): void {
-    const providers = config.providers || {};
+  private createProvider(config: VercelAIConfig): (modelId: string) => unknown {
+    switch (config.provider) {
+      case AIProvider.ANTHROPIC:
+        if (!config.apiKey) {
+          throw new Error('Anthropic provider requires apiKey');
+        }
+        return createAnthropic({ apiKey: config.apiKey });
 
-    const anthropicConfig = providers[AIProvider.ANTHROPIC];
-    if (anthropicConfig?.apiKey) {
-      this.providerRegistry.set(
-        AIProvider.ANTHROPIC,
-        createAnthropic({ apiKey: anthropicConfig.apiKey }),
-      );
-    }
+      case AIProvider.OPENAI:
+        if (!config.apiKey) {
+          throw new Error('OpenAI provider requires apiKey');
+        }
+        return createOpenAI({ apiKey: config.apiKey });
 
-    const openaiConfig = providers[AIProvider.OPENAI];
-    if (openaiConfig?.apiKey) {
-      this.providerRegistry.set(
-        AIProvider.OPENAI,
-        createOpenAI({
-          apiKey: openaiConfig.apiKey,
-          compatibility: 'strict',
-        }),
-      );
-    }
+      case AIProvider.GOOGLE:
+        if (!config.apiKey) {
+          throw new Error('Google provider requires apiKey');
+        }
+        return createGoogleGenerativeAI({ apiKey: config.apiKey });
 
-    const googleConfig = providers[AIProvider.GOOGLE];
-    if (googleConfig?.apiKey) {
-      this.providerRegistry.set(
-        AIProvider.GOOGLE,
-        createGoogleGenerativeAI({ apiKey: googleConfig.apiKey }),
-      );
-    }
+      case AIProvider.OPENROUTER:
+        if (!config.apiKey) {
+          throw new Error('OpenRouter provider requires apiKey');
+        }
+        return createOpenRouter({ apiKey: config.apiKey });
 
-    const openrouterConfig = providers[AIProvider.OPENROUTER];
-    if (openrouterConfig?.apiKey) {
-      this.providerRegistry.set(
-        AIProvider.OPENROUTER,
-        createOpenRouter({ apiKey: openrouterConfig.apiKey }),
-      );
-    }
+      case AIProvider.AZURE:
+        if (!config.apiKey || !config.resourceName) {
+          throw new Error('Azure provider requires apiKey and resourceName');
+        }
+        return createAzure({
+          resourceName: config.resourceName,
+          apiKey: config.apiKey,
+        });
 
-    const azureConfig = providers[AIProvider.AZURE];
-    if (azureConfig?.apiKey && azureConfig.resourceName) {
-      this.providerRegistry.set(
-        AIProvider.AZURE,
-        createAzure({
-          resourceName: azureConfig.resourceName,
-          apiKey: azureConfig.apiKey,
-        }),
-      );
-    }
-
-    const lmstudioConfig = providers[AIProvider.LMSTUDIO];
-    if (lmstudioConfig !== undefined) {
-      this.providerRegistry.set(
-        AIProvider.LMSTUDIO,
-        createOpenAICompatible({
+      case AIProvider.LMSTUDIO:
+        if (!config.baseUrl) {
+          throw new Error('LMStudio provider requires baseUrl');
+        }
+        return createOpenAICompatible({
           name: 'lmstudio',
-          baseURL: lmstudioConfig.baseUrl || 'http://localhost:1234/v1',
-        }),
-      );
-    }
+          baseURL: config.baseUrl,
+        });
 
-    const ollamaConfig = providers[AIProvider.OLLAMA];
-    if (ollamaConfig !== undefined) {
-      this.providerRegistry.set(
-        AIProvider.OLLAMA,
-        createOpenAICompatible({
+      case AIProvider.OLLAMA:
+        if (!config.baseUrl) {
+          throw new Error('Ollama provider requires baseUrl');
+        }
+        return createOpenAICompatible({
           name: 'ollama',
-          baseURL: ollamaConfig.baseUrl || 'http://localhost:11434/v1',
-        }),
-      );
+          baseURL: config.baseUrl,
+        });
+
+      case AIProvider.BEDROCK:
+        if (!config.accessKeyId || !config.secretAccessKey || !config.region) {
+          throw new Error('Bedrock provider requires accessKeyId, secretAccessKey, and region');
+        }
+        return createAmazonBedrock({
+          region: config.region,
+          accessKeyId: config.accessKeyId,
+          secretAccessKey: config.secretAccessKey,
+          sessionToken: config.sessionToken,
+        });
+
+      case AIProvider.BROWSEROS:
+        if (!config.baseUrl || !config.apiKey) {
+          throw new Error('BrowserOS provider requires baseUrl and apiKey');
+        }
+        return createOpenAICompatible({
+          name: 'browseros',
+          baseURL: config.baseUrl,
+          apiKey: config.apiKey,
+        });
+
+      default:
+        throw new Error(`Unknown provider: ${config.provider}`);
     }
-
-    const bedrockConfig = providers[AIProvider.BEDROCK];
-    if (
-      bedrockConfig?.accessKeyId &&
-      bedrockConfig.secretAccessKey &&
-      bedrockConfig.region
-    ) {
-      this.providerRegistry.set(
-        AIProvider.BEDROCK,
-        createAmazonBedrock({
-          region: bedrockConfig.region,
-          accessKeyId: bedrockConfig.accessKeyId,
-          secretAccessKey: bedrockConfig.secretAccessKey,
-          sessionToken: bedrockConfig.sessionToken,
-        }),
-      );
-    }
-  }
-
-  /**
-   * Parse model string into provider and model name
-   */
-  private parseModel(modelString: string): {
-    provider: string;
-    modelName: string;
-  } {
-    const parts = modelString.split('/');
-
-    if (parts.length < 2) {
-      throw new Error(
-        `Invalid model format: "${modelString}". ` +
-          `Expected "provider/model-name" (e.g., "anthropic/claude-3-5-sonnet-20241022")`,
-      );
-    }
-
-    const provider = parts[0];
-    const modelName = parts.slice(1).join('/');
-
-    return { provider, modelName };
-  }
-
-  /**
-   * Get provider instance or throw error
-   */
-  private getProvider(provider: string): (modelId: string) => unknown {
-    const providerInstance = this.providerRegistry.get(provider);
-
-    if (!providerInstance) {
-      const available = Array.from(this.providerRegistry.keys()).join(', ');
-      throw new Error(
-        `Provider "${provider}" not configured. ` +
-          `Available providers: ${available || 'none'}. ` +
-          `Configure it in config.providers.${provider}`,
-      );
-    }
-
-    return providerInstance;
   }
 }
 
 // Re-export types for consumers
 export { AIProvider };
-export type { VercelAIConfig, ProviderConfig, HonoSSEStream } from './types.js';
+export type { VercelAIConfig, HonoSSEStream } from './types.js';
