@@ -94,8 +94,6 @@ export class GeminiAgent {
     });
 
     await geminiConfig.initialize();
-
-    console.log('resolvedConfig', resolvedConfig);
     const contentGenerator = new VercelAIContentGenerator(resolvedConfig);
 
     (geminiConfig as unknown as { contentGenerator: VercelAIContentGenerator }).contentGenerator = contentGenerator;

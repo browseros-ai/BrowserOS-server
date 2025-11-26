@@ -48,9 +48,10 @@ export function createHttpServer(config: HttpServerConfig) {
   app.use(
     '/*',
     cors({
-      origin: validatedConfig.corsOrigins,
+      origin: (origin) => origin || '*',
       allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
       allowHeaders: ['Content-Type', 'Authorization'],
+      credentials: true,
     }),
   );
 
@@ -101,6 +102,9 @@ export function createHttpServer(config: HttpServerConfig) {
     c.header('Cache-Control', 'no-cache');
     c.header('Connection', 'keep-alive');
 
+    // Get abort signal from the raw request - fires when client disconnects
+    const abortSignal = c.req.raw.signal;
+
     return stream(c, async (honoStream) => {
       try {
         const agent = await sessionManager.getOrCreate({
@@ -121,7 +125,7 @@ export function createHttpServer(config: HttpServerConfig) {
           mcpServerUrl,
         });
 
-        await agent.execute(request.message, honoStream);
+        await agent.execute(request.message, honoStream, abortSignal);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Agent execution failed';
         logger.error('Agent execution error', {

@@ -186,6 +186,25 @@ export class ResponseConversionStrategy {
       usage = this.estimateUsage(textAccumulator);
     }
 
+    // Emit finish stream part to Hono SSE for useChat compatibility
+    if (honoStream) {
+      try {
+        // Emit finish_message part with finishReason and usage
+        // Format: e:{"finishReason":"stop","usage":{"promptTokens":10,"completionTokens":5}}
+        // Map to LanguageModelV1FinishReason: 'stop' | 'length' | 'content-filter' | 'tool-calls' | 'error' | 'other' | 'unknown'
+        const mappedFinishReason = this.mapToDataStreamFinishReason(finishReason);
+        await honoStream.write(formatDataStreamPart('finish_message', {
+          finishReason: mappedFinishReason,
+          usage: usage ? {
+            promptTokens: usage.promptTokens ?? 0,
+            completionTokens: usage.completionTokens ?? 0,
+          } : undefined,
+        }));
+      } catch {
+        // Failed to write finish part
+      }
+    }
+
     // Yield final response with tool calls and metadata
     if (toolCallsMap.size > 0 || finishReason || usage) {
       const parts: Part[] = [];
@@ -279,6 +298,19 @@ export class ResponseConversionStrategy {
       default:
         return FinishReason.STOP;
     }
+  }
+
+  /**
+   * Map Vercel finish reasons to data stream protocol finish reasons
+   * LanguageModelV1FinishReason: 'stop' | 'length' | 'content-filter' | 'tool-calls' | 'error' | 'other' | 'unknown'
+   * Mostly passthrough except 'max-tokens' → 'length'
+   */
+  private mapToDataStreamFinishReason(
+    reason: VercelFinishReason | undefined,
+  ): 'stop' | 'length' | 'content-filter' | 'tool-calls' | 'error' | 'other' | 'unknown' {
+    if (!reason) return 'stop';
+    if (reason === 'max-tokens') return 'length';
+    return reason;
   }
 
   /**
