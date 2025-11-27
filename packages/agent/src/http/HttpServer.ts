@@ -138,6 +138,78 @@ export function createHttpServer(config: HttpServerConfig) {
     });
   });
 
+  // Batch endpoint: execute multiple act() commands sequentially
+  // Input: act("open amazon.com")\nact("open google.com")
+  app.post('/batch', validateRequest(ChatRequestSchema), async (c) => {
+    const request = c.get('validatedBody') as ChatRequest;
+
+    // Parse act("...") commands from message
+    const actRegex = /act\("([^"]+)"\)/g;
+    const actions: string[] = [];
+    let match;
+    while ((match = actRegex.exec(request.message)) !== null) {
+      actions.push(match[1]);
+    }
+
+    if (actions.length === 0) {
+      // If no act() found, treat whole message as single action
+      actions.push(request.message);
+    }
+
+    logger.info('Batch request received', {
+      conversationId: request.conversationId,
+      actionCount: actions.length,
+      actions,
+    });
+
+    c.header('Content-Type', 'text/plain; charset=utf-8');
+    c.header('X-Vercel-AI-Data-Stream', 'v1');
+    c.header('Cache-Control', 'no-cache');
+    c.header('Connection', 'keep-alive');
+
+    const abortSignal = c.req.raw.signal;
+
+    return stream(c, async (honoStream) => {
+      try {
+        const agent = await sessionManager.getOrCreate({
+          conversationId: request.conversationId,
+          provider: request.provider,
+          model: request.model,
+          apiKey: request.apiKey,
+          baseUrl: request.baseUrl,
+          resourceName: request.resourceName,
+          region: request.region,
+          accessKeyId: request.accessKeyId,
+          secretAccessKey: request.secretAccessKey,
+          sessionToken: request.sessionToken,
+          tempDir: validatedConfig.tempDir || DEFAULT_TEMP_DIR,
+          mcpServerUrl,
+        });
+
+        // Execute each action sequentially
+        for (let i = 0; i < actions.length; i++) {
+          if (abortSignal.aborted) break;
+
+          const action = actions[i];
+          logger.info(`Executing action ${i + 1}/${actions.length}`, { action });
+
+          // Stream a marker for this action
+          await honoStream.write(formatDataStreamPart('text', `\n--- Action ${i + 1}: ${action} ---\n`));
+
+          await agent.execute(action, honoStream, abortSignal);
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Batch execution failed';
+        logger.error('Batch execution error', {
+          conversationId: request.conversationId,
+          error: errorMessage,
+        });
+        await honoStream.write(formatDataStreamPart('error', errorMessage));
+        throw new AgentExecutionError('Batch execution failed', error instanceof Error ? error : undefined);
+      }
+    });
+  });
+
   app.delete('/chat/:conversationId', (c) => {
     const conversationId = c.req.param('conversationId');
     const deleted = sessionManager.delete(conversationId);
