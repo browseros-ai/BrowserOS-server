@@ -3,13 +3,23 @@ import { VercelAIConfigSchema } from '../agent/gemini-vercel-sdk-adapter/types.j
 
 /**
  * Chat request schema extends VercelAIConfig with request-specific fields
+ * responseSchema accepts any valid JSON Schema object
  */
 export const ChatRequestSchema = VercelAIConfigSchema.extend({
   conversationId: z.string().uuid(),
   message: z.string().min(1, 'Message cannot be empty'),
+  responseSchema: z.any().optional(),
 });
 
 export type ChatRequest = z.infer<typeof ChatRequestSchema>;
+
+export const ExtractRequestSchema = VercelAIConfigSchema.extend({
+  query: z.string().min(1, 'Query cannot be empty'),
+  content: z.string().min(1, 'Content cannot be empty'),
+  schema: z.any(),
+});
+
+export type ExtractRequest = z.infer<typeof ExtractRequestSchema>;
 
 export interface HttpServerConfig {
   port: number;

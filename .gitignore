@@ -165,3 +165,6 @@ browseros-server-*
 log.txt
 
 .DS_Store
+
+# BAML generated client
+**/baml_client/

@@ -37,6 +37,7 @@
     "@ai-sdk/provider": "2.0.0",
     "@ai-sdk/ui-utils": "^1.2.11",
     "@anthropic-ai/claude-agent-sdk": "^0.1.11",
+    "@boundaryml/baml": "^0.214.0",
     "@browseros/common": "workspace:*",
     "@browseros/server": "workspace:*",
     "@browseros/tools": "workspace:*",

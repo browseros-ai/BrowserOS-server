@@ -10,8 +10,9 @@ import type { z } from 'zod';
 
 import { SessionManager } from '../session/SessionManager.js';
 import { HttpAgentError, ValidationError, AgentExecutionError } from '../errors.js';
-import { ChatRequestSchema, HttpServerConfigSchema } from './types.js';
-import type { HttpServerConfig, ValidatedHttpServerConfig, ChatRequest } from './types.js';
+import { ChatRequestSchema, ExtractRequestSchema, HttpServerConfigSchema } from './types.js';
+import type { HttpServerConfig, ValidatedHttpServerConfig, ChatRequest, ExtractRequest } from './types.js';
+import { getBAMLExtractor } from '../baml/index.js';
 
 type AppVariables = {
   validatedBody: unknown;
@@ -95,6 +96,7 @@ export function createHttpServer(config: HttpServerConfig) {
       conversationId: request.conversationId,
       provider: request.provider,
       model: request.model,
+      hasResponseSchema: !!request.responseSchema,
     });
 
     c.header('Content-Type', 'text/plain; charset=utf-8');
@@ -125,7 +127,7 @@ export function createHttpServer(config: HttpServerConfig) {
           mcpServerUrl,
         });
 
-        await agent.execute(request.message, honoStream, abortSignal);
+        await agent.execute(request.message, honoStream, abortSignal, request.responseSchema);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Agent execution failed';
         logger.error('Agent execution error', {
@@ -208,6 +210,43 @@ export function createHttpServer(config: HttpServerConfig) {
         throw new AgentExecutionError('Batch execution failed', error instanceof Error ? error : undefined);
       }
     });
+  });
+
+  app.post('/extract', validateRequest(ExtractRequestSchema), async (c) => {
+    const request = c.get('validatedBody') as ExtractRequest;
+
+    logger.info('Extract request received', {
+      provider: request.provider,
+      model: request.model,
+      queryLength: request.query.length,
+      contentLength: request.content.length,
+    });
+
+    try {
+      const extractor = getBAMLExtractor();
+      const result = await extractor.extract(
+        request.query,
+        request.content,
+        request.schema,
+        {
+          provider: request.provider,
+          model: request.model,
+          apiKey: request.apiKey,
+          baseUrl: request.baseUrl,
+          resourceName: request.resourceName,
+          region: request.region,
+          accessKeyId: request.accessKeyId,
+          secretAccessKey: request.secretAccessKey,
+          sessionToken: request.sessionToken,
+        }
+      );
+
+      return c.json({ success: true, data: result });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Extraction failed';
+      logger.error('Extract error', { error: errorMessage });
+      return c.json({ success: false, error: errorMessage }, 500);
+    }
   });
 
   app.delete('/chat/:conversationId', (c) => {
