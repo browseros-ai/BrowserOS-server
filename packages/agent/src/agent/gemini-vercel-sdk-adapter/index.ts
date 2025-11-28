@@ -43,6 +43,7 @@ import type { VercelAIConfig } from './types.js';
 export class VercelAIContentGenerator implements ContentGenerator {
   private providerInstance: (modelId: string) => unknown;
   private model: string;
+  private provider: AIProvider;
   private honoStream?: HonoSSEStream;
 
   // Conversion strategies
@@ -52,6 +53,7 @@ export class VercelAIContentGenerator implements ContentGenerator {
 
   constructor(config: VercelAIConfig) {
     this.model = config.model;
+    this.provider = config.provider;
 
     // Initialize conversion strategies
     this.toolStrategy = new ToolConversionStrategy();
@@ -70,6 +72,13 @@ export class VercelAIContentGenerator implements ContentGenerator {
     this.honoStream = stream;
   }
 
+  private getSamplingParams(temperature?: number, topP?: number) {
+    if (this.provider === AIProvider.ANTHROPIC || this.provider === AIProvider.BROWSEROS) {
+      return { temperature };
+    }
+    return { temperature, topP };
+  }
+
   /**
    * Non-streaming content generation
    */
@@ -85,6 +94,11 @@ export class VercelAIContentGenerator implements ContentGenerator {
       request.config?.systemInstruction,
     );
 
+    const samplingParams = this.getSamplingParams(
+      request.config?.temperature,
+      request.config?.topP,
+    );
+
     const result = await generateText({
       model: this.providerInstance(this.model) as Parameters<
         typeof generateText
@@ -92,8 +106,7 @@ export class VercelAIContentGenerator implements ContentGenerator {
       messages,
       system,
       tools,
-      temperature: request.config?.temperature,
-      topP: request.config?.topP,
+      ...samplingParams,
     });
 
     return this.responseStrategy.vercelToGemini(result);
@@ -113,6 +126,11 @@ export class VercelAIContentGenerator implements ContentGenerator {
       request.config?.systemInstruction,
     );
 
+    const samplingParams = this.getSamplingParams(
+      request.config?.temperature,
+      request.config?.topP,
+    );
+
     const result = streamText({
       model: this.providerInstance(this.model) as Parameters<
         typeof streamText
@@ -120,8 +138,7 @@ export class VercelAIContentGenerator implements ContentGenerator {
       messages,
       system,
       tools,
-      temperature: request.config?.temperature,
-      topP: request.config?.topP,
+      ...samplingParams,
       abortSignal: request.config?.abortSignal,
     });
 
