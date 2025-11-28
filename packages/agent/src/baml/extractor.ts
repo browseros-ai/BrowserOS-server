@@ -180,8 +180,6 @@ export class BAMLExtractor {
       provider: providerConfig.provider,
     });
 
-    console.log('BAML prompt', prompt);
-
     // 3. Call LLM via Vercel AI SDK
     const contentGenerator = new VercelAIContentGenerator(providerConfig);
     const llmResponse = await contentGenerator.generateTextFromPrompt(prompt);
