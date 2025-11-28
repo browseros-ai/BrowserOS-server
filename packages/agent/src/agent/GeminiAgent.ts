@@ -6,12 +6,14 @@ import {
   type GeminiClient,
   type ToolCallRequestInfo,
 } from '@google/gemini-cli-core';
-import type { Part } from '@google/genai';
+import type { Part, Content } from '@google/genai';
 import { logger, fetchBrowserOSConfig, getLLMConfigFromProvider } from '@browseros/common';
 import { VercelAIContentGenerator, AIProvider } from './gemini-vercel-sdk-adapter/index.js';
 import type { HonoSSEStream } from './gemini-vercel-sdk-adapter/types.js';
 import { AgentExecutionError } from '../errors.js';
 import type { AgentConfig } from './types.js';
+import { getBAMLExtractor, type JSONSchema } from '../baml/index.js';
+import { buildExtractionContext } from './extractionUtils.js';
 
 const MAX_TURNS = 100;
 
@@ -43,6 +45,7 @@ export class GeminiAgent {
     private geminiConfig: GeminiConfig,
     private contentGenerator: VercelAIContentGenerator,
     private conversationId: string,
+    private agentConfig: AgentConfig,
   ) {}
 
   static async create(config: AgentConfig): Promise<GeminiAgent> {
@@ -107,14 +110,19 @@ export class GeminiAgent {
       model: resolvedConfig.model,
     });
 
-    return new GeminiAgent(client, geminiConfig, contentGenerator, resolvedConfig.conversationId);
+    return new GeminiAgent(client, geminiConfig, contentGenerator, resolvedConfig.conversationId, resolvedConfig);
   }
 
   getHistory() {
     return this.client.getHistory();
   }
 
-  async execute(message: string, honoStream: HonoSSEStream, signal?: AbortSignal): Promise<void> {
+  async execute(
+    message: string,
+    honoStream: HonoSSEStream,
+    signal?: AbortSignal,
+    responseSchema?: JSONSchema,
+  ): Promise<void> {
     this.contentGenerator.setHonoStream(honoStream);
 
     const abortSignal = signal || new AbortController().signal;
@@ -127,6 +135,7 @@ export class GeminiAgent {
       conversationId: this.conversationId,
       message: message.substring(0, 100),
       historyLength: this.client.getHistory().length,
+      hasResponseSchema: !!responseSchema,
     });
 
     while (true) {
@@ -210,6 +219,57 @@ export class GeminiAgent {
         });
         break;
       }
+
+    }
+
+    // Extract structured output if responseSchema provided
+    if (responseSchema) {
+      await this.extractStructuredOutput(message, honoStream, responseSchema);
+    }
+  }
+
+  private async extractStructuredOutput(
+    query: string,
+    honoStream: HonoSSEStream,
+    responseSchema: JSONSchema,
+  ): Promise<void> {
+    try {
+      const history = this.client.getHistory() as Content[];
+      const context = buildExtractionContext(history, 4);
+
+      if (!context) {
+        logger.warn('No model responses found for extraction', {
+          conversationId: this.conversationId,
+        });
+        return;
+      }
+
+      logger.debug('Extracting structured output', {
+        conversationId: this.conversationId,
+        queryLength: query.length,
+        contextLength: context.length,
+      });
+
+      const extractor = getBAMLExtractor();
+      const extracted = await extractor.extract(query, context, responseSchema, this.agentConfig);
+
+      // Emit structured output as SSE event
+      const sseData = JSON.stringify({
+        type: 'structured-output',
+        data: extracted,
+      });
+      await honoStream.write(`d:${sseData}\n`);
+
+      logger.info('Structured output extracted', {
+        conversationId: this.conversationId,
+        hasData: !!extracted,
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Failed to extract structured output', {
+        conversationId: this.conversationId,
+        error: errorMessage,
+      });
     }
   }
 }

@@ -172,6 +172,19 @@ export class VercelAIContentGenerator implements ContentGenerator {
   }
 
   /**
+   * Simple text generation from a prompt string
+   * Used by BAML extractor for structured output extraction
+   */
+  async generateTextFromPrompt(prompt: string, temperature = 0.1): Promise<string> {
+    const result = await generateText({
+      model: this.providerInstance(this.model) as Parameters<typeof generateText>[0]['model'],
+      prompt,
+      temperature,
+    });
+    return result.text;
+  }
+
+  /**
    * Create provider instance based on config
    */
   private createProvider(config: VercelAIConfig): (modelId: string) => unknown {

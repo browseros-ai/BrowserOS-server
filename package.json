@@ -8,9 +8,10 @@
     "packages/*"
   ],
   "scripts": {
-    "start": "bun run build:codex-sdk-ts && CODEX_BINARY_PATH=third_party/bin/codex bun --env-file=.env.dev packages/server/src/index.ts",
-    "start:debug": "bun run build:codex-sdk-ts && CODEX_BINARY_PATH=third_party/bin/codex bun --inspect-brk --env-file=.env.dev packages/server/src/index.ts",
+    "start": "bun run build:codex-sdk-ts && bun run build:baml && CODEX_BINARY_PATH=third_party/bin/codex bun --env-file=.env.dev packages/server/src/index.ts",
+    "start:debug": "bun run build:codex-sdk-ts && bun run build:baml && CODEX_BINARY_PATH=third_party/bin/codex bun --inspect-brk --env-file=.env.dev packages/server/src/index.ts",
     "build:codex-sdk-ts": "bun run --filter @browseros/codex-sdk-ts prepare",
+    "build:baml": "cd packages/agent/src/baml && bunx baml-cli generate",
     "test": "bun test; bun run test:cleanup",
     "test:all": "bun test --workspace",
     "test:common": "bun run --filter @browseros/common test",
