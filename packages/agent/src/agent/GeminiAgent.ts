@@ -193,11 +193,16 @@ export class GeminiAgent {
                 tool: requestInfo.name,
                 error: toolResponse.error.message,
               });
-            }
-
-            if (toolResponse.responseParts && toolResponse.responseParts.length > 0) {
+              toolResponseParts.push({
+                functionResponse: {
+                  id: requestInfo.callId,
+                  name: requestInfo.name,
+                  response: { error: toolResponse.error.message },
+                },
+              } as Part);
+            } else if (toolResponse.responseParts && toolResponse.responseParts.length > 0) {
               toolResponseParts.push(...(toolResponse.responseParts as Part[]));
-            } else if (!toolResponse.error) {
+            } else {
               logger.warn('Tool returned empty response', {
                 conversationId: this.conversationId,
                 tool: requestInfo.name,
@@ -207,14 +212,6 @@ export class GeminiAgent {
                   id: requestInfo.callId,
                   name: requestInfo.name,
                   response: { output: 'Tool executed but returned no output.' },
-                },
-              } as Part);
-            } else {
-              toolResponseParts.push({
-                functionResponse: {
-                  id: requestInfo.callId,
-                  name: requestInfo.name,
-                  response: { error: toolResponse.error.message },
                 },
               } as Part);
             }
