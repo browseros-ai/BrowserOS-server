@@ -33,6 +33,16 @@ export class MessageConversionStrategy {
     const messages: CoreMessage[] = [];
     const seenToolResultIds = new Set<string>();
 
+    // First pass: collect all tool result IDs to validate tool calls
+    const allToolResultIds = new Set<string>();
+    for (const content of contents) {
+      for (const part of content.parts || []) {
+        if (isFunctionResponsePart(part) && part.functionResponse?.id) {
+          allToolResultIds.add(part.functionResponse.id);
+        }
+      }
+    }
+
     for (const content of contents) {
       const role = content.role === 'model' ? 'assistant' : 'user';
 
@@ -178,21 +188,31 @@ export class MessageConversionStrategy {
           });
         }
 
-        // Add tool calls
-        // CRITICAL: Use 'input' property - this is what ToolCallPart expects per AI SDK v5
+        // Add tool calls - but ONLY if they have matching tool results
+        // This prevents Anthropic error: "tool_use ids were found without tool_result blocks"
         for (const fc of functionCalls) {
+          const toolCallId = fc.id || this.generateToolCallId();
+
+          // Skip orphaned tool calls (no matching tool result in history)
+          if (fc.id && !allToolResultIds.has(fc.id)) {
+            continue;
+          }
+
           contentParts.push({
             type: 'tool-call' as const,
-            toolCallId: fc.id || this.generateToolCallId(),
+            toolCallId,
             toolName: fc.name || 'unknown',
             input: fc.args || {},
           });
         }
 
-        messages.push({
-          role: 'assistant',
-          content: contentParts,
-        } as CoreMessage);
+        // Only add the message if there's content (text or valid tool calls)
+        if (contentParts.length > 0) {
+          messages.push({
+            role: 'assistant',
+            content: contentParts,
+          } as CoreMessage);
+        }
         continue;
       }
     }

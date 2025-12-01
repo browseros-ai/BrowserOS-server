@@ -93,7 +93,6 @@ export class VercelAIContentGenerator implements ContentGenerator {
       system,
       tools,
       temperature: request.config?.temperature,
-      topP: request.config?.topP,
     });
 
     return this.responseStrategy.vercelToGemini(result);
@@ -121,7 +120,6 @@ export class VercelAIContentGenerator implements ContentGenerator {
       system,
       tools,
       temperature: request.config?.temperature,
-      topP: request.config?.topP,
       abortSignal: request.config?.abortSignal,
     });
 
