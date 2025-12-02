@@ -12,8 +12,10 @@ import { VercelAIContentGenerator, AIProvider } from './gemini-vercel-sdk-adapte
 import type { HonoSSEStream } from './gemini-vercel-sdk-adapter/types.js';
 import { AgentExecutionError } from '../errors.js';
 import type { AgentConfig } from './types.js';
+import { getSystemPrompt } from './GeminiAgent.prompt.js';
 
 const MAX_TURNS = 100;
+const TOOL_TIMEOUT_MS = 120000; // 2 minutes timeout per tool call
 
 interface McpHttpServerOptions {
   httpUrl: string;
@@ -99,6 +101,7 @@ export class GeminiAgent {
     (geminiConfig as unknown as { contentGenerator: VercelAIContentGenerator }).contentGenerator = contentGenerator;
 
     const client = geminiConfig.getGeminiClient();
+    client.getChat().setSystemInstruction(getSystemPrompt());
     await client.setTools();
 
     logger.info('GeminiAgent created', {
@@ -173,11 +176,14 @@ export class GeminiAgent {
 
         for (const requestInfo of toolCallRequests) {
           try {
-            const completedToolCall = await executeToolCall(
-              this.geminiConfig,
-              requestInfo,
-              abortSignal,
-            );
+            const timeoutPromise = new Promise<never>((_, reject) => {
+              setTimeout(() => reject(new Error(`Tool "${requestInfo.name}" timed out after ${TOOL_TIMEOUT_MS / 1000}s`)), TOOL_TIMEOUT_MS);
+            });
+
+            const completedToolCall = await Promise.race([
+              executeToolCall(this.geminiConfig, requestInfo, abortSignal),
+              timeoutPromise,
+            ]);
 
             const toolResponse = completedToolCall.response;
 
@@ -187,10 +193,27 @@ export class GeminiAgent {
                 tool: requestInfo.name,
                 error: toolResponse.error.message,
               });
-            }
-
-            if (toolResponse.responseParts) {
+              toolResponseParts.push({
+                functionResponse: {
+                  id: requestInfo.callId,
+                  name: requestInfo.name,
+                  response: { error: toolResponse.error.message },
+                },
+              } as Part);
+            } else if (toolResponse.responseParts && toolResponse.responseParts.length > 0) {
               toolResponseParts.push(...(toolResponse.responseParts as Part[]));
+            } else {
+              logger.warn('Tool returned empty response', {
+                conversationId: this.conversationId,
+                tool: requestInfo.name,
+              });
+              toolResponseParts.push({
+                functionResponse: {
+                  id: requestInfo.callId,
+                  name: requestInfo.name,
+                  response: { output: 'Tool executed but returned no output.' },
+                },
+              } as Part);
             }
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -199,6 +222,14 @@ export class GeminiAgent {
               tool: requestInfo.name,
               error: errorMessage,
             });
+
+            toolResponseParts.push({
+              functionResponse: {
+                id: requestInfo.callId,
+                name: requestInfo.name,
+                response: { error: errorMessage },
+              },
+            } as Part);
           }
         }
 
