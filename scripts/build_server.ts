@@ -158,6 +158,7 @@ async function buildTarget(
     `--target=${target.bunTarget}`,
     "--env",
     "inline",
+    "--external=*?binary",
   ];
 
   const buildEnv = mode === "prod" ? createCleanEnv(envVars) : { ...process.env, ...envVars };
