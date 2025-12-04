@@ -142,6 +142,21 @@ async function chat(config: {
 
         try {
           const event = JSON.parse(data);
+
+          // Stream text deltas inline for readability
+          if (event.type === 'text-start') {
+            process.stdout.write('\n💬 ');
+            continue;
+          }
+          if (event.type === 'text-delta') {
+            process.stdout.write(event.delta);
+            continue;
+          }
+          if (event.type === 'text-end') {
+            process.stdout.write('\n\n');
+            continue;
+          }
+
           let displayEvent = event;
           if (!config.showFullOutput && event.type === 'tool-output-available') {
             displayEvent = { ...event, output: truncateOutput(event.output) };
