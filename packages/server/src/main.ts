@@ -48,6 +48,66 @@ const generatedCodeSimple = `
   }
 `;
 
+// SES Sandbox test code - no exports, agent is a global
+const sandboxCodeSimple = `
+  // Sandbox code - agent is available as global
+  console.log('Starting sandbox execution...');
+
+  await agent.nav('https://google.com').exec();
+
+  console.log('Navigation complete!');
+  return { success: true, message: 'Sandbox executed successfully' };
+`;
+
+const sandboxCodeMalicious = `
+  // Try to escape the sandbox - these should all fail
+  console.log('Attempting sandbox escape...');
+
+  // Try to access fetch
+  try {
+    await fetch('https://evil.com');
+    console.log('FAIL: fetch should not be available');
+  } catch (e) {
+    console.log('PASS: fetch blocked -', e.message);
+  }
+
+  // Try to access process
+  try {
+    console.log(process.env);
+    console.log('FAIL: process should not be available');
+  } catch (e) {
+    console.log('PASS: process blocked -', e.message);
+  }
+
+  // Try to access Function constructor
+  try {
+    const fn = new Function('return globalThis');
+    console.log('FAIL: Function constructor should not be available');
+  } catch (e) {
+    console.log('PASS: Function constructor blocked -', e.message);
+  }
+
+  // Try to access require
+  try {
+    const fs = require('fs');
+    console.log('FAIL: require should not be available');
+  } catch (e) {
+    console.log('PASS: require blocked -', e.message);
+  }
+
+  // Try to access globalThis
+  try {
+    console.log(globalThis);
+    console.log('FAIL: globalThis should not be available');
+  } catch (e) {
+    console.log('PASS: globalThis blocked -', e.message);
+  }
+
+  // The only thing that should work is agent
+  console.log('Agent is available:', typeof agent);
+  return { success: true, message: 'Sandbox security test complete' };
+`;
+
 const generatedCodeComplex = `
   // Complex graph: HN -> open top 5 links -> list tabs -> summarize each
   export default async function run(agent) {
@@ -124,6 +184,36 @@ async function testGraphRuntime(
   }
 }
 
+async function testSandboxRuntime(
+  mcpPort: number,
+  agentPort: number,
+  testSecurity: boolean = false,
+): Promise<void> {
+  logger.info(
+    `[Sandbox Test] Starting ${testSecurity ? 'SECURITY' : 'SIMPLE'} test...`,
+  );
+
+  const {executeInSandbox} = await import('@browseros/graph-runtime/sandbox');
+
+  const code = testSecurity ? sandboxCodeMalicious : sandboxCodeSimple;
+
+  logger.info(`[Sandbox Test] Code:\n${code}`);
+
+  const result = await executeInSandbox(code, {
+    mcpServerUrl: `http://127.0.0.1:${mcpPort}/mcp`,
+    agentServerUrl: `http://127.0.0.1:${agentPort}`,
+  });
+
+  if (result.success) {
+    logger.info(`[Sandbox Test] SUCCESS in ${result.duration}ms`);
+    logger.info(`[Sandbox Test] Result: ${JSON.stringify(result.result)}`);
+  } else {
+    logger.error(
+      `[Sandbox Test] FAILED in ${result.duration}ms: ${result.error}`,
+    );
+  }
+}
+
 void (async () => {
   logger.info(`Starting BrowserOS Server v${version}`);
 
@@ -166,7 +256,15 @@ void (async () => {
       );
     }
     logger.info('[Graph Runtime Test] Controller connected! Starting test...');
-    await testGraphRuntime(ports.httpMcpPort, ports.agentPort, true); // true = complex test
+
+    // Test 1: SES Sandbox security test (verifies escape attempts are blocked)
+    // await testSandboxRuntime(ports.httpMcpPort, ports.agentPort, true); // true = security test
+
+    // Test 2: SES Sandbox simple test (verifies agent works in sandbox)
+    await testSandboxRuntime(ports.httpMcpPort, ports.agentPort, false);
+
+    // Test 3: Original dynamic import test
+    // await testGraphRuntime(ports.httpMcpPort, ports.agentPort, true); // true = complex test
   };
   waitForConnectionAndTest().catch(err => {
     logger.error(`[Graph Runtime Test] Error: ${err}`);
