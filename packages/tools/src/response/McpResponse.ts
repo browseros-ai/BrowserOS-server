@@ -38,6 +38,7 @@ export class McpResponse implements Response {
   #textResponseLines: string[] = [];
   #formattedConsoleData?: string[];
   #images: ImageContentData[] = [];
+  #structuredContent: Record<string, unknown> = {};
   #networkRequestsOptions?: {
     include: boolean;
     pagination?: PaginationOptions;
@@ -130,6 +131,22 @@ export class McpResponse implements Response {
 
   get images(): ImageContentData[] {
     return this.#images;
+  }
+
+  addStructuredContent(key: string, value: unknown): void {
+    if (!key || typeof key !== 'string') {
+      return;
+    }
+    if (value === undefined) {
+      return;
+    }
+    this.#structuredContent[key] = value;
+  }
+
+  get structuredContent(): Record<string, unknown> | undefined {
+    return Object.keys(this.#structuredContent).length > 0
+      ? this.#structuredContent
+      : undefined;
   }
 
   /**
