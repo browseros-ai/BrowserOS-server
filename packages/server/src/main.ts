@@ -166,7 +166,7 @@ void (async () => {
       );
     }
     logger.info('[Graph Runtime Test] Controller connected! Starting test...');
-    await testGraphRuntime(ports.httpMcpPort, ports.agentPort, false); // true = complex test
+    await testGraphRuntime(ports.httpMcpPort, ports.agentPort, true); // true = complex test
   };
   waitForConnectionAndTest().catch(err => {
     logger.error(`[Graph Runtime Test] Error: ${err}`);
