@@ -8,7 +8,7 @@ import type http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { createHttpServer as createAgentHttpServer } from '@browseros/agent';
+import {createHttpServer as createAgentHttpServer} from '@browseros/agent';
 import {
   ensureBrowserConnected,
   McpContext,
@@ -35,8 +35,53 @@ const ports = parseArguments();
 
 configureLogDirectory(ports.executionDir);
 
+async function testDynamicCodeExecution(): Promise<void> {
+  const randomNum = Math.floor(Math.random() * 100) + 1;
+
+  const generatedCode = `
+    export default function run() {
+      const n = ${randomNum};
+      let sum = 0;
+      for (let i = 0; i <= n; i++) {
+        sum += i;
+      }
+      console.log('[DYNAMIC CODE] Sum of 0 to ' + n + ' = ' + sum);
+      return sum;
+    }
+  `;
+
+  const tempPath = path.join(ports.executionDir, `test-graph-${Date.now()}.ts`);
+
+  logger.info(`[Dynamic Exec Test] Writing generated code to: ${tempPath}`);
+  logger.info(`[Dynamic Exec Test] Code:\n${generatedCode}`);
+
+  fs.writeFileSync(tempPath, generatedCode);
+
+  try {
+    const module = await import(tempPath);
+    const result = module.default();
+    logger.info(`[Dynamic Exec Test] Execution result: ${result}`);
+    logger.info(`[Dynamic Exec Test] SUCCESS - Dynamic code execution works!`);
+  } catch (err) {
+    logger.error(`[Dynamic Exec Test] FAILED: ${err}`);
+  } finally {
+    fs.unlinkSync(tempPath);
+    logger.info(`[Dynamic Exec Test] Cleaned up temp file`);
+  }
+}
+
 void (async () => {
   logger.info(`Starting BrowserOS Server v${version}`);
+
+  // Under the hood it's doing this
+  //  This is essentially what import() does:
+  //  const code = fs.readFileSync(tempPath, 'utf-8');
+  //  const transpiledJs = bunTranspileTS(code);
+  //  const module = new Module();
+  //  vm.runInContext(transpiledJs, module);
+  //  return module.exports;
+
+  await testDynamicCodeExecution();
 
   logger.info(
     `[Controller Server] Starting on ws://127.0.0.1:${ports.extensionPort}`,
@@ -175,12 +220,13 @@ function startMcpServer(config: {
   return mcpServer;
 }
 
-function startAgentServer(
-  ports: ReturnType<typeof parseArguments>,
-): { server: any; config: any } {
+function startAgentServer(ports: ReturnType<typeof parseArguments>): {
+  server: any;
+  config: any;
+} {
   const mcpServerUrl = `http://127.0.0.1:${ports.httpMcpPort}/mcp`;
 
-  const { server, config } = createAgentHttpServer({
+  const {server, config} = createAgentHttpServer({
     port: ports.agentPort,
     host: '0.0.0.0',
     corsOrigins: ['*'],
@@ -188,10 +234,12 @@ function startAgentServer(
     mcpServerUrl,
   });
 
-  logger.info(`[Agent Server] Listening on http://127.0.0.1:${ports.agentPort}`);
+  logger.info(
+    `[Agent Server] Listening on http://127.0.0.1:${ports.agentPort}`,
+  );
   logger.info(`[Agent Server] MCP Server URL: ${mcpServerUrl}`);
 
-  return { server, config };
+  return {server, config};
 }
 
 function logSummary(ports: ReturnType<typeof parseArguments>) {
@@ -207,7 +255,7 @@ function logSummary(ports: ReturnType<typeof parseArguments>) {
 
 function createShutdownHandler(
   mcpServer: http.Server,
-  agentServer: { server: any; config: any },
+  agentServer: {server: any; config: any},
   controllerBridge: ControllerBridge,
 ) {
   return async () => {
