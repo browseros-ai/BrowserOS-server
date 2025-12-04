@@ -11,7 +11,6 @@
  */
 
 import { GenerateContentResponse, FinishReason, Part, FunctionCall } from '@google/genai'
-import { formatDataStreamPart } from '@ai-sdk/ui-utils';
 import type {
   VercelFinishReason,
   VercelUsage,
@@ -22,6 +21,7 @@ import {
   VercelStreamChunkSchema,
 } from '../types.js';
 import type { ToolConversionStrategy } from './tool.js';
+import { UIMessageStreamWriter } from '../ui-message-stream.js';
 
 export class ResponseConversionStrategy {
   constructor(private toolStrategy: ToolConversionStrategy) {}
@@ -84,7 +84,7 @@ export class ResponseConversionStrategy {
 
   /**
    * Convert Vercel stream to Gemini async generator
-   * DUAL OUTPUT: Emits raw Vercel chunks to Hono SSE + converts to Gemini format
+   * DUAL OUTPUT: Emits UI Message Stream to Hono SSE + converts to Gemini format
    *
    * @param stream - AsyncIterable of Vercel stream chunks
    * @param getUsage - Function to get usage metadata after stream completes
@@ -108,6 +108,16 @@ export class ResponseConversionStrategy {
 
     let finishReason: VercelFinishReason | undefined;
 
+    const uiStream = honoStream
+      ? new UIMessageStreamWriter(async (data) => {
+          try {
+            await honoStream.write(data);
+          } catch {
+            // Failed to write to stream
+          }
+        })
+      : null;
+
     // Process stream chunks
     for await (const rawChunk of stream) {
       const chunkType = (rawChunk as { type?: string }).type;
@@ -116,6 +126,10 @@ export class ResponseConversionStrategy {
       if (chunkType === 'error') {
         const errorChunk = rawChunk as any;
         const errorMessage = errorChunk.error?.message || errorChunk.error || 'Unknown error from LLM provider';
+        if (uiStream) {
+          await uiStream.writeError(errorMessage);
+          await uiStream.finish('error');
+        }
         throw new Error(`LLM Provider Error: ${errorMessage}`);
       }
 
@@ -133,13 +147,9 @@ export class ResponseConversionStrategy {
         const delta = chunk.text;
         textAccumulator += delta;
 
-        // Emit AI SDK format: 0:"text"
-        if (honoStream) {
-          try {
-            await honoStream.write(formatDataStreamPart('text', delta));
-          } catch {
-            // Failed to write to stream
-          }
+        // Emit UI Message Stream format
+        if (uiStream) {
+          await uiStream.writeTextDelta(delta);
         }
 
         yield {
@@ -154,17 +164,9 @@ export class ResponseConversionStrategy {
           ],
         } as GenerateContentResponse;
       } else if (chunk.type === 'tool-call') {
-        // Emit AI SDK format: 9:{"toolCallId":"...","toolName":"...","args":{...}}
-        if (honoStream) {
-          try {
-            await honoStream.write(formatDataStreamPart('tool_call', {
-              toolCallId: chunk.toolCallId,
-              toolName: chunk.toolName,
-              args: chunk.input,
-            }));
-          } catch {
-            // Failed to write to stream
-          }
+        // Emit UI Message Stream format for tool calls
+        if (uiStream) {
+          await uiStream.writeToolCall(chunk.toolCallId, chunk.toolName, chunk.input);
         }
 
         toolCallsMap.set(chunk.toolCallId, {
@@ -186,23 +188,10 @@ export class ResponseConversionStrategy {
       usage = this.estimateUsage(textAccumulator);
     }
 
-    // Emit finish stream part to Hono SSE for useChat compatibility
-    if (honoStream) {
-      try {
-        // Emit finish_message part with finishReason and usage
-        // Format: e:{"finishReason":"stop","usage":{"promptTokens":10,"completionTokens":5}}
-        // Map to LanguageModelV1FinishReason: 'stop' | 'length' | 'content-filter' | 'tool-calls' | 'error' | 'other' | 'unknown'
-        const mappedFinishReason = this.mapToDataStreamFinishReason(finishReason);
-        await honoStream.write(formatDataStreamPart('finish_message', {
-          finishReason: mappedFinishReason,
-          usage: usage ? {
-            promptTokens: usage.promptTokens ?? 0,
-            completionTokens: usage.completionTokens ?? 0,
-          } : undefined,
-        }));
-      } catch {
-        // Failed to write finish part
-      }
+    // Emit finish events to UI Message Stream
+    if (uiStream) {
+      const mappedFinishReason = this.mapToDataStreamFinishReason(finishReason);
+      await uiStream.finish(mappedFinishReason);
     }
 
     // Yield final response with tool calls and metadata

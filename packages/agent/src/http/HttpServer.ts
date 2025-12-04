@@ -2,8 +2,8 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { stream } from 'hono/streaming';
 import { serve } from '@hono/node-server';
-import { formatDataStreamPart } from '@ai-sdk/ui-utils';
 import { logger } from '@browseros/common';
+import { formatUIMessageStreamEvent, formatUIMessageStreamDone } from '../agent/gemini-vercel-sdk-adapter/ui-message-stream.js';
 import type { Context, Next } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import type { z } from 'zod';
@@ -97,8 +97,8 @@ export function createHttpServer(config: HttpServerConfig) {
       model: request.model,
     });
 
-    c.header('Content-Type', 'text/plain; charset=utf-8');
-    c.header('X-Vercel-AI-Data-Stream', 'v1');
+    c.header('Content-Type', 'text/event-stream');
+    c.header('x-vercel-ai-ui-message-stream', 'v1');
     c.header('Cache-Control', 'no-cache');
     c.header('Connection', 'keep-alive');
 
@@ -132,7 +132,8 @@ export function createHttpServer(config: HttpServerConfig) {
           conversationId: request.conversationId,
           error: errorMessage,
         });
-        await honoStream.write(formatDataStreamPart('error', errorMessage));
+        await honoStream.write(formatUIMessageStreamEvent({ type: 'error', errorText: errorMessage }));
+        await honoStream.write(formatUIMessageStreamDone());
         throw new AgentExecutionError('Agent execution failed', error instanceof Error ? error : undefined);
       }
     });
