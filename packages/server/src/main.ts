@@ -35,34 +35,71 @@ const ports = parseArguments();
 
 configureLogDirectory(ports.executionDir);
 
+const generatedCodeSimple = `
+  // Graph-generated code - agent is passed in, no imports needed
+  export default async function run(agent) {
+    // Simple test: just navigate to a page
+    await agent
+      .nav('https://google.com')
+      .exec();
+
+    console.log('[GRAPH] Navigation complete!');
+    return { success: true, message: 'Graph executed successfully' };
+  }
+`;
+
+const generatedCodeComplex = `
+  // Complex graph: HN -> open top 5 links -> list tabs -> summarize each
+  export default async function run(agent) {
+    console.log('[GRAPH] Step 1: Navigate to Hacker News');
+    await agent.nav('https://news.ycombinator.com').exec();
+
+    console.log('[GRAPH] Step 2: Open top 5 story links in new tabs');
+    await agent.act('Open the first 5 story links (the main article links, not comments) in new tabs.').exec();
+
+    console.log('[GRAPH] Step 3: List all open tabs');
+    const tabs = await agent.listTabs();
+    console.log('[GRAPH] Open tabs:', tabs.length);
+
+    console.log('[GRAPH] Step 4: Summarize each tab');
+    const summaries = [];
+    for (const tab of tabs) {
+      if (tab.url && !tab.url.includes('news.ycombinator.com')) {
+        console.log('[GRAPH] Summarizing:', tab.title);
+        await agent.switchToTab(tab.id);
+
+        const summary = await agent
+          .extract('Summarize this page in 2-3 sentences. What is the main topic and key points?', {
+            schema: { type: 'object', properties: { title: { type: 'string' }, summary: { type: 'string' } } }
+          })
+          .exec();
+
+        summaries.push({ url: tab.url, ...summary });
+      }
+    }
+
+    console.log('[GRAPH] Done! Summaries:', JSON.stringify(summaries, null, 2));
+    return { success: true, tabCount: tabs.length, summaries };
+  }
+`;
+
 async function testGraphRuntime(
   mcpPort: number,
   agentPort: number,
+  useComplex: boolean = false,
 ): Promise<void> {
-  logger.info(`[Graph Runtime Test] Starting...`);
+  logger.info(
+    `[Graph Runtime Test] Starting ${useComplex ? 'COMPLEX' : 'SIMPLE'} test...`,
+  );
 
-  // Import graph-runtime (server-side, works with workspace resolution)
   const {Agent} = await import('@browseros/graph-runtime');
 
-  // Server creates and configures the agent
   const agent = new Agent({
     mcpServerUrl: `http://127.0.0.1:${mcpPort}/mcp`,
     agentServerUrl: `http://127.0.0.1:${agentPort}`,
   });
 
-  // Generated code receives agent as parameter - no import needed
-  const generatedCode = `
-    // Graph-generated code - agent is passed in, no imports needed
-    export default async function run(agent) {
-      // Simple test: just navigate to a page
-      await agent
-        .nav('https://google.com')
-        .exec();
-
-      console.log('[GRAPH] Navigation complete!');
-      return { success: true, message: 'Graph executed successfully' };
-    }
-  `;
+  const generatedCode = useComplex ? generatedCodeComplex : generatedCodeSimple;
 
   const tempPath = path.join(ports.executionDir, `test-graph-${Date.now()}.ts`);
 
@@ -82,8 +119,8 @@ async function testGraphRuntime(
     logger.error(`[Graph Runtime Test] FAILED: ${err}`);
   } finally {
     await agent.close();
-    fs.unlinkSync(tempPath);
-    logger.info(`[Graph Runtime Test] Cleaned up temp file`);
+    // fs.unlinkSync(tempPath);
+    // logger.info(`[Graph Runtime Test] Cleaned up temp file`);
   }
 }
 
@@ -124,10 +161,12 @@ void (async () => {
     logger.info('[Graph Runtime Test] Waiting for controller connection...');
     while (!controllerContext.isConnected()) {
       await new Promise(resolve => setTimeout(resolve, 5000));
-      logger.info('[Graph Runtime Test] Still waiting for controller connection...');
+      logger.info(
+        '[Graph Runtime Test] Still waiting for controller connection...',
+      );
     }
     logger.info('[Graph Runtime Test] Controller connected! Starting test...');
-    await testGraphRuntime(ports.httpMcpPort, ports.agentPort);
+    await testGraphRuntime(ports.httpMcpPort, ports.agentPort, false); // true = complex test
   };
   waitForConnectionAndTest().catch(err => {
     logger.error(`[Graph Runtime Test] Error: ${err}`);
