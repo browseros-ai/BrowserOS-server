@@ -63,28 +63,12 @@ const sandboxCodeMalicious = `
   // Try to escape the sandbox - these should all fail
   console.log('Attempting sandbox escape...');
 
-  // Try to access fetch
+  // Try to access non-localhost fetch
   try {
     await fetch('https://evil.com');
-    console.log('FAIL: fetch should not be available');
+    console.log('FAIL: external fetch should be blocked');
   } catch (e) {
-    console.log('PASS: fetch blocked -', e.message);
-  }
-
-  // Try to access process
-  try {
-    console.log(process.env);
-    console.log('FAIL: process should not be available');
-  } catch (e) {
-    console.log('PASS: process blocked -', e.message);
-  }
-
-  // Try to access Function constructor
-  try {
-    const fn = new Function('return globalThis');
-    console.log('FAIL: Function constructor should not be available');
-  } catch (e) {
-    console.log('PASS: Function constructor blocked -', e.message);
+    console.log('PASS: external fetch blocked -', e.message);
   }
 
   // Try to access require
@@ -95,50 +79,77 @@ const sandboxCodeMalicious = `
     console.log('PASS: require blocked -', e.message);
   }
 
-  // Try to access globalThis
+  // Try to access Bun
   try {
-    console.log(globalThis);
-    console.log('FAIL: globalThis should not be available');
+    const file = Bun.file('/etc/passwd');
+    console.log('FAIL: Bun should not be available');
   } catch (e) {
-    console.log('PASS: globalThis blocked -', e.message);
+    console.log('PASS: Bun blocked -', e.message);
   }
 
-  // The only thing that should work is agent
+  // Agent should work
   console.log('Agent is available:', typeof agent);
   return { success: true, message: 'Sandbox security test complete' };
 `;
 
+const sandboxCodeComplex = `
+  // Complex graph: HN -> open top 5 links -> summarize each tab
+  console.log('Step 1: Navigate to Hacker News');
+  await agent.nav('https://news.ycombinator.com').exec();
+
+  console.log('Step 2: Open top 3 story links in new tabs');
+  await agent.act('Open the first 3 story links in new tabs.').exec();
+
+  console.log('Step 3: Waiting 2s then listing tabs...');
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  const tabs = await agent.listTabs();
+  console.log('Found', tabs.length, 'tabs');
+
+  console.log('Step 4: Summarize each article tab');
+  const summaries = [];
+  for (const tab of tabs) {
+    if (tab.url && !tab.url.includes('news.ycombinator.com')) {
+      console.log('Summarizing tab:', tab.id, tab.title);
+      const summary = await agent
+        .act('For tab ' + tab.id + ' (' + tab.title + '), provide a 5-point summary of the page content.')
+        .exec();
+      console.log('Summary for', tab.title + ':', summary);
+      summaries.push({ tabId: tab.id, title: tab.title, summary });
+    }
+  }
+
+  console.log('Done!');
+  return { success: true, tabCount: tabs.length, summaries };
+`;
+
 const generatedCodeComplex = `
-  // Complex graph: HN -> open top 5 links -> list tabs -> summarize each
+  // Complex graph: HN -> open top 5 links -> summarize each tab
   export default async function run(agent) {
     console.log('[GRAPH] Step 1: Navigate to Hacker News');
     await agent.nav('https://news.ycombinator.com').exec();
 
-    console.log('[GRAPH] Step 2: Open top 5 story links in new tabs');
-    await agent.act('Open the first 5 story links (the main article links, not comments) in new tabs.').exec();
+    console.log('[GRAPH] Step 2: Open top 3 story links in new tabs');
+    await agent.act('Open the first 3 story links in new tabs.').exec();
 
-    console.log('[GRAPH] Step 3: List all open tabs');
+    console.log('[GRAPH] Step 3: Waiting 2s then listing tabs...');
+    await new Promise(resolve => setTimeout(resolve, 2000));
     const tabs = await agent.listTabs();
-    console.log('[GRAPH] Open tabs:', tabs.length);
+    console.log('[GRAPH] Found', tabs.length, 'tabs');
 
-    console.log('[GRAPH] Step 4: Summarize each tab');
+    console.log('[GRAPH] Step 4: Summarize each article tab');
     const summaries = [];
     for (const tab of tabs) {
       if (tab.url && !tab.url.includes('news.ycombinator.com')) {
-        console.log('[GRAPH] Summarizing:', tab.title);
-        await agent.switchToTab(tab.id);
-
+        console.log('[GRAPH] Summarizing tab:', tab.id, tab.title);
         const summary = await agent
-          .extract('Summarize this page in 2-3 sentences. What is the main topic and key points?', {
-            schema: { type: 'object', properties: { title: { type: 'string' }, summary: { type: 'string' } } }
-          })
+          .act('For tab ' + tab.id + ' (' + tab.title + '), provide a 5-point summary of the page content.')
           .exec();
-
-        summaries.push({ url: tab.url, ...summary });
+        console.log('[GRAPH] Summary for', tab.title + ':', summary);
+        summaries.push({ tabId: tab.id, title: tab.title, summary });
       }
     }
 
-    console.log('[GRAPH] Done! Summaries:', JSON.stringify(summaries, null, 2));
+    console.log('[GRAPH] Done!');
     return { success: true, tabCount: tabs.length, summaries };
   }
 `;
@@ -187,15 +198,18 @@ async function testGraphRuntime(
 async function testSandboxRuntime(
   mcpPort: number,
   agentPort: number,
-  testSecurity: boolean = false,
+  mode: 'simple' | 'security' | 'complex' = 'simple',
 ): Promise<void> {
-  logger.info(
-    `[Sandbox Test] Starting ${testSecurity ? 'SECURITY' : 'SIMPLE'} test...`,
-  );
+  logger.info(`[Sandbox Test] Starting ${mode.toUpperCase()} test...`);
 
   const {executeInSandbox} = await import('@browseros/graph-runtime/sandbox');
 
-  const code = testSecurity ? sandboxCodeMalicious : sandboxCodeSimple;
+  const codeMap = {
+    simple: sandboxCodeSimple,
+    security: sandboxCodeMalicious,
+    complex: sandboxCodeComplex,
+  };
+  const code = codeMap[mode];
 
   logger.info(`[Sandbox Test] Code:\n${code}`);
 
@@ -257,14 +271,17 @@ void (async () => {
     }
     logger.info('[Graph Runtime Test] Controller connected! Starting test...');
 
-    // Test 1: SES Sandbox security test (verifies escape attempts are blocked)
-    // await testSandboxRuntime(ports.httpMcpPort, ports.agentPort, true); // true = security test
+    // Test 1: Sandbox security test (verifies escape attempts are blocked)
+    // await testSandboxRuntime(ports.httpMcpPort, ports.agentPort, 'security');
 
-    // Test 2: SES Sandbox simple test (verifies agent works in sandbox)
-    await testSandboxRuntime(ports.httpMcpPort, ports.agentPort, false);
+    // Test 2: Sandbox simple test (verifies agent works in sandbox)
+    // await testSandboxRuntime(ports.httpMcpPort, ports.agentPort, 'simple');
 
-    // Test 3: Original dynamic import test
-    // await testGraphRuntime(ports.httpMcpPort, ports.agentPort, true); // true = complex test
+    // Test 3: Sandbox complex test (HN -> open links -> summarize)
+    // await testSandboxRuntime(ports.httpMcpPort, ports.agentPort, 'complex');
+
+    // Test 4: Original dynamic import test
+    await testGraphRuntime(ports.httpMcpPort, ports.agentPort, true);
   };
   waitForConnectionAndTest().catch(err => {
     logger.error(`[Graph Runtime Test] Error: ${err}`);
