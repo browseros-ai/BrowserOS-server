@@ -13,6 +13,7 @@ import type { HonoSSEStream } from './gemini-vercel-sdk-adapter/types.js';
 import { AgentExecutionError } from '../errors.js';
 import type { AgentConfig } from './types.js';
 import { getSystemPrompt } from './GeminiAgent.prompt.js';
+import { formatUIMessageStreamEvent } from './gemini-vercel-sdk-adapter/ui-message-stream.js';
 
 const MAX_TURNS = 100;
 const TOOL_TIMEOUT_MS = 120000; // 2 minutes timeout per tool call
@@ -200,8 +201,22 @@ export class GeminiAgent {
                   response: { error: toolResponse.error.message },
                 },
               } as Part);
+              if (honoStream) {
+                honoStream.write(formatUIMessageStreamEvent({
+                  type: 'tool-output-error',
+                  toolCallId: requestInfo.callId,
+                  errorText: toolResponse.error.message,
+                }));
+              }
             } else if (toolResponse.responseParts && toolResponse.responseParts.length > 0) {
               toolResponseParts.push(...(toolResponse.responseParts as Part[]));
+              if (honoStream) {
+                honoStream.write(formatUIMessageStreamEvent({
+                  type: 'tool-output-available',
+                  toolCallId: requestInfo.callId,
+                  output: toolResponse.responseParts,
+                }));
+              }
             } else {
               logger.warn('Tool returned empty response', {
                 conversationId: this.conversationId,
@@ -214,6 +229,13 @@ export class GeminiAgent {
                   response: { output: 'Tool executed but returned no output.' },
                 },
               } as Part);
+              if (honoStream) {
+                honoStream.write(formatUIMessageStreamEvent({
+                  type: 'tool-output-error',
+                  toolCallId: requestInfo.callId,
+                  errorText: 'Tool executed but returned no output.',
+                }));
+              }
             }
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -230,6 +252,13 @@ export class GeminiAgent {
                 response: { error: errorMessage },
               },
             } as Part);
+            if (honoStream) {
+              honoStream.write(formatUIMessageStreamEvent({
+                type: 'tool-output-error',
+                toolCallId: requestInfo.callId,
+                errorText: errorMessage,
+              }));
+            }
           }
         }
 
