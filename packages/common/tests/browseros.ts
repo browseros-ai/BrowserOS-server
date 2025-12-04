@@ -73,9 +73,12 @@ export async function ensureBrowserOS(options?: {
   tempUserDataDir: string;
 }> {
   const cdpPort = options?.cdpPort ?? parseInt(process.env.CDP_PORT || '9005');
-  const httpMcpPort = options?.httpMcpPort ?? parseInt(process.env.HTTP_MCP_PORT || '9105');
-  const agentPort = options?.agentPort ?? parseInt(process.env.AGENT_PORT || '9205');
-  const extensionPort = options?.extensionPort ?? parseInt(process.env.EXTENSION_PORT || '9305');
+  const httpMcpPort =
+    options?.httpMcpPort ?? parseInt(process.env.HTTP_MCP_PORT || '9105');
+  const agentPort =
+    options?.agentPort ?? parseInt(process.env.AGENT_PORT || '9205');
+  const extensionPort =
+    options?.extensionPort ?? parseInt(process.env.EXTENSION_PORT || '9305');
   const binaryPath =
     options?.binaryPath ??
     process.env.BROWSEROS_BINARY ??
@@ -125,6 +128,7 @@ export async function ensureBrowserOS(options?: {
       '--use-mock-keychain',
       '--show-component-extension-options',
       '--enable-logging=stderr',
+      '--headless=new',
       `--user-data-dir=${tempUserDataDir}`,
       `--remote-debugging-port=${cdpPort}`,
       `--browseros-mcp-port=${httpMcpPort}`,
