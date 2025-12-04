@@ -1,0 +1,16 @@
+{
+  "name": "@browseros/graph-runtime",
+  "version": "0.0.1",
+  "description": "Runtime library for BrowserOS graph execution",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --format esm --target=node",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.20.0",
+    "zod": "^3.23.8"
+  }
+}
