@@ -30,6 +30,11 @@ export const getActiveTab = defineTool<z.ZodRawShape, Context, Response>({
     response.appendResponseLine(`URL: ${data.url}`);
     response.appendResponseLine(`Tab ID: ${data.tabId}`);
     response.appendResponseLine(`Window ID: ${data.windowId}`);
+
+    response.addStructuredContent('tabId', data.tabId);
+    response.addStructuredContent('url', data.url);
+    response.addStructuredContent('title', data.title);
+    response.addStructuredContent('windowId', data.windowId);
   },
 });
 

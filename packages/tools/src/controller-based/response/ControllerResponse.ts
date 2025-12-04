@@ -16,6 +16,7 @@ import type {Response, ImageContentData} from '../types/Response.js';
 export class ControllerResponse implements Response {
   #textResponseLines: string[] = [];
   #images: ImageContentData[] = [];
+  #structuredContent: Record<string, unknown> = {};
 
   appendResponseLine(value: string): void {
     this.#textResponseLines.push(value);
@@ -31,6 +32,22 @@ export class ControllerResponse implements Response {
 
   get images(): ImageContentData[] {
     return this.#images;
+  }
+
+  addStructuredContent(key: string, value: unknown): void {
+    if (!key || typeof key !== 'string') {
+      return;
+    }
+    if (value === undefined) {
+      return;
+    }
+    this.#structuredContent[key] = value;
+  }
+
+  get structuredContent(): Record<string, unknown> | undefined {
+    return Object.keys(this.#structuredContent).length > 0
+      ? this.#structuredContent
+      : undefined;
   }
 
   /**
