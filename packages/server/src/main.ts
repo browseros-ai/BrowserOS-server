@@ -35,53 +35,60 @@ const ports = parseArguments();
 
 configureLogDirectory(ports.executionDir);
 
-async function testDynamicCodeExecution(): Promise<void> {
-  const randomNum = Math.floor(Math.random() * 100) + 1;
+async function testGraphRuntime(
+  mcpPort: number,
+  agentPort: number,
+): Promise<void> {
+  logger.info(`[Graph Runtime Test] Starting...`);
 
+  // Import graph-runtime (server-side, works with workspace resolution)
+  const {Agent} = await import('@browseros/graph-runtime');
+
+  // Server creates and configures the agent
+  const agent = new Agent({
+    mcpServerUrl: `http://127.0.0.1:${mcpPort}/mcp`,
+    agentServerUrl: `http://127.0.0.1:${agentPort}`,
+  });
+
+  // Generated code receives agent as parameter - no import needed
   const generatedCode = `
-    export default function run() {
-      const n = ${randomNum};
-      let sum = 0;
-      for (let i = 0; i <= n; i++) {
-        sum += i;
-      }
-      console.log('[DYNAMIC CODE] Sum of 0 to ' + n + ' = ' + sum);
-      return sum;
+    // Graph-generated code - agent is passed in, no imports needed
+    export default async function run(agent) {
+      // Simple test: just navigate to a page
+      await agent
+        .nav('https://google.com')
+        .exec();
+
+      console.log('[GRAPH] Navigation complete!');
+      return { success: true, message: 'Graph executed successfully' };
     }
   `;
 
   const tempPath = path.join(ports.executionDir, `test-graph-${Date.now()}.ts`);
 
-  logger.info(`[Dynamic Exec Test] Writing generated code to: ${tempPath}`);
-  logger.info(`[Dynamic Exec Test] Code:\n${generatedCode}`);
+  logger.info(`[Graph Runtime Test] Writing generated code to: ${tempPath}`);
+  logger.info(`[Graph Runtime Test] Code:\n${generatedCode}`);
 
   fs.writeFileSync(tempPath, generatedCode);
 
   try {
     const module = await import(tempPath);
-    const result = module.default();
-    logger.info(`[Dynamic Exec Test] Execution result: ${result}`);
-    logger.info(`[Dynamic Exec Test] SUCCESS - Dynamic code execution works!`);
+    const result = await module.default(agent); // Pass agent to the function
+    logger.info(
+      `[Graph Runtime Test] Execution result: ${JSON.stringify(result)}`,
+    );
+    logger.info(`[Graph Runtime Test] SUCCESS - Graph runtime works!`);
   } catch (err) {
-    logger.error(`[Dynamic Exec Test] FAILED: ${err}`);
+    logger.error(`[Graph Runtime Test] FAILED: ${err}`);
   } finally {
+    await agent.close();
     fs.unlinkSync(tempPath);
-    logger.info(`[Dynamic Exec Test] Cleaned up temp file`);
+    logger.info(`[Graph Runtime Test] Cleaned up temp file`);
   }
 }
 
 void (async () => {
   logger.info(`Starting BrowserOS Server v${version}`);
-
-  // Under the hood it's doing this
-  //  This is essentially what import() does:
-  //  const code = fs.readFileSync(tempPath, 'utf-8');
-  //  const transpiledJs = bunTranspileTS(code);
-  //  const module = new Module();
-  //  vm.runInContext(transpiledJs, module);
-  //  return module.exports;
-
-  await testDynamicCodeExecution();
 
   logger.info(
     `[Controller Server] Starting on ws://127.0.0.1:${ports.extensionPort}`,
@@ -110,6 +117,21 @@ void (async () => {
   const agentServer = startAgentServer(ports);
 
   logSummary(ports);
+
+  // Test graph runtime after controller is connected
+  // Comment this out to skip the test
+  const waitForConnectionAndTest = async () => {
+    logger.info('[Graph Runtime Test] Waiting for controller connection...');
+    while (!controllerContext.isConnected()) {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      logger.info('[Graph Runtime Test] Still waiting for controller connection...');
+    }
+    logger.info('[Graph Runtime Test] Controller connected! Starting test...');
+    await testGraphRuntime(ports.httpMcpPort, ports.agentPort);
+  };
+  waitForConnectionAndTest().catch(err => {
+    logger.error(`[Graph Runtime Test] Error: ${err}`);
+  });
 
   const shutdown = createShutdownHandler(
     mcpServer,

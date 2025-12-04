@@ -162,6 +162,13 @@
         "typescript": "^5.9.2",
       },
     },
+    "packages/graph-runtime": {
+      "name": "@browseros/graph-runtime",
+      "version": "0.0.1",
+      "dependencies": {
+        "zod": "^3.23.8",
+      },
+    },
     "packages/mcp": {
       "name": "@browseros/mcp",
       "version": "0.0.1",
@@ -318,6 +325,8 @@
     "@browseros/common": ["@browseros/common@workspace:packages/common"],
 
     "@browseros/controller-server": ["@browseros/controller-server@workspace:packages/controller-server"],
+
+    "@browseros/graph-runtime": ["@browseros/graph-runtime@workspace:packages/graph-runtime"],
 
     "@browseros/mcp": ["@browseros/mcp@workspace:packages/mcp"],
 
