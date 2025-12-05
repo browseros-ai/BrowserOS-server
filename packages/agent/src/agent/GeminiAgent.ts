@@ -17,6 +17,8 @@ import { formatUIMessageStreamEvent } from './gemini-vercel-sdk-adapter/ui-messa
 
 const MAX_TURNS = 100;
 const TOOL_TIMEOUT_MS = 120000; // 2 minutes timeout per tool call
+const DEFAULT_CONTEXT_WINDOW = 1000000; // 1M tokens (gemini-cli-core default)
+const DEFAULT_COMPRESSION_RATIO = 0.75; // Compress at 75% of context window
 
 interface McpHttpServerOptions {
   httpUrl: string;
@@ -78,6 +80,20 @@ export class GeminiAgent {
 
     const modelString = `${resolvedConfig.provider}/${resolvedConfig.model}`;
 
+    // Calculate compression threshold based on context window size
+    // Formula: (compressionRatio * contextWindowSize) / DEFAULT_CONTEXT_WINDOW
+    // This converts user's absolute token preference to gemini-cli-core's multiplier format
+    const contextWindow = resolvedConfig.contextWindowSize ?? DEFAULT_CONTEXT_WINDOW;
+    const compressionRatio = resolvedConfig.compressionRatio ?? DEFAULT_COMPRESSION_RATIO;
+    const compressionThreshold = (compressionRatio * contextWindow) / DEFAULT_CONTEXT_WINDOW;
+
+    logger.info('Compression config', {
+      contextWindow,
+      compressionRatio,
+      compressionThreshold,
+      compressesAtTokens: Math.floor(compressionRatio * contextWindow),
+    });
+
     const geminiConfig = new GeminiConfig({
       sessionId: resolvedConfig.conversationId,
       targetDir: tempDir,
@@ -85,6 +101,7 @@ export class GeminiAgent {
       debugMode: false,
       model: modelString,
       excludeTools: ['run_shell_command', 'write_file', 'replace'],
+      compressionThreshold,
       mcpServers: resolvedConfig.mcpServerUrl
         ? {
             'browseros-mcp': createHttpMcpServerConfig({
@@ -135,7 +152,13 @@ export class GeminiAgent {
 
     while (true) {
       turnCount++;
-      logger.debug(`Turn ${turnCount}`, { conversationId: this.conversationId });
+      const historyLength = this.client.getHistory().length;
+      const lastPromptTokens = this.client.getChat?.()?.getLastPromptTokenCount?.() ?? 'N/A';
+      logger.debug(`Turn ${turnCount}`, {
+        conversationId: this.conversationId,
+        historyLength,
+        lastPromptTokens,
+      });
 
       if (turnCount > MAX_TURNS) {
         logger.warn('Max turns exceeded', {
@@ -160,6 +183,18 @@ export class GeminiAgent {
 
         if (event.type === GeminiEventType.ToolCallRequest) {
           toolCallRequests.push(event.value as ToolCallRequestInfo);
+        } else if (event.type === GeminiEventType.ChatCompressed) {
+          const compressionInfo = event.value as {
+            originalTokenCount: number;
+            newTokenCount: number;
+            compressionStatus: string;
+          };
+          logger.info('Chat history compressed', {
+            conversationId: this.conversationId,
+            originalTokens: compressionInfo.originalTokenCount,
+            newTokens: compressionInfo.newTokenCount,
+            savedTokens: compressionInfo.originalTokenCount - compressionInfo.newTokenCount,
+          });
         } else if (event.type === GeminiEventType.Error) {
           const errorValue = event.value as { error: Error };
           throw new AgentExecutionError('Agent execution failed', errorValue.error);

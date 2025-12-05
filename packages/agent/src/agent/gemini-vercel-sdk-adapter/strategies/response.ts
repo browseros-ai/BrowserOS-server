@@ -233,7 +233,8 @@ export class ResponseConversionStrategy {
   }
 
   /**
-   * Convert usage metadata with fallback for undefined fields
+   * Convert usage metadata from AI SDK format to Gemini format
+   * AI SDK uses inputTokens/outputTokens, Gemini uses promptTokenCount/candidatesTokenCount
    */
   private convertUsage(usage: VercelUsage | undefined):
     | {
@@ -247,8 +248,8 @@ export class ResponseConversionStrategy {
     }
 
     return {
-      promptTokenCount: usage.promptTokens ?? 0,
-      candidatesTokenCount: usage.completionTokens ?? 0,
+      promptTokenCount: usage.inputTokens ?? 0,
+      candidatesTokenCount: usage.outputTokens ?? 0,
       totalTokenCount: usage.totalTokens ?? 0,
     };
   }
@@ -259,8 +260,8 @@ export class ResponseConversionStrategy {
   private estimateUsage(text: string): VercelUsage {
     const estimatedTokens = Math.ceil(text.length / 4);
     return {
-      promptTokens: 0,
-      completionTokens: estimatedTokens,
+      inputTokens: 0,
+      outputTokens: estimatedTokens,
       totalTokens: estimatedTokens,
     };
   }

@@ -120,6 +120,9 @@ export function createHttpServer(config: HttpServerConfig) {
           accessKeyId: request.accessKeyId,
           secretAccessKey: request.secretAccessKey,
           sessionToken: request.sessionToken,
+          // Context window configuration
+          contextWindowSize: request.contextWindowSize,
+          compressionRatio: request.compressionRatio,
           // Agent-specific
           tempDir: validatedConfig.tempDir || DEFAULT_TEMP_DIR,
           mcpServerUrl,

@@ -7,6 +7,9 @@ import { VercelAIConfigSchema } from '../agent/gemini-vercel-sdk-adapter/types.j
 export const ChatRequestSchema = VercelAIConfigSchema.extend({
   conversationId: z.string().uuid(),
   message: z.string().min(1, 'Message cannot be empty'),
+  // Context window configuration
+  contextWindowSize: z.number().optional(), // Model's context window in tokens
+  compressionRatio: z.number().min(0).max(1).optional(), // Compress at this % of context
 });
 
 export type ChatRequest = z.infer<typeof ChatRequestSchema>;

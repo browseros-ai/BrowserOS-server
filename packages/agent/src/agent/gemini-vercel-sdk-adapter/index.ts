@@ -20,6 +20,7 @@ import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
 import type { ContentGenerator } from '@google/gemini-cli-core';
 import type { HonoSSEStream } from './types.js';
 import { AIProvider } from './types.js';
+import { logger } from '@browseros/common';
 import type {
   GenerateContentParameters,
   GenerateContentResponse,
@@ -123,19 +124,47 @@ export class VercelAIContentGenerator implements ContentGenerator {
       abortSignal: request.config?.abortSignal,
     });
 
+    // Estimate prompt tokens from ALL request components (system + tools + contents)
+    // This must match what the LLM actually receives to avoid compression failures
+    const systemTokens = system ? Math.ceil(system.length / 4) : 0;
+    const toolsTokens = tools ? Math.ceil(JSON.stringify(tools).length / 4) : 0;
+    const contentsTokens = Math.ceil(JSON.stringify(contents).length / 4);
+    const estimatedPromptTokens = systemTokens + toolsTokens + contentsTokens;
+
     return this.responseStrategy.streamToGemini(
       result.fullStream,
       async () => {
         try {
           const usage = await result.usage;
-          return {
-            promptTokens: (usage as { promptTokens?: number }).promptTokens,
-            completionTokens: (usage as { completionTokens?: number })
-              .completionTokens,
-            totalTokens: (usage as { totalTokens?: number }).totalTokens,
+          // AI SDK returns LanguageModelUsage: inputTokens, outputTokens, totalTokens
+          const rawUsage = usage as {
+            inputTokens?: number;
+            outputTokens?: number;
+            totalTokens?: number;
+            reasoningTokens?: number;
+            cachedInputTokens?: number;
           };
-        } catch {
-          return undefined;
+
+          const inputTokens = rawUsage.inputTokens;
+          const outputTokens = rawUsage.outputTokens ?? 0;
+          const totalTokens = rawUsage.totalTokens ?? ((inputTokens ?? 0) + outputTokens);
+          
+          return {
+            // Use actual value if available, otherwise estimate from request contents
+            inputTokens: inputTokens && inputTokens > 0 ? inputTokens : estimatedPromptTokens,
+            outputTokens,
+            totalTokens: inputTokens && inputTokens > 0 ? totalTokens : (estimatedPromptTokens + outputTokens),
+          };
+        } catch (err) {
+          logger.debug('Usage fetch failed, using estimate', {
+            error: String(err),
+            estimated: { system: systemTokens, tools: toolsTokens, contents: contentsTokens, total: estimatedPromptTokens },
+          });
+          return {
+            inputTokens: estimatedPromptTokens,
+            outputTokens: 0,
+            totalTokens: estimatedPromptTokens,
+          };
         }
       },
       this.honoStream,
