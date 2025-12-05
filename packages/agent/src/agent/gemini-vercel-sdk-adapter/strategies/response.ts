@@ -14,14 +14,13 @@ import { GenerateContentResponse, FinishReason, Part, FunctionCall } from '@goog
 import type {
   VercelFinishReason,
   VercelUsage,
-  HonoSSEStream,
 } from '../types.js';
 import {
   VercelGenerateTextResultSchema,
   VercelStreamChunkSchema,
 } from '../types.js';
 import type { ToolConversionStrategy } from './tool.js';
-import { UIMessageStreamWriter } from '../ui-message-stream.js';
+import type { UIMessageStreamWriter } from '../ui-message-stream.js';
 
 export class ResponseConversionStrategy {
   constructor(private toolStrategy: ToolConversionStrategy) {}
@@ -84,17 +83,17 @@ export class ResponseConversionStrategy {
 
   /**
    * Convert Vercel stream to Gemini async generator
-   * DUAL OUTPUT: Emits UI Message Stream to Hono SSE + converts to Gemini format
+   * DUAL OUTPUT: Emits UI Message Stream events + converts to Gemini format
    *
    * @param stream - AsyncIterable of Vercel stream chunks
    * @param getUsage - Function to get usage metadata after stream completes
-   * @param honoStream - Optional Hono SSE stream for direct frontend streaming
+   * @param uiStream - Optional shared UIMessageStreamWriter (lifecycle managed by caller)
    * @returns AsyncGenerator yielding Gemini responses
    */
   async *streamToGemini(
     stream: AsyncIterable<unknown>,
     getUsage: () => Promise<VercelUsage | undefined>,
-    honoStream?: HonoSSEStream,
+    uiStream?: UIMessageStreamWriter,
   ): AsyncGenerator<GenerateContentResponse> {
     let textAccumulator = '';
     const toolCallsMap = new Map<
@@ -107,16 +106,6 @@ export class ResponseConversionStrategy {
     >();
 
     let finishReason: VercelFinishReason | undefined;
-
-    const uiStream = honoStream
-      ? new UIMessageStreamWriter(async (data) => {
-          try {
-            await honoStream.write(data);
-          } catch {
-            // Failed to write to stream
-          }
-        })
-      : null;
 
     // Process stream chunks
     for await (const rawChunk of stream) {
@@ -188,11 +177,8 @@ export class ResponseConversionStrategy {
       usage = this.estimateUsage(textAccumulator);
     }
 
-    // Emit finish events to UI Message Stream
-    if (uiStream) {
-      const mappedFinishReason = this.mapToDataStreamFinishReason(finishReason);
-      await uiStream.finish(mappedFinishReason);
-    }
+    // Note: finishStep() is called by GeminiAgent after tool outputs are written
+    // This ensures the step includes: LLM response + tool calls + tool results
 
     // Yield final response with tool calls and metadata
     if (toolCallsMap.size > 0 || finishReason || usage) {
@@ -288,19 +274,6 @@ export class ResponseConversionStrategy {
       default:
         return FinishReason.STOP;
     }
-  }
-
-  /**
-   * Map Vercel finish reasons to data stream protocol finish reasons
-   * LanguageModelV1FinishReason: 'stop' | 'length' | 'content-filter' | 'tool-calls' | 'error' | 'other' | 'unknown'
-   * Mostly passthrough except 'max-tokens' → 'length'
-   */
-  private mapToDataStreamFinishReason(
-    reason: VercelFinishReason | undefined,
-  ): 'stop' | 'length' | 'content-filter' | 'tool-calls' | 'error' | 'other' | 'unknown' {
-    if (!reason) return 'stop';
-    if (reason === 'max-tokens') return 'length';
-    return reason;
   }
 
   /**

@@ -12,8 +12,9 @@ import { VercelAIContentGenerator, AIProvider } from './gemini-vercel-sdk-adapte
 import type { HonoSSEStream } from './gemini-vercel-sdk-adapter/types.js';
 import { AgentExecutionError } from '../errors.js';
 import type { AgentConfig } from './types.js';
+import type { BrowserContext } from '../http/types.js';
 import { getSystemPrompt } from './GeminiAgent.prompt.js';
-import { formatUIMessageStreamEvent } from './gemini-vercel-sdk-adapter/ui-message-stream.js';
+import { UIMessageStreamWriter } from './gemini-vercel-sdk-adapter/ui-message-stream.js';
 
 const MAX_TURNS = 100;
 const TOOL_TIMEOUT_MS = 120000; // 2 minutes timeout per tool call
@@ -134,14 +135,43 @@ export class GeminiAgent {
     return this.client.getHistory();
   }
 
-  async execute(message: string, honoStream: HonoSSEStream, signal?: AbortSignal): Promise<void> {
-    this.contentGenerator.setHonoStream(honoStream);
-
+  async execute(
+    message: string,
+    honoStream: HonoSSEStream,
+    signal?: AbortSignal,
+    browserContext?: BrowserContext,
+  ): Promise<void> {
     const abortSignal = signal || new AbortController().signal;
     const promptId = `${this.conversationId}-${Date.now()}`;
 
-    let currentParts: Part[] = [{ text: message }];
+    // Prepend browser context to the message if provided
+    let messageWithContext = message;
+    if (browserContext?.activeTab) {
+      const tab = browserContext.activeTab;
+      const tabContext = `[Active Tab: id=${tab.id}${tab.url ? `, url="${tab.url}"` : ''}${tab.title ? `, title="${tab.title}"` : ''}]\n\n`;
+      messageWithContext = tabContext + message;
+    }
+
+    let currentParts: Part[] = [{ text: messageWithContext }];
     let turnCount = 0;
+
+    // Create single UIMessageStreamWriter to manage entire stream lifecycle
+    const uiStream = honoStream
+      ? new UIMessageStreamWriter(async (data) => {
+          try {
+            await honoStream.write(data);
+          } catch {
+            // Failed to write to stream
+          }
+        })
+      : null;
+
+    // Pass shared writer to content generator for LLM streaming
+    this.contentGenerator.setUIStream(uiStream ?? undefined);
+
+    if (uiStream) {
+      await uiStream.start();
+    }
 
     logger.info('Starting agent execution', {
       conversationId: this.conversationId,
@@ -217,21 +247,13 @@ export class GeminiAgent {
                   response: { error: toolResponse.error.message },
                 },
               } as Part);
-              if (honoStream) {
-                honoStream.write(formatUIMessageStreamEvent({
-                  type: 'tool-output-error',
-                  toolCallId: requestInfo.callId,
-                  errorText: toolResponse.error.message,
-                }));
+              if (uiStream) {
+                await uiStream.writeToolError(requestInfo.callId, toolResponse.error.message);
               }
             } else if (toolResponse.responseParts && toolResponse.responseParts.length > 0) {
               toolResponseParts.push(...(toolResponse.responseParts as Part[]));
-              if (honoStream) {
-                honoStream.write(formatUIMessageStreamEvent({
-                  type: 'tool-output-available',
-                  toolCallId: requestInfo.callId,
-                  output: toolResponse.responseParts,
-                }));
+              if (uiStream) {
+                await uiStream.writeToolResult(requestInfo.callId, toolResponse.responseParts);
               }
             } else {
               logger.warn('Tool returned empty response', {
@@ -245,12 +267,8 @@ export class GeminiAgent {
                   response: { output: 'Tool executed but returned no output.' },
                 },
               } as Part);
-              if (honoStream) {
-                honoStream.write(formatUIMessageStreamEvent({
-                  type: 'tool-output-error',
-                  toolCallId: requestInfo.callId,
-                  errorText: 'Tool executed but returned no output.',
-                }));
+              if (uiStream) {
+                await uiStream.writeToolError(requestInfo.callId, 'Tool executed but returned no output.');
               }
             }
           } catch (error) {
@@ -268,14 +286,15 @@ export class GeminiAgent {
                 response: { error: errorMessage },
               },
             } as Part);
-            if (honoStream) {
-              honoStream.write(formatUIMessageStreamEvent({
-                type: 'tool-output-error',
-                toolCallId: requestInfo.callId,
-                errorText: errorMessage,
-              }));
+            if (uiStream) {
+              await uiStream.writeToolError(requestInfo.callId, errorMessage);
             }
           }
+        }
+
+        // Finish the step after all tool outputs are written
+        if (uiStream) {
+          await uiStream.finishStep();
         }
 
         currentParts = toolResponseParts;
@@ -286,6 +305,11 @@ export class GeminiAgent {
         });
         break;
       }
+    }
+
+    // Finish the UI stream after all turns complete
+    if (uiStream) {
+      await uiStream.finish();
     }
   }
 }

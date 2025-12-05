@@ -123,7 +123,7 @@ export function createHttpServer(config: HttpServerConfig) {
           mcpServerUrl,
         });
 
-        await agent.execute(request.message, honoStream, abortSignal);
+        await agent.execute(request.message, honoStream, abortSignal, request.browserContext);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Agent execution failed';
         logger.error('Agent execution error', {
