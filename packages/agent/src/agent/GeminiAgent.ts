@@ -183,18 +183,6 @@ export class GeminiAgent {
 
         if (event.type === GeminiEventType.ToolCallRequest) {
           toolCallRequests.push(event.value as ToolCallRequestInfo);
-        } else if (event.type === GeminiEventType.ChatCompressed) {
-          const compressionInfo = event.value as {
-            originalTokenCount: number;
-            newTokenCount: number;
-            compressionStatus: string;
-          };
-          logger.info('Chat history compressed', {
-            conversationId: this.conversationId,
-            originalTokens: compressionInfo.originalTokenCount,
-            newTokens: compressionInfo.newTokenCount,
-            savedTokens: compressionInfo.originalTokenCount - compressionInfo.newTokenCount,
-          });
         } else if (event.type === GeminiEventType.Error) {
           const errorValue = event.value as { error: Error };
           throw new AgentExecutionError('Agent execution failed', errorValue.error);
