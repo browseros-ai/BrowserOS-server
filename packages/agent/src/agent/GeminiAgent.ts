@@ -81,17 +81,16 @@ export class GeminiAgent {
     const modelString = `${resolvedConfig.provider}/${resolvedConfig.model}`;
 
     // Calculate compression threshold based on context window size
-    // Formula: (compressionRatio * contextWindowSize) / DEFAULT_CONTEXT_WINDOW
-    // This converts user's absolute token preference to gemini-cli-core's multiplier format
+    // Formula: (DEFAULT_COMPRESSION_RATIO * contextWindowSize) / DEFAULT_CONTEXT_WINDOW
+    // This converts absolute token threshold to gemini-cli-core's multiplier format
     const contextWindow = resolvedConfig.contextWindowSize ?? DEFAULT_CONTEXT_WINDOW;
-    const compressionRatio = resolvedConfig.compressionRatio ?? DEFAULT_COMPRESSION_RATIO;
-    const compressionThreshold = (compressionRatio * contextWindow) / DEFAULT_CONTEXT_WINDOW;
+    const compressionThreshold = (DEFAULT_COMPRESSION_RATIO * contextWindow) / DEFAULT_CONTEXT_WINDOW;
 
     logger.info('Compression config', {
       contextWindow,
-      compressionRatio,
+      compressionRatio: compressionThreshold,
       compressionThreshold,
-      compressesAtTokens: Math.floor(compressionRatio * contextWindow),
+      compressesAtTokens: Math.floor(DEFAULT_COMPRESSION_RATIO * contextWindow),
     });
 
     const geminiConfig = new GeminiConfig({
@@ -101,7 +100,7 @@ export class GeminiAgent {
       debugMode: false,
       model: modelString,
       excludeTools: ['run_shell_command', 'write_file', 'replace'],
-      compressionThreshold: Math.floor(compressionThreshold),
+      compressionThreshold: compressionThreshold,
       mcpServers: resolvedConfig.mcpServerUrl
         ? {
             'browseros-mcp': createHttpMcpServerConfig({
