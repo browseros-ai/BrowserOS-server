@@ -29,14 +29,16 @@ export const VercelToolCallSchema = z.object({
 export type VercelToolCall = z.infer<typeof VercelToolCallSchema>;
 
 /**
- * Usage metadata from result
- * All fields can be undefined per SDK types
- * Uses actual SDK property names: promptTokens, completionTokens, totalTokens
+ * Usage metadata from result (LanguageModelUsage)
+ * AI SDK uses inputTokens/outputTokens (not promptTokens/completionTokens)
+ * @see https://ai-sdk.dev/docs/reference/ai-sdk-core/stream-text
  */
 export const VercelUsageSchema = z.object({
-  promptTokens: z.number().optional(),
-  completionTokens: z.number().optional(),
+  inputTokens: z.number().optional(),
+  outputTokens: z.number().optional(),
   totalTokens: z.number().optional(),
+  reasoningTokens: z.number().optional(),
+  cachedInputTokens: z.number().optional(),
 });
 
 export type VercelUsage = z.infer<typeof VercelUsageSchema>;

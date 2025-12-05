@@ -113,19 +113,17 @@ export function createHttpServer(config: HttpServerConfig) {
           model: request.model,
           apiKey: request.apiKey,
           baseUrl: request.baseUrl,
-          // Azure-specific
           resourceName: request.resourceName,
-          // AWS Bedrock-specific
           region: request.region,
           accessKeyId: request.accessKeyId,
           secretAccessKey: request.secretAccessKey,
           sessionToken: request.sessionToken,
-          // Agent-specific
+          contextWindowSize: request.contextWindowSize,
           tempDir: validatedConfig.tempDir || DEFAULT_TEMP_DIR,
           mcpServerUrl,
         });
 
-        await agent.execute(request.message, honoStream, abortSignal);
+        await agent.execute(request.message, honoStream, abortSignal, request.browserContext);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Agent execution failed';
         logger.error('Agent execution error', {

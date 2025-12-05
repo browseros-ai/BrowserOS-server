@@ -1,12 +1,26 @@
 import { z } from 'zod';
 import { VercelAIConfigSchema } from '../agent/gemini-vercel-sdk-adapter/types.js';
 
-/**
- * Chat request schema extends VercelAIConfig with request-specific fields
- */
+export const TabSchema = z.object({
+  id: z.number(),
+  url: z.string().optional(),
+  title: z.string().optional(),
+});
+
+export type Tab = z.infer<typeof TabSchema>;
+
+export const BrowserContextSchema = z.object({
+  activeTab: TabSchema.optional(),
+  tabs: z.array(TabSchema).optional(),
+});
+
+export type BrowserContext = z.infer<typeof BrowserContextSchema>;
+
 export const ChatRequestSchema = VercelAIConfigSchema.extend({
   conversationId: z.string().uuid(),
   message: z.string().min(1, 'Message cannot be empty'),
+  contextWindowSize: z.number().optional(),
+  browserContext: BrowserContextSchema.optional(),
 });
 
 export type ChatRequest = z.infer<typeof ChatRequestSchema>;

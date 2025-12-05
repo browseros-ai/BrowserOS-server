@@ -45,8 +45,8 @@ describe('ResponseConversionStrategy', () => {
         text: 'Hello world',
         finishReason: 'stop' as const,
         usage: {
-          promptTokens: 10,
-          completionTokens: 5,
+          inputTokens: 10,
+          outputTokens: 5,
           totalTokens: 15,
         },
       };
@@ -68,8 +68,8 @@ describe('ResponseConversionStrategy', () => {
       const vercelResult = {
         text: 'Test',
         usage: {
-          promptTokens: 100,
-          completionTokens: 50,
+          inputTokens: 100,
+          outputTokens: 50,
           totalTokens: 150,
         },
       };
@@ -198,11 +198,13 @@ describe('ResponseConversionStrategy', () => {
     });
 
     t('tests that usage with undefined fields defaults to 0', () => {
+      // The adapter's getUsage now provides estimates, but convertUsage still defaults to 0
+      // for any undefined fields passed through
       const vercelResult = {
         text: 'Test',
         usage: {
-          promptTokens: undefined,
-          completionTokens: 5,
+          inputTokens: undefined,
+          outputTokens: 5,
           totalTokens: undefined,
         },
       };
@@ -530,8 +532,8 @@ describe('ResponseConversionStrategy', () => {
         })();
 
         const getUsage = async () => ({
-          promptTokens: 10,
-          completionTokens: 5,
+          inputTokens: 10,
+          outputTokens: 5,
           totalTokens: 15,
         });
 
