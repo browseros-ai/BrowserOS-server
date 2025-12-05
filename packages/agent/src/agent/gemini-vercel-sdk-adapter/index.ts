@@ -18,8 +18,8 @@ import { createAzure } from '@ai-sdk/azure';
 import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
 
 import type { ContentGenerator } from '@google/gemini-cli-core';
-import type { HonoSSEStream } from './types.js';
 import { AIProvider } from './types.js';
+import type { UIMessageStreamWriter } from './ui-message-stream.js';
 import { logger } from '@browseros/common';
 import type {
   GenerateContentParameters,
@@ -44,7 +44,7 @@ import type { VercelAIConfig } from './types.js';
 export class VercelAIContentGenerator implements ContentGenerator {
   private providerInstance: (modelId: string) => unknown;
   private model: string;
-  private honoStream?: HonoSSEStream;
+  private uiStream?: UIMessageStreamWriter;
 
   // Conversion strategies
   private toolStrategy: ToolConversionStrategy;
@@ -64,11 +64,11 @@ export class VercelAIContentGenerator implements ContentGenerator {
   }
 
   /**
-   * Set/override the Hono SSE stream for the current request
-   * This allows reusing the same ContentGenerator across multiple requests
+   * Set/override the UIMessageStreamWriter for the current request
+   * This ensures a single writer manages the stream lifecycle across all turns
    */
-  setHonoStream(stream: HonoSSEStream | undefined): void {
-    this.honoStream = stream;
+  setUIStream(writer: UIMessageStreamWriter | undefined): void {
+    this.uiStream = writer;
   }
 
   /**
@@ -148,7 +148,7 @@ export class VercelAIContentGenerator implements ContentGenerator {
           const inputTokens = rawUsage.inputTokens;
           const outputTokens = rawUsage.outputTokens ?? 0;
           const totalTokens = rawUsage.totalTokens ?? ((inputTokens ?? 0) + outputTokens);
-          
+
           return {
             // Use actual value if available, otherwise estimate from request contents
             inputTokens: inputTokens && inputTokens > 0 ? inputTokens : estimatedPromptTokens,
@@ -167,7 +167,7 @@ export class VercelAIContentGenerator implements ContentGenerator {
           };
         }
       },
-      this.honoStream,
+      this.uiStream,
     );
   }
 
