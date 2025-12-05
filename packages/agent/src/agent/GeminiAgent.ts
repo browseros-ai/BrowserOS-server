@@ -152,13 +152,7 @@ export class GeminiAgent {
 
     while (true) {
       turnCount++;
-      const historyLength = this.client.getHistory().length;
-      const lastPromptTokens = this.client.getChat?.()?.getLastPromptTokenCount?.() ?? 'N/A';
-      logger.debug(`Turn ${turnCount}`, {
-        conversationId: this.conversationId,
-        historyLength,
-        lastPromptTokens,
-      });
+      logger.debug(`Turn ${turnCount}`, { conversationId: this.conversationId });
 
       if (turnCount > MAX_TURNS) {
         logger.warn('Max turns exceeded', {
