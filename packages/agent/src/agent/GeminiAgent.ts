@@ -101,7 +101,7 @@ export class GeminiAgent {
       debugMode: false,
       model: modelString,
       excludeTools: ['run_shell_command', 'write_file', 'replace'],
-      compressionThreshold,
+      compressionThreshold: Math.floor(compressionThreshold),
       mcpServers: resolvedConfig.mcpServerUrl
         ? {
             'browseros-mcp': createHttpMcpServerConfig({
