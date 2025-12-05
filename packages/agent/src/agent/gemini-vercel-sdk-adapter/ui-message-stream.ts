@@ -45,6 +45,7 @@ export class UIMessageStreamWriter {
   private currentReasoningId: string | null = null;
   private hasStarted = false;
   private hasStartedStep = false;
+  private hasFinished = false;
   private write: (data: string) => Promise<void>;
 
   constructor(writeFn: (data: string) => Promise<void>) {
@@ -147,12 +148,16 @@ export class UIMessageStreamWriter {
   }
 
   async finish(finishReason: string = 'stop'): Promise<void> {
+    if (this.hasFinished) return;
+    this.hasFinished = true;
     await this.finishStep();
     await this.write(formatUIMessageStreamEvent({ type: 'finish', finishReason }));
     await this.write(formatUIMessageStreamDone());
   }
 
   async abort(): Promise<void> {
+    if (this.hasFinished) return;
+    this.hasFinished = true;
     await this.endText();
     await this.endReasoning();
     await this.write(formatUIMessageStreamEvent({ type: 'abort' }));
