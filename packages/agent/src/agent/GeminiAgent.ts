@@ -12,6 +12,7 @@ import { VercelAIContentGenerator, AIProvider } from './gemini-vercel-sdk-adapte
 import type { HonoSSEStream } from './gemini-vercel-sdk-adapter/types.js';
 import { AgentExecutionError } from '../errors.js';
 import type { AgentConfig } from './types.js';
+import type { BrowserContext } from '../http/types.js';
 import { getSystemPrompt } from './GeminiAgent.prompt.js';
 import { formatUIMessageStreamEvent } from './gemini-vercel-sdk-adapter/ui-message-stream.js';
 
@@ -134,13 +135,26 @@ export class GeminiAgent {
     return this.client.getHistory();
   }
 
-  async execute(message: string, honoStream: HonoSSEStream, signal?: AbortSignal): Promise<void> {
+  async execute(
+    message: string,
+    honoStream: HonoSSEStream,
+    signal?: AbortSignal,
+    browserContext?: BrowserContext,
+  ): Promise<void> {
     this.contentGenerator.setHonoStream(honoStream);
 
     const abortSignal = signal || new AbortController().signal;
     const promptId = `${this.conversationId}-${Date.now()}`;
 
-    let currentParts: Part[] = [{ text: message }];
+    // Prepend browser context to the message if provided
+    let messageWithContext = message;
+    if (browserContext?.activeTab) {
+      const tab = browserContext.activeTab;
+      const tabContext = `[Active Tab: id=${tab.id}${tab.url ? `, url="${tab.url}"` : ''}${tab.title ? `, title="${tab.title}"` : ''}]\n\n`;
+      messageWithContext = tabContext + message;
+    }
+
+    let currentParts: Part[] = [{ text: messageWithContext }];
     let turnCount = 0;
 
     logger.info('Starting agent execution', {
