@@ -172,6 +172,7 @@ export function createHttpServer(config: HttpServerConfig) {
     fetch: app.fetch,
     port: validatedConfig.port,
     hostname: validatedConfig.host,
+    idleTimeout: 0,
   });
 
   logger.info('HTTP Agent Server started', {
