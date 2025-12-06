@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { stream } from 'hono/streaming';
-import { serve } from '@hono/node-server';
 import { logger } from '@browseros/common';
 import { formatUIMessageStreamEvent, formatUIMessageStreamDone } from '../agent/gemini-vercel-sdk-adapter/ui-message-stream.js';
 import type { Context, Next } from 'hono';
@@ -102,10 +101,23 @@ export function createHttpServer(config: HttpServerConfig) {
     c.header('Cache-Control', 'no-cache');
     c.header('Connection', 'keep-alive');
 
-    // Get abort signal from the raw request - fires when client disconnects
-    const abortSignal = c.req.raw.signal;
+    // Create AbortController that we can trigger from multiple sources
+    const abortController = new AbortController();
+    const abortSignal = abortController.signal;
+
+    // Forward raw request abort to our controller
+    if (c.req.raw.signal) {
+      c.req.raw.signal.addEventListener('abort', () => {
+        abortController.abort();
+      }, { once: true });
+    }
 
     return stream(c, async (honoStream) => {
+      // Register onAbort callback - fires when client disconnects
+      honoStream.onAbort(() => {
+        abortController.abort();
+      });
+
       try {
         const agent = await sessionManager.getOrCreate({
           conversationId: request.conversationId,
@@ -155,7 +167,8 @@ export function createHttpServer(config: HttpServerConfig) {
     }, 404);
   });
 
-  const server = serve({
+  // Use Bun's native serve for proper abort detection (fixes Hono issue #3032)
+  const server = Bun.serve({
     fetch: app.fetch,
     port: validatedConfig.port,
     hostname: validatedConfig.host,
