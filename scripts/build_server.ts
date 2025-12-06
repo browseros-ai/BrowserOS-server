@@ -28,7 +28,7 @@ interface BuildTarget {
 const TARGETS: Record<string, BuildTarget> = {
   "linux-x64": {
     name: "Linux x64",
-    bunTarget: "bun-linux-x64-modern",
+    bunTarget: "bun-linux-x64-baseline",
     outfile: "dist/server/browseros-server-linux-x64",
   },
   "linux-arm64": {
@@ -38,7 +38,7 @@ const TARGETS: Record<string, BuildTarget> = {
   },
   "windows-x64": {
     name: "Windows x64",
-    bunTarget: "bun-windows-x64-modern",
+    bunTarget: "bun-windows-x64-baseline",
     outfile: "dist/server/browseros-server-windows-x64.exe",
   },
   "darwin-arm64": {
