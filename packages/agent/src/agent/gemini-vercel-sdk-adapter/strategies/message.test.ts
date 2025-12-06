@@ -127,11 +127,18 @@ describe('MessageConversionStrategy', () => {
     });
 
     // Tool result messages (function responses from user)
+    // NOTE: Each test includes matching tool call + tool result pairs because
+    // orphaned tool results (without matching tool_use) are filtered out to
+    // prevent "unexpected tool_use_id found in tool_result blocks" errors
 
     t(
       'tests that function response converts to tool role not user role',
       () => {
         const contents: Content[] = [
+          {
+            role: 'model',
+            parts: [{ functionCall: { id: 'call_123', name: 'get_weather', args: {} } }],
+          },
           {
             role: 'user',
             parts: [
@@ -149,7 +156,7 @@ describe('MessageConversionStrategy', () => {
         const result = strategy.geminiToVercel(contents);
 
         // CRITICAL: Must be 'tool' role, not 'user'
-        expect(result[0].role).toBe('tool');
+        expect(result[1].role).toBe('tool');
       },
     );
 
@@ -157,6 +164,10 @@ describe('MessageConversionStrategy', () => {
       'tests that function response content is array of tool-result parts',
       () => {
         const contents: Content[] = [
+          {
+            role: 'model',
+            parts: [{ functionCall: { id: 'call_456', name: 'search', args: {} } }],
+          },
           {
             role: 'user',
             parts: [
@@ -173,8 +184,8 @@ describe('MessageConversionStrategy', () => {
 
         const result = strategy.geminiToVercel(contents);
 
-        expect(Array.isArray(result[0].content)).toBe(true);
-        const content = result[0].content as VercelContentPart[];
+        expect(Array.isArray(result[1].content)).toBe(true);
+        const content = result[1].content as VercelContentPart[];
         const toolResult = content[0] as VercelToolResultPart;
         expect(toolResult.type).toBe('tool-result');
         expect(toolResult.toolCallId).toBe('call_456');
@@ -184,6 +195,10 @@ describe('MessageConversionStrategy', () => {
 
     t('tests that function response output contains structured response per v5', () => {
       const contents: Content[] = [
+        {
+          role: 'model',
+          parts: [{ functionCall: { id: 'call_789', name: 'get_data', args: {} } }],
+        },
         {
           role: 'user',
           parts: [
@@ -200,7 +215,7 @@ describe('MessageConversionStrategy', () => {
 
       const result = strategy.geminiToVercel(contents);
 
-      const content = result[0].content as VercelContentPart[];
+      const content = result[1].content as VercelContentPart[];
       const toolResult = content[0] as VercelToolResultPart;
       // AI SDK v5 uses structured output format
       expect(toolResult.output).toEqual({ type: 'json', value: { data: 'test', success: true } });
@@ -210,6 +225,10 @@ describe('MessageConversionStrategy', () => {
       'tests that function response with error field uses error output type',
       () => {
         const contents: Content[] = [
+          {
+            role: 'model',
+            parts: [{ functionCall: { id: 'call_error', name: 'broken_tool', args: {} } }],
+          },
           {
             role: 'user',
             parts: [
@@ -226,7 +245,7 @@ describe('MessageConversionStrategy', () => {
 
         const result = strategy.geminiToVercel(contents);
 
-        const content = result[0].content as VercelContentPart[];
+        const content = result[1].content as VercelContentPart[];
         const toolResult = content[0] as VercelToolResultPart;
         // AI SDK v5 uses error-text or error-json for error responses
         expect(toolResult.output).toEqual({
@@ -240,6 +259,10 @@ describe('MessageConversionStrategy', () => {
       'tests that function response without response field uses empty json output',
       () => {
         const contents: Content[] = [
+          {
+            role: 'model',
+            parts: [{ functionCall: { id: 'call_no_response', name: 'simple_tool', args: {} } }],
+          },
           {
             role: 'user',
             parts: [
@@ -255,7 +278,7 @@ describe('MessageConversionStrategy', () => {
 
         const result = strategy.geminiToVercel(contents);
 
-        const content = result[0].content as VercelContentPart[];
+        const content = result[1].content as VercelContentPart[];
         const toolResult = content[0] as VercelToolResultPart;
         // AI SDK v5 uses structured output format
         expect(toolResult.output).toEqual({ type: 'json', value: {} });
@@ -288,6 +311,10 @@ describe('MessageConversionStrategy', () => {
     t('tests that function response without name uses unknown', () => {
       const contents: Content[] = [
         {
+          role: 'model',
+          parts: [{ functionCall: { id: 'call_no_name', name: 'some_tool', args: {} } }],
+        },
+        {
           role: 'user',
           parts: [
             {
@@ -302,7 +329,7 @@ describe('MessageConversionStrategy', () => {
 
       const result = strategy.geminiToVercel(contents);
 
-      const content = result[0].content as VercelContentPart[];
+      const content = result[1].content as VercelContentPart[];
       const toolResult = content[0] as VercelToolResultPart;
       expect(toolResult.toolName).toBe('unknown');
     });
@@ -311,6 +338,13 @@ describe('MessageConversionStrategy', () => {
       'tests that multiple function responses in one message all convert',
       () => {
         const contents: Content[] = [
+          {
+            role: 'model',
+            parts: [
+              { functionCall: { id: 'call_1', name: 'tool1', args: {} } },
+              { functionCall: { id: 'call_2', name: 'tool2', args: {} } },
+            ],
+          },
           {
             role: 'user',
             parts: [
@@ -334,7 +368,7 @@ describe('MessageConversionStrategy', () => {
 
         const result = strategy.geminiToVercel(contents);
 
-        const content = result[0].content as VercelContentPart[];
+        const content = result[1].content as VercelContentPart[];
         expect(content).toHaveLength(2);
         const toolResult0 = content[0] as VercelToolResultPart;
         const toolResult1 = content[1] as VercelToolResultPart;
@@ -344,6 +378,9 @@ describe('MessageConversionStrategy', () => {
     );
 
     // Assistant messages with tool calls
+    // NOTE: Each test includes matching tool call + tool result pairs because
+    // orphaned tool calls (without matching tool_result) are filtered out to
+    // prevent "tool_use ids were found without tool_result blocks" errors
 
     t(
       'tests that function call converts to assistant message with tool-call part',
@@ -360,6 +397,10 @@ describe('MessageConversionStrategy', () => {
                 },
               },
             ],
+          },
+          {
+            role: 'user',
+            parts: [{ functionResponse: { id: 'call_abc', name: 'search', response: {} } }],
           },
         ];
 
@@ -390,6 +431,10 @@ describe('MessageConversionStrategy', () => {
                 },
               },
             ],
+          },
+          {
+            role: 'user',
+            parts: [{ functionResponse: { id: 'call_def', name: 'get_weather', response: {} } }],
           },
         ];
 
@@ -422,6 +467,10 @@ describe('MessageConversionStrategy', () => {
                 },
               },
             ],
+          },
+          {
+            role: 'user',
+            parts: [{ functionResponse: { id: 'call_search', name: 'search', response: {} } }],
           },
         ];
 
@@ -473,6 +522,10 @@ describe('MessageConversionStrategy', () => {
             },
           ],
         },
+        {
+          role: 'user',
+          parts: [{ functionResponse: { id: 'call_xyz', name: 'unknown', response: {} } }],
+        },
       ];
 
       const result = strategy.geminiToVercel(contents);
@@ -494,6 +547,10 @@ describe('MessageConversionStrategy', () => {
               } as Partial<FunctionCall> as FunctionCall,
             },
           ],
+        },
+        {
+          role: 'user',
+          parts: [{ functionResponse: { id: 'call_no_args', name: 'simple_tool', response: {} } }],
         },
       ];
 
@@ -523,6 +580,13 @@ describe('MessageConversionStrategy', () => {
                 args: { arg: 'val2' },
               },
             },
+          ],
+        },
+        {
+          role: 'user',
+          parts: [
+            { functionResponse: { id: 'call_1', name: 'tool1', response: {} } },
+            { functionResponse: { id: 'call_2', name: 'tool2', response: {} } },
           ],
         },
       ];

@@ -33,10 +33,14 @@ export class MessageConversionStrategy {
     const messages: CoreMessage[] = [];
     const seenToolResultIds = new Set<string>();
 
-    // First pass: collect all tool result IDs to validate tool calls
+    // First pass: collect all tool call IDs and tool result IDs
+    const allToolCallIds = new Set<string>();
     const allToolResultIds = new Set<string>();
     for (const content of contents) {
       for (const part of content.parts || []) {
+        if (isFunctionCallPart(part) && part.functionCall?.id) {
+          allToolCallIds.add(part.functionCall.id);
+        }
         if (isFunctionResponsePart(part) && part.functionResponse?.id) {
           allToolResultIds.add(part.functionResponse.id);
         }
@@ -115,10 +119,16 @@ export class MessageConversionStrategy {
       // CASE 2: Tool results (user providing tool execution results)
       if (functionResponses.length > 0) {
 
-        // Filter out duplicate tool results based on ID
+        // Filter out duplicate tool results AND orphaned tool results (no matching tool_use)
         const uniqueResponses = functionResponses.filter((fr) => {
           const id = fr.id || '';
+          // Skip duplicates
           if (seenToolResultIds.has(id)) {
+            return false;
+          }
+          // Skip orphaned tool results (no matching tool_use in history)
+          // This prevents: "unexpected tool_use_id found in tool_result blocks"
+          if (id && !allToolCallIds.has(id)) {
             return false;
           }
           seenToolResultIds.add(id);
