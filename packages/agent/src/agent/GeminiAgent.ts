@@ -213,6 +213,12 @@ export class GeminiAgent {
         // Other events are handled by the content generator
       }
 
+      // Check abort after processing stream
+      if (abortSignal.aborted) {
+        logger.info('Agent execution aborted', { conversationId: this.conversationId, turnCount });
+        break;
+      }
+
       if (toolCallRequests.length > 0) {
         logger.debug(`Executing ${toolCallRequests.length} tool(s)`, {
           conversationId: this.conversationId,
@@ -222,6 +228,11 @@ export class GeminiAgent {
         const toolResponseParts: Part[] = [];
 
         for (const requestInfo of toolCallRequests) {
+          // Check abort before each tool execution
+          if (abortSignal.aborted) {
+            break;
+          }
+
           try {
             const timeoutPromise = new Promise<never>((_, reject) => {
               setTimeout(() => reject(new Error(`Tool "${requestInfo.name}" timed out after ${TOOL_TIMEOUT_MS / 1000}s`)), TOOL_TIMEOUT_MS);
@@ -290,6 +301,11 @@ export class GeminiAgent {
               await uiStream.writeToolError(requestInfo.callId, errorMessage);
             }
           }
+        }
+
+        // Check if aborted during tool execution
+        if (abortSignal.aborted) {
+          break;
         }
 
         // Finish the step after all tool outputs are written

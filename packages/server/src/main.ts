@@ -216,7 +216,7 @@ function createShutdownHandler(
     await shutdownMcpServer(mcpServer, logger);
 
     logger.info('Stopping agent server...');
-    agentServer.server.close();
+    agentServer.server.stop();
 
     logger.info('Closing ControllerBridge...');
     await controllerBridge.close();
