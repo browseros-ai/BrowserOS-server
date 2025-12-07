@@ -122,6 +122,12 @@ export class GeminiAgent {
     client.getChat().setSystemInstruction(getSystemPrompt());
     await client.setTools();
 
+    // Disable chat recording to prevent disk writes
+    const recordingService = client.getChatRecordingService();
+    if (recordingService) {
+      (recordingService as unknown as { conversationFile: string | null }).conversationFile = null;
+    }
+
     logger.info('GeminiAgent created', {
       conversationId: resolvedConfig.conversationId,
       provider: resolvedConfig.provider,
