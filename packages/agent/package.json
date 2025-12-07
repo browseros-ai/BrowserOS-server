@@ -40,9 +40,9 @@
     "@browseros/common": "workspace:*",
     "@browseros/server": "workspace:*",
     "@browseros/tools": "workspace:*",
-    "@google/gemini-cli-core": "^0.16.0",
+    "@google/gemini-cli-core": "^0.19.4",
     "@hono/node-server": "^1.19.6",
-    "@openrouter/ai-sdk-provider": "~1.2.5",
+    "@openrouter/ai-sdk-provider": "~1.4.1",
     "ai": "^5.0.101",
     "zod": "^4.1.12"
   },
