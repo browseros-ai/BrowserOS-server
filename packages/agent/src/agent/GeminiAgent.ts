@@ -152,10 +152,24 @@ export class GeminiAgent {
 
     // Prepend browser context to the message if provided
     let messageWithContext = message;
-    if (browserContext?.activeTab) {
-      const tab = browserContext.activeTab;
-      const tabContext = `[Active Tab: id=${tab.id}${tab.url ? `, url="${tab.url}"` : ''}${tab.title ? `, title="${tab.title}"` : ''}]\n\n`;
-      messageWithContext = tabContext + message;
+    if (browserContext?.activeTab || browserContext?.selectedTabs?.length) {
+      const formatTab = (tab: { id: number; url?: string; title?: string }) =>
+        `Tab ${tab.id}${tab.title ? ` - "${tab.title}"` : ''}${tab.url ? ` (${tab.url})` : ''}`;
+
+      let contextLines: string[] = ['## Browser Context'];
+
+      if (browserContext.activeTab) {
+        contextLines.push(`**User's Active Tab:** ${formatTab(browserContext.activeTab)}`);
+      }
+
+      if (browserContext.selectedTabs?.length) {
+        contextLines.push(`**User's Selected Tabs (${browserContext.selectedTabs.length}):**`);
+        browserContext.selectedTabs.forEach((tab, i) => {
+          contextLines.push(`  ${i + 1}. ${formatTab(tab)}`);
+        });
+      }
+
+      messageWithContext = `${contextLines.join('\n')}\n\n---\n\n${message}`;
     }
 
     let currentParts: Part[] = [{ text: messageWithContext }];
