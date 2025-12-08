@@ -165,12 +165,14 @@ describe('MCP Server Integration Tests', () => {
   });
 
   describe('Health endpoint', () => {
-    it('responds with 200 OK', async () => {
+    it('responds with JSON health status', async () => {
       const response = await fetch(`${BASE_URL}/health`);
-      assert.strictEqual(response.status, 200);
+      // Status is 200 when extension connected, 503 when disconnected
+      assert.ok([200, 503].includes(response.status), 'Status should be 200 or 503');
 
-      const text = await response.text();
-      assert.strictEqual(text, 'OK');
+      const json = await response.json();
+      assert.ok(['ok', 'degraded'].includes(json.status), 'Status should be ok or degraded');
+      assert.ok(['connected', 'disconnected'].includes(json.extension), 'Extension should be connected or disconnected');
     });
   });
 
