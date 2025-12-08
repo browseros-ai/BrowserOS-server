@@ -131,7 +131,7 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
  * Handles transport and protocol concerns
  */
 export function createHttpMcpServer(config: McpServerConfig): http.Server {
-  const {port, logger, mcpServerEnabled} = config;
+  const {port, logger, mcpServerEnabled, controllerContext} = config;
 
   // Runtime state - can be toggled via control endpoint
   let mcpEnabled = mcpServerEnabled;
@@ -269,8 +269,14 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
 
     // Health check endpoint (always available, no security checks)
     if (url.pathname === '/health') {
-      res.writeHead(200, {'Content-Type': 'text/plain'});
-      res.end('OK');
+      const extensionConnected = controllerContext?.isConnected?.() ?? false;
+      const status = {
+        status: extensionConnected ? 'ok' : 'degraded',
+        extension: extensionConnected ? 'connected' : 'disconnected',
+      };
+      const statusCode = extensionConnected ? 200 : 503;
+      res.writeHead(statusCode, {'Content-Type': 'application/json'});
+      res.end(JSON.stringify(status));
       return;
     }
 
