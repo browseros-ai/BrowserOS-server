@@ -11,6 +11,7 @@ export type Tab = z.infer<typeof TabSchema>;
 
 export const BrowserContextSchema = z.object({
   activeTab: TabSchema.optional(),
+  selectedTabs: z.array(TabSchema).optional(),
   tabs: z.array(TabSchema).optional(),
 });
 
