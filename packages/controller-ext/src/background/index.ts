@@ -67,8 +67,7 @@ async function getOrCreateController(): Promise<BrowserOSController> {
     controllerState.initPromise = (async () => {
       try {
         await KeepAlive.start();
-        const port = await getWebSocketPort();
-        const controller = new BrowserOSController(port);
+        const controller = new BrowserOSController(getWebSocketPort);
         await controller.start();
 
         controllerState.controller = controller;

@@ -39,7 +39,7 @@ import {logger} from '@/utils/Logger';
 import {RequestTracker} from '@/utils/RequestTracker';
 import {RequestValidator} from '@/utils/RequestValidator';
 import {ResponseQueue} from '@/utils/ResponseQueue';
-import {WebSocketClient} from '@/websocket/WebSocketClient';
+import {WebSocketClient, PortProvider} from '@/websocket/WebSocketClient';
 
 /**
  * BrowserOS Controller
@@ -55,7 +55,7 @@ export class BrowserOSController {
   private responseQueue: ResponseQueue;
   private actionRegistry: ActionRegistry;
 
-  constructor(port: number) {
+  constructor(getPort: PortProvider) {
     logger.info('Initializing BrowserOS Controller...');
 
     this.requestTracker = new RequestTracker();
@@ -65,7 +65,7 @@ export class BrowserOSController {
     );
     this.requestValidator = new RequestValidator();
     this.responseQueue = new ResponseQueue();
-    this.wsClient = new WebSocketClient(port);
+    this.wsClient = new WebSocketClient(getPort);
     this.actionRegistry = new ActionRegistry();
 
     this.registerActions();
