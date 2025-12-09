@@ -77,102 +77,12 @@ export async function testProviderConnection(
     };
   } catch (error) {
     const responseTime = Math.round(performance.now() - startTime);
-
-    if (error instanceof Error) {
-      return {
-        success: false,
-        message: parseProviderError(error),
-        responseTime,
-      };
-    }
+    const message = error instanceof Error ? error.message : String(error);
 
     return {
       success: false,
-      message: 'An unexpected error occurred',
+      message,
       responseTime,
     };
   }
-}
-
-function parseProviderError(error: Error): string {
-  const msg = error.message;
-  const msgLower = msg.toLowerCase();
-
-  // Authentication errors
-  if (
-    msgLower.includes('401') ||
-    msgLower.includes('unauthorized') ||
-    msgLower.includes('invalid api key') ||
-    msgLower.includes('invalid_api_key') ||
-    msgLower.includes('authentication')
-  ) {
-    return 'Authentication failed: Invalid API key';
-  }
-
-  // Permission errors
-  if (msgLower.includes('403') || msgLower.includes('forbidden')) {
-    return 'Access denied: Check API key permissions';
-  }
-
-  // Model not found
-  if (
-    msgLower.includes('404') ||
-    msgLower.includes('not found') ||
-    msgLower.includes('does not exist') ||
-    msgLower.includes('invalid model')
-  ) {
-    return 'Model not found: Verify the model ID is correct';
-  }
-
-  // Rate limits
-  if (
-    msgLower.includes('429') ||
-    msgLower.includes('rate limit') ||
-    msgLower.includes('too many requests') ||
-    msgLower.includes('quota')
-  ) {
-    return 'Rate limit exceeded: Try again later';
-  }
-
-  // Timeout
-  if (
-    msgLower.includes('timeout') ||
-    msgLower.includes('aborted') ||
-    error.name === 'TimeoutError' ||
-    error.name === 'AbortError'
-  ) {
-    return `Connection timed out after ${TEST_TIMEOUT_MS / 1000}s`;
-  }
-
-  // Network errors
-  if (
-    msgLower.includes('econnrefused') ||
-    msgLower.includes('enotfound') ||
-    msgLower.includes('network') ||
-    msgLower.includes('fetch failed') ||
-    msgLower.includes('failed to fetch')
-  ) {
-    return 'Network error: Unable to reach provider';
-  }
-
-  // Server errors
-  if (msgLower.includes('500') || msgLower.includes('internal server error')) {
-    return 'Provider server error: Try again later';
-  }
-
-  if (msgLower.includes('502') || msgLower.includes('bad gateway')) {
-    return 'Provider temporarily unavailable (502)';
-  }
-
-  if (msgLower.includes('503') || msgLower.includes('service unavailable')) {
-    return 'Provider service unavailable (503)';
-  }
-
-  // Provider-specific validation errors from createProvider()
-  // These are already user-friendly: "Azure provider requires apiKey and resourceName"
-  if (msg.includes('requires')) {
-    return msg;
-  }
-
-  return `Error: ${msg}`;
 }
