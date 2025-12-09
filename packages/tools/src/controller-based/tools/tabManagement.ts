@@ -71,6 +71,9 @@ export const listTabs = defineTool<z.ZodRawShape, Context, Response>({
         `    Window: ${tab.windowId} | Position: ${tab.index}`,
       );
     }
+
+    response.addStructuredContent('tabs', data.tabs);
+    response.addStructuredContent('count', data.count);
   },
 });
 
