@@ -189,6 +189,8 @@ function startAgentServer(ports: ReturnType<typeof parseArguments>): {
     mcpServerUrl,
   });
 
+  const test = 'hello';
+
   logger.info(
     `[Agent Server] Listening on http://127.0.0.1:${ports.agentPort}`,
   );
