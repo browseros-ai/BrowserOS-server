@@ -20,11 +20,11 @@
  * - Usage retrieval is ASYNC and happens AFTER stream (may fail)
  */
 
-import { describe, it as t, expect, beforeEach } from 'vitest';
-import { ResponseConversionStrategy } from './response.js';
-import { ToolConversionStrategy } from './tool.js';
-import type { GenerateContentResponse } from '@google/genai';
-import { FinishReason } from '@google/genai';
+import {describe, it as t, expect, beforeEach} from 'vitest';
+import {ResponseConversionStrategy} from './response.js';
+import {ToolConversionStrategy} from './tool.js';
+import type {GenerateContentResponse} from '@google/genai';
+import {FinishReason} from '@google/genai';
 
 describe('ResponseConversionStrategy', () => {
   let strategy: ResponseConversionStrategy;
@@ -91,7 +91,7 @@ describe('ResponseConversionStrategy', () => {
             {
               toolCallId: 'call_123',
               toolName: 'get_weather',
-              input: { location: 'Tokyo' },
+              input: {location: 'Tokyo'},
             },
           ],
           finishReason: 'tool-calls' as const,
@@ -104,7 +104,7 @@ describe('ResponseConversionStrategy', () => {
         expect(result.functionCalls).toHaveLength(1);
         expect(result.functionCalls![0].id).toBe('call_123');
         expect(result.functionCalls![0].name).toBe('get_weather');
-        expect(result.functionCalls![0].args).toEqual({ location: 'Tokyo' });
+        expect(result.functionCalls![0].args).toEqual({location: 'Tokyo'});
       },
     );
 
@@ -117,7 +117,7 @@ describe('ResponseConversionStrategy', () => {
             {
               toolCallId: 'call_456',
               toolName: 'search',
-              input: { query: 'test' },
+              input: {query: 'test'},
             },
           ],
         };
@@ -143,7 +143,7 @@ describe('ResponseConversionStrategy', () => {
           {
             toolCallId: 'call_789',
             toolName: 'get_weather',
-            input: { location: 'Paris' },
+            input: {location: 'Paris'},
           },
         ],
       };
@@ -163,8 +163,8 @@ describe('ResponseConversionStrategy', () => {
       const vercelResult = {
         text: '',
         toolCalls: [
-          { toolCallId: 'call_1', toolName: 'tool1', input: { arg: 'val1' } },
-          { toolCallId: 'call_2', toolName: 'tool2', input: { arg: 'val2' } },
+          {toolCallId: 'call_1', toolName: 'tool1', input: {arg: 'val1'}},
+          {toolCallId: 'call_2', toolName: 'tool2', input: {arg: 'val2'}},
         ],
       };
 
@@ -229,7 +229,7 @@ describe('ResponseConversionStrategy', () => {
     t('tests that tool-calls finish reason maps to STOP', () => {
       const result = strategy.vercelToGemini({
         text: '',
-        toolCalls: [{ toolCallId: 'call_1', toolName: 'tool', input: {} }],
+        toolCalls: [{toolCallId: 'call_1', toolName: 'tool', input: {}}],
         finishReason: 'tool-calls' as const,
       });
       expect(result.candidates![0].finishReason!).toBe(FinishReason.STOP);
@@ -284,7 +284,7 @@ describe('ResponseConversionStrategy', () => {
     });
 
     t('tests that undefined finish reason defaults to STOP', () => {
-      const result = strategy.vercelToGemini({ text: 'Test' });
+      const result = strategy.vercelToGemini({text: 'Test'});
       expect(result.candidates![0].finishReason!).toBe(FinishReason.STOP);
     });
 
@@ -300,7 +300,7 @@ describe('ResponseConversionStrategy', () => {
 
         expect(result.candidates).toHaveLength(1);
         expect(result.candidates![0].content!.parts).toHaveLength(1);
-        expect(result.candidates![0].content!.parts![0]).toEqual({ text: '' });
+        expect(result.candidates![0].content!.parts![0]).toEqual({text: ''});
         expect(result.candidates![0].finishReason!).toBe(FinishReason.OTHER);
       },
     );
@@ -315,12 +315,12 @@ describe('ResponseConversionStrategy', () => {
       'tests that stream with text-delta chunks yields immediately',
       async () => {
         const stream = (async function* () {
-          yield { type: 'text-delta', text: 'Hello' };
-          yield { type: 'text-delta', text: ' world' };
-          yield { type: 'finish', finishReason: 'stop' as const };
+          yield {type: 'text-delta', text: 'Hello'};
+          yield {type: 'text-delta', text: ' world'};
+          yield {type: 'finish', finishReason: 'stop' as const};
         })();
 
-        const getUsage = async () => ({ totalTokens: 5 });
+        const getUsage = async () => ({totalTokens: 5});
 
         const chunks: GenerateContentResponse[] = [];
         for await (const chunk of strategy.streamToGemini(stream, getUsage)) {
@@ -346,12 +346,12 @@ describe('ResponseConversionStrategy', () => {
             type: 'tool-call',
             toolCallId: 'call_123',
             toolName: 'get_weather',
-            input: { location: 'Tokyo' },
+            input: {location: 'Tokyo'},
           };
-          yield { type: 'finish', finishReason: 'tool-calls' as const };
+          yield {type: 'finish', finishReason: 'tool-calls' as const};
         })();
 
-        const getUsage = async () => ({ totalTokens: 10 });
+        const getUsage = async () => ({totalTokens: 10});
 
         const chunks: GenerateContentResponse[] = [];
         for await (const chunk of strategy.streamToGemini(stream, getUsage)) {
@@ -374,18 +374,18 @@ describe('ResponseConversionStrategy', () => {
             type: 'tool-call',
             toolCallId: 'call_1',
             toolName: 'tool1',
-            input: { arg: 'val1' },
+            input: {arg: 'val1'},
           };
           yield {
             type: 'tool-call',
             toolCallId: 'call_2',
             toolName: 'tool2',
-            input: { arg: 'val2' },
+            input: {arg: 'val2'},
           };
-          yield { type: 'finish', finishReason: 'tool-calls' as const };
+          yield {type: 'finish', finishReason: 'tool-calls' as const};
         })();
 
-        const getUsage = async () => ({ totalTokens: 15 });
+        const getUsage = async () => ({totalTokens: 15});
 
         const chunks: GenerateContentResponse[] = [];
         for await (const chunk of strategy.streamToGemini(stream, getUsage)) {
@@ -399,17 +399,17 @@ describe('ResponseConversionStrategy', () => {
 
     t('tests that stream with text and tool calls yields both', async () => {
       const stream = (async function* () {
-        yield { type: 'text-delta', text: 'Searching...' };
+        yield {type: 'text-delta', text: 'Searching...'};
         yield {
           type: 'tool-call',
           toolCallId: 'call_search',
           toolName: 'search',
-          input: { query: 'test' },
+          input: {query: 'test'},
         };
-        yield { type: 'finish', finishReason: 'tool-calls' as const };
+        yield {type: 'finish', finishReason: 'tool-calls' as const};
       })();
 
-      const getUsage = async () => ({ totalTokens: 20 });
+      const getUsage = async () => ({totalTokens: 20});
 
       const chunks: GenerateContentResponse[] = [];
       for await (const chunk of strategy.streamToGemini(stream, getUsage)) {
@@ -429,13 +429,13 @@ describe('ResponseConversionStrategy', () => {
       'tests that stream with unknown chunk types skips them gracefully',
       async () => {
         const stream = (async function* () {
-          yield { type: 'start' } as unknown; // Unknown type
-          yield { type: 'text-delta', text: 'Hello' };
-          yield { type: 'step-finish' } as unknown; // Unknown type
-          yield { type: 'finish', finishReason: 'stop' as const };
+          yield {type: 'start'} as unknown; // Unknown type
+          yield {type: 'text-delta', text: 'Hello'};
+          yield {type: 'step-finish'} as unknown; // Unknown type
+          yield {type: 'finish', finishReason: 'stop' as const};
         })();
 
-        const getUsage = async () => ({ totalTokens: 5 });
+        const getUsage = async () => ({totalTokens: 5});
 
         const chunks: GenerateContentResponse[] = [];
         for await (const chunk of strategy.streamToGemini(stream, getUsage)) {
@@ -449,11 +449,11 @@ describe('ResponseConversionStrategy', () => {
 
     t('tests that stream with empty text-delta still yields', async () => {
       const stream = (async function* () {
-        yield { type: 'text-delta', text: '' };
-        yield { type: 'finish', finishReason: 'stop' as const };
+        yield {type: 'text-delta', text: ''};
+        yield {type: 'finish', finishReason: 'stop' as const};
       })();
 
-      const getUsage = async () => ({ totalTokens: 0 });
+      const getUsage = async () => ({totalTokens: 0});
 
       const chunks: GenerateContentResponse[] = [];
       for await (const chunk of strategy.streamToGemini(stream, getUsage)) {
@@ -466,11 +466,11 @@ describe('ResponseConversionStrategy', () => {
 
     t('tests that stream without finish reason still completes', async () => {
       const stream = (async function* () {
-        yield { type: 'text-delta', text: 'Test' };
+        yield {type: 'text-delta', text: 'Test'};
         // No finish chunk
       })();
 
-      const getUsage = async () => ({ totalTokens: 5 });
+      const getUsage = async () => ({totalTokens: 5});
 
       const chunks: GenerateContentResponse[] = [];
       for await (const chunk of strategy.streamToGemini(stream, getUsage)) {
@@ -484,8 +484,8 @@ describe('ResponseConversionStrategy', () => {
       'tests that stream with getUsage error uses estimation fallback',
       async () => {
         const stream = (async function* () {
-          yield { type: 'text-delta', text: 'Test message here' };
-          yield { type: 'finish', finishReason: 'stop' as const };
+          yield {type: 'text-delta', text: 'Test message here'};
+          yield {type: 'finish', finishReason: 'stop' as const};
         })();
 
         const getUsage = async () => {
@@ -510,7 +510,7 @@ describe('ResponseConversionStrategy', () => {
           // Empty stream
         })();
 
-        const getUsage = async () => ({ totalTokens: 0 });
+        const getUsage = async () => ({totalTokens: 0});
 
         const chunks: GenerateContentResponse[] = [];
         for await (const chunk of strategy.streamToGemini(stream, getUsage)) {
@@ -527,8 +527,8 @@ describe('ResponseConversionStrategy', () => {
       'tests that stream usage metadata is included in final chunk',
       async () => {
         const stream = (async function* () {
-          yield { type: 'text-delta', text: 'Test' };
-          yield { type: 'finish', finishReason: 'stop' as const };
+          yield {type: 'text-delta', text: 'Test'};
+          yield {type: 'finish', finishReason: 'stop' as const};
         })();
 
         const getUsage = async () => ({

@@ -129,4 +129,4 @@ export function getSystemPrompt(): string {
   return systemPrompt;
 }
 
-export { systemPrompt };
+export {systemPrompt};

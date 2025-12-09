@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { VercelAIConfigSchema } from '../agent/gemini-vercel-sdk-adapter/types.js';
+import {z} from 'zod';
+import {VercelAIConfigSchema} from '../agent/gemini-vercel-sdk-adapter/types.js';
 
 export const TabSchema = z.object({
   id: z.number(),

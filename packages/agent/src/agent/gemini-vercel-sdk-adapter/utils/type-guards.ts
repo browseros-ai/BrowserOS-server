@@ -9,12 +9,12 @@
  * Enable TypeScript to narrow types for type safety
  */
 
-import type { Part, FunctionCall, FunctionResponse } from '@google/genai';
+import type {Part, FunctionCall, FunctionResponse} from '@google/genai';
 
 /**
  * Check if part contains text
  */
-export function isTextPart(part: Part): part is Part & { text: string } {
+export function isTextPart(part: Part): part is Part & {text: string} {
   return 'text' in part && typeof part.text === 'string';
 }
 
@@ -23,7 +23,7 @@ export function isTextPart(part: Part): part is Part & { text: string } {
  */
 export function isFunctionCallPart(
   part: Part,
-): part is Part & { functionCall: FunctionCall } {
+): part is Part & {functionCall: FunctionCall} {
   return 'functionCall' in part && part.functionCall !== undefined;
 }
 
@@ -32,7 +32,7 @@ export function isFunctionCallPart(
  */
 export function isFunctionResponsePart(
   part: Part,
-): part is Part & { functionResponse: FunctionResponse } {
+): part is Part & {functionResponse: FunctionResponse} {
   return 'functionResponse' in part && part.functionResponse !== undefined;
 }
 
@@ -41,7 +41,7 @@ export function isFunctionResponsePart(
  */
 export function isInlineDataPart(
   part: Part,
-): part is Part & { inlineData: { mimeType: string; data: string } } {
+): part is Part & {inlineData: {mimeType: string; data: string}} {
   return (
     'inlineData' in part &&
     typeof part.inlineData === 'object' &&
@@ -56,7 +56,7 @@ export function isInlineDataPart(
  */
 export function isFileDataPart(
   part: Part,
-): part is Part & { fileData: { mimeType: string; fileUri: string } } {
+): part is Part & {fileData: {mimeType: string; fileUri: string}} {
   return (
     'fileData' in part &&
     typeof part.fileData === 'object' &&

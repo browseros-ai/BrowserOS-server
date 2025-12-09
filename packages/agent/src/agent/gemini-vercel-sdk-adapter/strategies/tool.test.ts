@@ -20,10 +20,10 @@
  * - Conversion must handle invalid inputs gracefully (no throws)
  */
 
-import { describe, it as t, expect, beforeEach } from 'vitest';
-import { ToolConversionStrategy } from './tool.js';
-import { Type } from '@google/genai';
-import type { Tool, FunctionDeclaration, Schema } from '@google/genai';
+import {describe, it as t, expect, beforeEach} from 'vitest';
+import {ToolConversionStrategy} from './tool.js';
+import {Type} from '@google/genai';
+import type {Tool, FunctionDeclaration, Schema} from '@google/genai';
 
 describe('ToolConversionStrategy', () => {
   let strategy: ToolConversionStrategy;
@@ -49,8 +49,8 @@ describe('ToolConversionStrategy', () => {
 
     t('tests that tools without functionDeclarations returns undefined', () => {
       const tools = [
-        { googleSearch: {} } as unknown as Tool,
-        { retrieval: {} } as unknown as Tool,
+        {googleSearch: {}} as unknown as Tool,
+        {retrieval: {}} as unknown as Tool,
       ];
       const result = strategy.geminiToVercel(tools);
       expect(result).toBeUndefined();
@@ -68,7 +68,7 @@ describe('ToolConversionStrategy', () => {
                 parameters: {
                   type: Type.OBJECT,
                   properties: {
-                    location: { type: Type.STRING },
+                    location: {type: Type.STRING},
                   },
                   required: ['location'],
                 },
@@ -96,7 +96,7 @@ describe('ToolConversionStrategy', () => {
             functionDeclarations: [
               {
                 name: 'simple_tool',
-                parameters: { type: Type.OBJECT, properties: {} },
+                parameters: {type: Type.OBJECT, properties: {}},
               } as FunctionDeclaration,
             ],
           },
@@ -138,12 +138,12 @@ describe('ToolConversionStrategy', () => {
               {
                 name: 'tool1',
                 description: 'First',
-                parameters: { type: Type.OBJECT },
+                parameters: {type: Type.OBJECT},
               },
               {
                 name: 'tool2',
                 description: 'Second',
-                parameters: { type: Type.OBJECT },
+                parameters: {type: Type.OBJECT},
               },
             ],
           },
@@ -164,7 +164,7 @@ describe('ToolConversionStrategy', () => {
             {
               name: 'tool1',
               description: 'First',
-              parameters: { type: Type.OBJECT },
+              parameters: {type: Type.OBJECT},
             },
           ],
         },
@@ -173,7 +173,7 @@ describe('ToolConversionStrategy', () => {
             {
               name: 'tool2',
               description: 'Second',
-              parameters: { type: Type.OBJECT },
+              parameters: {type: Type.OBJECT},
             },
           ],
         },
@@ -198,7 +198,7 @@ describe('ToolConversionStrategy', () => {
                 parameters: {
                   // Missing 'type' field - should be normalized
                   properties: {
-                    arg1: { type: Type.STRING },
+                    arg1: {type: Type.STRING},
                   },
                 } as Schema,
               },
@@ -224,7 +224,7 @@ describe('ToolConversionStrategy', () => {
                 parameters: {
                   type: Type.OBJECT,
                   properties: {
-                    location: { type: Type.STRING },
+                    location: {type: Type.STRING},
                   },
                 },
               },
@@ -253,8 +253,8 @@ describe('ToolConversionStrategy', () => {
                   user: {
                     type: Type.OBJECT,
                     properties: {
-                      name: { type: Type.STRING },
-                      age: { type: Type.NUMBER },
+                      name: {type: Type.STRING},
+                      age: {type: Type.NUMBER},
                     },
                   },
                 },
@@ -282,7 +282,7 @@ describe('ToolConversionStrategy', () => {
                 properties: {
                   tags: {
                     type: Type.ARRAY,
-                    items: { type: Type.STRING },
+                    items: {type: Type.STRING},
                   },
                 },
               },
@@ -312,7 +312,7 @@ describe('ToolConversionStrategy', () => {
         {
           toolCallId: 'call_123',
           toolName: 'get_weather',
-          input: { location: 'Tokyo', units: 'celsius' },
+          input: {location: 'Tokyo', units: 'celsius'},
         },
       ];
 
@@ -321,7 +321,7 @@ describe('ToolConversionStrategy', () => {
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('call_123');
       expect(result[0].name).toBe('get_weather');
-      expect(result[0].args).toEqual({ location: 'Tokyo', units: 'celsius' });
+      expect(result[0].args).toEqual({location: 'Tokyo', units: 'celsius'});
     });
 
     t('tests that tool call with empty object input converts correctly', () => {
@@ -471,9 +471,9 @@ describe('ToolConversionStrategy', () => {
 
     t('tests that multiple tool calls all convert', () => {
       const toolCalls = [
-        { toolCallId: 'call_1', toolName: 'tool1', input: { arg: 'val1' } },
-        { toolCallId: 'call_2', toolName: 'tool2', input: { arg: 'val2' } },
-        { toolCallId: 'call_3', toolName: 'tool3', input: {} },
+        {toolCallId: 'call_1', toolName: 'tool1', input: {arg: 'val1'}},
+        {toolCallId: 'call_2', toolName: 'tool2', input: {arg: 'val2'}},
+        {toolCallId: 'call_3', toolName: 'tool3', input: {}},
       ];
 
       const result = strategy.vercelToGemini(toolCalls);
@@ -506,7 +506,7 @@ describe('ToolConversionStrategy', () => {
         const toolCalls = [
           {
             toolName: 'missing_id_tool',
-            input: { test: true },
+            input: {test: true},
           } as unknown,
         ];
 
@@ -526,7 +526,7 @@ describe('ToolConversionStrategy', () => {
         const toolCalls = [
           {
             toolCallId: 'call_no_name',
-            input: { test: true },
+            input: {test: true},
           } as unknown,
         ];
 
@@ -543,7 +543,7 @@ describe('ToolConversionStrategy', () => {
     t(
       'tests that completely invalid tool call returns fallback structure',
       () => {
-        const toolCalls = [{ invalid: 'data', random: 123 } as unknown];
+        const toolCalls = [{invalid: 'data', random: 123} as unknown];
 
         const result = strategy.vercelToGemini(toolCalls);
 
@@ -558,12 +558,12 @@ describe('ToolConversionStrategy', () => {
       'tests that mix of valid and invalid tool calls all return valid structures',
       () => {
         const toolCalls = [
-          { toolCallId: 'call_1', toolName: 'valid_tool', input: { test: 1 } },
-          { invalid: 'data' } as unknown,
+          {toolCallId: 'call_1', toolName: 'valid_tool', input: {test: 1}},
+          {invalid: 'data'} as unknown,
           {
             toolCallId: 'call_2',
             toolName: 'another_valid',
-            input: { test: 2 },
+            input: {test: 2},
           },
         ];
 

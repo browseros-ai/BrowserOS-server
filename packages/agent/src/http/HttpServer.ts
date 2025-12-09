@@ -1,16 +1,27 @@
-import { Hono } from 'hono';
-import { cors } from 'hono/cors';
-import { stream } from 'hono/streaming';
-import { logger } from '@browseros/common';
-import { formatUIMessageStreamEvent, formatUIMessageStreamDone } from '../agent/gemini-vercel-sdk-adapter/ui-message-stream.js';
-import type { Context, Next } from 'hono';
-import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import type { z } from 'zod';
+import {Hono} from 'hono';
+import {cors} from 'hono/cors';
+import {stream} from 'hono/streaming';
+import {logger} from '@browseros/common';
+import {
+  formatUIMessageStreamEvent,
+  formatUIMessageStreamDone,
+} from '../agent/gemini-vercel-sdk-adapter/ui-message-stream.js';
+import type {Context, Next} from 'hono';
+import type {ContentfulStatusCode} from 'hono/utils/http-status';
+import type {z} from 'zod';
 
-import { SessionManager } from '../session/SessionManager.js';
-import { HttpAgentError, ValidationError, AgentExecutionError } from '../errors.js';
-import { ChatRequestSchema, HttpServerConfigSchema } from './types.js';
-import type { HttpServerConfig, ValidatedHttpServerConfig, ChatRequest } from './types.js';
+import {SessionManager} from '../session/SessionManager.js';
+import {
+  HttpAgentError,
+  ValidationError,
+  AgentExecutionError,
+} from '../errors.js';
+import {ChatRequestSchema, HttpServerConfigSchema} from './types.js';
+import type {
+  HttpServerConfig,
+  ValidatedHttpServerConfig,
+  ChatRequest,
+} from './types.js';
 
 type AppVariables = {
   validatedBody: unknown;
@@ -20,7 +31,7 @@ const DEFAULT_MCP_SERVER_URL = 'http://127.0.0.1:9150/mcp';
 const DEFAULT_TEMP_DIR = '/tmp';
 
 function validateRequest<T>(schema: z.ZodType<T>) {
-  return async (c: Context<{ Variables: AppVariables }>, next: Next) => {
+  return async (c: Context<{Variables: AppVariables}>, next: Next) => {
     try {
       const body = await c.req.json();
       const validated = schema.parse(body);
@@ -28,8 +39,8 @@ function validateRequest<T>(schema: z.ZodType<T>) {
       await next();
     } catch (err) {
       if (err && typeof err === 'object' && 'issues' in err) {
-        const zodError = err as { issues: unknown };
-        logger.warn('Request validation failed', { issues: zodError.issues });
+        const zodError = err as {issues: unknown};
+        logger.warn('Request validation failed', {issues: zodError.issues});
         throw new ValidationError('Request validation failed', zodError.issues);
       }
       throw err;
@@ -38,16 +49,20 @@ function validateRequest<T>(schema: z.ZodType<T>) {
 }
 
 export function createHttpServer(config: HttpServerConfig) {
-  const validatedConfig: ValidatedHttpServerConfig = HttpServerConfigSchema.parse(config);
-  const mcpServerUrl = validatedConfig.mcpServerUrl || process.env.MCP_SERVER_URL || DEFAULT_MCP_SERVER_URL;
+  const validatedConfig: ValidatedHttpServerConfig =
+    HttpServerConfigSchema.parse(config);
+  const mcpServerUrl =
+    validatedConfig.mcpServerUrl ||
+    process.env.MCP_SERVER_URL ||
+    DEFAULT_MCP_SERVER_URL;
 
-  const app = new Hono<{ Variables: AppVariables }>();
+  const app = new Hono<{Variables: AppVariables}>();
   const sessionManager = new SessionManager();
 
   app.use(
     '/*',
     cors({
-      origin: (origin) => origin || '*',
+      origin: origin => origin || '*',
       allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
       allowHeaders: ['Content-Type', 'Authorization'],
       credentials: true,
@@ -85,9 +100,9 @@ export function createHttpServer(config: HttpServerConfig) {
     );
   });
 
-  app.get('/health', (c) => c.json({ status: 'ok' }));
+  app.get('/health', c => c.json({status: 'ok'}));
 
-  app.post('/chat', validateRequest(ChatRequestSchema), async (c) => {
+  app.post('/chat', validateRequest(ChatRequestSchema), async c => {
     const request = c.get('validatedBody') as ChatRequest;
 
     logger.info('Chat request received', {
@@ -107,12 +122,16 @@ export function createHttpServer(config: HttpServerConfig) {
 
     // Forward raw request abort to our controller
     if (c.req.raw.signal) {
-      c.req.raw.signal.addEventListener('abort', () => {
-        abortController.abort();
-      }, { once: true });
+      c.req.raw.signal.addEventListener(
+        'abort',
+        () => {
+          abortController.abort();
+        },
+        {once: true},
+      );
     }
 
-    return stream(c, async (honoStream) => {
+    return stream(c, async honoStream => {
       // Register onAbort callback - fires when client disconnects
       honoStream.onAbort(() => {
         abortController.abort();
@@ -135,21 +154,32 @@ export function createHttpServer(config: HttpServerConfig) {
           mcpServerUrl,
         });
 
-        await agent.execute(request.message, honoStream, abortSignal, request.browserContext);
+        await agent.execute(
+          request.message,
+          honoStream,
+          abortSignal,
+          request.browserContext,
+        );
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Agent execution failed';
+        const errorMessage =
+          error instanceof Error ? error.message : 'Agent execution failed';
         logger.error('Agent execution error', {
           conversationId: request.conversationId,
           error: errorMessage,
         });
-        await honoStream.write(formatUIMessageStreamEvent({ type: 'error', errorText: errorMessage }));
+        await honoStream.write(
+          formatUIMessageStreamEvent({type: 'error', errorText: errorMessage}),
+        );
         await honoStream.write(formatUIMessageStreamDone());
-        throw new AgentExecutionError('Agent execution failed', error instanceof Error ? error : undefined);
+        throw new AgentExecutionError(
+          'Agent execution failed',
+          error instanceof Error ? error : undefined,
+        );
       }
     });
   });
 
-  app.delete('/chat/:conversationId', (c) => {
+  app.delete('/chat/:conversationId', c => {
     const conversationId = c.req.param('conversationId');
     const deleted = sessionManager.delete(conversationId);
 
@@ -161,10 +191,13 @@ export function createHttpServer(config: HttpServerConfig) {
       });
     }
 
-    return c.json({
-      success: false,
-      message: `Session ${conversationId} not found`,
-    }, 404);
+    return c.json(
+      {
+        success: false,
+        message: `Session ${conversationId} not found`,
+      },
+      404,
+    );
   });
 
   // Use Bun's native serve for proper abort detection (fixes Hono issue #3032)

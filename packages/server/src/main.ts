@@ -8,7 +8,7 @@ import type http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { createHttpServer as createAgentHttpServer } from '@browseros/agent';
+import {createHttpServer as createAgentHttpServer} from '@browseros/agent';
 import {
   ensureBrowserConnected,
   McpContext,
@@ -175,12 +175,13 @@ function startMcpServer(config: {
   return mcpServer;
 }
 
-function startAgentServer(
-  ports: ReturnType<typeof parseArguments>,
-): { server: any; config: any } {
+function startAgentServer(ports: ReturnType<typeof parseArguments>): {
+  server: any;
+  config: any;
+} {
   const mcpServerUrl = `http://127.0.0.1:${ports.httpMcpPort}/mcp`;
 
-  const { server, config } = createAgentHttpServer({
+  const {server, config} = createAgentHttpServer({
     port: ports.agentPort,
     host: '0.0.0.0',
     corsOrigins: ['*'],
@@ -188,10 +189,12 @@ function startAgentServer(
     mcpServerUrl,
   });
 
-  logger.info(`[Agent Server] Listening on http://127.0.0.1:${ports.agentPort}`);
+  logger.info(
+    `[Agent Server] Listening on http://127.0.0.1:${ports.agentPort}`,
+  );
   logger.info(`[Agent Server] MCP Server URL: ${mcpServerUrl}`);
 
-  return { server, config };
+  return {server, config};
 }
 
 function logSummary(ports: ReturnType<typeof parseArguments>) {
@@ -207,7 +210,7 @@ function logSummary(ports: ReturnType<typeof parseArguments>) {
 
 function createShutdownHandler(
   mcpServer: http.Server,
-  agentServer: { server: any; config: any },
+  agentServer: {server: any; config: any},
   controllerBridge: ControllerBridge,
 ) {
   return async () => {

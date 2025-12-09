@@ -122,9 +122,7 @@ export class KlavisAPIManager {
   /**
    * Check if a server is installed and authenticated
    */
-  async isServerReady(
-    serverName: string,
-  ): Promise<{
+  async isServerReady(serverName: string): Promise<{
     installed: boolean;
     authenticated: boolean;
     instanceId?: string;

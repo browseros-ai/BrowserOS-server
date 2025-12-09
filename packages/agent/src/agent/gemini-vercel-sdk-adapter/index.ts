@@ -8,19 +8,19 @@
  * Multi-provider LLM adapter using Vercel AI SDK
  */
 
-import { streamText, generateText } from 'ai';
-import { createAnthropic } from '@ai-sdk/anthropic';
-import { createOpenAI } from '@ai-sdk/openai';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import { createAzure } from '@ai-sdk/azure';
-import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
+import {streamText, generateText} from 'ai';
+import {createAnthropic} from '@ai-sdk/anthropic';
+import {createOpenAI} from '@ai-sdk/openai';
+import {createGoogleGenerativeAI} from '@ai-sdk/google';
+import {createOpenRouter} from '@openrouter/ai-sdk-provider';
+import {createOpenAICompatible} from '@ai-sdk/openai-compatible';
+import {createAzure} from '@ai-sdk/azure';
+import {createAmazonBedrock} from '@ai-sdk/amazon-bedrock';
 
-import type { ContentGenerator } from '@google/gemini-cli-core';
-import { AIProvider } from './types.js';
-import type { UIMessageStreamWriter } from './ui-message-stream.js';
-import { logger } from '@browseros/common';
+import type {ContentGenerator} from '@google/gemini-cli-core';
+import {AIProvider} from './types.js';
+import type {UIMessageStreamWriter} from './ui-message-stream.js';
+import {logger} from '@browseros/common';
 import type {
   GenerateContentParameters,
   GenerateContentResponse,
@@ -35,7 +35,7 @@ import {
   MessageConversionStrategy,
   ResponseConversionStrategy,
 } from './strategies/index.js';
-import type { VercelAIConfig } from './types.js';
+import type {VercelAIConfig} from './types.js';
 
 /**
  * Vercel AI ContentGenerator
@@ -78,7 +78,9 @@ export class VercelAIContentGenerator implements ContentGenerator {
     request: GenerateContentParameters,
     _userPromptId: string,
   ): Promise<GenerateContentResponse> {
-    const contents = (Array.isArray(request.contents) ? request.contents : [request.contents]) as Content[];
+    const contents = (
+      Array.isArray(request.contents) ? request.contents : [request.contents]
+    ) as Content[];
     const messages = this.messageStrategy.geminiToVercel(contents);
     const tools = this.toolStrategy.geminiToVercel(request.config?.tools);
 
@@ -106,7 +108,9 @@ export class VercelAIContentGenerator implements ContentGenerator {
     request: GenerateContentParameters,
     _userPromptId: string,
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
-    const contents = (Array.isArray(request.contents) ? request.contents : [request.contents]) as Content[];
+    const contents = (
+      Array.isArray(request.contents) ? request.contents : [request.contents]
+    ) as Content[];
     const messages = this.messageStrategy.geminiToVercel(contents);
     const tools = this.toolStrategy.geminiToVercel(request.config?.tools);
     const system = this.messageStrategy.convertSystemInstruction(
@@ -147,18 +151,30 @@ export class VercelAIContentGenerator implements ContentGenerator {
 
           const inputTokens = rawUsage.inputTokens;
           const outputTokens = rawUsage.outputTokens ?? 0;
-          const totalTokens = rawUsage.totalTokens ?? ((inputTokens ?? 0) + outputTokens);
+          const totalTokens =
+            rawUsage.totalTokens ?? (inputTokens ?? 0) + outputTokens;
 
           return {
             // Use actual value if available, otherwise estimate from request contents
-            inputTokens: inputTokens && inputTokens > 0 ? inputTokens : estimatedPromptTokens,
+            inputTokens:
+              inputTokens && inputTokens > 0
+                ? inputTokens
+                : estimatedPromptTokens,
             outputTokens,
-            totalTokens: inputTokens && inputTokens > 0 ? totalTokens : (estimatedPromptTokens + outputTokens),
+            totalTokens:
+              inputTokens && inputTokens > 0
+                ? totalTokens
+                : estimatedPromptTokens + outputTokens,
           };
         } catch (err) {
           logger.debug('Usage fetch failed, using estimate', {
             error: String(err),
-            estimated: { system: systemTokens, tools: toolsTokens, contents: contentsTokens, total: estimatedPromptTokens },
+            estimated: {
+              system: systemTokens,
+              tools: toolsTokens,
+              contents: contentsTokens,
+              total: estimatedPromptTokens,
+            },
           });
           return {
             inputTokens: estimatedPromptTokens,
@@ -207,25 +223,25 @@ export class VercelAIContentGenerator implements ContentGenerator {
         if (!config.apiKey) {
           throw new Error('Anthropic provider requires apiKey');
         }
-        return createAnthropic({ apiKey: config.apiKey });
+        return createAnthropic({apiKey: config.apiKey});
 
       case AIProvider.OPENAI:
         if (!config.apiKey) {
           throw new Error('OpenAI provider requires apiKey');
         }
-        return createOpenAI({ apiKey: config.apiKey });
+        return createOpenAI({apiKey: config.apiKey});
 
       case AIProvider.GOOGLE:
         if (!config.apiKey) {
           throw new Error('Google provider requires apiKey');
         }
-        return createGoogleGenerativeAI({ apiKey: config.apiKey });
+        return createGoogleGenerativeAI({apiKey: config.apiKey});
 
       case AIProvider.OPENROUTER:
         if (!config.apiKey) {
           throw new Error('OpenRouter provider requires apiKey');
         }
-        return createOpenRouter({ apiKey: config.apiKey });
+        return createOpenRouter({apiKey: config.apiKey});
 
       case AIProvider.AZURE:
         if (!config.apiKey || !config.resourceName) {
@@ -256,7 +272,9 @@ export class VercelAIContentGenerator implements ContentGenerator {
 
       case AIProvider.BEDROCK:
         if (!config.accessKeyId || !config.secretAccessKey || !config.region) {
-          throw new Error('Bedrock provider requires accessKeyId, secretAccessKey, and region');
+          throw new Error(
+            'Bedrock provider requires accessKeyId, secretAccessKey, and region',
+          );
         }
         return createAmazonBedrock({
           region: config.region,
@@ -282,5 +300,5 @@ export class VercelAIContentGenerator implements ContentGenerator {
 }
 
 // Re-export types for consumers
-export { AIProvider };
-export type { VercelAIConfig, HonoSSEStream } from './types.js';
+export {AIProvider};
+export type {VercelAIConfig, HonoSSEStream} from './types.js';

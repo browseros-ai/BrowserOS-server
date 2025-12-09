@@ -23,7 +23,8 @@ export class Logger {
 
     switch (level) {
       case 'debug':
-        if (LOGGING_CONFIG.level === 'debug') console.log(logMessage + formattedData);
+        if (LOGGING_CONFIG.level === 'debug')
+          console.log(logMessage + formattedData);
         break;
       case 'info':
         if (['debug', 'info'].includes(LOGGING_CONFIG.level))
