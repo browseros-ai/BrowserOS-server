@@ -36,7 +36,7 @@ export const WEBSOCKET_CONFIG: WebSocketConfig = {
   port: 9225,
   path: '/controller',
 
-  reconnectIntervalMs: 30000,
+  reconnectIntervalMs: 5000,
 
   heartbeatInterval: 20000,
   heartbeatTimeout: 5000,
