@@ -35,4 +35,9 @@ export interface Response {
    * Get all attached images (read-only)
    */
   readonly images: ImageContentData[];
+
+  /**
+   * Add a key-value pair to structured content (flat, no nesting)
+   */
+  addStructuredContent(key: string, value: unknown): void;
 }

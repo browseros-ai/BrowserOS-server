@@ -92,7 +92,11 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
               success: true,
             });
 
-            return {content};
+            const structuredContent = response.structuredContent;
+            return {
+              content,
+              ...(structuredContent && {structuredContent}),
+            };
           } catch (error) {
             const errorText =
               error instanceof Error ? error.message : String(error);

@@ -80,6 +80,51 @@ describe('MCP Controller Tab Management Tools', () => {
       },
       30000,
     );
+
+    it(
+      'tests that structured content includes tabs and count',
+      async () => {
+        await withMcpServer(async client => {
+          const result = await client.callTool({
+            name: 'browser_list_tabs',
+            arguments: {},
+          });
+
+          console.log('\n=== List Tabs Structured Content ===');
+          console.log(JSON.stringify(result.structuredContent, null, 2));
+
+          assert.ok(!result.isError, 'Should succeed');
+          assert.ok(
+            result.structuredContent,
+            'Should have structuredContent',
+          );
+          assert.ok(
+            Array.isArray(result.structuredContent.tabs),
+            'structuredContent.tabs should be an array',
+          );
+          assert.ok(
+            typeof result.structuredContent.count === 'number',
+            'structuredContent.count should be a number',
+          );
+          assert.strictEqual(
+            result.structuredContent.tabs.length,
+            result.structuredContent.count,
+            'tabs array length should match count',
+          );
+
+          if (result.structuredContent.tabs.length > 0) {
+            const tab = result.structuredContent.tabs[0];
+            assert.ok('id' in tab, 'Tab should have id');
+            assert.ok('url' in tab, 'Tab should have url');
+            assert.ok('title' in tab, 'Tab should have title');
+            assert.ok('windowId' in tab, 'Tab should have windowId');
+            assert.ok('active' in tab, 'Tab should have active');
+            assert.ok('index' in tab, 'Tab should have index');
+          }
+        });
+      },
+      30000,
+    );
   });
 
   describe('browser_open_tab - Success Cases', () => {
