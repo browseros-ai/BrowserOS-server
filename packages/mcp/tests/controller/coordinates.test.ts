@@ -3,9 +3,9 @@
  * Copyright 2025 BrowserOS
  */
 import assert from 'node:assert';
-import {describe, it} from 'bun:test';
 
 import {withMcpServer} from '@browseros/common/tests/utils';
+import {describe, it} from 'bun:test';
 
 describe('MCP Controller Coordinates Tools', () => {
   describe('browser_click_coordinates - Success Cases', () => {

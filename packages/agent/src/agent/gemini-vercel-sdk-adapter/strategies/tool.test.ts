@@ -20,10 +20,11 @@
  * - Conversion must handle invalid inputs gracefully (no throws)
  */
 
-import {describe, it as t, expect, beforeEach} from 'vitest';
-import {ToolConversionStrategy} from './tool.js';
 import {Type} from '@google/genai';
 import type {Tool, FunctionDeclaration, Schema} from '@google/genai';
+import {describe, it as t, expect, beforeEach} from 'vitest';
+
+import {ToolConversionStrategy} from './tool.js';
 
 describe('ToolConversionStrategy', () => {
   let strategy: ToolConversionStrategy;

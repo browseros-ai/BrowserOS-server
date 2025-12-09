@@ -3,9 +3,9 @@
  * Copyright 2025 BrowserOS
  */
 import assert from 'node:assert';
-import {describe, it} from 'bun:test';
 
 import {withMcpServer} from '@browseros/common/tests/utils';
+import {describe, it} from 'bun:test';
 
 describe('MCP Controller Interaction Tools', () => {
   describe('browser_get_interactive_elements - Success Cases', () => {

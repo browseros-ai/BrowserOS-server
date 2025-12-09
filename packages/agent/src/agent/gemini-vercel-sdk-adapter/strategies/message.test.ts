@@ -22,19 +22,21 @@
  * - Empty messages (no text, no parts) should be skipped
  */
 
-import {describe, it as t, expect, beforeEach} from 'vitest';
-import {MessageConversionStrategy} from './message.js';
 import type {
   Content,
   FunctionResponse,
   FunctionCall,
   ContentUnion,
 } from '@google/genai';
+import {describe, it as t, expect, beforeEach} from 'vitest';
+
 import type {
   VercelContentPart,
   VercelToolResultPart,
   VercelToolCallPart,
 } from '../types.js';
+
+import {MessageConversionStrategy} from './message.js';
 
 describe('MessageConversionStrategy', () => {
   let strategy: MessageConversionStrategy;

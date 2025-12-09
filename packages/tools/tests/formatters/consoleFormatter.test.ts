@@ -3,8 +3,8 @@
  * Copyright 2025 BrowserOS
  */
 import assert from 'node:assert';
-import {describe, it} from 'bun:test';
 
+import {describe, it} from 'bun:test';
 import type {ConsoleMessage} from 'puppeteer-core';
 
 import {formatConsoleEvent} from '../../src/formatters/consoleFormatter.js';

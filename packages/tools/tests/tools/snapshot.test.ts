@@ -3,9 +3,9 @@
  * Copyright 2025 BrowserOS
  */
 import assert from 'node:assert';
-import {describe, it} from 'bun:test';
 
 import {html, withBrowser} from '@browseros/common/tests/utils';
+import {describe, it} from 'bun:test';
 
 import {takeSnapshot, waitFor} from '../../src/cdp-based/snapshot.js';
 

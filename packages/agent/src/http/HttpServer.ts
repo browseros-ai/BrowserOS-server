@@ -1,21 +1,30 @@
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+import {logger} from '@browseros/common';
 import {Hono} from 'hono';
+import type {Context, Next} from 'hono';
 import {cors} from 'hono/cors';
 import {stream} from 'hono/streaming';
-import {logger} from '@browseros/common';
+import type {ContentfulStatusCode} from 'hono/utils/http-status';
+import type {z} from 'zod';
+
+import {testProviderConnection} from '../agent/gemini-vercel-sdk-adapter/testProvider.js';
+import {VercelAIConfigSchema} from '../agent/gemini-vercel-sdk-adapter/types.js';
+import type {VercelAIConfig} from '../agent/gemini-vercel-sdk-adapter/types.js';
 import {
   formatUIMessageStreamEvent,
   formatUIMessageStreamDone,
 } from '../agent/gemini-vercel-sdk-adapter/ui-message-stream.js';
-import type {Context, Next} from 'hono';
-import type {ContentfulStatusCode} from 'hono/utils/http-status';
-import type {z} from 'zod';
-
-import {SessionManager} from '../session/SessionManager.js';
 import {
   HttpAgentError,
   ValidationError,
   AgentExecutionError,
 } from '../errors.js';
+import {SessionManager} from '../session/SessionManager.js';
+
 import {ChatRequestSchema, HttpServerConfigSchema} from './types.js';
 import type {
   HttpServerConfig,
@@ -23,9 +32,9 @@ import type {
   ChatRequest,
 } from './types.js';
 
-type AppVariables = {
+interface AppVariables {
   validatedBody: unknown;
-};
+}
 
 const DEFAULT_MCP_SERVER_URL = 'http://127.0.0.1:9150/mcp';
 const DEFAULT_TEMP_DIR = '/tmp';
@@ -198,6 +207,26 @@ export function createHttpServer(config: HttpServerConfig) {
       },
       404,
     );
+  });
+
+  app.post('/test-provider', validateRequest(VercelAIConfigSchema), async c => {
+    const config = c.get('validatedBody') as VercelAIConfig;
+
+    logger.info('Testing provider connection', {
+      provider: config.provider,
+      model: config.model,
+    });
+
+    const result = await testProviderConnection(config);
+
+    logger.info('Provider test result', {
+      provider: config.provider,
+      model: config.model,
+      success: result.success,
+      responseTime: result.responseTime,
+    });
+
+    return c.json(result, result.success ? 200 : 400);
   });
 
   // Use Bun's native serve for proper abort detection (fixes Hono issue #3032)

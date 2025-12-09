@@ -3,9 +3,9 @@
  * Copyright 2025 BrowserOS
  */
 import assert from 'node:assert';
-import {describe, it} from 'bun:test';
 
 import {withBrowser} from '@browseros/common/tests/utils';
+import {describe, it} from 'bun:test';
 import type {Dialog} from 'puppeteer-core';
 
 import {

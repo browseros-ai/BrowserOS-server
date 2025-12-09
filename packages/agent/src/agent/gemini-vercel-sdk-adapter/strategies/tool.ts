@@ -9,15 +9,15 @@
  * Converts tool definitions and tool calls between Gemini and Vercel formats
  */
 
-import type {VercelTool} from '../types.js';
-
-import {jsonSchema} from 'ai';
-import {ConversionError} from '../errors.js';
 import type {
   ToolListUnion,
   FunctionDeclaration,
   FunctionCall,
 } from '@google/genai';
+import {jsonSchema} from 'ai';
+
+import {ConversionError} from '../errors.js';
+import type {VercelTool} from '../types.js';
 import {VercelToolCallSchema} from '../types.js';
 
 export class ToolConversionStrategy {

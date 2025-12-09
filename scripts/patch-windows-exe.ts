@@ -1,6 +1,11 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import {spawn} from 'child_process';
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+import {spawn} from 'node:child_process';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 const exePath = process.argv[2];
 

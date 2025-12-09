@@ -8,19 +8,14 @@
  * Multi-provider LLM adapter using Vercel AI SDK
  */
 
-import {streamText, generateText} from 'ai';
-import {createAnthropic} from '@ai-sdk/anthropic';
-import {createOpenAI} from '@ai-sdk/openai';
-import {createGoogleGenerativeAI} from '@ai-sdk/google';
-import {createOpenRouter} from '@openrouter/ai-sdk-provider';
-import {createOpenAICompatible} from '@ai-sdk/openai-compatible';
-import {createAzure} from '@ai-sdk/azure';
 import {createAmazonBedrock} from '@ai-sdk/amazon-bedrock';
-
-import type {ContentGenerator} from '@google/gemini-cli-core';
-import {AIProvider} from './types.js';
-import type {UIMessageStreamWriter} from './ui-message-stream.js';
+import {createAnthropic} from '@ai-sdk/anthropic';
+import {createAzure} from '@ai-sdk/azure';
+import {createGoogleGenerativeAI} from '@ai-sdk/google';
+import {createOpenAI} from '@ai-sdk/openai';
+import {createOpenAICompatible} from '@ai-sdk/openai-compatible';
 import {logger} from '@browseros/common';
+import type {ContentGenerator} from '@google/gemini-cli-core';
 import type {
   GenerateContentParameters,
   GenerateContentResponse,
@@ -30,12 +25,17 @@ import type {
   EmbedContentResponse,
   Content,
 } from '@google/genai';
+import {createOpenRouter} from '@openrouter/ai-sdk-provider';
+import {streamText, generateText} from 'ai';
+
 import {
   ToolConversionStrategy,
   MessageConversionStrategy,
   ResponseConversionStrategy,
 } from './strategies/index.js';
+import {AIProvider} from './types.js';
 import type {VercelAIConfig} from './types.js';
+import type {UIMessageStreamWriter} from './ui-message-stream.js';
 
 /**
  * Vercel AI ContentGenerator
@@ -96,6 +96,7 @@ export class VercelAIContentGenerator implements ContentGenerator {
       system,
       tools,
       temperature: request.config?.temperature,
+      abortSignal: request.config?.abortSignal,
     });
 
     return this.responseStrategy.vercelToGemini(result);
@@ -302,3 +303,5 @@ export class VercelAIContentGenerator implements ContentGenerator {
 // Re-export types for consumers
 export {AIProvider};
 export type {VercelAIConfig, HonoSSEStream} from './types.js';
+export {testProviderConnection} from './testProvider.js';
+export type {ProviderTestResult} from './testProvider.js';

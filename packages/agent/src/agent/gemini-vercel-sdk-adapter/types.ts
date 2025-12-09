@@ -9,10 +9,10 @@
  * Single source of truth for all types + Zod schemas
  */
 
-import {z} from 'zod';
-import {jsonSchema} from 'ai';
-// Vercel AI SDK
 import type {LanguageModelV2ToolResultOutput} from '@ai-sdk/provider';
+import type {jsonSchema} from 'ai';
+import {z} from 'zod';
+// Vercel AI SDK
 
 // === Vercel SDK Runtime Shapes (What We Receive) ===
 
