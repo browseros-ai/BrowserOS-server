@@ -25,13 +25,13 @@ export async function getWebSocketPort(): Promise<number> {
     }
 
     logger.warn(
-      `Port preference not found, using default: ${WEBSOCKET_CONFIG.port}`,
+      `Port preference not found, using default: ${WEBSOCKET_CONFIG.defaultExtensionPort}`,
     );
-    return WEBSOCKET_CONFIG.port;
+    return WEBSOCKET_CONFIG.defaultExtensionPort;
   } catch (error) {
     logger.error(
-      `Failed to get port from BrowserOS preferences: ${error}, using default: ${WEBSOCKET_CONFIG.port}`,
+      `Failed to get port from BrowserOS preferences: ${error}, using default: ${WEBSOCKET_CONFIG.defaultExtensionPort}`,
     );
-    return WEBSOCKET_CONFIG.port;
+    return WEBSOCKET_CONFIG.defaultExtensionPort;
   }
 }

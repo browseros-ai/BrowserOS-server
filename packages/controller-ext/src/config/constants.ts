@@ -10,8 +10,8 @@ export type WebSocketProtocol = 'ws' | 'wss';
 export interface WebSocketConfig {
   readonly protocol: WebSocketProtocol;
   readonly host: string;
-  readonly port: number;
   readonly path: string;
+  readonly defaultExtensionPort: number;
   readonly reconnectIntervalMs: number;
   readonly heartbeatInterval: number;
   readonly heartbeatTimeout: number;
@@ -33,8 +33,8 @@ export interface LoggingConfig {
 export const WEBSOCKET_CONFIG: WebSocketConfig = {
   protocol: 'ws',
   host: '127.0.0.1',
-  port: 9225,
   path: '/controller',
+  defaultExtensionPort: 9300,
 
   reconnectIntervalMs: 5000,
 
