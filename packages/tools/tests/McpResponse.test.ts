@@ -3,7 +3,6 @@
  * Copyright 2025 BrowserOS
  */
 import assert from 'node:assert';
-import {describe, it} from 'bun:test';
 
 import {
   getMockRequest,
@@ -11,6 +10,7 @@ import {
   html,
   withBrowser,
 } from '@browseros/common/tests/utils';
+import {describe, it} from 'bun:test';
 
 describe('McpResponse', () => {
   it('list pages', async () => {

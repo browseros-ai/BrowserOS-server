@@ -79,7 +79,7 @@ export async function fetchBrowserOSConfig(
  */
 export function getLLMConfigFromProvider(
   config: BrowserOSConfig,
-  providerName: string = 'default',
+  providerName = 'default',
 ): LLMConfig {
   const provider = config.providers.find(p => p.name === providerName);
 

@@ -20,11 +20,12 @@
  * - Usage retrieval is ASYNC and happens AFTER stream (may fail)
  */
 
-import {describe, it as t, expect, beforeEach} from 'vitest';
-import {ResponseConversionStrategy} from './response.js';
-import {ToolConversionStrategy} from './tool.js';
 import type {GenerateContentResponse} from '@google/genai';
 import {FinishReason} from '@google/genai';
+import {describe, it as t, expect, beforeEach} from 'vitest';
+
+import {ResponseConversionStrategy} from './response.js';
+import {ToolConversionStrategy} from './tool.js';
 
 describe('ResponseConversionStrategy', () => {
   let strategy: ResponseConversionStrategy;

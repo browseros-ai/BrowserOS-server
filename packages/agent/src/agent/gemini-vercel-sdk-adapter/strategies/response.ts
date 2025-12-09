@@ -10,19 +10,17 @@
  * Handles both streaming and non-streaming responses
  */
 
-import {
-  GenerateContentResponse,
-  FinishReason,
-  Part,
-  FunctionCall,
-} from '@google/genai';
+import type {GenerateContentResponse, Part, FunctionCall} from '@google/genai';
+import {FinishReason} from '@google/genai';
+
 import type {VercelFinishReason, VercelUsage} from '../types.js';
 import {
   VercelGenerateTextResultSchema,
   VercelStreamChunkSchema,
 } from '../types.js';
-import type {ToolConversionStrategy} from './tool.js';
 import type {UIMessageStreamWriter} from '../ui-message-stream.js';
+
+import type {ToolConversionStrategy} from './tool.js';
 
 export class ResponseConversionStrategy {
   constructor(private toolStrategy: ToolConversionStrategy) {}

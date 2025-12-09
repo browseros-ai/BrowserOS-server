@@ -1,4 +1,9 @@
 /**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+/**
  * UI Message Stream Protocol formatter
  * Formats events for Vercel AI SDK's UI Message Stream protocol
  * Used with useChat hook expecting toUIMessageStreamResponse() format
@@ -209,7 +214,7 @@ export class UIMessageStreamWriter {
     }
   }
 
-  async finish(finishReason: string = 'stop'): Promise<void> {
+  async finish(finishReason = 'stop'): Promise<void> {
     if (this.hasFinished) return;
     this.hasFinished = true;
     await this.finishStep();

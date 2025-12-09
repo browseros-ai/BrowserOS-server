@@ -4,8 +4,8 @@
  *
  * Main server orchestration
  */
-import type http from 'node:http';
 import fs from 'node:fs';
+import type http from 'node:http';
 import path from 'node:path';
 
 import {createHttpServer as createAgentHttpServer} from '@browseros/agent';

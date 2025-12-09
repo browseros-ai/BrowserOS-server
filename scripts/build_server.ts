@@ -1,5 +1,11 @@
 #!/usr/bin/env bun
 /**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+/**
  * Build script for BrowserOS server binaries
  *
  * Usage:
@@ -14,9 +20,10 @@
  *   linux-x64, linux-arm64, windows-x64, darwin-arm64, darwin-x64, all
  */
 
-import {spawn} from 'child_process';
-import {readFileSync, mkdirSync} from 'fs';
-import {resolve, join} from 'path';
+import {spawn} from 'node:child_process';
+import {readFileSync, mkdirSync} from 'node:fs';
+import {resolve, join} from 'node:path';
+
 import {parse} from 'dotenv';
 
 interface BuildTarget {

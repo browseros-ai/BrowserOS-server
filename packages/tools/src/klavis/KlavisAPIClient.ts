@@ -1,4 +1,9 @@
 /**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+/**
  * Minimal Klavis API client for MCP server operations
  * No external dependencies - just fetch API and TypeScript
  */

@@ -3,19 +3,19 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
+import {BrowserOSController} from './BrowserOSController';
+
 import {getWebSocketPort} from '@/utils/ConfigHelper';
 import {KeepAlive} from '@/utils/KeepAlive';
 import {logger} from '@/utils/Logger';
 
-import {BrowserOSController} from './BrowserOSController';
-
 const STATS_LOG_INTERVAL_MS = 30000;
 
-type ControllerState = {
+interface ControllerState {
   controller: BrowserOSController | null;
   initPromise: Promise<BrowserOSController> | null;
   statsTimer: ReturnType<typeof setInterval> | null;
-};
+}
 
 type BrowserOSGlobals = typeof globalThis & {
   __browserosControllerState?: ControllerState;

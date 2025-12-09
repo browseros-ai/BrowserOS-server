@@ -4,10 +4,10 @@
  */
 import assert from 'node:assert';
 import fs from 'node:fs';
-import {describe, it} from 'bun:test';
 
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StdioClientTransport} from '@modelcontextprotocol/sdk/client/stdio.js';
+import {describe, it} from 'bun:test';
 import {executablePath} from 'puppeteer';
 
 // TODO: Re-enable after Phase 4 (HTTP Server) implementation

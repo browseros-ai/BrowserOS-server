@@ -9,13 +9,14 @@
  * Converts conversation history from Gemini to Vercel format
  */
 
-import type {VercelContentPart} from '../types.js';
-import type {CoreMessage} from 'ai';
 import type {
   LanguageModelV2ToolResultOutput,
   JSONValue,
 } from '@ai-sdk/provider';
 import type {Content, ContentUnion} from '@google/genai';
+import type {CoreMessage} from 'ai';
+
+import type {VercelContentPart} from '../types.js';
 import {
   isTextPart,
   isFunctionCallPart,

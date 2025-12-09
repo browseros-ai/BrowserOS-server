@@ -1,4 +1,10 @@
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 import {z} from 'zod';
+
 import {VercelAIConfigSchema} from '../agent/gemini-vercel-sdk-adapter/types.js';
 
 export const TabSchema = z.object({

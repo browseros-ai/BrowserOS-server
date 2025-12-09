@@ -6,13 +6,13 @@
 import {z} from 'zod';
 
 import {ActionHandler} from '../ActionHandler';
-import {logger} from '@/utils/Logger';
 
 import {
   BrowserOSAdapter,
   type Snapshot,
   type SnapshotOptions,
 } from '@/adapters/BrowserOSAdapter';
+import {logger} from '@/utils/Logger';
 
 // Input schema for getSnapshot action
 const GetSnapshotInputSchema = z.object({

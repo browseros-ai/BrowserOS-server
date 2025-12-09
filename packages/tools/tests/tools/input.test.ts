@@ -5,9 +5,9 @@
 import assert from 'node:assert';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {describe, it} from 'bun:test';
 
 import {html, withBrowser} from '@browseros/common/tests/utils';
+import {describe, it} from 'bun:test';
 
 import {
   click,

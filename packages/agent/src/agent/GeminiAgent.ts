@@ -1,3 +1,13 @@
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+import {
+  logger,
+  fetchBrowserOSConfig,
+  getLLMConfigFromProvider,
+} from '@browseros/common';
 import {
   Config as GeminiConfig,
   MCPServerConfig,
@@ -7,21 +17,18 @@ import {
   type ToolCallRequestInfo,
 } from '@google/gemini-cli-core';
 import type {Part} from '@google/genai';
-import {
-  logger,
-  fetchBrowserOSConfig,
-  getLLMConfigFromProvider,
-} from '@browseros/common';
+
+import {AgentExecutionError} from '../errors.js';
+import type {BrowserContext} from '../http/types.js';
+
 import {
   VercelAIContentGenerator,
   AIProvider,
 } from './gemini-vercel-sdk-adapter/index.js';
 import type {HonoSSEStream} from './gemini-vercel-sdk-adapter/types.js';
-import {AgentExecutionError} from '../errors.js';
-import type {AgentConfig} from './types.js';
-import type {BrowserContext} from '../http/types.js';
-import {getSystemPrompt} from './GeminiAgent.prompt.js';
 import {UIMessageStreamWriter} from './gemini-vercel-sdk-adapter/ui-message-stream.js';
+import {getSystemPrompt} from './GeminiAgent.prompt.js';
+import type {AgentConfig} from './types.js';
 
 const MAX_TURNS = 100;
 const TOOL_TIMEOUT_MS = 120000; // 2 minutes timeout per tool call
@@ -178,7 +185,7 @@ export class GeminiAgent {
       const formatTab = (tab: {id: number; url?: string; title?: string}) =>
         `Tab ${tab.id}${tab.title ? ` - "${tab.title}"` : ''}${tab.url ? ` (${tab.url})` : ''}`;
 
-      let contextLines: string[] = ['## Browser Context'];
+      const contextLines: string[] = ['## Browser Context'];
 
       if (browserContext.activeTab) {
         contextLines.push(

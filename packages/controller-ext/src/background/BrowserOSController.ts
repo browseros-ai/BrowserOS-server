@@ -39,7 +39,8 @@ import {logger} from '@/utils/Logger';
 import {RequestTracker} from '@/utils/RequestTracker';
 import {RequestValidator} from '@/utils/RequestValidator';
 import {ResponseQueue} from '@/utils/ResponseQueue';
-import {WebSocketClient, PortProvider} from '@/websocket/WebSocketClient';
+import type {PortProvider} from '@/websocket/WebSocketClient';
+import {WebSocketClient} from '@/websocket/WebSocketClient';
 
 /**
  * BrowserOS Controller
