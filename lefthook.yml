@@ -1,6 +1,6 @@
 pre-commit:
   commands:
     format:
-      glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc,md,yml,yaml}"
+      glob: '*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc,md,yml,yaml}'
       run: bun prettier --write --cache {staged_files}
       stage_fixed: true
