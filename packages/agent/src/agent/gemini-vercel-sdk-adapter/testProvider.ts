@@ -77,11 +77,11 @@ export async function testProviderConnection(
     };
   } catch (error) {
     const responseTime = Math.round(performance.now() - startTime);
-    const message = error instanceof Error ? error.message : String(error);
+    const errorMsg = error instanceof Error ? error.message : String(error);
 
     return {
       success: false,
-      message,
+      message: `[${config.provider}] ${errorMsg}`,
       responseTime,
     };
   }
