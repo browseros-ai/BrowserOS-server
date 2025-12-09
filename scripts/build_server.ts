@@ -14,10 +14,10 @@
  *   linux-x64, linux-arm64, windows-x64, darwin-arm64, darwin-x64, all
  */
 
-import { spawn } from "child_process";
-import { readFileSync, mkdirSync } from "fs";
-import { resolve, join } from "path";
-import { parse } from "dotenv";
+import {spawn} from 'child_process';
+import {readFileSync, mkdirSync} from 'fs';
+import {resolve, join} from 'path';
+import {parse} from 'dotenv';
 
 interface BuildTarget {
   name: string;
@@ -26,72 +26,74 @@ interface BuildTarget {
 }
 
 const TARGETS: Record<string, BuildTarget> = {
-  "linux-x64": {
-    name: "Linux x64",
-    bunTarget: "bun-linux-x64-baseline",
-    outfile: "dist/server/browseros-server-linux-x64",
+  'linux-x64': {
+    name: 'Linux x64',
+    bunTarget: 'bun-linux-x64-baseline',
+    outfile: 'dist/server/browseros-server-linux-x64',
   },
-  "linux-arm64": {
-    name: "Linux ARM64",
-    bunTarget: "bun-linux-arm64",
-    outfile: "dist/server/browseros-server-linux-arm64",
+  'linux-arm64': {
+    name: 'Linux ARM64',
+    bunTarget: 'bun-linux-arm64',
+    outfile: 'dist/server/browseros-server-linux-arm64',
   },
-  "windows-x64": {
-    name: "Windows x64",
-    bunTarget: "bun-windows-x64-baseline",
-    outfile: "dist/server/browseros-server-windows-x64.exe",
+  'windows-x64': {
+    name: 'Windows x64',
+    bunTarget: 'bun-windows-x64-baseline',
+    outfile: 'dist/server/browseros-server-windows-x64.exe',
   },
-  "darwin-arm64": {
-    name: "macOS ARM64",
-    bunTarget: "bun-darwin-arm64",
-    outfile: "dist/server/browseros-server-darwin-arm64",
+  'darwin-arm64': {
+    name: 'macOS ARM64',
+    bunTarget: 'bun-darwin-arm64',
+    outfile: 'dist/server/browseros-server-darwin-arm64',
   },
-  "darwin-x64": {
-    name: "macOS x64",
-    bunTarget: "bun-darwin-x64",
-    outfile: "dist/server/browseros-server-darwin-x64",
+  'darwin-x64': {
+    name: 'macOS x64',
+    bunTarget: 'bun-darwin-x64',
+    outfile: 'dist/server/browseros-server-darwin-x64',
   },
 };
 
-const MINIMAL_SYSTEM_VARS = ["PATH"];
+const MINIMAL_SYSTEM_VARS = ['PATH'];
 
-function parseArgs(): { mode: "prod" | "dev"; targets: string[] } {
+function parseArgs(): {mode: 'prod' | 'dev'; targets: string[]} {
   const args = process.argv.slice(2);
-  let mode: "prod" | "dev" = "prod";
-  let targetArg = "all";
+  let mode: 'prod' | 'dev' = 'prod';
+  let targetArg = 'all';
 
   for (const arg of args) {
-    if (arg.startsWith("--mode=")) {
-      const modeValue = arg.split("=")[1];
-      if (modeValue !== "prod" && modeValue !== "dev") {
+    if (arg.startsWith('--mode=')) {
+      const modeValue = arg.split('=')[1];
+      if (modeValue !== 'prod' && modeValue !== 'dev') {
         console.error(`Invalid mode: ${modeValue}. Must be 'prod' or 'dev'`);
         process.exit(1);
       }
       mode = modeValue;
-    } else if (arg.startsWith("--target=")) {
-      targetArg = arg.split("=")[1];
+    } else if (arg.startsWith('--target=')) {
+      targetArg = arg.split('=')[1];
     }
   }
 
   const targets =
-    targetArg === "all"
+    targetArg === 'all'
       ? Object.keys(TARGETS)
-      : targetArg.split(",").map((t) => t.trim());
+      : targetArg.split(',').map(t => t.trim());
 
   for (const target of targets) {
     if (!TARGETS[target]) {
       console.error(`Invalid target: ${target}`);
-      console.error(`Available targets: ${Object.keys(TARGETS).join(", ")}, all`);
+      console.error(
+        `Available targets: ${Object.keys(TARGETS).join(', ')}, all`,
+      );
       process.exit(1);
     }
   }
 
-  return { mode, targets };
+  return {mode, targets};
 }
 
 function loadEnvFile(path: string): Record<string, string> {
   try {
-    const content = readFileSync(path, "utf-8");
+    const content = readFileSync(path, 'utf-8');
     const parsed = parse(content);
     return parsed;
   } catch (error) {
@@ -100,7 +102,9 @@ function loadEnvFile(path: string): Record<string, string> {
   }
 }
 
-function createCleanEnv(envVars: Record<string, string>): Record<string, string> {
+function createCleanEnv(
+  envVars: Record<string, string>,
+): Record<string, string> {
   const cleanEnv: Record<string, string> = {};
 
   for (const varName of MINIMAL_SYSTEM_VARS) {
@@ -118,15 +122,15 @@ function createCleanEnv(envVars: Record<string, string>): Record<string, string>
 function runCommand(
   command: string,
   args: string[],
-  env: NodeJS.ProcessEnv
+  env: NodeJS.ProcessEnv,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       env,
-      stdio: "inherit",
+      stdio: 'inherit',
     });
 
-    child.on("close", (code) => {
+    child.on('close', code => {
       if (code === 0) {
         resolve();
       } else {
@@ -134,7 +138,7 @@ function runCommand(
       }
     });
 
-    child.on("error", (error) => {
+    child.on('error', error => {
       reject(error);
     });
   });
@@ -142,34 +146,39 @@ function runCommand(
 
 async function buildTarget(
   target: BuildTarget,
-  mode: "prod" | "dev",
-  envVars: Record<string, string>
+  mode: 'prod' | 'dev',
+  envVars: Record<string, string>,
 ): Promise<void> {
   console.log(`\n📦 Building ${target.name}...`);
 
   const args = [
-    "build",
-    "--compile",
-    "packages/server/src/index.ts",
-    "--outfile",
+    'build',
+    '--compile',
+    'packages/server/src/index.ts',
+    '--outfile',
     target.outfile,
-    "--minify",
-    "--sourcemap",
+    '--minify',
+    '--sourcemap',
     `--target=${target.bunTarget}`,
-    "--env",
-    "inline",
-    "--external=*?binary",
+    '--env',
+    'inline',
+    '--external=*?binary',
   ];
 
-  const buildEnv = mode === "prod" ? createCleanEnv(envVars) : { ...process.env, ...envVars };
+  const buildEnv =
+    mode === 'prod' ? createCleanEnv(envVars) : {...process.env, ...envVars};
 
   try {
-    await runCommand("bun", args, buildEnv);
+    await runCommand('bun', args, buildEnv);
     console.log(`✅ ${target.name} built successfully`);
 
-    if (target.outfile.endsWith(".exe")) {
+    if (target.outfile.endsWith('.exe')) {
       console.log(`🔧 Patching Windows executable...`);
-      await runCommand("bun", ["scripts/patch-windows-exe.ts", target.outfile], process.env);
+      await runCommand(
+        'bun',
+        ['scripts/patch-windows-exe.ts', target.outfile],
+        process.env,
+      );
     }
   } catch (error) {
     console.error(`❌ Failed to build ${target.name}:`, error);
@@ -178,29 +187,31 @@ async function buildTarget(
 }
 
 async function main() {
-  const { mode, targets } = parseArgs();
-  const rootDir = resolve(import.meta.dir, "..");
+  const {mode, targets} = parseArgs();
+  const rootDir = resolve(import.meta.dir, '..');
   process.chdir(rootDir);
 
   console.log(`🚀 Building BrowserOS server binaries`);
   console.log(`   Mode: ${mode}`);
-  console.log(`   Targets: ${targets.join(", ")}`);
+  console.log(`   Targets: ${targets.join(', ')}`);
 
-  const envFile = mode === "prod" ? ".env.prod" : ".env.dev";
+  const envFile = mode === 'prod' ? '.env.prod' : '.env.dev';
   const envPath = join(rootDir, envFile);
 
   console.log(`\n📄 Loading environment from ${envFile}...`);
   const envVars = loadEnvFile(envPath);
   console.log(`   Loaded ${Object.keys(envVars).length} variables`);
 
-  if (mode === "prod") {
-    console.log(`\n🔒 Production mode: Using CLEAN environment (only ${envFile} + minimal system vars)`);
-    console.log(`   System vars: ${MINIMAL_SYSTEM_VARS.join(", ")}`);
+  if (mode === 'prod') {
+    console.log(
+      `\n🔒 Production mode: Using CLEAN environment (only ${envFile} + minimal system vars)`,
+    );
+    console.log(`   System vars: ${MINIMAL_SYSTEM_VARS.join(', ')}`);
   } else {
     console.log(`\n🔓 Development mode: Using shell environment + ${envFile}`);
   }
 
-  mkdirSync("dist/server", { recursive: true });
+  mkdirSync('dist/server', {recursive: true});
 
   for (const targetKey of targets) {
     const target = TARGETS[targetKey];
@@ -214,7 +225,7 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error("\n💥 Build failed:", error);
+main().catch(error => {
+  console.error('\n💥 Build failed:', error);
   process.exit(1);
 });

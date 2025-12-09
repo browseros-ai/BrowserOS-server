@@ -22,7 +22,10 @@ export class HttpAgentError extends Error {
 }
 
 export class ValidationError extends HttpAgentError {
-  constructor(message: string, public details?: unknown) {
+  constructor(
+    message: string,
+    public details?: unknown,
+  ) {
     super(message, 400, 'VALIDATION_ERROR');
   }
 
@@ -46,7 +49,10 @@ export class SessionNotFoundError extends HttpAgentError {
 }
 
 export class AgentExecutionError extends HttpAgentError {
-  constructor(message: string, public originalError?: Error) {
+  constructor(
+    message: string,
+    public originalError?: Error,
+  ) {
     super(message, 500, 'AGENT_EXECUTION_ERROR');
   }
 

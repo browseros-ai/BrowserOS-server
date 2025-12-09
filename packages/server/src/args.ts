@@ -67,7 +67,10 @@ export function parseArguments(argv = process.argv): ServerPorts {
     .option('--agent-port <port>', 'Agent communication port', parsePort)
     .option('--extension-port <port>', 'Extension WebSocket port', parsePort)
     .option('--resources-dir <path>', 'Resources directory path')
-    .option('--execution-dir <path>', 'Execution directory for logs and configs')
+    .option(
+      '--execution-dir <path>',
+      'Execution directory for logs and configs',
+    )
     .option('--disable-mcp-server', 'Disable MCP server', false)
     .exitOverride()
     .parse(argv);

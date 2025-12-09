@@ -157,10 +157,7 @@ describe('screenshot', () => {
 
   it('browser_take_screenshot - with unwritable filePath', async () => {
     if (process.platform === 'win32') {
-      const filePath = join(
-        tmpdir(),
-        'readonly-file-for-screenshot-test.png',
-      );
+      const filePath = join(tmpdir(), 'readonly-file-for-screenshot-test.png');
       await writeFile(filePath, '');
       await chmod(filePath, 0o400);
 

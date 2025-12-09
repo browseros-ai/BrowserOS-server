@@ -30,7 +30,7 @@ export type SnapshotOptions = chrome.browserOS.SnapshotOptions;
 
 export type PrefObject = chrome.browserOS.PrefObject;
 
-import { VersionUtils } from '@/utils/versionUtils';
+import {VersionUtils} from '@/utils/versionUtils';
 
 // ============= BrowserOS Adapter =============
 
@@ -424,10 +424,7 @@ export class BrowserOSAdapter {
       const version = await this.getVersion();
       logger.debug(`[BrowserOSAdapter] BrowserOS version: ${version}`);
 
-      if (
-        version &&
-        !VersionUtils.isVersionAtLeast(version, '137.0.7220.69')
-      ) {
+      if (version && !VersionUtils.isVersionAtLeast(version, '137.0.7220.69')) {
         // Older versions: pass the type parameter
         return await new Promise<Snapshot>((resolve, reject) => {
           chrome.browserOS.getSnapshot(tabId, type, (snapshot: Snapshot) => {
@@ -457,8 +454,11 @@ export class BrowserOSAdapter {
         });
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`[BrowserOSAdapter] Failed to get snapshot: ${errorMessage}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error(
+        `[BrowserOSAdapter] Failed to get snapshot: ${errorMessage}`,
+      );
       throw new Error(`Failed to get snapshot: ${errorMessage}`);
     }
   }

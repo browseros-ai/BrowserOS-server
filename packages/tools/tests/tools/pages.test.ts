@@ -30,11 +30,7 @@ describe('pages', () => {
   it('browser_new_page - create a page', async () => {
     await withBrowser(async (response, context) => {
       assert.strictEqual(context.getSelectedPageIdx(), 0);
-      await newPage.handler(
-        {params: {url: 'about:blank'}},
-        response,
-        context,
-      );
+      await newPage.handler({params: {url: 'about:blank'}}, response, context);
       assert.strictEqual(context.getSelectedPageIdx(), 1);
       assert.ok(response.includePages);
     });

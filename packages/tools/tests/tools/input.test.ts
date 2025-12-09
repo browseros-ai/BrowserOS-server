@@ -73,10 +73,7 @@ describe('input', () => {
   });
   it('click - waits for navigation', async () => {
     const resolveNavigation = Promise.withResolvers<void>();
-    server.addHtmlRoute(
-      '/link',
-      html`<a href="/navigated">Navigate page</a>`,
-    );
+    server.addHtmlRoute('/link', html`<a href="/navigated">Navigate page</a>`);
     server.addRoute('/navigated', async (_req, res) => {
       await resolveNavigation.promise;
       res.write(html`<main>I was navigated</main>`);

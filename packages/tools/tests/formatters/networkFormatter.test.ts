@@ -63,10 +63,7 @@ describe('networkFormatter', () => {
     });
     const result = getShortDescriptionForRequest(request);
 
-    assert.equal(
-      result,
-      'http://example.com GET [failed - Error in Network]',
-    );
+    assert.equal(result, 'http://example.com GET [failed - Error in Network]');
   });
 
   it('getFormattedHeaderValue - works', () => {
@@ -146,9 +143,7 @@ describe('networkFormatter', () => {
   });
   it('getFormattedRequestBody - shows trunkated string correctly with fetchPostData', async () => {
     const request = getMockRequest({
-      fetchPostData: Promise.resolve(
-        'some text that is longer than expected',
-      ),
+      fetchPostData: Promise.resolve('some text that is longer than expected'),
       postData: undefined,
       hasPostData: true,
     });

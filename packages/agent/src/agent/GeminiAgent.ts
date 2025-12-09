@@ -6,15 +6,22 @@ import {
   type GeminiClient,
   type ToolCallRequestInfo,
 } from '@google/gemini-cli-core';
-import type { Part } from '@google/genai';
-import { logger, fetchBrowserOSConfig, getLLMConfigFromProvider } from '@browseros/common';
-import { VercelAIContentGenerator, AIProvider } from './gemini-vercel-sdk-adapter/index.js';
-import type { HonoSSEStream } from './gemini-vercel-sdk-adapter/types.js';
-import { AgentExecutionError } from '../errors.js';
-import type { AgentConfig } from './types.js';
-import type { BrowserContext } from '../http/types.js';
-import { getSystemPrompt } from './GeminiAgent.prompt.js';
-import { UIMessageStreamWriter } from './gemini-vercel-sdk-adapter/ui-message-stream.js';
+import type {Part} from '@google/genai';
+import {
+  logger,
+  fetchBrowserOSConfig,
+  getLLMConfigFromProvider,
+} from '@browseros/common';
+import {
+  VercelAIContentGenerator,
+  AIProvider,
+} from './gemini-vercel-sdk-adapter/index.js';
+import type {HonoSSEStream} from './gemini-vercel-sdk-adapter/types.js';
+import {AgentExecutionError} from '../errors.js';
+import type {AgentConfig} from './types.js';
+import type {BrowserContext} from '../http/types.js';
+import {getSystemPrompt} from './GeminiAgent.prompt.js';
+import {UIMessageStreamWriter} from './gemini-vercel-sdk-adapter/ui-message-stream.js';
 
 const MAX_TURNS = 100;
 const TOOL_TIMEOUT_MS = 120000; // 2 minutes timeout per tool call
@@ -28,18 +35,20 @@ interface McpHttpServerOptions {
 }
 
 // MCP Server Config for HTTP is a positional argument in the constructor (can't be passed as an object)
-function createHttpMcpServerConfig(options: McpHttpServerOptions): MCPServerConfig {
+function createHttpMcpServerConfig(
+  options: McpHttpServerOptions,
+): MCPServerConfig {
   return new MCPServerConfig(
-    undefined,        // command (stdio)
-    undefined,        // args (stdio)
-    undefined,        // env (stdio)
-    undefined,        // cwd (stdio)
-    undefined,        // url (sse transport)
-    options.httpUrl,  // httpUrl (streamable http)
-    options.headers,  // headers
-    undefined,        // tcp (websocket)
-    undefined,        // timeout
-    options.trust,    // trust
+    undefined, // command (stdio)
+    undefined, // args (stdio)
+    undefined, // env (stdio)
+    undefined, // cwd (stdio)
+    undefined, // url (sse transport)
+    options.httpUrl, // httpUrl (streamable http)
+    options.headers, // headers
+    undefined, // tcp (websocket)
+    undefined, // timeout
+    options.trust, // trust
   );
 }
 
@@ -55,14 +64,16 @@ export class GeminiAgent {
     const tempDir = config.tempDir;
 
     // If provider is BROWSEROS, fetch config from BROWSEROS_CONFIG_URL
-    let resolvedConfig = { ...config };
+    let resolvedConfig = {...config};
     if (config.provider === AIProvider.BROWSEROS) {
       const configUrl = process.env.BROWSEROS_CONFIG_URL;
       if (!configUrl) {
-        throw new Error('BROWSEROS_CONFIG_URL environment variable is required for BrowserOS provider');
+        throw new Error(
+          'BROWSEROS_CONFIG_URL environment variable is required for BrowserOS provider',
+        );
       }
 
-      logger.info('Fetching BrowserOS config', { configUrl });
+      logger.info('Fetching BrowserOS config', {configUrl});
       const browserosConfig = await fetchBrowserOSConfig(configUrl);
       const llmConfig = getLLMConfigFromProvider(browserosConfig, 'default');
 
@@ -84,8 +95,10 @@ export class GeminiAgent {
     // Calculate compression threshold based on context window size
     // Formula: (DEFAULT_COMPRESSION_RATIO * contextWindowSize) / DEFAULT_CONTEXT_WINDOW
     // This converts absolute token threshold to gemini-cli-core's multiplier format
-    const contextWindow = resolvedConfig.contextWindowSize ?? DEFAULT_CONTEXT_WINDOW;
-    const compressionThreshold = (DEFAULT_COMPRESSION_RATIO * contextWindow) / DEFAULT_CONTEXT_WINDOW;
+    const contextWindow =
+      resolvedConfig.contextWindowSize ?? DEFAULT_CONTEXT_WINDOW;
+    const compressionThreshold =
+      (DEFAULT_COMPRESSION_RATIO * contextWindow) / DEFAULT_CONTEXT_WINDOW;
 
     logger.info('Compression config', {
       contextWindow,
@@ -106,7 +119,7 @@ export class GeminiAgent {
         ? {
             'browseros-mcp': createHttpMcpServerConfig({
               httpUrl: resolvedConfig.mcpServerUrl,
-              headers: { 'Accept': 'application/json, text/event-stream' },
+              headers: {Accept: 'application/json, text/event-stream'},
               trust: true,
             }),
           }
@@ -116,7 +129,9 @@ export class GeminiAgent {
     await geminiConfig.initialize();
     const contentGenerator = new VercelAIContentGenerator(resolvedConfig);
 
-    (geminiConfig as unknown as { contentGenerator: VercelAIContentGenerator }).contentGenerator = contentGenerator;
+    (
+      geminiConfig as unknown as {contentGenerator: VercelAIContentGenerator}
+    ).contentGenerator = contentGenerator;
 
     const client = geminiConfig.getGeminiClient();
     client.getChat().setSystemInstruction(getSystemPrompt());
@@ -125,7 +140,9 @@ export class GeminiAgent {
     // Disable chat recording to prevent disk writes
     const recordingService = client.getChatRecordingService();
     if (recordingService) {
-      (recordingService as unknown as { conversationFile: string | null }).conversationFile = null;
+      (
+        recordingService as unknown as {conversationFile: string | null}
+      ).conversationFile = null;
     }
 
     logger.info('GeminiAgent created', {
@@ -134,7 +151,12 @@ export class GeminiAgent {
       model: resolvedConfig.model,
     });
 
-    return new GeminiAgent(client, geminiConfig, contentGenerator, resolvedConfig.conversationId);
+    return new GeminiAgent(
+      client,
+      geminiConfig,
+      contentGenerator,
+      resolvedConfig.conversationId,
+    );
   }
 
   getHistory() {
@@ -153,17 +175,21 @@ export class GeminiAgent {
     // Prepend browser context to the message if provided
     let messageWithContext = message;
     if (browserContext?.activeTab || browserContext?.selectedTabs?.length) {
-      const formatTab = (tab: { id: number; url?: string; title?: string }) =>
+      const formatTab = (tab: {id: number; url?: string; title?: string}) =>
         `Tab ${tab.id}${tab.title ? ` - "${tab.title}"` : ''}${tab.url ? ` (${tab.url})` : ''}`;
 
       let contextLines: string[] = ['## Browser Context'];
 
       if (browserContext.activeTab) {
-        contextLines.push(`**User's Active Tab:** ${formatTab(browserContext.activeTab)}`);
+        contextLines.push(
+          `**User's Active Tab:** ${formatTab(browserContext.activeTab)}`,
+        );
       }
 
       if (browserContext.selectedTabs?.length) {
-        contextLines.push(`**User's Selected Tabs (${browserContext.selectedTabs.length}):**`);
+        contextLines.push(
+          `**User's Selected Tabs (${browserContext.selectedTabs.length}):**`,
+        );
         browserContext.selectedTabs.forEach((tab, i) => {
           contextLines.push(`  ${i + 1}. ${formatTab(tab)}`);
         });
@@ -172,12 +198,12 @@ export class GeminiAgent {
       messageWithContext = `${contextLines.join('\n')}\n\n---\n\n${message}`;
     }
 
-    let currentParts: Part[] = [{ text: messageWithContext }];
+    let currentParts: Part[] = [{text: messageWithContext}];
     let turnCount = 0;
 
     // Create single UIMessageStreamWriter to manage entire stream lifecycle
     const uiStream = honoStream
-      ? new UIMessageStreamWriter(async (data) => {
+      ? new UIMessageStreamWriter(async data => {
           try {
             await honoStream.write(data);
           } catch {
@@ -201,7 +227,7 @@ export class GeminiAgent {
 
     while (true) {
       turnCount++;
-      logger.debug(`Turn ${turnCount}`, { conversationId: this.conversationId });
+      logger.debug(`Turn ${turnCount}`, {conversationId: this.conversationId});
 
       if (turnCount > MAX_TURNS) {
         logger.warn('Max turns exceeded', {
@@ -227,22 +253,28 @@ export class GeminiAgent {
         if (event.type === GeminiEventType.ToolCallRequest) {
           toolCallRequests.push(event.value as ToolCallRequestInfo);
         } else if (event.type === GeminiEventType.Error) {
-          const errorValue = event.value as { error: Error };
-          throw new AgentExecutionError('Agent execution failed', errorValue.error);
+          const errorValue = event.value as {error: Error};
+          throw new AgentExecutionError(
+            'Agent execution failed',
+            errorValue.error,
+          );
         }
         // Other events are handled by the content generator
       }
 
       // Check abort after processing stream
       if (abortSignal.aborted) {
-        logger.info('Agent execution aborted', { conversationId: this.conversationId, turnCount });
+        logger.info('Agent execution aborted', {
+          conversationId: this.conversationId,
+          turnCount,
+        });
         break;
       }
 
       if (toolCallRequests.length > 0) {
         logger.debug(`Executing ${toolCallRequests.length} tool(s)`, {
           conversationId: this.conversationId,
-          tools: toolCallRequests.map((r) => r.name),
+          tools: toolCallRequests.map(r => r.name),
         });
 
         const toolResponseParts: Part[] = [];
@@ -255,7 +287,15 @@ export class GeminiAgent {
 
           try {
             const timeoutPromise = new Promise<never>((_, reject) => {
-              setTimeout(() => reject(new Error(`Tool "${requestInfo.name}" timed out after ${TOOL_TIMEOUT_MS / 1000}s`)), TOOL_TIMEOUT_MS);
+              setTimeout(
+                () =>
+                  reject(
+                    new Error(
+                      `Tool "${requestInfo.name}" timed out after ${TOOL_TIMEOUT_MS / 1000}s`,
+                    ),
+                  ),
+                TOOL_TIMEOUT_MS,
+              );
             });
 
             const completedToolCall = await Promise.race([
@@ -275,16 +315,25 @@ export class GeminiAgent {
                 functionResponse: {
                   id: requestInfo.callId,
                   name: requestInfo.name,
-                  response: { error: toolResponse.error.message },
+                  response: {error: toolResponse.error.message},
                 },
               } as Part);
               if (uiStream) {
-                await uiStream.writeToolError(requestInfo.callId, toolResponse.error.message);
+                await uiStream.writeToolError(
+                  requestInfo.callId,
+                  toolResponse.error.message,
+                );
               }
-            } else if (toolResponse.responseParts && toolResponse.responseParts.length > 0) {
+            } else if (
+              toolResponse.responseParts &&
+              toolResponse.responseParts.length > 0
+            ) {
               toolResponseParts.push(...(toolResponse.responseParts as Part[]));
               if (uiStream) {
-                await uiStream.writeToolResult(requestInfo.callId, toolResponse.responseParts);
+                await uiStream.writeToolResult(
+                  requestInfo.callId,
+                  toolResponse.responseParts,
+                );
               }
             } else {
               logger.warn('Tool returned empty response', {
@@ -295,15 +344,19 @@ export class GeminiAgent {
                 functionResponse: {
                   id: requestInfo.callId,
                   name: requestInfo.name,
-                  response: { output: 'Tool executed but returned no output.' },
+                  response: {output: 'Tool executed but returned no output.'},
                 },
               } as Part);
               if (uiStream) {
-                await uiStream.writeToolError(requestInfo.callId, 'Tool executed but returned no output.');
+                await uiStream.writeToolError(
+                  requestInfo.callId,
+                  'Tool executed but returned no output.',
+                );
               }
             }
           } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorMessage =
+              error instanceof Error ? error.message : String(error);
             logger.error('Tool execution failed', {
               conversationId: this.conversationId,
               tool: requestInfo.name,
@@ -314,7 +367,7 @@ export class GeminiAgent {
               functionResponse: {
                 id: requestInfo.callId,
                 name: requestInfo.name,
-                response: { error: errorMessage },
+                response: {error: errorMessage},
               },
             } as Part);
             if (uiStream) {
