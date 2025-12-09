@@ -32,7 +32,7 @@ export interface LoggingConfig {
 
 export const WEBSOCKET_CONFIG: WebSocketConfig = {
   protocol: 'ws',
-  host: 'localhost',
+  host: '127.0.0.1',
   port: 9225,
   path: '/controller',
 
