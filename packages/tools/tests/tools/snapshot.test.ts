@@ -3,9 +3,9 @@
  * Copyright 2025 BrowserOS
  */
 import assert from 'node:assert';
-import {describe, it} from 'bun:test';
 
 import {html, withBrowser} from '@browseros/common/tests/utils';
+import {describe, it} from 'bun:test';
 
 import {takeSnapshot, waitFor} from '../../src/cdp-based/snapshot.js';
 
@@ -71,9 +71,7 @@ describe('snapshot', () => {
     await withBrowser(async (response, context) => {
       const page = context.getSelectedPage();
 
-      await page.setContent(
-        html`<main><h1>Header</h1><div>Text</div></main>`,
-      );
+      await page.setContent(html`<main><h1>Header</h1><div>Text</div></main>`);
 
       await waitFor.handler(
         {
@@ -98,8 +96,7 @@ describe('snapshot', () => {
       const page = await context.getSelectedPage();
 
       await page.setContent(
-        html`<h1>Top level</h1>
-          <iframe srcdoc="<p>Hello iframe</p>"></iframe>`,
+        html`<h1>Top level</h1> <iframe srcdoc="<p>Hello iframe</p>"></iframe>`,
       );
 
       await waitFor.handler(

@@ -22,19 +22,21 @@
  * - Empty messages (no text, no parts) should be skipped
  */
 
-import { describe, it as t, expect, beforeEach } from 'vitest';
-import { MessageConversionStrategy } from './message.js';
 import type {
   Content,
   FunctionResponse,
   FunctionCall,
   ContentUnion,
 } from '@google/genai';
+import {describe, it as t, expect, beforeEach} from 'vitest';
+
 import type {
   VercelContentPart,
   VercelToolResultPart,
   VercelToolCallPart,
 } from '../types.js';
+
+import {MessageConversionStrategy} from './message.js';
 
 describe('MessageConversionStrategy', () => {
   let strategy: MessageConversionStrategy;
@@ -56,7 +58,7 @@ describe('MessageConversionStrategy', () => {
     });
 
     t('tests that content with undefined parts is skipped', () => {
-      const contents: Content[] = [{ role: 'user', parts: undefined }];
+      const contents: Content[] = [{role: 'user', parts: undefined}];
 
       const result = strategy.geminiToVercel(contents);
 
@@ -64,7 +66,7 @@ describe('MessageConversionStrategy', () => {
     });
 
     t('tests that content with empty parts array is skipped', () => {
-      const contents: Content[] = [{ role: 'user', parts: [] }];
+      const contents: Content[] = [{role: 'user', parts: []}];
 
       const result = strategy.geminiToVercel(contents);
 
@@ -74,7 +76,7 @@ describe('MessageConversionStrategy', () => {
     t(
       'tests that content with no text and no function parts is skipped',
       () => {
-        const contents: Content[] = [{ role: 'user', parts: [{ text: '' }] }];
+        const contents: Content[] = [{role: 'user', parts: [{text: ''}]}];
 
         const result = strategy.geminiToVercel(contents);
 
@@ -88,7 +90,7 @@ describe('MessageConversionStrategy', () => {
       const contents: Content[] = [
         {
           role: 'user',
-          parts: [{ text: 'Hello world' }],
+          parts: [{text: 'Hello world'}],
         },
       ];
 
@@ -103,7 +105,7 @@ describe('MessageConversionStrategy', () => {
       const contents: Content[] = [
         {
           role: 'model',
-          parts: [{ text: 'Hi there!' }],
+          parts: [{text: 'Hi there!'}],
         },
       ];
 
@@ -117,7 +119,7 @@ describe('MessageConversionStrategy', () => {
       const contents: Content[] = [
         {
           role: 'user',
-          parts: [{ text: 'Line 1' }, { text: 'Line 2' }, { text: 'Line 3' }],
+          parts: [{text: 'Line 1'}, {text: 'Line 2'}, {text: 'Line 3'}],
         },
       ];
 
@@ -137,7 +139,9 @@ describe('MessageConversionStrategy', () => {
         const contents: Content[] = [
           {
             role: 'model',
-            parts: [{ functionCall: { id: 'call_123', name: 'get_weather', args: {} } }],
+            parts: [
+              {functionCall: {id: 'call_123', name: 'get_weather', args: {}}},
+            ],
           },
           {
             role: 'user',
@@ -146,7 +150,7 @@ describe('MessageConversionStrategy', () => {
                 functionResponse: {
                   id: 'call_123',
                   name: 'get_weather',
-                  response: { temperature: 72, condition: 'sunny' },
+                  response: {temperature: 72, condition: 'sunny'},
                 },
               },
             ],
@@ -166,7 +170,7 @@ describe('MessageConversionStrategy', () => {
         const contents: Content[] = [
           {
             role: 'model',
-            parts: [{ functionCall: { id: 'call_456', name: 'search', args: {} } }],
+            parts: [{functionCall: {id: 'call_456', name: 'search', args: {}}}],
           },
           {
             role: 'user',
@@ -175,7 +179,7 @@ describe('MessageConversionStrategy', () => {
                 functionResponse: {
                   id: 'call_456',
                   name: 'search',
-                  response: { results: ['result1', 'result2'] },
+                  response: {results: ['result1', 'result2']},
                 },
               },
             ],
@@ -193,33 +197,41 @@ describe('MessageConversionStrategy', () => {
       },
     );
 
-    t('tests that function response output contains structured response per v5', () => {
-      const contents: Content[] = [
-        {
-          role: 'model',
-          parts: [{ functionCall: { id: 'call_789', name: 'get_data', args: {} } }],
-        },
-        {
-          role: 'user',
-          parts: [
-            {
-              functionResponse: {
-                id: 'call_789',
-                name: 'get_data',
-                response: { data: 'test', success: true },
+    t(
+      'tests that function response output contains structured response per v5',
+      () => {
+        const contents: Content[] = [
+          {
+            role: 'model',
+            parts: [
+              {functionCall: {id: 'call_789', name: 'get_data', args: {}}},
+            ],
+          },
+          {
+            role: 'user',
+            parts: [
+              {
+                functionResponse: {
+                  id: 'call_789',
+                  name: 'get_data',
+                  response: {data: 'test', success: true},
+                },
               },
-            },
-          ],
-        },
-      ];
+            ],
+          },
+        ];
 
-      const result = strategy.geminiToVercel(contents);
+        const result = strategy.geminiToVercel(contents);
 
-      const content = result[1].content as VercelContentPart[];
-      const toolResult = content[0] as VercelToolResultPart;
-      // AI SDK v5 uses structured output format
-      expect(toolResult.output).toEqual({ type: 'json', value: { data: 'test', success: true } });
-    });
+        const content = result[1].content as VercelContentPart[];
+        const toolResult = content[0] as VercelToolResultPart;
+        // AI SDK v5 uses structured output format
+        expect(toolResult.output).toEqual({
+          type: 'json',
+          value: {data: 'test', success: true},
+        });
+      },
+    );
 
     t(
       'tests that function response with error field uses error output type',
@@ -227,7 +239,9 @@ describe('MessageConversionStrategy', () => {
         const contents: Content[] = [
           {
             role: 'model',
-            parts: [{ functionCall: { id: 'call_error', name: 'broken_tool', args: {} } }],
+            parts: [
+              {functionCall: {id: 'call_error', name: 'broken_tool', args: {}}},
+            ],
           },
           {
             role: 'user',
@@ -236,7 +250,7 @@ describe('MessageConversionStrategy', () => {
                 functionResponse: {
                   id: 'call_error',
                   name: 'broken_tool',
-                  response: { error: 'Something went wrong', code: 500 },
+                  response: {error: 'Something went wrong', code: 500},
                 },
               },
             ],
@@ -261,7 +275,15 @@ describe('MessageConversionStrategy', () => {
         const contents: Content[] = [
           {
             role: 'model',
-            parts: [{ functionCall: { id: 'call_no_response', name: 'simple_tool', args: {} } }],
+            parts: [
+              {
+                functionCall: {
+                  id: 'call_no_response',
+                  name: 'simple_tool',
+                  args: {},
+                },
+              },
+            ],
           },
           {
             role: 'user',
@@ -281,7 +303,7 @@ describe('MessageConversionStrategy', () => {
         const content = result[1].content as VercelContentPart[];
         const toolResult = content[0] as VercelToolResultPart;
         // AI SDK v5 uses structured output format
-        expect(toolResult.output).toEqual({ type: 'json', value: {} });
+        expect(toolResult.output).toEqual({type: 'json', value: {}});
       },
     );
 
@@ -293,7 +315,7 @@ describe('MessageConversionStrategy', () => {
             {
               functionResponse: {
                 name: 'test_tool',
-                response: { result: 'ok' },
+                response: {result: 'ok'},
               } as Partial<FunctionResponse> as FunctionResponse,
             },
           ],
@@ -312,7 +334,9 @@ describe('MessageConversionStrategy', () => {
       const contents: Content[] = [
         {
           role: 'model',
-          parts: [{ functionCall: { id: 'call_no_name', name: 'some_tool', args: {} } }],
+          parts: [
+            {functionCall: {id: 'call_no_name', name: 'some_tool', args: {}}},
+          ],
         },
         {
           role: 'user',
@@ -320,7 +344,7 @@ describe('MessageConversionStrategy', () => {
             {
               functionResponse: {
                 id: 'call_no_name',
-                response: { result: 'ok' },
+                response: {result: 'ok'},
               } as Partial<FunctionResponse> as FunctionResponse,
             },
           ],
@@ -341,8 +365,8 @@ describe('MessageConversionStrategy', () => {
           {
             role: 'model',
             parts: [
-              { functionCall: { id: 'call_1', name: 'tool1', args: {} } },
-              { functionCall: { id: 'call_2', name: 'tool2', args: {} } },
+              {functionCall: {id: 'call_1', name: 'tool1', args: {}}},
+              {functionCall: {id: 'call_2', name: 'tool2', args: {}}},
             ],
           },
           {
@@ -352,14 +376,14 @@ describe('MessageConversionStrategy', () => {
                 functionResponse: {
                   id: 'call_1',
                   name: 'tool1',
-                  response: { result: 1 },
+                  response: {result: 1},
                 },
               },
               {
                 functionResponse: {
                   id: 'call_2',
                   name: 'tool2',
-                  response: { result: 2 },
+                  response: {result: 2},
                 },
               },
             ],
@@ -393,14 +417,22 @@ describe('MessageConversionStrategy', () => {
                 functionCall: {
                   id: 'call_abc',
                   name: 'search',
-                  args: { query: 'test' },
+                  args: {query: 'test'},
                 },
               },
             ],
           },
           {
             role: 'user',
-            parts: [{ functionResponse: { id: 'call_abc', name: 'search', response: {} } }],
+            parts: [
+              {
+                functionResponse: {
+                  id: 'call_abc',
+                  name: 'search',
+                  response: {},
+                },
+              },
+            ],
           },
         ];
 
@@ -427,14 +459,22 @@ describe('MessageConversionStrategy', () => {
                 functionCall: {
                   id: 'call_def',
                   name: 'get_weather',
-                  args: { location: 'Tokyo', units: 'celsius' },
+                  args: {location: 'Tokyo', units: 'celsius'},
                 },
               },
             ],
           },
           {
             role: 'user',
-            parts: [{ functionResponse: { id: 'call_def', name: 'get_weather', response: {} } }],
+            parts: [
+              {
+                functionResponse: {
+                  id: 'call_def',
+                  name: 'get_weather',
+                  response: {},
+                },
+              },
+            ],
           },
         ];
 
@@ -458,19 +498,27 @@ describe('MessageConversionStrategy', () => {
           {
             role: 'model',
             parts: [
-              { text: 'Let me search for that' },
+              {text: 'Let me search for that'},
               {
                 functionCall: {
                   id: 'call_search',
                   name: 'search',
-                  args: { query: 'test' },
+                  args: {query: 'test'},
                 },
               },
             ],
           },
           {
             role: 'user',
-            parts: [{ functionResponse: { id: 'call_search', name: 'search', response: {} } }],
+            parts: [
+              {
+                functionResponse: {
+                  id: 'call_search',
+                  name: 'search',
+                  response: {},
+                },
+              },
+            ],
           },
         ];
 
@@ -494,7 +542,7 @@ describe('MessageConversionStrategy', () => {
             {
               functionCall: {
                 name: 'test_tool',
-                args: { test: true },
+                args: {test: true},
               } as Partial<FunctionCall> as FunctionCall,
             },
           ],
@@ -517,14 +565,16 @@ describe('MessageConversionStrategy', () => {
             {
               functionCall: {
                 id: 'call_xyz',
-                args: { test: true },
+                args: {test: true},
               } as Partial<FunctionCall> as FunctionCall,
             },
           ],
         },
         {
           role: 'user',
-          parts: [{ functionResponse: { id: 'call_xyz', name: 'unknown', response: {} } }],
+          parts: [
+            {functionResponse: {id: 'call_xyz', name: 'unknown', response: {}}},
+          ],
         },
       ];
 
@@ -550,7 +600,15 @@ describe('MessageConversionStrategy', () => {
         },
         {
           role: 'user',
-          parts: [{ functionResponse: { id: 'call_no_args', name: 'simple_tool', response: {} } }],
+          parts: [
+            {
+              functionResponse: {
+                id: 'call_no_args',
+                name: 'simple_tool',
+                response: {},
+              },
+            },
+          ],
         },
       ];
 
@@ -570,14 +628,14 @@ describe('MessageConversionStrategy', () => {
               functionCall: {
                 id: 'call_1',
                 name: 'tool1',
-                args: { arg: 'val1' },
+                args: {arg: 'val1'},
               },
             },
             {
               functionCall: {
                 id: 'call_2',
                 name: 'tool2',
-                args: { arg: 'val2' },
+                args: {arg: 'val2'},
               },
             },
           ],
@@ -585,8 +643,8 @@ describe('MessageConversionStrategy', () => {
         {
           role: 'user',
           parts: [
-            { functionResponse: { id: 'call_1', name: 'tool1', response: {} } },
-            { functionResponse: { id: 'call_2', name: 'tool2', response: {} } },
+            {functionResponse: {id: 'call_1', name: 'tool1', response: {}}},
+            {functionResponse: {id: 'call_2', name: 'tool2', response: {}}},
           ],
         },
       ];
@@ -607,9 +665,9 @@ describe('MessageConversionStrategy', () => {
       'tests that multi-turn conversation with mixed message types converts correctly',
       () => {
         const contents: Content[] = [
-          { role: 'user', parts: [{ text: 'Hello' }] },
-          { role: 'model', parts: [{ text: 'Hi! How can I help?' }] },
-          { role: 'user', parts: [{ text: 'Search for cats' }] },
+          {role: 'user', parts: [{text: 'Hello'}]},
+          {role: 'model', parts: [{text: 'Hi! How can I help?'}]},
+          {role: 'user', parts: [{text: 'Search for cats'}]},
           {
             role: 'model',
             parts: [
@@ -617,7 +675,7 @@ describe('MessageConversionStrategy', () => {
                 functionCall: {
                   id: 'call_search',
                   name: 'search',
-                  args: { query: 'cats' },
+                  args: {query: 'cats'},
                 },
               },
             ],
@@ -629,12 +687,12 @@ describe('MessageConversionStrategy', () => {
                 functionResponse: {
                   id: 'call_search',
                   name: 'search',
-                  response: { results: ['cat1', 'cat2'] },
+                  response: {results: ['cat1', 'cat2']},
                 },
               },
             ],
           },
-          { role: 'model', parts: [{ text: 'Found 2 results' }] },
+          {role: 'model', parts: [{text: 'Found 2 results'}]},
         ];
 
         const result = strategy.geminiToVercel(contents);
@@ -680,7 +738,7 @@ describe('MessageConversionStrategy', () => {
       'tests that Content object with text parts extracts and joins text',
       () => {
         const instruction = {
-          parts: [{ text: 'System instruction here' }],
+          parts: [{text: 'System instruction here'}],
         };
 
         const result = strategy.convertSystemInstruction(
@@ -695,7 +753,7 @@ describe('MessageConversionStrategy', () => {
       'tests that Content object with multiple text parts joins with newline',
       () => {
         const instruction = {
-          parts: [{ text: 'Line 1' }, { text: 'Line 2' }],
+          parts: [{text: 'Line 1'}, {text: 'Line 2'}],
         };
 
         const result = strategy.convertSystemInstruction(

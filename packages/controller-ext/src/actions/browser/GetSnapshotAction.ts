@@ -5,23 +5,40 @@
  */
 import {z} from 'zod';
 
-import { ActionHandler } from '../ActionHandler';
-import { logger } from '@/utils/Logger';
+import {ActionHandler} from '../ActionHandler';
 
 import {
   BrowserOSAdapter,
   type Snapshot,
   type SnapshotOptions,
 } from '@/adapters/BrowserOSAdapter';
+import {logger} from '@/utils/Logger';
 
 // Input schema for getSnapshot action
 const GetSnapshotInputSchema = z.object({
   tabId: z.number().int().positive().describe('Tab ID to get snapshot from'),
-  type: z.enum(['text', 'links']).default('text').describe('Type of snapshot: text or links'),
-  options: z.object({
-    context: z.enum(['visible', 'full']).optional(),
-    includeSections: z.array(z.enum(['main', 'navigation', 'footer', 'header', 'article', 'aside'])).optional(),
-  }).optional().describe('Optional snapshot configuration'),
+  type: z
+    .enum(['text', 'links'])
+    .default('text')
+    .describe('Type of snapshot: text or links'),
+  options: z
+    .object({
+      context: z.enum(['visible', 'full']).optional(),
+      includeSections: z
+        .array(
+          z.enum([
+            'main',
+            'navigation',
+            'footer',
+            'header',
+            'article',
+            'aside',
+          ]),
+        )
+        .optional(),
+    })
+    .optional()
+    .describe('Optional snapshot configuration'),
 });
 
 type GetSnapshotInput = z.infer<typeof GetSnapshotInputSchema>;
@@ -53,8 +70,10 @@ export class GetSnapshotAction extends ActionHandler<
   private browserOSAdapter = BrowserOSAdapter.getInstance();
 
   async execute(input: GetSnapshotInput): Promise<GetSnapshotOutput> {
-    const { tabId, type } = input;
-    logger.info(`[GetSnapshotAction] Getting snapshot for tab ${tabId} with type ${type}`);
+    const {tabId, type} = input;
+    logger.info(
+      `[GetSnapshotAction] Getting snapshot for tab ${tabId} with type ${type}`,
+    );
     const snapshot = await this.browserOSAdapter.getSnapshot(tabId, type);
     return snapshot;
   }

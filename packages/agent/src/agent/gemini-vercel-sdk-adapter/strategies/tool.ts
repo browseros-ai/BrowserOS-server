@@ -10,13 +10,15 @@
  */
 
 import type {
-  VercelTool,
-} from '../types.js';
+  ToolListUnion,
+  FunctionDeclaration,
+  FunctionCall,
+} from '@google/genai';
+import {jsonSchema} from 'ai';
 
-import { jsonSchema } from 'ai';
-import { ConversionError } from '../errors.js';
-import type { ToolListUnion, FunctionDeclaration, FunctionCall } from '@google/genai';
-import { VercelToolCallSchema } from '../types.js';
+import {ConversionError} from '../errors.js';
+import type {VercelTool} from '../types.js';
+import {VercelToolCallSchema} from '../types.js';
 
 export class ToolConversionStrategy {
   /**
@@ -56,7 +58,7 @@ export class ToolConversionStrategy {
           {
             stage: 'tool',
             operation: 'geminiToVercel',
-            input: { hasDescription: !!func.description },
+            input: {hasDescription: !!func.description},
           },
         );
       }
@@ -68,12 +70,19 @@ export class ToolConversionStrategy {
 
       if (func.parametersJsonSchema !== undefined) {
         // Prefer parametersJsonSchema (standard JSON Schema format)
-        if (typeof func.parametersJsonSchema === 'object' && func.parametersJsonSchema !== null) {
+        if (
+          typeof func.parametersJsonSchema === 'object' &&
+          func.parametersJsonSchema !== null
+        ) {
           rawParameters = func.parametersJsonSchema as Record<string, unknown>;
         } else {
           throw new ConversionError(
             `Tool ${func.name}: parametersJsonSchema must be an object`,
-            { stage: 'tool', operation: 'geminiToVercel', input: { parametersJsonSchema: func.parametersJsonSchema } }
+            {
+              stage: 'tool',
+              operation: 'geminiToVercel',
+              input: {parametersJsonSchema: func.parametersJsonSchema},
+            },
           );
         }
       } else if (func.parameters !== undefined) {

@@ -1,7 +1,12 @@
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 export class HttpAgentError extends Error {
   constructor(
     message: string,
-    public statusCode: number = 500,
+    public statusCode = 500,
     public code?: string,
   ) {
     super(message);
@@ -22,7 +27,10 @@ export class HttpAgentError extends Error {
 }
 
 export class ValidationError extends HttpAgentError {
-  constructor(message: string, public details?: unknown) {
+  constructor(
+    message: string,
+    public details?: unknown,
+  ) {
     super(message, 400, 'VALIDATION_ERROR');
   }
 
@@ -46,7 +54,10 @@ export class SessionNotFoundError extends HttpAgentError {
 }
 
 export class AgentExecutionError extends HttpAgentError {
-  constructor(message: string, public originalError?: Error) {
+  constructor(
+    message: string,
+    public originalError?: Error,
+  ) {
     super(message, 500, 'AGENT_EXECUTION_ERROR');
   }
 

@@ -1,6 +1,12 @@
-import { logger } from '@browseros/common';
-import { GeminiAgent } from '../agent/GeminiAgent.js';
-import type { AgentConfig } from '../agent/types.js';
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+import {logger} from '@browseros/common';
+
+import {GeminiAgent} from '../agent/GeminiAgent.js';
+import type {AgentConfig} from '../agent/types.js';
 
 export class SessionManager {
   private sessions = new Map<string, GeminiAgent>();

@@ -1,14 +1,19 @@
-import { z } from 'zod'
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+import {z} from 'zod';
 
 // MCP server configuration schema
 export const MCPServerConfigSchema = z.object({
-  id: z.string(),  // Server identifier
-  name: z.string(),  // Display name
-  subdomain: z.string(),  // Server subdomain for URL construction
-  iconPath: z.string(),  // Path to icon in assets
-})
+  id: z.string(), // Server identifier
+  name: z.string(), // Display name
+  subdomain: z.string(), // Server subdomain for URL construction
+  iconPath: z.string(), // Path to icon in assets
+});
 
-export type MCPServerConfig = z.infer<typeof MCPServerConfigSchema>
+export type MCPServerConfig = z.infer<typeof MCPServerConfigSchema>;
 
 // Available MCP servers - names must match Klavis API exactly
 // Currently limited to core Google Workspace and Notion
@@ -43,4 +48,4 @@ export const MCP_SERVERS: MCPServerConfig[] = [
     subdomain: 'notion',
     iconPath: 'assets/mcp_servers/notion.svg',
   },
-]
+];

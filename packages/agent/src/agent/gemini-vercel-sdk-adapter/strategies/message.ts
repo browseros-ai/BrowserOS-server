@@ -105,7 +105,7 @@ export class MessageConversionStrategy {
           for (const img of imageParts) {
             contentParts.push({
               type: 'image',
-              image: img.data,  // Pass raw base64 string
+              image: img.data, // Pass raw base64 string
               mediaType: img.mimeType,
             });
           }
@@ -125,9 +125,8 @@ export class MessageConversionStrategy {
 
       // CASE 2: Tool results (user providing tool execution results)
       if (functionResponses.length > 0) {
-
         // Filter out duplicate tool results AND orphaned tool results (no matching tool_use)
-        const uniqueResponses = functionResponses.filter((fr) => {
+        const uniqueResponses = functionResponses.filter(fr => {
           const id = fr.id || '';
           // Skip duplicates
           if (seenToolResultIds.has(id)) {
@@ -149,7 +148,8 @@ export class MessageConversionStrategy {
 
         // If there are NO images → standard tool message
         if (imageParts.length === 0) {
-          const toolResultParts = this.convertFunctionResponsesToToolResults(uniqueResponses);
+          const toolResultParts =
+            this.convertFunctionResponsesToToolResults(uniqueResponses);
           messages.push({
             role: 'tool',
             content: toolResultParts,
@@ -162,7 +162,8 @@ export class MessageConversionStrategy {
         // 2. User message with images (tool messages don't support images)
 
         // Message 1: Tool message with tool results (no images)
-        const toolResultParts = this.convertFunctionResponsesToToolResults(uniqueResponses);
+        const toolResultParts =
+          this.convertFunctionResponsesToToolResults(uniqueResponses);
         messages.push({
           role: 'tool',
           content: toolResultParts,
@@ -280,7 +281,7 @@ export class MessageConversionStrategy {
     if (typeof instruction === 'object' && 'parts' in instruction) {
       const textParts = (instruction.parts || [])
         .filter(isTextPart)
-        .map((p) => p.text);
+        .map(p => p.text);
 
       return textParts.length > 0 ? textParts.join('\n') : undefined;
     }
@@ -298,28 +299,35 @@ export class MessageConversionStrategy {
       response?: Record<string, unknown>;
     }>,
   ): VercelContentPart[] {
-    return responses.map((fr) => {
+    return responses.map(fr => {
       // Convert Gemini response to AI SDK v5 structured output format
       let output: LanguageModelV2ToolResultOutput;
       const response = fr.response || {};
 
       // Check for error first
-      if (typeof response === 'object' && 'error' in response && response.error) {
+      if (
+        typeof response === 'object' &&
+        'error' in response &&
+        response.error
+      ) {
         const errorValue = response.error;
-        output = typeof errorValue === 'string'
-          ? { type: 'error-text', value: errorValue }
-          : { type: 'error-json', value: errorValue as JSONValue };
+        output =
+          typeof errorValue === 'string'
+            ? {type: 'error-text', value: errorValue}
+            : {type: 'error-json', value: errorValue as JSONValue};
       } else if (typeof response === 'object' && 'output' in response) {
         // Gemini's explicit output format: {output: value}
         const outputValue = response.output;
-        output = typeof outputValue === 'string'
-          ? { type: 'text', value: outputValue }
-          : { type: 'json', value: outputValue as JSONValue };
+        output =
+          typeof outputValue === 'string'
+            ? {type: 'text', value: outputValue}
+            : {type: 'json', value: outputValue as JSONValue};
       } else {
         // Whole response is the output
-        output = typeof response === 'string'
-          ? { type: 'text', value: response }
-          : { type: 'json', value: response as JSONValue };
+        output =
+          typeof response === 'string'
+            ? {type: 'text', value: response}
+            : {type: 'json', value: response as JSONValue};
       }
 
       return {

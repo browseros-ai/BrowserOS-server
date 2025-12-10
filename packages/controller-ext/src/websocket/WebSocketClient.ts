@@ -8,13 +8,15 @@ import type {ProtocolRequest, ProtocolResponse} from '@/protocol/types';
 import {ConnectionStatus} from '@/protocol/types';
 import {logger} from '@/utils/Logger';
 
+export type PortProvider = () => Promise<number>;
+
 export class WebSocketClient {
   private ws: WebSocket | null = null;
   private status: ConnectionStatus = ConnectionStatus.DISCONNECTED;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private heartbeatTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
-  private port: number;
+  private getPort: PortProvider;
   private lastPongReceived: number = Date.now();
   private pendingPing = false;
 
@@ -22,9 +24,9 @@ export class WebSocketClient {
   private messageHandlers = new Set<(msg: ProtocolResponse) => void>();
   private statusHandlers = new Set<(status: ConnectionStatus) => void>();
 
-  constructor(port: number) {
-    this.port = port;
-    logger.info(`WebSocketClient initialized with port: ${port}`);
+  constructor(getPort: PortProvider) {
+    this.getPort = getPort;
+    logger.info('WebSocketClient initialized');
   }
 
   // Public API
@@ -37,10 +39,11 @@ export class WebSocketClient {
 
     this._setStatus(ConnectionStatus.CONNECTING);
 
-    const url = this._buildUrl();
-    logger.info(`Connecting to ${url}`);
-
     try {
+      const port = await this.getPort();
+      const url = this._buildUrl(port);
+      logger.info(`Connecting to ${url}`);
+
       this.ws = new WebSocket(url);
 
       this.ws.onopen = this._handleOpen.bind(this);
@@ -92,9 +95,9 @@ export class WebSocketClient {
 
   // Private methods
 
-  private _buildUrl(): string {
+  private _buildUrl(port: number): string {
     const {protocol, host, path} = WEBSOCKET_CONFIG;
-    return `${protocol}://${host}:${this.port}${path}`;
+    return `${protocol}://${host}:${port}${path}`;
   }
 
   private async _waitForConnection(): Promise<void> {

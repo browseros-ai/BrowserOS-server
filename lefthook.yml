@@ -1,0 +1,42 @@
+commit-msg:
+  commands:
+    conventional:
+      run: |
+        msg=$(head -1 {1})
+        if [[ ! "$msg" =~ ^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)(\(.+\))?\!?:\ .+ ]]; then
+          echo "Commit message must follow Conventional Commits format:"
+          echo "  <type>(<optional scope>): <description>"
+          echo "  Types: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert"
+          echo ""
+          echo "Examples:"
+          echo "  feat(auth): add OAuth2 support"
+          echo "  fix: resolve null pointer exception"
+          exit 1
+        fi
+
+pre-commit:
+  commands:
+    format:
+      glob: '*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc,md,yml,yaml}'
+      run: bun prettier --write --cache {staged_files}
+      stage_fixed: true
+
+pre-push:
+  commands:
+    branch-name:
+      run: |
+        branch=$(git rev-parse --abbrev-ref HEAD)
+        if [[ "$branch" == "main" || "$branch" == "master" ]]; then
+          exit 0
+        fi
+        if [[ ! "$branch" =~ ^(feat|fix|bugfix|hotfix|release|docs|refactor|test|chore|experiment)/[a-z0-9-]+$ ]]; then
+          echo "Branch name '$branch' doesn't match required format."
+          echo "Use: <type>/<short-description>"
+          echo "Types: feat, fix, bugfix, hotfix, release, docs, refactor, test, chore, experiment"
+          echo "Example: feat/add-auth, fix/login-crash"
+          echo ""
+          echo "To rename your branch:"
+          echo "  git branch -m <new-name>"
+          echo "  git push -u origin <new-name>"
+          exit 1
+        fi

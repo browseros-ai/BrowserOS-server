@@ -1,6 +1,6 @@
 {
   "name": "browseros-server",
-  "version": "0.0.15",
+  "version": "0.0.17",
   "description": "Unified BrowserOS server with MCP and Agent support",
   "private": true,
   "type": "module",
@@ -32,8 +32,10 @@
     "dist:server:windows-x64": "bun run build:codex-sdk-ts && bun scripts/build_server.ts --mode=prod --target=windows-x64",
     "dist:server:darwin-arm64": "bun run build:codex-sdk-ts && bun scripts/build_server.ts --mode=prod --target=darwin-arm64",
     "dist:server:darwin-x64": "bun run build:codex-sdk-ts && bun scripts/build_server.ts --mode=prod --target=darwin-x64",
-    "format": "prettier --write --cache . || true ; eslint --cache --fix . || true",
-    "check-format": "prettier --check --cache . || true ; eslint --cache || true",
+    "format": "prettier --write --cache .",
+    "lint": "eslint --cache --fix .",
+    "check-format": "prettier --check --cache .",
+    "check-lint": "eslint --cache .",
     "docs": "npm run docs:generate && npm run format",
     "docs:generate": "node --experimental-strip-types scripts/generate-docs.ts",
     "clean": "rimraf dist"
@@ -98,10 +100,17 @@
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.43.0",
     "zod": "^3.24.2",
-    "zod-to-json-schema": "^3.24.6"
+    "zod-to-json-schema": "^3.24.6",
+    "lefthook": "^1.11.13"
   },
+  "trustedDependencies": [
+    "lefthook"
+  ],
   "engines": {
     "bun": ">=1.0.0",
-    "node": "^20.19.0 || ^22.12.0 || >=23"
+    "node": "please-use-bun",
+    "npm": "please-use-bun",
+    "yarn": "please-use-bun",
+    "pnpm": "please-use-bun"
   }
 }

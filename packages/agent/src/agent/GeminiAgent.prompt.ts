@@ -1,4 +1,9 @@
 /**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+/**
  * BrowserOS Agent System Prompt v5
  *
  * Focused browser automation prompt:
@@ -129,4 +134,4 @@ export function getSystemPrompt(): string {
   return systemPrompt;
 }
 
-export { systemPrompt };
+export {systemPrompt};

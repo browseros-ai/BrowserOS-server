@@ -5,9 +5,9 @@
 import assert from 'node:assert';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {describe, it} from 'bun:test';
 
 import {html, withBrowser} from '@browseros/common/tests/utils';
+import {describe, it} from 'bun:test';
 
 import {
   click,
@@ -73,10 +73,7 @@ describe('input', () => {
   });
   it('click - waits for navigation', async () => {
     const resolveNavigation = Promise.withResolvers<void>();
-    server.addHtmlRoute(
-      '/link',
-      html`<a href="/navigated">Navigate page</a>`,
-    );
+    server.addHtmlRoute('/link', html`<a href="/navigated">Navigate page</a>`);
     server.addRoute('/navigated', async (_req, res) => {
       await resolveNavigation.promise;
       res.write(html`<main>I was navigated</main>`);

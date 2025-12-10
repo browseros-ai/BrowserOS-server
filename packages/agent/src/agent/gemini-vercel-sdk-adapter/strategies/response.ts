@@ -20,8 +20,9 @@ import {
   VercelGenerateTextResultSchema,
   VercelStreamChunkSchema,
 } from '../types.js';
-import type { ToolConversionStrategy } from './tool.js';
-import type { UIMessageStreamWriter } from '../ui-message-stream.js';
+import type {UIMessageStreamWriter} from '../ui-message-stream.js';
+
+import type {ToolConversionStrategy} from './tool.js';
 
 export class ResponseConversionStrategy {
   constructor(private toolStrategy: ToolConversionStrategy) {}
@@ -48,7 +49,7 @@ export class ResponseConversionStrategy {
 
     // Add text content if present
     if (validated.text) {
-      parts.push({ text: validated.text });
+      parts.push({text: validated.text});
     }
 
     // Convert tool calls using ToolStrategy
@@ -57,7 +58,7 @@ export class ResponseConversionStrategy {
 
       // Add to parts (dual representation for Gemini)
       for (const fc of functionCalls) {
-        parts.push({ functionCall: fc });
+        parts.push({functionCall: fc});
       }
     }
 
@@ -77,7 +78,7 @@ export class ResponseConversionStrategy {
         },
       ],
       // CRITICAL: Top-level functionCalls for turn.ts compatibility
-      ...(functionCalls && functionCalls.length > 0 ? { functionCalls } : {}),
+      ...(functionCalls && functionCalls.length > 0 ? {functionCalls} : {}),
       usageMetadata,
     } as GenerateContentResponse;
   }
@@ -115,12 +116,15 @@ export class ResponseConversionStrategy {
 
     // Process stream chunks
     for await (const rawChunk of stream) {
-      const chunkType = (rawChunk as { type?: string }).type;
+      const chunkType = (rawChunk as {type?: string}).type;
 
       // Handle error chunks first
       if (chunkType === 'error') {
         const errorChunk = rawChunk as any;
-        const errorMessage = errorChunk.error?.message || errorChunk.error || 'Unknown error from LLM provider';
+        const errorMessage =
+          errorChunk.error?.message ||
+          errorChunk.error ||
+          'Unknown error from LLM provider';
         if (uiStream) {
           await uiStream.writeError(errorMessage);
           await uiStream.finish('error');
@@ -152,7 +156,7 @@ export class ResponseConversionStrategy {
             {
               content: {
                 role: 'model',
-                parts: [{ text: delta }],
+                parts: [{text: delta}],
               },
               index: 0,
             },
@@ -161,7 +165,11 @@ export class ResponseConversionStrategy {
       } else if (chunk.type === 'tool-call') {
         // Emit UI Message Stream format for tool calls
         if (uiStream) {
-          await uiStream.writeToolCall(chunk.toolCallId, chunk.toolName, chunk.input);
+          await uiStream.writeToolCall(
+            chunk.toolCallId,
+            chunk.toolName,
+            chunk.input,
+          );
         }
 
         toolCallsMap.set(chunk.toolCallId, {
@@ -231,16 +239,14 @@ export class ResponseConversionStrategy {
           {
             content: {
               role: 'model',
-              parts: parts.length > 0 ? parts : [{ text: '' }],
+              parts: parts.length > 0 ? parts : [{text: ''}],
             },
             finishReason: this.mapFinishReason(finishReason),
             index: 0,
           },
         ],
         // Top-level functionCalls
-        ...(functionCalls && functionCalls.length > 0
-          ? { functionCalls }
-          : {}),
+        ...(functionCalls && functionCalls.length > 0 ? {functionCalls} : {}),
         usageMetadata,
       } as GenerateContentResponse;
     }
@@ -313,7 +319,7 @@ export class ResponseConversionStrategy {
         {
           content: {
             role: 'model',
-            parts: [{ text: '' }],
+            parts: [{text: ''}],
           },
           finishReason: FinishReason.OTHER,
           index: 0,

@@ -3,8 +3,8 @@
  * Copyright 2025 BrowserOS
  */
 import assert from 'node:assert';
-import {describe, it} from 'bun:test';
 
+import {describe, it} from 'bun:test';
 import type {ElementHandle} from 'puppeteer-core';
 
 import {formatA11ySnapshot} from '../../src/formatters/snapshotFormatter.js';

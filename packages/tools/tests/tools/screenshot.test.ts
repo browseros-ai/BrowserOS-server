@@ -6,9 +6,9 @@ import assert from 'node:assert';
 import {rm, stat, mkdir, chmod, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {describe, it} from 'bun:test';
 
 import {withBrowser} from '@browseros/common/tests/utils';
+import {describe, it} from 'bun:test';
 
 import {screenshot} from '../../src/cdp-based/screenshot.js';
 import {screenshots} from '../snapshot.js';
@@ -157,10 +157,7 @@ describe('screenshot', () => {
 
   it('browser_take_screenshot - with unwritable filePath', async () => {
     if (process.platform === 'win32') {
-      const filePath = join(
-        tmpdir(),
-        'readonly-file-for-screenshot-test.png',
-      );
+      const filePath = join(tmpdir(), 'readonly-file-for-screenshot-test.png');
       await writeFile(filePath, '');
       await chmod(filePath, 0o400);
 

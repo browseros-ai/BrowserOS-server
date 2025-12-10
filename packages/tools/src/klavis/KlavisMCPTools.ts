@@ -1,4 +1,9 @@
 /**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+/**
  * Klavis MCP tool definitions
  */
 import type {ToolDefinition} from '@browseros/tools';
@@ -165,7 +170,10 @@ const mcpCallTool: ToolDefinition = {
   schema: {
     instanceId: z.string().describe('MCP server instance ID'),
     toolName: z.string().describe('Name of the tool to execute'),
-    toolArgs: z.any().optional().describe('Arguments for the tool (JSON object)'),
+    toolArgs: z
+      .any()
+      .optional()
+      .describe('Arguments for the tool (JSON object)'),
     userId: z.string().describe('Your Klavis user ID for MCP integration'),
   },
   handler: async (request, response, _context) => {

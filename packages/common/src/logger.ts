@@ -6,7 +6,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
-type FormatOptions = {useColor?: boolean; truncateStrings?: boolean};
+interface FormatOptions {
+  useColor?: boolean;
+  truncateStrings?: boolean;
+}
 
 const COLORS = {
   debug: '\x1b[36m',

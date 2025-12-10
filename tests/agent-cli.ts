@@ -50,12 +50,20 @@ function parseArgs(): {
   }
 
   if (!message) {
-    console.error('Usage: bun tests/test-agent-cli.ts [options] "your message"');
+    console.error(
+      'Usage: bun tests/test-agent-cli.ts [options] "your message"',
+    );
     console.error('Options:');
-    console.error('  --provider=<provider>  AI provider (anthropic, openai, google, etc.)');
+    console.error(
+      '  --provider=<provider>  AI provider (anthropic, openai, google, etc.)',
+    );
     console.error('  --model=<model>        Model name');
-    console.error('  --host=<url>           Server URL (default: http://127.0.0.1:9200)');
-    console.error('  --show-full-output     Show full tool output (default: truncated)');
+    console.error(
+      '  --host=<url>           Server URL (default: http://127.0.0.1:9200)',
+    );
+    console.error(
+      '  --show-full-output     Show full tool output (default: truncated)',
+    );
     process.exit(1);
   }
 
@@ -158,8 +166,11 @@ async function chat(config: {
           }
 
           let displayEvent = event;
-          if (!config.showFullOutput && event.type === 'tool-output-available') {
-            displayEvent = { ...event, output: truncateOutput(event.output) };
+          if (
+            !config.showFullOutput &&
+            event.type === 'tool-output-available'
+          ) {
+            displayEvent = {...event, output: truncateOutput(event.output)};
           }
           console.log(JSON.stringify(displayEvent, null, 2));
         } catch {

@@ -11,7 +11,8 @@ import type {Response} from '../types/Response.js';
 
 export const executeJavaScript = defineTool<z.ZodRawShape, Context, Response>({
   name: 'browser_execute_javascript',
-  description: 'Execute arbitrary JavaScript code in the page context. Use this tool sparingly.',
+  description:
+    'Execute arbitrary JavaScript code in the page context. Use this tool sparingly.',
   annotations: {
     category: ToolCategories.ADVANCED,
     readOnlyHint: false,

@@ -3,6 +3,7 @@
  * Copyright 2025 BrowserOS
  */
 import assert from 'node:assert';
+
 import {describe, it, beforeEach, afterEach} from 'bun:test';
 
 import {parseArguments} from '../src/args.js';

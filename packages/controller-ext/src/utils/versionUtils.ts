@@ -1,8 +1,13 @@
+/**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
 // Version comparison utility
 export class VersionUtils {
   // Parse "137.0.7207.69" → [137, 0, 7207, 69]
   private static parseVersion(version: string): number[] {
-    return version.split('.').map((n) => parseInt(n, 10) || 0);
+    return version.split('.').map(n => parseInt(n, 10) || 0);
   }
 
   // Compare if versionA >= versionB

@@ -4,8 +4,8 @@
  */
 import http from 'node:http';
 
-import type {McpContext, Mutex,logger} from '@browseros/common';
-import { metrics} from '@browseros/common';
+import type {McpContext, Mutex, logger} from '@browseros/common';
+import {metrics} from '@browseros/common';
 import type {ToolDefinition} from '@browseros/tools';
 import {McpResponse} from '@browseros/tools';
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -92,7 +92,11 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
               success: true,
             });
 
-            return {content};
+            const structuredContent = response.structuredContent;
+            return {
+              content,
+              ...(structuredContent && {structuredContent}),
+            };
           } catch (error) {
             const errorText =
               error instanceof Error ? error.message : String(error);

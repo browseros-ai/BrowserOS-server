@@ -1,4 +1,9 @@
 /**
+ * @license
+ * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+/**
  * Manages MCP servers - per-user instance
  * Server-side version with session-based user IDs
  */
@@ -20,7 +25,7 @@ const PLATFORM_NAME = 'Nxtscape';
  * - No OAuth handling (assume pre-authenticated for now)
  */
 export class KlavisAPIManager {
-  private static instances: Map<string, KlavisAPIManager> = new Map();
+  private static instances = new Map<string, KlavisAPIManager>();
   public readonly client: KlavisAPIClient;
   private userId: string;
 
@@ -122,9 +127,7 @@ export class KlavisAPIManager {
   /**
    * Check if a server is installed and authenticated
    */
-  async isServerReady(
-    serverName: string,
-  ): Promise<{
+  async isServerReady(serverName: string): Promise<{
     installed: boolean;
     authenticated: boolean;
     instanceId?: string;

@@ -42,4 +42,7 @@ export interface Response {
 
   /** Attach network request details */
   attachNetworkRequest(url: string): void;
+
+  /** Add a key-value pair to structured content (flat, no nesting) */
+  addStructuredContent(key: string, value: unknown): void;
 }
