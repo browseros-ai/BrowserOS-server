@@ -10,20 +10,21 @@
  * Handles both streaming and non-streaming responses
  */
 
-import type {GenerateContentResponse, Part, FunctionCall} from '@google/genai';
-import {FinishReason} from '@google/genai';
+import {GenerateContentResponse, FinishReason, Part, FunctionCall} from '@google/genai';
 
+import type {ProviderAdapter} from '../adapters/index.js';
+import type {ProviderMetadata} from '../adapters/types.js';
 import type {VercelFinishReason, VercelUsage} from '../types.js';
-import {
-  VercelGenerateTextResultSchema,
-  VercelStreamChunkSchema,
-} from '../types.js';
+import {VercelGenerateTextResultSchema, VercelStreamChunkSchema} from '../types.js';
 import type {UIMessageStreamWriter} from '../ui-message-stream.js';
 
 import type {ToolConversionStrategy} from './tool.js';
 
 export class ResponseConversionStrategy {
-  constructor(private toolStrategy: ToolConversionStrategy) {}
+  constructor(
+    private toolStrategy: ToolConversionStrategy,
+    private adapter: ProviderAdapter,
+  ) {}
 
   /**
    * Convert Vercel generateText result to Gemini format
@@ -109,17 +110,20 @@ export class ResponseConversionStrategy {
 
     // Process stream chunks
     for await (const rawChunk of stream) {
+      // Let adapter process chunk (accumulates provider-specific metadata)
+      this.adapter.processStreamChunk(rawChunk);
+
       const chunkType = (rawChunk as {type?: string}).type;
 
       // Handle error chunks first
       if (chunkType === 'error') {
-        const errorChunk = rawChunk as any;
+        const errorChunk = rawChunk as {error?: {message?: string} | string};
         const errorMessage =
-          errorChunk.error?.message ||
-          errorChunk.error ||
-          'Unknown error from LLM provider';
+          typeof errorChunk.error === 'object'
+            ? errorChunk.error?.message
+            : errorChunk.error || 'Unknown error from LLM provider';
         if (uiStream) {
-          await uiStream.writeError(errorMessage);
+          await uiStream.writeError(errorMessage || 'Unknown error');
           await uiStream.finish('error');
         }
         throw new Error(`LLM Provider Error: ${errorMessage}`);
@@ -173,6 +177,7 @@ export class ResponseConversionStrategy {
       } else if (chunk.type === 'finish') {
         finishReason = chunk.finishReason;
       }
+      // reasoning-delta and reasoning-start are handled by adapter.processStreamChunk()
     }
 
     // Get usage metadata after stream completes
@@ -184,8 +189,8 @@ export class ResponseConversionStrategy {
       usage = this.estimateUsage(textAccumulator);
     }
 
-    // Note: finishStep() is called by GeminiAgent after tool outputs are written
-    // This ensures the step includes: LLM response + tool calls + tool results
+    // Get provider metadata from adapter (if any was accumulated)
+    const providerMetadata = this.adapter.getResponseMetadata();
 
     // Yield final response with tool calls and metadata
     if (toolCallsMap.size > 0 || finishReason || usage) {
@@ -197,9 +202,17 @@ export class ResponseConversionStrategy {
         const toolCallsArray = Array.from(toolCallsMap.values());
         functionCalls = this.toolStrategy.vercelToGemini(toolCallsArray);
 
-        // Add to parts
+        // Attach provider metadata to first functionCall part
+        let isFirst = true;
         for (const fc of functionCalls) {
-          parts.push({functionCall: fc});
+          const part: Part & {providerMetadata?: ProviderMetadata} = {
+            functionCall: fc,
+          };
+          if (isFirst && providerMetadata) {
+            part.providerMetadata = providerMetadata;
+            isFirst = false;
+          }
+          parts.push(part);
         }
       }
 
@@ -260,9 +273,7 @@ export class ResponseConversionStrategy {
   /**
    * Map Vercel finish reasons to Gemini finish reasons
    */
-  private mapFinishReason(
-    reason: VercelFinishReason | undefined,
-  ): FinishReason {
+  private mapFinishReason(reason: VercelFinishReason | undefined): FinishReason {
     switch (reason) {
       case 'stop':
       case 'tool-calls':

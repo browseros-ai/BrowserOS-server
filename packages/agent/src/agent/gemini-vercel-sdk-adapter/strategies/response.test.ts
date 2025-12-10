@@ -24,16 +24,20 @@ import type {GenerateContentResponse} from '@google/genai';
 import {FinishReason} from '@google/genai';
 import {describe, it as t, expect, beforeEach} from 'vitest';
 
+import {BaseProviderAdapter} from '../adapters/base.js';
+
 import {ResponseConversionStrategy} from './response.js';
 import {ToolConversionStrategy} from './tool.js';
 
 describe('ResponseConversionStrategy', () => {
   let strategy: ResponseConversionStrategy;
   let toolStrategy: ToolConversionStrategy;
+  let adapter: BaseProviderAdapter;
 
   beforeEach(() => {
     toolStrategy = new ToolConversionStrategy();
-    strategy = new ResponseConversionStrategy(toolStrategy);
+    adapter = new BaseProviderAdapter();
+    strategy = new ResponseConversionStrategy(toolStrategy, adapter);
   });
 
   // ========================================

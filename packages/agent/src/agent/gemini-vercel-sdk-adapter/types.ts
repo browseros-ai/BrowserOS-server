@@ -107,6 +107,7 @@ export const VercelFinishChunkSchema = z.object({
 /**
  * Union of stream chunks we process
  * (SDK emits many other types we ignore)
+ * Note: Provider-specific chunks (reasoning-delta, reasoning-start) are handled by adapters
  */
 export const VercelStreamChunkSchema = z.discriminatedUnion('type', [
   VercelTextDeltaChunkSchema,
