@@ -5,7 +5,6 @@
 import http from 'node:http';
 
 import type {McpContext, Mutex, logger} from '@browseros/common';
-import {metrics} from '@browseros/common';
 import type {ToolDefinition} from '@browseros/tools';
 import {McpResponse} from '@browseros/tools';
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -179,45 +178,6 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
   };
 
   /**
-   * Handles /init endpoint for metrics initialization
-   */
-  const handleInitEndpoint = async (
-    req: http.IncomingMessage,
-    res: http.ServerResponse,
-  ): Promise<void> => {
-    if (req.method !== 'POST') {
-      res.writeHead(405, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({error: 'Method not allowed'}));
-      return;
-    }
-
-    try {
-      const chunks: Buffer[] = [];
-      for await (const chunk of req) {
-        chunks.push(chunk);
-      }
-      const body = Buffer.concat(chunks).toString();
-
-      const data = JSON.parse(body);
-      if (!data.client_id) {
-        res.writeHead(400, {'Content-Type': 'application/json'});
-        res.end(JSON.stringify({error: 'client_id is required'}));
-        return;
-      }
-
-      metrics.initialize(data);
-      logger.info(`Metrics initialized with client_id: ${data.client_id}`);
-
-      res.writeHead(200, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({success: true}));
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Invalid JSON';
-      res.writeHead(400, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({error: errorMsg}));
-    }
-  };
-
-  /**
    * Sets CORS headers - permissive since server is localhost-only
    */
   const setCorsHeaders = (
@@ -262,12 +222,6 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
       res.end(
         JSON.stringify({error: 'Forbidden: Only localhost access allowed'}),
       );
-      return;
-    }
-
-    // Init endpoint
-    if (url.pathname === '/init') {
-      await handleInitEndpoint(req, res);
       return;
     }
 
