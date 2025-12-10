@@ -8,26 +8,17 @@ import {Command, InvalidArgumentError} from 'commander';
 
 import {version} from '../../../package.json' assert {type: 'json'};
 
-import {loadConfig, type ResolvedConfig} from './config.js';
+import {loadConfig} from './config.js';
+import {
+  ServerConfigSchema,
+  type ServerConfig,
+  type PartialServerConfig,
+} from './types.js';
 
-export interface ServerConfig {
-  cdpPort: number | null;
-  httpMcpPort: number;
-  agentPort: number;
-  extensionPort: number;
-  resourcesDir: string;
-  executionDir: string;
-  mcpAllowRemote: boolean;
-  metricsClientId?: string;
-  metricsInstallId?: string;
-}
+export type {ServerConfig} from './types.js';
 
 /**
  * Validate and parse a port number string.
- *
- * @param value - Port number as string
- * @returns Parsed port number
- * @throws InvalidArgumentError if port is invalid
  */
 function parsePort(value: string): number {
   const port = parseInt(value, 10);
@@ -93,70 +84,78 @@ export function parseArguments(argv = process.argv): ServerConfig {
     );
   }
 
-  let config: ResolvedConfig = {};
+  let tomlConfig: PartialServerConfig = {};
   if (options.config) {
-    config = loadConfig(options.config);
+    tomlConfig = loadConfig(options.config);
   }
 
   // Precedence: CLI > TOML > ENV > undefined
   const cdpPort =
     options.cdpPort ??
-    config.cdpPort ??
-    (process.env.CDP_PORT ? parsePort(process.env.CDP_PORT) : undefined);
+    tomlConfig.cdpPort ??
+    (process.env.CDP_PORT ? parsePort(process.env.CDP_PORT) : null);
   const httpMcpPort =
     options.httpMcpPort ??
-    config.httpMcpPort ??
+    tomlConfig.httpMcpPort ??
     (process.env.HTTP_MCP_PORT
       ? parsePort(process.env.HTTP_MCP_PORT)
       : undefined);
   const agentPort =
     options.agentPort ??
-    config.agentPort ??
+    tomlConfig.agentPort ??
     (process.env.AGENT_PORT ? parsePort(process.env.AGENT_PORT) : undefined);
   const extensionPort =
     options.extensionPort ??
-    config.extensionPort ??
+    tomlConfig.extensionPort ??
     (process.env.EXTENSION_PORT
       ? parsePort(process.env.EXTENSION_PORT)
       : undefined);
 
   const cwd = process.cwd();
-  const resolvedResourcesDir = resolvePath(
-    options.resourcesDir ?? config.resourcesDir ?? process.env.RESOURCES_DIR,
+  const resourcesDir = resolvePath(
+    options.resourcesDir ??
+      tomlConfig.resourcesDir ??
+      process.env.RESOURCES_DIR,
     cwd,
   );
-  const resolvedExecutionDir = resolvePath(
-    options.executionDir ?? config.executionDir ?? process.env.EXECUTION_DIR,
-    resolvedResourcesDir,
+  const executionDir = resolvePath(
+    options.executionDir ??
+      tomlConfig.executionDir ??
+      process.env.EXECUTION_DIR,
+    resourcesDir,
   );
 
   const mcpAllowRemote =
-    options.mcpAllowRemote || config.mcpAllowRemote || false;
+    options.mcpAllowRemote || tomlConfig.mcpAllowRemote || false;
 
-  const missing: string[] = [];
-  if (!httpMcpPort) missing.push('HTTP_MCP_PORT');
-  if (!agentPort) missing.push('AGENT_PORT');
-  if (!extensionPort) missing.push('EXTENSION_PORT');
+  const rawConfig = {
+    cdpPort,
+    httpMcpPort,
+    agentPort,
+    extensionPort,
+    resourcesDir,
+    executionDir,
+    mcpAllowRemote,
+    instanceClientId: tomlConfig.instanceClientId,
+    instanceInstallId: tomlConfig.instanceInstallId,
+    instanceBrowserosVersion: tomlConfig.instanceBrowserosVersion,
+    instanceChromiumVersion: tomlConfig.instanceChromiumVersion,
+  };
 
-  if (missing.length > 0) {
-    console.error(
-      `Error: Missing required port configuration: ${missing.join(', ')}`,
-    );
-    console.error('Provide via --config, CLI flags, or .env file');
+  const result = ServerConfigSchema.safeParse(rawConfig);
+
+  if (!result.success) {
+    const errors = result.error.issues.map(issue => {
+      const path = issue.path.join('.');
+      return `  - ${path}: ${issue.message}`;
+    });
+    console.error('Error: Invalid server configuration:');
+    console.error(errors.join('\n'));
+    console.error('\nProvide via --config, CLI flags, or .env file');
     process.exit(1);
   }
 
-  return {
-    cdpPort,
-    httpMcpPort: httpMcpPort!,
-    agentPort: agentPort!,
-    extensionPort: extensionPort!,
-    resourcesDir: resolvedResourcesDir,
-    executionDir: resolvedExecutionDir,
-    mcpAllowRemote,
-    metricsClientId: config.metricsClientId,
-    metricsInstallId: config.metricsInstallId,
-  };
+  return result.data;
 }
 
 function resolvePath(target: string | undefined, baseDir: string): string {

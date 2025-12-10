@@ -9,7 +9,12 @@ import path from 'node:path';
 
 import {parse as parseToml} from 'smol-toml';
 
-export interface TomlConfig {
+import type {PartialServerConfig} from './types.js';
+
+/**
+ * Raw TOML config structure (snake_case keys matching TOML file)
+ */
+interface TomlConfig {
   ports?: {
     cdp?: number;
     http_mcp?: number;
@@ -23,29 +28,19 @@ export interface TomlConfig {
   mcp?: {
     allow_remote?: boolean;
   };
-  metrics?: {
+  instance?: {
     client_id?: string;
     install_id?: string;
+    browseros_version?: string;
+    chromium_version?: string;
   };
-}
-
-export interface ResolvedConfig {
-  cdpPort?: number;
-  httpMcpPort?: number;
-  agentPort?: number;
-  extensionPort?: number;
-  resourcesDir?: string;
-  executionDir?: string;
-  mcpAllowRemote?: boolean;
-  metricsClientId?: string;
-  metricsInstallId?: string;
 }
 
 /**
  * Load and parse a TOML configuration file.
  * Relative paths in the config are resolved relative to the config file's directory.
  */
-export function loadConfig(configPath: string): ResolvedConfig {
+export function loadConfig(configPath: string): PartialServerConfig {
   const absoluteConfigPath = path.isAbsolute(configPath)
     ? configPath
     : path.resolve(process.cwd(), configPath);
@@ -65,23 +60,23 @@ export function loadConfig(configPath: string): ResolvedConfig {
     throw new Error(`Failed to parse TOML config: ${message}`);
   }
 
-  const resolved: ResolvedConfig = {};
+  const result: PartialServerConfig = {};
 
   if (parsed.ports) {
     if (parsed.ports.cdp !== undefined) {
-      resolved.cdpPort = validatePort(parsed.ports.cdp, 'ports.cdp');
+      result.cdpPort = validatePort(parsed.ports.cdp, 'ports.cdp');
     }
     if (parsed.ports.http_mcp !== undefined) {
-      resolved.httpMcpPort = validatePort(
+      result.httpMcpPort = validatePort(
         parsed.ports.http_mcp,
         'ports.http_mcp',
       );
     }
     if (parsed.ports.agent !== undefined) {
-      resolved.agentPort = validatePort(parsed.ports.agent, 'ports.agent');
+      result.agentPort = validatePort(parsed.ports.agent, 'ports.agent');
     }
     if (parsed.ports.extension !== undefined) {
-      resolved.extensionPort = validatePort(
+      result.extensionPort = validatePort(
         parsed.ports.extension,
         'ports.extension',
       );
@@ -90,13 +85,13 @@ export function loadConfig(configPath: string): ResolvedConfig {
 
   if (parsed.directories) {
     if (parsed.directories.resources !== undefined) {
-      resolved.resourcesDir = resolvePath(
+      result.resourcesDir = resolvePath(
         parsed.directories.resources,
         configDir,
       );
     }
     if (parsed.directories.execution !== undefined) {
-      resolved.executionDir = resolvePath(
+      result.executionDir = resolvePath(
         parsed.directories.execution,
         configDir,
       );
@@ -108,26 +103,42 @@ export function loadConfig(configPath: string): ResolvedConfig {
       if (typeof parsed.mcp.allow_remote !== 'boolean') {
         throw new Error(`Invalid config: mcp.allow_remote must be a boolean`);
       }
-      resolved.mcpAllowRemote = parsed.mcp.allow_remote;
+      result.mcpAllowRemote = parsed.mcp.allow_remote;
     }
   }
 
-  if (parsed.metrics) {
-    if (parsed.metrics.client_id !== undefined) {
-      if (typeof parsed.metrics.client_id !== 'string') {
-        throw new Error(`Invalid config: metrics.client_id must be a string`);
+  if (parsed.instance) {
+    if (parsed.instance.client_id !== undefined) {
+      if (typeof parsed.instance.client_id !== 'string') {
+        throw new Error(`Invalid config: instance.client_id must be a string`);
       }
-      resolved.metricsClientId = parsed.metrics.client_id;
+      result.instanceClientId = parsed.instance.client_id;
     }
-    if (parsed.metrics.install_id !== undefined) {
-      if (typeof parsed.metrics.install_id !== 'string') {
-        throw new Error(`Invalid config: metrics.install_id must be a string`);
+    if (parsed.instance.install_id !== undefined) {
+      if (typeof parsed.instance.install_id !== 'string') {
+        throw new Error(`Invalid config: instance.install_id must be a string`);
       }
-      resolved.metricsInstallId = parsed.metrics.install_id;
+      result.instanceInstallId = parsed.instance.install_id;
+    }
+    if (parsed.instance.browseros_version !== undefined) {
+      if (typeof parsed.instance.browseros_version !== 'string') {
+        throw new Error(
+          `Invalid config: instance.browseros_version must be a string`,
+        );
+      }
+      result.instanceBrowserosVersion = parsed.instance.browseros_version;
+    }
+    if (parsed.instance.chromium_version !== undefined) {
+      if (typeof parsed.instance.chromium_version !== 'string') {
+        throw new Error(
+          `Invalid config: instance.chromium_version must be a string`,
+        );
+      }
+      result.instanceChromiumVersion = parsed.instance.chromium_version;
     }
   }
 
-  return resolved;
+  return result;
 }
 
 function validatePort(value: unknown, field: string): number {

@@ -20,7 +20,8 @@
     "@browseros/controller-server": "workspace:*",
     "commander": "^14.0.1",
     "smol-toml": "^1.4.2",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^24.3.3",

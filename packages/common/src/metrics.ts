@@ -11,6 +11,8 @@ const EVENT_PREFIX = 'browseros.server.';
 export interface MetricsConfig {
   client_id?: string;
   install_id?: string;
+  browseros_version?: string;
+  chromium_version?: string;
   [key: string]: any;
 }
 
@@ -38,7 +40,13 @@ class MetricsService {
       return;
     }
 
-    const {client_id, install_id, ...defaultProperties} = this.config;
+    const {
+      client_id,
+      install_id,
+      browseros_version,
+      chromium_version,
+      ...defaultProperties
+    } = this.config;
 
     const payload = {
       api_key: POSTHOG_API_KEY,
@@ -48,6 +56,8 @@ class MetricsService {
         ...defaultProperties,
         ...properties,
         ...(install_id && {install_id}),
+        ...(browseros_version && {browseros_version}),
+        ...(chromium_version && {chromium_version}),
         $process_person_profile: false,
       },
     };

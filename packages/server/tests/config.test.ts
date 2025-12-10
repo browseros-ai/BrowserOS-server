@@ -175,29 +175,33 @@ allow_remote = "yes"
     assert.strictEqual(config.mcpAllowRemote, undefined);
   });
 
-  it('loads metrics config', () => {
+  it('loads instance config', () => {
     const configPath = path.join(tempDir, 'config.toml');
     fs.writeFileSync(
       configPath,
       `
-[metrics]
+[instance]
 client_id = "user-123"
 install_id = "install-456"
+browseros_version = "1.0.0"
+chromium_version = "120.0.0"
 `,
     );
 
     const config = loadConfig(configPath);
 
-    assert.strictEqual(config.metricsClientId, 'user-123');
-    assert.strictEqual(config.metricsInstallId, 'install-456');
+    assert.strictEqual(config.instanceClientId, 'user-123');
+    assert.strictEqual(config.instanceInstallId, 'install-456');
+    assert.strictEqual(config.instanceBrowserosVersion, '1.0.0');
+    assert.strictEqual(config.instanceChromiumVersion, '120.0.0');
   });
 
-  it('throws on invalid metrics client_id type', () => {
+  it('throws on invalid instance client_id type', () => {
     const configPath = path.join(tempDir, 'config.toml');
     fs.writeFileSync(
       configPath,
       `
-[metrics]
+[instance]
 client_id = 123
 `,
     );

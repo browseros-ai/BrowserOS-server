@@ -172,7 +172,7 @@ describe('args parsing', () => {
       '--agent-port=9225',
       '--extension-port=9224',
     ]);
-    assert.strictEqual(config.cdpPort, undefined);
+    assert.strictEqual(config.cdpPort, null);
     assert.strictEqual(config.httpMcpPort, 9223);
     assert.strictEqual(config.agentPort, 9225);
     assert.strictEqual(config.extensionPort, 9224);

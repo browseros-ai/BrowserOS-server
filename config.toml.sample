@@ -1,0 +1,22 @@
+# BrowserOS Server Configuration
+# Copy this file to config.toml and customize as needed
+# Usage: browseros-server --config config.toml
+
+[ports]
+cdp = 9000              # CDP WebSocket port (optional, omit to disable)
+http_mcp = 9100         # MCP HTTP server port (required)
+agent = 9200            # Agent communication port (required)
+extension = 9300        # Extension WebSocket port (required)
+
+[directories]
+resources = "./resources"   # Resources directory (optional, default: cwd)
+execution = "./out"         # Execution directory for logs (optional, default: resources dir)
+
+[mcp]
+allow_remote = false    # Allow non-localhost MCP connections (default: false)
+
+[instance]
+# client_id = ""            # Client identifier
+# install_id = ""           # Installation identifier
+# browseros_version = ""    # BrowserOS version
+# chromium_version = ""     # Chromium version

@@ -36,10 +36,17 @@ const config = parseArguments();
 
 configureLogDirectory(config.executionDir);
 
-if (config.metricsClientId || config.metricsInstallId) {
+if (
+  config.instanceClientId ||
+  config.instanceInstallId ||
+  config.instanceBrowserosVersion ||
+  config.instanceChromiumVersion
+) {
   metrics.initialize({
-    client_id: config.metricsClientId,
-    install_id: config.metricsInstallId,
+    client_id: config.instanceClientId,
+    install_id: config.instanceInstallId,
+    browseros_version: config.instanceBrowserosVersion,
+    chromium_version: config.instanceChromiumVersion,
   });
 }
 
