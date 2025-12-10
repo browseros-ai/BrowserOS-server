@@ -3,13 +3,13 @@
  * Chat CLI - Send a chat request to the HTTP Agent Server
  *
  * Usage:
- *   bun scripts/chat.ts "your message here"
- *   bun scripts/chat.ts --provider=openai --model=gpt-4o "your message here"
+ *   bun --env-file=.env.dev tests/agent-cli.ts "your message here"
+ *   bun --env-file=.env.dev tests/agent-cli.ts --provider=openai --model=gpt-4o "your message here"
  *
  * Options:
  *   --provider  AI provider (default: google)
  *   --model     Model name (default: gemini-2.5-flash)
- *   --host      Server host (default: http://127.0.0.1:9200)
+ *   --port      Server port (default: $AGENT_PORT or 9200)
  *   --show-full-output  Show full tool output (default: truncated to 50 chars)
  */
 
@@ -25,13 +25,13 @@ function parseArgs(): {
   message: string;
   provider: string;
   model: string;
-  host: string;
+  port: string;
   showFullOutput: boolean;
 } {
   const args = process.argv.slice(2);
   let provider = 'google';
   let model = 'gemini-2.5-flash';
-  let host = 'http://127.0.0.1:9200';
+  let port = process.env.AGENT_PORT || '9200';
   let showFullOutput = false;
   let message = '';
 
@@ -40,8 +40,8 @@ function parseArgs(): {
       provider = arg.split('=')[1];
     } else if (arg.startsWith('--model=')) {
       model = arg.split('=')[1];
-    } else if (arg.startsWith('--host=')) {
-      host = arg.split('=')[1];
+    } else if (arg.startsWith('--port=')) {
+      port = arg.split('=')[1];
     } else if (arg === '--show-full-output') {
       showFullOutput = true;
     } else if (!arg.startsWith('--')) {
@@ -59,7 +59,7 @@ function parseArgs(): {
     );
     console.error('  --model=<model>        Model name');
     console.error(
-      '  --host=<url>           Server URL (default: http://127.0.0.1:9200)',
+      '  --port=<port>          Server port (default: $AGENT_PORT or 9200)',
     );
     console.error(
       '  --show-full-output     Show full tool output (default: truncated)',
@@ -67,7 +67,7 @@ function parseArgs(): {
     process.exit(1);
   }
 
-  return {message, provider, model, host, showFullOutput};
+  return {message, provider, model, port, showFullOutput};
 }
 
 function truncateOutput(obj: unknown, maxLen = 50): unknown {
@@ -91,7 +91,7 @@ async function chat(config: {
   message: string;
   provider: string;
   model: string;
-  host: string;
+  port: string;
   showFullOutput: boolean;
 }) {
   const conversationId = crypto.randomUUID();
@@ -107,7 +107,7 @@ async function chat(config: {
   console.log(JSON.stringify(request, null, 2));
   console.log('\n--- Response Stream ---\n');
 
-  const response = await fetch(`${config.host}/chat`, {
+  const response = await fetch(`http://127.0.0.1:${config.port}/chat`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(request),

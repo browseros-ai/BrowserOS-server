@@ -41,7 +41,7 @@ describe('args parsing', () => {
   });
 
   it('parses valid cdp-port, http-mcp-port, agent-port, and extension-port', () => {
-    const ports = parseArguments([
+    const config = parseArguments([
       'bun',
       'src/index.ts',
       '--cdp-port=9222',
@@ -49,17 +49,28 @@ describe('args parsing', () => {
       '--agent-port=9225',
       '--extension-port=9224',
     ]);
-    assert.deepStrictEqual(ports, {
-      cdpPort: 9222,
-      httpMcpPort: 9223,
-      agentPort: 9225,
-      extensionPort: 9224,
-      mcpServerEnabled: true,
-    });
+    assert.strictEqual(config.cdpPort, 9222);
+    assert.strictEqual(config.httpMcpPort, 9223);
+    assert.strictEqual(config.agentPort, 9225);
+    assert.strictEqual(config.extensionPort, 9224);
+    assert.strictEqual(config.mcpAllowRemote, false);
   });
 
-  it('parses --disable-mcp-server flag', () => {
-    const ports = parseArguments([
+  it('parses --mcp-allow-remote flag', () => {
+    const config = parseArguments([
+      'bun',
+      'src/index.ts',
+      '--cdp-port=9222',
+      '--http-mcp-port=9223',
+      '--agent-port=9225',
+      '--extension-port=9224',
+      '--mcp-allow-remote',
+    ]);
+    assert.strictEqual(config.mcpAllowRemote, true);
+  });
+
+  it('--disable-mcp-server is deprecated no-op', () => {
+    const config = parseArguments([
       'bun',
       'src/index.ts',
       '--cdp-port=9222',
@@ -68,13 +79,8 @@ describe('args parsing', () => {
       '--extension-port=9224',
       '--disable-mcp-server',
     ]);
-    assert.deepStrictEqual(ports, {
-      cdpPort: 9222,
-      httpMcpPort: 9223,
-      agentPort: 9225,
-      extensionPort: 9224,
-      mcpServerEnabled: false,
-    });
+    assert.strictEqual(config.cdpPort, 9222);
+    assert.strictEqual(config.httpMcpPort, 9223);
   });
 
   it('reads from environment variables when CLI args not provided', () => {
@@ -83,14 +89,11 @@ describe('args parsing', () => {
     process.env.AGENT_PORT = '9225';
     process.env.EXTENSION_PORT = '9224';
 
-    const ports = parseArguments(['bun', 'src/index.ts']);
-    assert.deepStrictEqual(ports, {
-      cdpPort: 9222,
-      httpMcpPort: 9223,
-      agentPort: 9225,
-      extensionPort: 9224,
-      mcpServerEnabled: true,
-    });
+    const config = parseArguments(['bun', 'src/index.ts']);
+    assert.strictEqual(config.cdpPort, 9222);
+    assert.strictEqual(config.httpMcpPort, 9223);
+    assert.strictEqual(config.agentPort, 9225);
+    assert.strictEqual(config.extensionPort, 9224);
   });
 
   it('CLI args take precedence over environment variables', () => {
@@ -99,7 +102,7 @@ describe('args parsing', () => {
     process.env.AGENT_PORT = '3333';
     process.env.EXTENSION_PORT = '4444';
 
-    const ports = parseArguments([
+    const config = parseArguments([
       'bun',
       'src/index.ts',
       '--cdp-port=9222',
@@ -107,13 +110,10 @@ describe('args parsing', () => {
       '--agent-port=9225',
       '--extension-port=9224',
     ]);
-    assert.deepStrictEqual(ports, {
-      cdpPort: 9222,
-      httpMcpPort: 9223,
-      agentPort: 9225,
-      extensionPort: 9224,
-      mcpServerEnabled: true,
-    });
+    assert.strictEqual(config.cdpPort, 9222);
+    assert.strictEqual(config.httpMcpPort, 9223);
+    assert.strictEqual(config.agentPort, 9225);
+    assert.strictEqual(config.extensionPort, 9224);
   });
 
   it('calls process.exit when http-mcp-port is missing', () => {
@@ -165,19 +165,16 @@ describe('args parsing', () => {
   });
 
   it('cdp-port is optional', () => {
-    const ports = parseArguments([
+    const config = parseArguments([
       'bun',
       'src/index.ts',
       '--http-mcp-port=9223',
       '--agent-port=9225',
       '--extension-port=9224',
     ]);
-    assert.deepStrictEqual(ports, {
-      cdpPort: undefined,
-      httpMcpPort: 9223,
-      agentPort: 9225,
-      extensionPort: 9224,
-      mcpServerEnabled: true,
-    });
+    assert.strictEqual(config.cdpPort, undefined);
+    assert.strictEqual(config.httpMcpPort, 9223);
+    assert.strictEqual(config.agentPort, 9225);
+    assert.strictEqual(config.extensionPort, 9224);
   });
 });

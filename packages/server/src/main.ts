@@ -31,21 +31,21 @@ import {allKlavisTools} from '@browseros/tools/klavis';
 import {parseArguments} from './args.js';
 
 const version = readVersion();
-const ports = parseArguments();
+const config = parseArguments();
 
-configureLogDirectory(ports.executionDir);
+configureLogDirectory(config.executionDir);
 
 void (async () => {
   logger.info(`Starting BrowserOS Server v${version}`);
 
   logger.info(
-    `[Controller Server] Starting on ws://127.0.0.1:${ports.extensionPort}`,
+    `[Controller Server] Starting on ws://127.0.0.1:${config.extensionPort}`,
   );
   const {controllerBridge, controllerContext} = createController(
-    ports.extensionPort,
+    config.extensionPort,
   );
 
-  const cdpContext = await connectToCdp(ports.cdpPort);
+  const cdpContext = await connectToCdp(config.cdpPort);
 
   logger.info(
     `Loaded ${allControllerTools.length} controller (extension) tools`,
@@ -54,7 +54,7 @@ void (async () => {
   const toolMutex = new Mutex();
 
   const mcpServer = startMcpServer({
-    ports,
+    config,
     version,
     tools,
     cdpContext,
@@ -62,9 +62,9 @@ void (async () => {
     toolMutex,
   });
 
-  const agentServer = startAgentServer(ports);
+  const agentServer = startAgentServer(config);
 
-  logSummary(ports);
+  logSummary(config);
 
   const shutdown = createShutdownHandler(
     mcpServer,
@@ -139,74 +139,71 @@ function mergeTools(
   return [...cdpTools, ...wrappedControllerTools, ...klavisTools];
 }
 
-function startMcpServer(config: {
-  ports: ReturnType<typeof parseArguments>;
+function startMcpServer(params: {
+  config: ReturnType<typeof parseArguments>;
   version: string;
   tools: Array<ToolDefinition<any, any, any>>;
   cdpContext: McpContext | null;
   controllerContext: ControllerContext;
   toolMutex: Mutex;
 }): http.Server {
-  const {ports, version, tools, cdpContext, controllerContext, toolMutex} =
-    config;
+  const {config, version, tools, cdpContext, controllerContext, toolMutex} =
+    params;
 
   const mcpServer = createHttpMcpServer({
-    port: ports.httpMcpPort,
+    port: config.httpMcpPort,
     version,
     tools,
     context: cdpContext || ({} as any),
     controllerContext,
     toolMutex,
     logger,
-    mcpServerEnabled: ports.mcpServerEnabled,
+    allowRemote: config.mcpAllowRemote,
   });
 
-  if (!ports.mcpServerEnabled) {
-    logger.info('[MCP Server] Disabled (--disable-mcp-server)');
-  } else {
-    logger.info(
-      `[MCP Server] Listening on http://127.0.0.1:${ports.httpMcpPort}/mcp`,
-    );
-    logger.info(
-      `[MCP Server] Health check: http://127.0.0.1:${ports.httpMcpPort}/health`,
-    );
+  logger.info(
+    `[MCP Server] Listening on http://127.0.0.1:${config.httpMcpPort}/mcp`,
+  );
+  logger.info(
+    `[MCP Server] Health check: http://127.0.0.1:${config.httpMcpPort}/health`,
+  );
+  if (config.mcpAllowRemote) {
+    logger.warn('[MCP Server] Remote connections enabled (--mcp-allow-remote)');
   }
 
   return mcpServer;
 }
 
-function startAgentServer(ports: ReturnType<typeof parseArguments>): {
+function startAgentServer(serverConfig: ReturnType<typeof parseArguments>): {
   server: any;
   config: any;
 } {
-  const mcpServerUrl = `http://127.0.0.1:${ports.httpMcpPort}/mcp`;
+  const mcpServerUrl = `http://127.0.0.1:${serverConfig.httpMcpPort}/mcp`;
 
   const {server, config} = createAgentHttpServer({
-    port: ports.agentPort,
+    port: serverConfig.agentPort,
     host: '0.0.0.0',
     corsOrigins: ['*'],
-    tempDir: ports.executionDir || ports.resourcesDir,
+    tempDir: serverConfig.executionDir || serverConfig.resourcesDir,
     mcpServerUrl,
   });
 
-  const test = 'hello';
-
   logger.info(
-    `[Agent Server] Listening on http://127.0.0.1:${ports.agentPort}`,
+    `[Agent Server] Listening on http://127.0.0.1:${serverConfig.agentPort}`,
   );
   logger.info(`[Agent Server] MCP Server URL: ${mcpServerUrl}`);
 
   return {server, config};
 }
 
-function logSummary(ports: ReturnType<typeof parseArguments>) {
+function logSummary(serverConfig: ReturnType<typeof parseArguments>) {
   logger.info('');
   logger.info('Services running:');
-  logger.info(`  Controller Server: ws://127.0.0.1:${ports.extensionPort}`);
-  logger.info(`  Agent Server: http://127.0.0.1:${ports.agentPort}`);
-  if (ports.mcpServerEnabled) {
-    logger.info(`  MCP Server: http://127.0.0.1:${ports.httpMcpPort}/mcp`);
-  }
+  logger.info(
+    `  Controller Server: ws://127.0.0.1:${serverConfig.extensionPort}`,
+  );
+  logger.info(`  Agent Server: http://127.0.0.1:${serverConfig.agentPort}`);
+  logger.info(`  MCP Server: http://127.0.0.1:${serverConfig.httpMcpPort}/mcp`);
   logger.info('');
 }
 
