@@ -1,4 +1,6 @@
 # BrowserOS Server Development Configuration
+# Usage: browseros-server --config config.dev.toml
+# Or:    bun run start:with_toml
 
 [ports]
 cdp = 9005

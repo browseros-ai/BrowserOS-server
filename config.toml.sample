@@ -1,6 +1,11 @@
 # BrowserOS Server Configuration
-# Copy this file to config.toml and customize as needed
+#
+# TOML-based configuration is now supported via --config flag.
+# Copy this file to config.toml and customize as needed.
+#
 # Usage: browseros-server --config config.toml
+#
+# Precedence: CLI args > TOML config > ENV vars > defaults
 
 [ports]
 cdp = 9000              # CDP WebSocket port (optional, omit to disable)
