@@ -4,8 +4,8 @@
  */
 import http from 'node:http';
 
-import type {McpContext, Mutex, logger} from '@browseros/common';
-import {metrics} from '@browseros/common';
+import type {McpContext, Mutex,logger} from '@browseros/common';
+import { metrics} from '@browseros/common';
 import type {ToolDefinition} from '@browseros/tools';
 import {McpResponse} from '@browseros/tools';
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -92,11 +92,7 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
               success: true,
             });
 
-            const structuredContent = response.structuredContent;
-            return {
-              content,
-              ...(structuredContent && {structuredContent}),
-            };
+            return {content};
           } catch (error) {
             const errorText =
               error instanceof Error ? error.message : String(error);
@@ -135,7 +131,7 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
  * Handles transport and protocol concerns
  */
 export function createHttpMcpServer(config: McpServerConfig): http.Server {
-  const {port, logger, mcpServerEnabled, controllerContext} = config;
+  const {port, logger, mcpServerEnabled} = config;
 
   // Runtime state - can be toggled via control endpoint
   let mcpEnabled = mcpServerEnabled;
@@ -273,14 +269,8 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
 
     // Health check endpoint (always available, no security checks)
     if (url.pathname === '/health') {
-      const extensionConnected = controllerContext?.isConnected?.() ?? false;
-      const status = {
-        status: extensionConnected ? 'ok' : 'degraded',
-        extension: extensionConnected ? 'connected' : 'disconnected',
-      };
-      const statusCode = extensionConnected ? 200 : 503;
-      res.writeHead(statusCode, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify(status));
+      res.writeHead(200, {'Content-Type': 'text/plain'});
+      res.end('OK');
       return;
     }
 

@@ -7,13 +7,13 @@
  */
 import assert from 'node:assert';
 import {spawn} from 'node:child_process';
+import {describe, it, beforeAll, afterAll} from 'bun:test';
 import {URL} from 'node:url';
 
 import {ensureBrowserOS} from '@browseros/common/tests/browseros';
 import {killProcessOnPort} from '@browseros/common/tests/utils.js';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StreamableHTTPClientTransport} from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import {describe, it, beforeAll, afterAll} from 'bun:test';
 
 // Test configuration
 const CDP_PORT = parseInt(process.env.CDP_PORT || '9001');
@@ -165,14 +165,12 @@ describe('MCP Server Integration Tests', () => {
   });
 
   describe('Health endpoint', () => {
-    it('responds with JSON health status', async () => {
+    it('responds with 200 OK', async () => {
       const response = await fetch(`${BASE_URL}/health`);
-      // Status is 200 when extension connected, 503 when disconnected
-      assert.ok([200, 503].includes(response.status), 'Status should be 200 or 503');
+      assert.strictEqual(response.status, 200);
 
-      const json = await response.json();
-      assert.ok(['ok', 'degraded'].includes(json.status), 'Status should be ok or degraded');
-      assert.ok(['connected', 'disconnected'].includes(json.extension), 'Extension should be connected or disconnected');
+      const text = await response.text();
+      assert.strictEqual(text, 'OK');
     });
   });
 
