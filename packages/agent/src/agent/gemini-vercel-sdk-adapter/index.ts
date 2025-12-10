@@ -28,6 +28,8 @@ import type {
 import {createOpenRouter} from '@openrouter/ai-sdk-provider';
 import {streamText, generateText} from 'ai';
 
+import {createProviderAdapter} from './adapters/index.js';
+import type {ProviderAdapter} from './adapters/index.js';
 import {
   ToolConversionStrategy,
   MessageConversionStrategy,
@@ -46,6 +48,9 @@ export class VercelAIContentGenerator implements ContentGenerator {
   private model: string;
   private uiStream?: UIMessageStreamWriter;
 
+  // Provider adapter for provider-specific behavior
+  private adapter: ProviderAdapter;
+
   // Conversion strategies
   private toolStrategy: ToolConversionStrategy;
   private messageStrategy: MessageConversionStrategy;
@@ -54,10 +59,16 @@ export class VercelAIContentGenerator implements ContentGenerator {
   constructor(config: VercelAIConfig) {
     this.model = config.model;
 
-    // Initialize conversion strategies
+    // Create provider-specific adapter
+    this.adapter = createProviderAdapter(config.provider);
+
+    // Initialize conversion strategies with adapter
     this.toolStrategy = new ToolConversionStrategy();
-    this.messageStrategy = new MessageConversionStrategy();
-    this.responseStrategy = new ResponseConversionStrategy(this.toolStrategy);
+    this.messageStrategy = new MessageConversionStrategy(this.adapter);
+    this.responseStrategy = new ResponseConversionStrategy(
+      this.toolStrategy,
+      this.adapter,
+    );
 
     // Register the single provider from config
     this.providerInstance = this.createProvider(config);
@@ -109,6 +120,9 @@ export class VercelAIContentGenerator implements ContentGenerator {
     request: GenerateContentParameters,
     _userPromptId: string,
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
+    // Reset adapter state before each stream
+    this.adapter.reset();
+
     const contents = (
       Array.isArray(request.contents) ? request.contents : [request.contents]
     ) as Content[];

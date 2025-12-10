@@ -9,13 +9,13 @@
  * Converts conversation history from Gemini to Vercel format
  */
 
-import type {
-  VercelContentPart,
-  ReasoningProviderMetadata,
-} from '../types.js';
-import type { CoreMessage } from 'ai';
-import type { LanguageModelV2ToolResultOutput, JSONValue } from '@ai-sdk/provider';
-import type { Content, ContentUnion } from '@google/genai';
+import type {CoreMessage} from 'ai';
+import type {LanguageModelV2ToolResultOutput, JSONValue} from '@ai-sdk/provider';
+import type {Content, ContentUnion} from '@google/genai';
+
+import type {ProviderAdapter} from '../adapters/index.js';
+import type {ProviderMetadata, FunctionCallWithMetadata} from '../adapters/types.js';
+import type {VercelContentPart} from '../types.js';
 import {
   isTextPart,
   isFunctionCallPart,
@@ -24,6 +24,8 @@ import {
 } from '../utils/type-guards.js';
 
 export class MessageConversionStrategy {
+  constructor(private adapter: ProviderAdapter) {}
+
   /**
    * Convert Gemini conversation history to Vercel messages
    *
@@ -53,12 +55,7 @@ export class MessageConversionStrategy {
 
       // Separate parts by type
       const textParts: string[] = [];
-      const functionCalls: Array<{
-        id?: string;
-        name?: string;
-        args?: Record<string, unknown>;
-        reasoningProviderMetadata?: ReasoningProviderMetadata; // Provider metadata for reasoning models
-      }> = [];
+      const functionCalls: FunctionCallWithMetadata[] = [];
       const functionResponses: Array<{
         id?: string;
         name?: string;
@@ -73,11 +70,11 @@ export class MessageConversionStrategy {
         if (isTextPart(part)) {
           textParts.push(part.text);
         } else if (isFunctionCallPart(part)) {
-          // Capture reasoning metadata if present (provider-agnostic)
-          const partWithMetadata = part as typeof part & { reasoningProviderMetadata?: ReasoningProviderMetadata };
+          // Extract provider metadata from part (attached by ResponseConversionStrategy)
+          const partWithMetadata = part as typeof part & {providerMetadata?: ProviderMetadata};
           functionCalls.push({
             ...part.functionCall,
-            reasoningProviderMetadata: partWithMetadata.reasoningProviderMetadata,
+            providerMetadata: partWithMetadata.providerMetadata,
           });
         } else if (isFunctionResponsePart(part)) {
           functionResponses.push(part.functionResponse);
@@ -206,12 +203,9 @@ export class MessageConversionStrategy {
           });
         }
 
-        // Collect reasoning metadata from parts (provider-agnostic)
-        let reasoningMetadata: ReasoningProviderMetadata | undefined;
-
         // Add tool calls - but ONLY if they have matching tool results
         // This prevents Anthropic error: "tool_use ids were found without tool_result blocks"
-        let isFirstToolCall = true;
+        let isFirst = true;
         for (const fc of functionCalls) {
           const toolCallId = fc.id || this.generateToolCallId();
 
@@ -220,13 +214,6 @@ export class MessageConversionStrategy {
             continue;
           }
 
-          // Capture first set of reasoning metadata for use on first tool-call part
-          if (fc.reasoningProviderMetadata && !reasoningMetadata) {
-            reasoningMetadata = fc.reasoningProviderMetadata;
-          }
-
-          // Pass provider metadata through as providerOptions on first tool-call part
-          // AI SDK pattern: providerMetadata in responses -> providerOptions in requests
           const toolCallPart: Record<string, unknown> = {
             type: 'tool-call' as const,
             toolCallId,
@@ -234,13 +221,16 @@ export class MessageConversionStrategy {
             input: fc.args || {},
           };
 
-          if (isFirstToolCall && reasoningMetadata) {
-            // Pass through provider metadata as providerOptions (provider-agnostic)
-            toolCallPart.providerOptions = reasoningMetadata;
-            isFirstToolCall = false;
+          // Let adapter extract provider options from stored metadata
+          if (isFirst) {
+            const providerOptions = this.adapter.getToolCallProviderOptions(fc);
+            if (providerOptions) {
+              toolCallPart.providerOptions = providerOptions;
+            }
+            isFirst = false;
           }
 
-          contentParts.push(toolCallPart as VercelContentPart);
+          contentParts.push(toolCallPart as unknown as VercelContentPart);
         }
 
         // Only add the message if there's content (text or valid tool calls)
@@ -265,9 +255,7 @@ export class MessageConversionStrategy {
    * @param instruction - Gemini system instruction (string, Content, or Part)
    * @returns Plain text string or undefined
    */
-  convertSystemInstruction(
-    instruction: ContentUnion | undefined,
-  ): string | undefined {
+  convertSystemInstruction(instruction: ContentUnion | undefined): string | undefined {
     if (!instruction) {
       return undefined;
     }

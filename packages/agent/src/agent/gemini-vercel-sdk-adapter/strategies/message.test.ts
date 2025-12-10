@@ -30,6 +30,7 @@ import type {
 } from '@google/genai';
 import {describe, it as t, expect, beforeEach} from 'vitest';
 
+import {BaseProviderAdapter} from '../adapters/base.js';
 import type {
   VercelContentPart,
   VercelToolResultPart,
@@ -40,9 +41,11 @@ import {MessageConversionStrategy} from './message.js';
 
 describe('MessageConversionStrategy', () => {
   let strategy: MessageConversionStrategy;
+  let adapter: BaseProviderAdapter;
 
   beforeEach(() => {
-    strategy = new MessageConversionStrategy();
+    adapter = new BaseProviderAdapter();
+    strategy = new MessageConversionStrategy(adapter);
   });
 
   // ========================================

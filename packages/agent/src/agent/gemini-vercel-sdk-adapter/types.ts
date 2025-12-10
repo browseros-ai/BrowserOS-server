@@ -105,39 +105,14 @@ export const VercelFinishChunkSchema = z.object({
 });
 
 /**
- * Reasoning chunk from fullStream (provider-agnostic)
- * Vercel AI SDK emits reasoning-start, reasoning-delta for models with reasoning/thinking
- * providerMetadata contains provider-specific data that must be passed back as providerOptions
- * CRITICAL: Use .passthrough() to preserve ALL fields from any provider
- */
-export const VercelReasoningDeltaChunkSchema = z.object({
-  type: z.literal('reasoning-delta'),
-  id: z.string().optional(),
-  text: z.string().optional(),
-  providerMetadata: z.record(z.string(), z.unknown()).optional(), // Any provider's metadata
-}).passthrough();
-
-export const VercelReasoningStartChunkSchema = z.object({
-  type: z.literal('reasoning-start'),
-  providerMetadata: z.record(z.string(), z.unknown()).optional(), // Any provider's metadata
-}).passthrough();
-
-export type VercelReasoningDeltaChunk = z.infer<typeof VercelReasoningDeltaChunkSchema>;
-export type VercelReasoningStartChunk = z.infer<typeof VercelReasoningStartChunkSchema>;
-
-/** Provider metadata from reasoning chunks - passed back as providerOptions */
-export type ReasoningProviderMetadata = Record<string, unknown>;
-
-/**
  * Union of stream chunks we process
  * (SDK emits many other types we ignore)
+ * Note: Provider-specific chunks (reasoning-delta, reasoning-start) are handled by adapters
  */
 export const VercelStreamChunkSchema = z.discriminatedUnion('type', [
   VercelTextDeltaChunkSchema,
   VercelToolCallChunkSchema,
   VercelFinishChunkSchema,
-  VercelReasoningDeltaChunkSchema,
-  VercelReasoningStartChunkSchema,
 ]);
 
 export type VercelTextDeltaChunk = z.infer<typeof VercelTextDeltaChunkSchema>;

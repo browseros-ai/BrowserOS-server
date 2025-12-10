@@ -10,22 +10,21 @@
  * Handles both streaming and non-streaming responses
  */
 
-import { GenerateContentResponse, FinishReason, Part, FunctionCall } from '@google/genai'
-import type {
-  VercelFinishReason,
-  VercelUsage,
-  ReasoningProviderMetadata,
-} from '../types.js';
-import {
-  VercelGenerateTextResultSchema,
-  VercelStreamChunkSchema,
-} from '../types.js';
+import {GenerateContentResponse, FinishReason, Part, FunctionCall} from '@google/genai';
+
+import type {ProviderAdapter} from '../adapters/index.js';
+import type {ProviderMetadata} from '../adapters/types.js';
+import type {VercelFinishReason, VercelUsage} from '../types.js';
+import {VercelGenerateTextResultSchema, VercelStreamChunkSchema} from '../types.js';
 import type {UIMessageStreamWriter} from '../ui-message-stream.js';
 
 import type {ToolConversionStrategy} from './tool.js';
 
 export class ResponseConversionStrategy {
-  constructor(private toolStrategy: ToolConversionStrategy) {}
+  constructor(
+    private toolStrategy: ToolConversionStrategy,
+    private adapter: ProviderAdapter,
+  ) {}
 
   /**
    * Convert Vercel generateText result to Gemini format
@@ -109,24 +108,22 @@ export class ResponseConversionStrategy {
 
     let finishReason: VercelFinishReason | undefined;
 
-    // Accumulate reasoning_details from provider metadata
-    // OpenRouter pattern: sends reasoning_details incrementally across chunks, must accumulate
-    // Other providers may need different accumulation patterns
-    const accumulatedReasoningDetails: unknown[] = [];
-
     // Process stream chunks
     for await (const rawChunk of stream) {
+      // Let adapter process chunk (accumulates provider-specific metadata)
+      this.adapter.processStreamChunk(rawChunk);
+
       const chunkType = (rawChunk as {type?: string}).type;
 
       // Handle error chunks first
       if (chunkType === 'error') {
-        const errorChunk = rawChunk as any;
+        const errorChunk = rawChunk as {error?: {message?: string} | string};
         const errorMessage =
-          errorChunk.error?.message ||
-          errorChunk.error ||
-          'Unknown error from LLM provider';
+          typeof errorChunk.error === 'object'
+            ? errorChunk.error?.message
+            : errorChunk.error || 'Unknown error from LLM provider';
         if (uiStream) {
-          await uiStream.writeError(errorMessage);
+          await uiStream.writeError(errorMessage || 'Unknown error');
           await uiStream.finish('error');
         }
         throw new Error(`LLM Provider Error: ${errorMessage}`);
@@ -177,18 +174,10 @@ export class ResponseConversionStrategy {
           toolName: chunk.toolName,
           input: chunk.input,
         });
-      } else if (chunk.type === 'reasoning-delta' || chunk.type === 'reasoning-start') {
-        // Accumulate reasoning_details from provider metadata
-        // OpenRouter sends these incrementally across multiple chunks
-        const metadata = chunk.providerMetadata as Record<string, unknown> | undefined;
-        const openrouterData = metadata?.openrouter as Record<string, unknown> | undefined;
-        const reasoningDetails = openrouterData?.reasoning_details;
-        if (Array.isArray(reasoningDetails)) {
-          accumulatedReasoningDetails.push(...reasoningDetails);
-        }
       } else if (chunk.type === 'finish') {
         finishReason = chunk.finishReason;
       }
+      // reasoning-delta and reasoning-start are handled by adapter.processStreamChunk()
     }
 
     // Get usage metadata after stream completes
@@ -200,14 +189,8 @@ export class ResponseConversionStrategy {
       usage = this.estimateUsage(textAccumulator);
     }
 
-    // Note: finishStep() is called by GeminiAgent after tool outputs are written
-    // This ensures the step includes: LLM response + tool calls + tool results
-
-    // Build provider metadata from accumulated reasoning details
-    const hasReasoningMetadata = accumulatedReasoningDetails.length > 0;
-    const reasoningProviderMetadata: ReasoningProviderMetadata | undefined = hasReasoningMetadata
-      ? { openrouter: { reasoning_details: accumulatedReasoningDetails } }
-      : undefined;
+    // Get provider metadata from adapter (if any was accumulated)
+    const providerMetadata = this.adapter.getResponseMetadata();
 
     // Yield final response with tool calls and metadata
     if (toolCallsMap.size > 0 || finishReason || usage) {
@@ -219,14 +202,15 @@ export class ResponseConversionStrategy {
         const toolCallsArray = Array.from(toolCallsMap.values());
         functionCalls = this.toolStrategy.vercelToGemini(toolCallsArray);
 
-        // Add reasoning metadata to first functionCall part (provider-agnostic)
-        let isFirstFunctionCall = true;
+        // Attach provider metadata to first functionCall part
+        let isFirst = true;
         for (const fc of functionCalls) {
-          const part: Part & { reasoningProviderMetadata?: ReasoningProviderMetadata } = { functionCall: fc };
-          // Attach provider metadata to first part - will be converted to providerOptions
-          if (isFirstFunctionCall && hasReasoningMetadata) {
-            part.reasoningProviderMetadata = reasoningProviderMetadata;
-            isFirstFunctionCall = false;
+          const part: Part & {providerMetadata?: ProviderMetadata} = {
+            functionCall: fc,
+          };
+          if (isFirst && providerMetadata) {
+            part.providerMetadata = providerMetadata;
+            isFirst = false;
           }
           parts.push(part);
         }
@@ -289,9 +273,7 @@ export class ResponseConversionStrategy {
   /**
    * Map Vercel finish reasons to Gemini finish reasons
    */
-  private mapFinishReason(
-    reason: VercelFinishReason | undefined,
-  ): FinishReason {
+  private mapFinishReason(reason: VercelFinishReason | undefined): FinishReason {
     switch (reason) {
       case 'stop':
       case 'tool-calls':
