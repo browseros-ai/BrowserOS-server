@@ -56,7 +56,7 @@ describe('args parsing', () => {
     assert.strictEqual(config.mcpAllowRemote, false);
   });
 
-  it('parses --mcp-allow-remote flag', () => {
+  it('parses --allow-remote-in-mcp flag', () => {
     const config = parseArguments([
       'bun',
       'src/index.ts',
@@ -64,7 +64,7 @@ describe('args parsing', () => {
       '--http-mcp-port=9223',
       '--agent-port=9225',
       '--extension-port=9224',
-      '--mcp-allow-remote',
+      '--allow-remote-in-mcp',
     ]);
     assert.strictEqual(config.mcpAllowRemote, true);
   });

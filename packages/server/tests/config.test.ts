@@ -37,8 +37,8 @@ extension = 3002
 resources = "./resources"
 execution = "./logs"
 
-[mcp]
-allow_remote = true
+[flags]
+allow_remote_in_mcp = true
 `,
     );
 
@@ -151,13 +151,13 @@ http_mcp = "not-a-number"
     assert.throws(() => loadConfig(configPath), /must be an integer/);
   });
 
-  it('throws on invalid allow_remote type', () => {
+  it('throws on invalid allow_remote_in_mcp type', () => {
     const configPath = path.join(tempDir, 'config.toml');
     fs.writeFileSync(
       configPath,
       `
-[mcp]
-allow_remote = "yes"
+[flags]
+allow_remote_in_mcp = "yes"
 `,
     );
 

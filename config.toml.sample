@@ -17,8 +17,8 @@ extension = 9300        # Extension WebSocket port (required)
 resources = "./resources"   # Resources directory (optional, default: cwd)
 execution = "./out"         # Execution directory for logs (optional, default: resources dir)
 
-[mcp]
-allow_remote = false    # Allow non-localhost MCP connections (default: false)
+[flags]
+allow_remote_in_mcp = false    # Allow non-localhost MCP connections (default: false)
 
 [instance]
 # client_id = ""            # Client identifier

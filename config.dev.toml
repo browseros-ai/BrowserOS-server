@@ -12,8 +12,8 @@ extension = 9305
 # resources = "./resources"
 # execution = "./out"
 
-[mcp]
-allow_remote = false
+[flags]
+allow_remote_in_mcp = false
 
 [instance]
 # client_id = ""

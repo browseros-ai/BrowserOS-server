@@ -47,7 +47,7 @@ function parsePort(value: string): number {
  * Optional:
  * - CDP_PORT: Chrome DevTools Protocol port
  * - --config: Path to TOML configuration file
- * - --mcp-allow-remote: Allow non-localhost MCP connections
+ * - --allow-remote-in-mcp: Allow non-localhost MCP connections
  *
  * @param argv - Optional argv array for testing. Defaults to process.argv
  */
@@ -68,7 +68,11 @@ export function parseArguments(argv = process.argv): ServerConfig {
       '--execution-dir <path>',
       'Execution directory for logs and configs',
     )
-    .option('--mcp-allow-remote', 'Allow non-localhost MCP connections', false)
+    .option(
+      '--allow-remote-in-mcp',
+      'Allow non-localhost MCP connections',
+      false,
+    )
     .option(
       '--disable-mcp-server',
       '[DEPRECATED] No-op, kept for backwards compatibility',
@@ -126,7 +130,7 @@ export function parseArguments(argv = process.argv): ServerConfig {
   );
 
   const mcpAllowRemote =
-    options.mcpAllowRemote || tomlConfig.mcpAllowRemote || false;
+    options.allowRemoteInMcp || tomlConfig.mcpAllowRemote || false;
 
   const rawConfig = {
     cdpPort,

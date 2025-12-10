@@ -25,8 +25,8 @@ interface TomlConfig {
     resources?: string;
     execution?: string;
   };
-  mcp?: {
-    allow_remote?: boolean;
+  flags?: {
+    allow_remote_in_mcp?: boolean;
   };
   instance?: {
     client_id?: string;
@@ -98,12 +98,14 @@ export function loadConfig(configPath: string): PartialServerConfig {
     }
   }
 
-  if (parsed.mcp) {
-    if (parsed.mcp.allow_remote !== undefined) {
-      if (typeof parsed.mcp.allow_remote !== 'boolean') {
-        throw new Error(`Invalid config: mcp.allow_remote must be a boolean`);
+  if (parsed.flags) {
+    if (parsed.flags.allow_remote_in_mcp !== undefined) {
+      if (typeof parsed.flags.allow_remote_in_mcp !== 'boolean') {
+        throw new Error(
+          `Invalid config: flags.allow_remote_in_mcp must be a boolean`,
+        );
       }
-      result.mcpAllowRemote = parsed.mcp.allow_remote;
+      result.mcpAllowRemote = parsed.flags.allow_remote_in_mcp;
     }
   }
 
