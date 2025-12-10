@@ -266,10 +266,34 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
     }
   };
 
+  /**
+   * Sets CORS headers - permissive since server is localhost-only
+   */
+  const setCorsHeaders = (
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+  ): void => {
+    const origin = req.headers.origin;
+    if (origin) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+    res.setHeader('Access-Control-Expose-Headers', '*');
+  };
+
   const httpServer = http.createServer(async (req, res) => {
     const url = new URL(req.url!, `http://${req.headers.host}`);
 
     logger.info(`${req.method} ${url.pathname}`);
+
+    // Handle CORS preflight for all endpoints
+    if (req.method === 'OPTIONS') {
+      setCorsHeaders(req, res);
+      res.writeHead(204);
+      res.end();
+      return;
+    }
 
     // Health check endpoint (always available, no security checks)
     if (url.pathname === '/health') {
@@ -304,6 +328,8 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
 
     // MCP endpoint
     if (url.pathname === '/mcp') {
+      setCorsHeaders(req, res);
+
       if (!mcpEnabled) {
         res.writeHead(503, {'Content-Type': 'application/json'});
         res.end(
