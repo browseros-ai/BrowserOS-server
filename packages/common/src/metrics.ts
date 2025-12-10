@@ -8,8 +8,11 @@ const POSTHOG_ENDPOINT =
   process.env.POSTHOG_ENDPOINT || 'https://us.i.posthog.com/i/v0/e/';
 const EVENT_PREFIX = 'browseros.server.';
 
-interface MetricsConfig {
-  client_id: string;
+export interface MetricsConfig {
+  client_id?: string;
+  install_id?: string;
+  browseros_version?: string;
+  chromium_version?: string;
   [key: string]: any;
 }
 
@@ -17,13 +20,7 @@ class MetricsService {
   private config: MetricsConfig | null = null;
 
   initialize(config: MetricsConfig): void {
-    if (!config.client_id) {
-      console.warn(
-        'client_id is required for metrics initialization. Metrics will be disabled.',
-      );
-      return;
-    }
-    this.config = config;
+    this.config = {...this.config, ...config};
   }
 
   isInitialized(): boolean {
@@ -35,17 +32,21 @@ class MetricsService {
   }
 
   log(eventName: string, properties: Record<string, any> = {}): void {
-    if (!this.config) {
-      console.warn('Metrics not initialized. Call initialize() first.');
+    if (!this.config?.client_id) {
       return;
     }
 
     if (!POSTHOG_API_KEY) {
-      console.warn('POSTHOG_API_KEY not set. Skipping metrics.');
       return;
     }
 
-    const {client_id, ...defaultProperties} = this.config;
+    const {
+      client_id,
+      install_id,
+      browseros_version,
+      chromium_version,
+      ...defaultProperties
+    } = this.config;
 
     const payload = {
       api_key: POSTHOG_API_KEY,
@@ -54,6 +55,9 @@ class MetricsService {
       properties: {
         ...defaultProperties,
         ...properties,
+        ...(install_id && {install_id}),
+        ...(browseros_version && {browseros_version}),
+        ...(chromium_version && {chromium_version}),
         $process_person_profile: false,
       },
     };
@@ -64,9 +68,7 @@ class MetricsService {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
-    }).catch(error => {
-      console.error('Failed to send metrics event:', error);
-    });
+    }).catch(() => {});
   }
 }
 

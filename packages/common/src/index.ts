@@ -8,7 +8,7 @@ export {ensureBrowserConnected} from './browser.js';
 export {McpContext} from './McpContext.js';
 export {Mutex} from './Mutex.js';
 export {logger} from './logger.js';
-export {metrics} from './metrics.js';
+export {metrics, type MetricsConfig} from './metrics.js';
 export {fetchBrowserOSConfig} from './gateway.js';
 
 // Utils exports

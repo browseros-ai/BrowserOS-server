@@ -1,0 +1,22 @@
+# BrowserOS Server Development Configuration
+# Usage: browseros-server --config config.dev.toml
+# Or:    bun run start:with_toml
+
+[ports]
+cdp = 9005
+http_mcp = 9105
+agent = 9205
+extension = 9305
+
+[directories]
+# resources = "./resources"
+# execution = "./out"
+
+[mcp]
+allow_remote = false
+
+[instance]
+# client_id = ""
+# install_id = ""
+# browseros_version = ""
+# chromium_version = ""
