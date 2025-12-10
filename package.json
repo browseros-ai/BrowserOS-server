@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "start": "bun run build:codex-sdk-ts && CODEX_BINARY_PATH=third_party/bin/codex bun --env-file=.env.dev packages/server/src/index.ts",
+    "start:with_toml": "bun run build:codex-sdk-ts && CODEX_BINARY_PATH=third_party/bin/codex bun --env-file=.env.dev packages/server/src/index.ts --config config.dev.toml",
     "start:debug": "bun run build:codex-sdk-ts && CODEX_BINARY_PATH=third_party/bin/codex bun --inspect-brk --env-file=.env.dev packages/server/src/index.ts",
     "build:codex-sdk-ts": "bun run --filter @browseros/codex-sdk-ts prepare",
     "test": "bun test; bun run test:cleanup",
