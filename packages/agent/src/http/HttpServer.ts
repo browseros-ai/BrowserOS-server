@@ -161,6 +161,7 @@ export function createHttpServer(config: HttpServerConfig) {
           contextWindowSize: request.contextWindowSize,
           tempDir: validatedConfig.tempDir || DEFAULT_TEMP_DIR,
           mcpServerUrl,
+          klavisUserId: request.klavisUserId,
         });
 
         await agent.execute(
