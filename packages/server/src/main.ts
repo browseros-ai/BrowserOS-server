@@ -14,6 +14,7 @@ import {
   McpContext,
   Mutex,
   logger,
+  metrics,
   readVersion,
 } from '@browseros/common';
 import {
@@ -34,6 +35,13 @@ const version = readVersion();
 const config = parseArguments();
 
 configureLogDirectory(config.executionDir);
+
+if (config.metricsClientId || config.metricsInstallId) {
+  metrics.initialize({
+    client_id: config.metricsClientId,
+    install_id: config.metricsInstallId,
+  });
+}
 
 void (async () => {
   logger.info(`Starting BrowserOS Server v${version}`);

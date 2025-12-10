@@ -23,6 +23,10 @@ export interface TomlConfig {
   mcp?: {
     allow_remote?: boolean;
   };
+  metrics?: {
+    client_id?: string;
+    install_id?: string;
+  };
 }
 
 export interface ResolvedConfig {
@@ -33,6 +37,8 @@ export interface ResolvedConfig {
   resourcesDir?: string;
   executionDir?: string;
   mcpAllowRemote?: boolean;
+  metricsClientId?: string;
+  metricsInstallId?: string;
 }
 
 /**
@@ -103,6 +109,21 @@ export function loadConfig(configPath: string): ResolvedConfig {
         throw new Error(`Invalid config: mcp.allow_remote must be a boolean`);
       }
       resolved.mcpAllowRemote = parsed.mcp.allow_remote;
+    }
+  }
+
+  if (parsed.metrics) {
+    if (parsed.metrics.client_id !== undefined) {
+      if (typeof parsed.metrics.client_id !== 'string') {
+        throw new Error(`Invalid config: metrics.client_id must be a string`);
+      }
+      resolved.metricsClientId = parsed.metrics.client_id;
+    }
+    if (parsed.metrics.install_id !== undefined) {
+      if (typeof parsed.metrics.install_id !== 'string') {
+        throw new Error(`Invalid config: metrics.install_id must be a string`);
+      }
+      resolved.metricsInstallId = parsed.metrics.install_id;
     }
   }
 

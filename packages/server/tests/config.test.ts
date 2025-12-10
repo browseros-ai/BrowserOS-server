@@ -174,4 +174,34 @@ allow_remote = "yes"
     assert.strictEqual(config.httpMcpPort, undefined);
     assert.strictEqual(config.mcpAllowRemote, undefined);
   });
+
+  it('loads metrics config', () => {
+    const configPath = path.join(tempDir, 'config.toml');
+    fs.writeFileSync(
+      configPath,
+      `
+[metrics]
+client_id = "user-123"
+install_id = "install-456"
+`,
+    );
+
+    const config = loadConfig(configPath);
+
+    assert.strictEqual(config.metricsClientId, 'user-123');
+    assert.strictEqual(config.metricsInstallId, 'install-456');
+  });
+
+  it('throws on invalid metrics client_id type', () => {
+    const configPath = path.join(tempDir, 'config.toml');
+    fs.writeFileSync(
+      configPath,
+      `
+[metrics]
+client_id = 123
+`,
+    );
+
+    assert.throws(() => loadConfig(configPath), /must be a string/);
+  });
 });

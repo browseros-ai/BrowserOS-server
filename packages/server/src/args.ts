@@ -18,6 +18,8 @@ export interface ServerConfig {
   resourcesDir: string;
   executionDir: string;
   mcpAllowRemote: boolean;
+  metricsClientId?: string;
+  metricsInstallId?: string;
 }
 
 /**
@@ -152,6 +154,8 @@ export function parseArguments(argv = process.argv): ServerConfig {
     resourcesDir: resolvedResourcesDir,
     executionDir: resolvedExecutionDir,
     mcpAllowRemote,
+    metricsClientId: config.metricsClientId,
+    metricsInstallId: config.metricsInstallId,
   };
 }
 
