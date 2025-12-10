@@ -11,6 +11,7 @@
 
 import type {
   VercelContentPart,
+  ReasoningProviderMetadata,
 } from '../types.js';
 import type { CoreMessage } from 'ai';
 import type { LanguageModelV2ToolResultOutput, JSONValue } from '@ai-sdk/provider';
@@ -56,6 +57,7 @@ export class MessageConversionStrategy {
         id?: string;
         name?: string;
         args?: Record<string, unknown>;
+        reasoningProviderMetadata?: ReasoningProviderMetadata; // Provider metadata for reasoning models
       }> = [];
       const functionResponses: Array<{
         id?: string;
@@ -71,7 +73,12 @@ export class MessageConversionStrategy {
         if (isTextPart(part)) {
           textParts.push(part.text);
         } else if (isFunctionCallPart(part)) {
-          functionCalls.push(part.functionCall);
+          // Capture reasoning metadata if present (provider-agnostic)
+          const partWithMetadata = part as typeof part & { reasoningProviderMetadata?: ReasoningProviderMetadata };
+          functionCalls.push({
+            ...part.functionCall,
+            reasoningProviderMetadata: partWithMetadata.reasoningProviderMetadata,
+          });
         } else if (isFunctionResponsePart(part)) {
           functionResponses.push(part.functionResponse);
         } else if (isInlineDataPart(part)) {
@@ -198,8 +205,12 @@ export class MessageConversionStrategy {
           });
         }
 
+        // Collect reasoning metadata from parts (provider-agnostic)
+        let reasoningMetadata: ReasoningProviderMetadata | undefined;
+
         // Add tool calls - but ONLY if they have matching tool results
         // This prevents Anthropic error: "tool_use ids were found without tool_result blocks"
+        let isFirstToolCall = true;
         for (const fc of functionCalls) {
           const toolCallId = fc.id || this.generateToolCallId();
 
@@ -208,20 +219,37 @@ export class MessageConversionStrategy {
             continue;
           }
 
-          contentParts.push({
+          // Capture first set of reasoning metadata for use on first tool-call part
+          if (fc.reasoningProviderMetadata && !reasoningMetadata) {
+            reasoningMetadata = fc.reasoningProviderMetadata;
+          }
+
+          // Pass provider metadata through as providerOptions on first tool-call part
+          // AI SDK pattern: providerMetadata in responses -> providerOptions in requests
+          const toolCallPart: Record<string, unknown> = {
             type: 'tool-call' as const,
             toolCallId,
             toolName: fc.name || 'unknown',
             input: fc.args || {},
-          });
+          };
+
+          if (isFirstToolCall && reasoningMetadata) {
+            // Pass through provider metadata as providerOptions (provider-agnostic)
+            toolCallPart.providerOptions = reasoningMetadata;
+            isFirstToolCall = false;
+          }
+
+          contentParts.push(toolCallPart as VercelContentPart);
         }
 
         // Only add the message if there's content (text or valid tool calls)
         if (contentParts.length > 0) {
-          messages.push({
-            role: 'assistant',
+          const message = {
+            role: 'assistant' as const,
             content: contentParts,
-          } as CoreMessage);
+          };
+
+          messages.push(message as CoreMessage);
         }
         continue;
       }

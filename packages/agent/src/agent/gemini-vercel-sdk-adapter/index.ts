@@ -225,7 +225,12 @@ export class VercelAIContentGenerator implements ContentGenerator {
         if (!config.apiKey) {
           throw new Error('OpenRouter provider requires apiKey');
         }
-        return createOpenRouter({ apiKey: config.apiKey });
+        return createOpenRouter({
+          apiKey: config.apiKey,
+          extraBody: {
+            reasoning: {}, // Enable reasoning for Gemini 3 thought signatures
+          },
+        });
 
       case AIProvider.AZURE:
         if (!config.apiKey || !config.resourceName) {

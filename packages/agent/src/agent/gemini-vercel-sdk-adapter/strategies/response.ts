@@ -14,6 +14,7 @@ import { GenerateContentResponse, FinishReason, Part, FunctionCall } from '@goog
 import type {
   VercelFinishReason,
   VercelUsage,
+  ReasoningProviderMetadata,
 } from '../types.js';
 import {
   VercelGenerateTextResultSchema,
@@ -107,6 +108,11 @@ export class ResponseConversionStrategy {
 
     let finishReason: VercelFinishReason | undefined;
 
+    // Accumulate reasoning_details from provider metadata
+    // OpenRouter pattern: sends reasoning_details incrementally across chunks, must accumulate
+    // Other providers may need different accumulation patterns
+    const accumulatedReasoningDetails: unknown[] = [];
+
     // Process stream chunks
     for await (const rawChunk of stream) {
       const chunkType = (rawChunk as { type?: string }).type;
@@ -163,6 +169,15 @@ export class ResponseConversionStrategy {
           toolName: chunk.toolName,
           input: chunk.input,
         });
+      } else if (chunk.type === 'reasoning-delta' || chunk.type === 'reasoning-start') {
+        // Accumulate reasoning_details from provider metadata
+        // OpenRouter sends these incrementally across multiple chunks
+        const metadata = chunk.providerMetadata as Record<string, unknown> | undefined;
+        const openrouterData = metadata?.openrouter as Record<string, unknown> | undefined;
+        const reasoningDetails = openrouterData?.reasoning_details;
+        if (Array.isArray(reasoningDetails)) {
+          accumulatedReasoningDetails.push(...reasoningDetails);
+        }
       } else if (chunk.type === 'finish') {
         finishReason = chunk.finishReason;
       }
@@ -180,6 +195,12 @@ export class ResponseConversionStrategy {
     // Note: finishStep() is called by GeminiAgent after tool outputs are written
     // This ensures the step includes: LLM response + tool calls + tool results
 
+    // Build provider metadata from accumulated reasoning details
+    const hasReasoningMetadata = accumulatedReasoningDetails.length > 0;
+    const reasoningProviderMetadata: ReasoningProviderMetadata | undefined = hasReasoningMetadata
+      ? { openrouter: { reasoning_details: accumulatedReasoningDetails } }
+      : undefined;
+
     // Yield final response with tool calls and metadata
     if (toolCallsMap.size > 0 || finishReason || usage) {
       const parts: Part[] = [];
@@ -190,9 +211,16 @@ export class ResponseConversionStrategy {
         const toolCallsArray = Array.from(toolCallsMap.values());
         functionCalls = this.toolStrategy.vercelToGemini(toolCallsArray);
 
-        // Add to parts
+        // Add reasoning metadata to first functionCall part (provider-agnostic)
+        let isFirstFunctionCall = true;
         for (const fc of functionCalls) {
-          parts.push({ functionCall: fc });
+          const part: Part & { reasoningProviderMetadata?: ReasoningProviderMetadata } = { functionCall: fc };
+          // Attach provider metadata to first part - will be converted to providerOptions
+          if (isFirstFunctionCall && hasReasoningMetadata) {
+            part.reasoningProviderMetadata = reasoningProviderMetadata;
+            isFirstFunctionCall = false;
+          }
+          parts.push(part);
         }
       }
 
