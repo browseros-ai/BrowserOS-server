@@ -37,7 +37,7 @@ function parsePort(value: string): number {
 /**
  * Parse command-line arguments for BrowserOS unified server.
  *
- * Precedence: CLI args > TOML config > environment variables > defaults
+ * Precedence: CLI args > JSON config > environment variables > defaults
  *
  * Required (from CLI, config, or env):
  * - HTTP_MCP_PORT: MCP HTTP server port
@@ -46,7 +46,7 @@ function parsePort(value: string): number {
  *
  * Optional:
  * - CDP_PORT: Chrome DevTools Protocol port
- * - --config: Path to TOML configuration file
+ * - --config: Path to JSON configuration file
  * - --allow-remote-in-mcp: Allow non-localhost MCP connections
  *
  * @param argv - Optional argv array for testing. Defaults to process.argv
@@ -58,7 +58,7 @@ export function parseArguments(argv = process.argv): ServerConfig {
     .name('browseros-server')
     .description('BrowserOS Unified Server - MCP + Agent')
     .version(version)
-    .option('--config <path>', 'Path to TOML configuration file')
+    .option('--config <path>', 'Path to JSON configuration file')
     .option('--cdp-port <port>', 'CDP WebSocket port (optional)', parsePort)
     .option('--http-mcp-port <port>', 'MCP HTTP server port', parsePort)
     .option('--agent-port <port>', 'Agent communication port', parsePort)
@@ -88,29 +88,29 @@ export function parseArguments(argv = process.argv): ServerConfig {
     );
   }
 
-  let tomlConfig: PartialServerConfig = {};
+  let jsonConfig: PartialServerConfig = {};
   if (options.config) {
-    tomlConfig = loadConfig(options.config);
+    jsonConfig = loadConfig(options.config);
   }
 
-  // Precedence: CLI > TOML > ENV > undefined
+  // Precedence: CLI > JSON > ENV > undefined
   const cdpPort =
     options.cdpPort ??
-    tomlConfig.cdpPort ??
+    jsonConfig.cdpPort ??
     (process.env.CDP_PORT ? parsePort(process.env.CDP_PORT) : null);
   const httpMcpPort =
     options.httpMcpPort ??
-    tomlConfig.httpMcpPort ??
+    jsonConfig.httpMcpPort ??
     (process.env.HTTP_MCP_PORT
       ? parsePort(process.env.HTTP_MCP_PORT)
       : undefined);
   const agentPort =
     options.agentPort ??
-    tomlConfig.agentPort ??
+    jsonConfig.agentPort ??
     (process.env.AGENT_PORT ? parsePort(process.env.AGENT_PORT) : undefined);
   const extensionPort =
     options.extensionPort ??
-    tomlConfig.extensionPort ??
+    jsonConfig.extensionPort ??
     (process.env.EXTENSION_PORT
       ? parsePort(process.env.EXTENSION_PORT)
       : undefined);
@@ -118,19 +118,19 @@ export function parseArguments(argv = process.argv): ServerConfig {
   const cwd = process.cwd();
   const resourcesDir = resolvePath(
     options.resourcesDir ??
-      tomlConfig.resourcesDir ??
+      jsonConfig.resourcesDir ??
       process.env.RESOURCES_DIR,
     cwd,
   );
   const executionDir = resolvePath(
     options.executionDir ??
-      tomlConfig.executionDir ??
+      jsonConfig.executionDir ??
       process.env.EXECUTION_DIR,
     resourcesDir,
   );
 
   const mcpAllowRemote =
-    options.allowRemoteInMcp || tomlConfig.mcpAllowRemote || false;
+    options.allowRemoteInMcp || jsonConfig.mcpAllowRemote || false;
 
   const rawConfig = {
     cdpPort,
@@ -140,10 +140,10 @@ export function parseArguments(argv = process.argv): ServerConfig {
     resourcesDir,
     executionDir,
     mcpAllowRemote,
-    instanceClientId: tomlConfig.instanceClientId,
-    instanceInstallId: tomlConfig.instanceInstallId,
-    instanceBrowserosVersion: tomlConfig.instanceBrowserosVersion,
-    instanceChromiumVersion: tomlConfig.instanceChromiumVersion,
+    instanceClientId: jsonConfig.instanceClientId,
+    instanceInstallId: jsonConfig.instanceInstallId,
+    instanceBrowserosVersion: jsonConfig.instanceBrowserosVersion,
+    instanceChromiumVersion: jsonConfig.instanceChromiumVersion,
   };
 
   const result = ServerConfigSchema.safeParse(rawConfig);

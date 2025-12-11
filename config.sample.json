@@ -1,0 +1,21 @@
+{
+  "ports": {
+    "cdp": 9000,
+    "http_mcp": 9100,
+    "agent": 9200,
+    "extension": 9300
+  },
+  "directories": {
+    "resources": "./resources",
+    "execution": "./out"
+  },
+  "flags": {
+    "allow_remote_in_mcp": false
+  },
+  "instance": {
+    "client_id": "",
+    "install_id": "",
+    "browseros_version": "",
+    "chromium_version": ""
+  }
+}
