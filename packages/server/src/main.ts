@@ -238,6 +238,9 @@ function createShutdownHandler(
     logger.info('Closing ControllerBridge...');
     await controllerBridge.close();
 
+    logger.info('Flushing metrics...');
+    await metrics.shutdown();
+
     logger.info('Server shutdown complete');
     process.exit(0);
   };
