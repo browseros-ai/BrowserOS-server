@@ -2,19 +2,18 @@
  * @license
  * Copyright 2025 BrowserOS
  *
- * TOML configuration file loader
+ * JSON configuration file loader.
+ * Using JSON as Chromium has native JSON support but no TOML support.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 
-import {parse as parseToml} from 'smol-toml';
-
 import type {PartialServerConfig} from './types.js';
 
 /**
- * Raw TOML config structure (snake_case keys matching TOML file)
+ * Raw JSON config structure (snake_case keys matching JSON file)
  */
-interface TomlConfig {
+interface JsonConfig {
   ports?: {
     cdp?: number;
     http_mcp?: number;
@@ -37,7 +36,7 @@ interface TomlConfig {
 }
 
 /**
- * Load and parse a TOML configuration file.
+ * Load and parse a JSON configuration file.
  * Relative paths in the config are resolved relative to the config file's directory.
  */
 export function loadConfig(configPath: string): PartialServerConfig {
@@ -52,12 +51,12 @@ export function loadConfig(configPath: string): PartialServerConfig {
   const configDir = path.dirname(absoluteConfigPath);
   const content = fs.readFileSync(absoluteConfigPath, 'utf-8');
 
-  let parsed: TomlConfig;
+  let parsed: JsonConfig;
   try {
-    parsed = parseToml(content) as TomlConfig;
+    parsed = JSON.parse(content) as JsonConfig;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to parse TOML config: ${message}`);
+    throw new Error(`Failed to parse JSON config: ${message}`);
   }
 
   const result: PartialServerConfig = {};
@@ -110,19 +109,19 @@ export function loadConfig(configPath: string): PartialServerConfig {
   }
 
   if (parsed.instance) {
-    if (parsed.instance.client_id !== undefined) {
+    if (parsed.instance.client_id) {
       if (typeof parsed.instance.client_id !== 'string') {
         throw new Error(`Invalid config: instance.client_id must be a string`);
       }
       result.instanceClientId = parsed.instance.client_id;
     }
-    if (parsed.instance.install_id !== undefined) {
+    if (parsed.instance.install_id) {
       if (typeof parsed.instance.install_id !== 'string') {
         throw new Error(`Invalid config: instance.install_id must be a string`);
       }
       result.instanceInstallId = parsed.instance.install_id;
     }
-    if (parsed.instance.browseros_version !== undefined) {
+    if (parsed.instance.browseros_version) {
       if (typeof parsed.instance.browseros_version !== 'string') {
         throw new Error(
           `Invalid config: instance.browseros_version must be a string`,
@@ -130,7 +129,7 @@ export function loadConfig(configPath: string): PartialServerConfig {
       }
       result.instanceBrowserosVersion = parsed.instance.browseros_version;
     }
-    if (parsed.instance.chromium_version !== undefined) {
+    if (parsed.instance.chromium_version) {
       if (typeof parsed.instance.chromium_version !== 'string') {
         throw new Error(
           `Invalid config: instance.chromium_version must be a string`,

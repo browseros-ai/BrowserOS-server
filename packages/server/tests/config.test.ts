@@ -22,24 +22,25 @@ describe('config loading', () => {
     fs.rmSync(tempDir, {recursive: true, force: true});
   });
 
-  it('loads a valid TOML config with all fields', () => {
-    const configPath = path.join(tempDir, 'config.toml');
+  it('loads a valid JSON config with all fields', () => {
+    const configPath = path.join(tempDir, 'config.json');
     fs.writeFileSync(
       configPath,
-      `
-[ports]
-cdp = 9222
-http_mcp = 3000
-agent = 3001
-extension = 3002
-
-[directories]
-resources = "./resources"
-execution = "./logs"
-
-[flags]
-allow_remote_in_mcp = true
-`,
+      JSON.stringify({
+        ports: {
+          cdp: 9222,
+          http_mcp: 3000,
+          agent: 3001,
+          extension: 3002,
+        },
+        directories: {
+          resources: './resources',
+          execution: './logs',
+        },
+        flags: {
+          allow_remote_in_mcp: true,
+        },
+      }),
     );
 
     const config = loadConfig(configPath);
@@ -54,15 +55,16 @@ allow_remote_in_mcp = true
   });
 
   it('loads partial config (ports only)', () => {
-    const configPath = path.join(tempDir, 'config.toml');
+    const configPath = path.join(tempDir, 'config.json');
     fs.writeFileSync(
       configPath,
-      `
-[ports]
-http_mcp = 8080
-agent = 8081
-extension = 8082
-`,
+      JSON.stringify({
+        ports: {
+          http_mcp: 8080,
+          agent: 8081,
+          extension: 8082,
+        },
+      }),
     );
 
     const config = loadConfig(configPath);
@@ -78,14 +80,15 @@ extension = 8082
   it('resolves relative paths relative to config file', () => {
     const subdir = path.join(tempDir, 'subdir');
     fs.mkdirSync(subdir);
-    const configPath = path.join(subdir, 'config.toml');
+    const configPath = path.join(subdir, 'config.json');
     fs.writeFileSync(
       configPath,
-      `
-[directories]
-resources = "../data"
-execution = "./logs"
-`,
+      JSON.stringify({
+        directories: {
+          resources: '../data',
+          execution: './logs',
+        },
+      }),
     );
 
     const config = loadConfig(configPath);
@@ -95,14 +98,15 @@ execution = "./logs"
   });
 
   it('handles absolute paths', () => {
-    const configPath = path.join(tempDir, 'config.toml');
+    const configPath = path.join(tempDir, 'config.json');
     fs.writeFileSync(
       configPath,
-      `
-[directories]
-resources = "/absolute/path/resources"
-execution = "/absolute/path/logs"
-`,
+      JSON.stringify({
+        directories: {
+          resources: '/absolute/path/resources',
+          execution: '/absolute/path/logs',
+        },
+      }),
     );
 
     const config = loadConfig(configPath);
@@ -113,60 +117,63 @@ execution = "/absolute/path/logs"
 
   it('throws on missing config file', () => {
     assert.throws(
-      () => loadConfig('/nonexistent/config.toml'),
+      () => loadConfig('/nonexistent/config.json'),
       /Config file not found/,
     );
   });
 
-  it('throws on invalid TOML syntax', () => {
-    const configPath = path.join(tempDir, 'config.toml');
-    fs.writeFileSync(configPath, 'this is not valid toml [[[');
+  it('throws on invalid JSON syntax', () => {
+    const configPath = path.join(tempDir, 'config.json');
+    fs.writeFileSync(configPath, 'this is not valid json {{{');
 
-    assert.throws(() => loadConfig(configPath), /Failed to parse TOML/);
+    assert.throws(() => loadConfig(configPath), /Failed to parse JSON/);
   });
 
   it('throws on invalid port (out of range)', () => {
-    const configPath = path.join(tempDir, 'config.toml');
+    const configPath = path.join(tempDir, 'config.json');
     fs.writeFileSync(
       configPath,
-      `
-[ports]
-http_mcp = 99999
-`,
+      JSON.stringify({
+        ports: {
+          http_mcp: 99999,
+        },
+      }),
     );
 
     assert.throws(() => loadConfig(configPath), /must be between 1 and 65535/);
   });
 
   it('throws on invalid port (not a number)', () => {
-    const configPath = path.join(tempDir, 'config.toml');
+    const configPath = path.join(tempDir, 'config.json');
     fs.writeFileSync(
       configPath,
-      `
-[ports]
-http_mcp = "not-a-number"
-`,
+      JSON.stringify({
+        ports: {
+          http_mcp: 'not-a-number',
+        },
+      }),
     );
 
     assert.throws(() => loadConfig(configPath), /must be an integer/);
   });
 
   it('throws on invalid allow_remote_in_mcp type', () => {
-    const configPath = path.join(tempDir, 'config.toml');
+    const configPath = path.join(tempDir, 'config.json');
     fs.writeFileSync(
       configPath,
-      `
-[flags]
-allow_remote_in_mcp = "yes"
-`,
+      JSON.stringify({
+        flags: {
+          allow_remote_in_mcp: 'yes',
+        },
+      }),
     );
 
     assert.throws(() => loadConfig(configPath), /must be a boolean/);
   });
 
   it('loads empty config file', () => {
-    const configPath = path.join(tempDir, 'config.toml');
-    fs.writeFileSync(configPath, '');
+    const configPath = path.join(tempDir, 'config.json');
+    fs.writeFileSync(configPath, '{}');
 
     const config = loadConfig(configPath);
 
@@ -176,16 +183,17 @@ allow_remote_in_mcp = "yes"
   });
 
   it('loads instance config', () => {
-    const configPath = path.join(tempDir, 'config.toml');
+    const configPath = path.join(tempDir, 'config.json');
     fs.writeFileSync(
       configPath,
-      `
-[instance]
-client_id = "user-123"
-install_id = "install-456"
-browseros_version = "1.0.0"
-chromium_version = "120.0.0"
-`,
+      JSON.stringify({
+        instance: {
+          client_id: 'user-123',
+          install_id: 'install-456',
+          browseros_version: '1.0.0',
+          chromium_version: '120.0.0',
+        },
+      }),
     );
 
     const config = loadConfig(configPath);
@@ -197,13 +205,14 @@ chromium_version = "120.0.0"
   });
 
   it('throws on invalid instance client_id type', () => {
-    const configPath = path.join(tempDir, 'config.toml');
+    const configPath = path.join(tempDir, 'config.json');
     fs.writeFileSync(
       configPath,
-      `
-[instance]
-client_id = 123
-`,
+      JSON.stringify({
+        instance: {
+          client_id: 123,
+        },
+      }),
     );
 
     assert.throws(() => loadConfig(configPath), /must be a string/);
