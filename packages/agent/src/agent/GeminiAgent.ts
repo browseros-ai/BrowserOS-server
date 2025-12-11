@@ -29,7 +29,13 @@ import {
 import type {HonoSSEStream} from './gemini-vercel-sdk-adapter/types.js';
 import {UIMessageStreamWriter} from './gemini-vercel-sdk-adapter/ui-message-stream.js';
 import {getSystemPrompt} from './GeminiAgent.prompt.js';
-import type {AgentConfig} from './types.js';
+import {
+  SubAgentExecutor,
+  TASK_TOOL_NAME,
+  TaskToolInputSchema,
+  TaskDeclarativeTool,
+} from './subagent/index.js';
+import type {AgentConfig, GeminiAgentOptions} from './types.js';
 
 const MAX_TURNS = 100;
 const TOOL_TIMEOUT_MS = 120000; // 2 minutes timeout per tool call
@@ -61,14 +67,31 @@ function createHttpMcpServerConfig(
 }
 
 export class GeminiAgent {
+  private isSubAgent: boolean;
+  private maxTurns: number;
+  private subAgentExecutor?: SubAgentExecutor;
+
   private constructor(
     private client: GeminiClient,
     private geminiConfig: GeminiConfig,
     private contentGenerator: VercelAIContentGenerator,
     private conversationId: string,
-  ) {}
+    private config: AgentConfig,
+    options: GeminiAgentOptions = {},
+  ) {
+    this.isSubAgent = options.isSubAgent ?? false;
+    this.maxTurns = options.maxTurns ?? MAX_TURNS;
 
-  static async create(config: AgentConfig): Promise<GeminiAgent> {
+    // Only parent agents can spawn subagents
+    if (!this.isSubAgent) {
+      this.subAgentExecutor = new SubAgentExecutor(config);
+    }
+  }
+
+  static async create(
+    config: AgentConfig,
+    options: GeminiAgentOptions = {},
+  ): Promise<GeminiAgent> {
     const tempDir = config.tempDir;
 
     // If provider is BROWSEROS, fetch config from BROWSEROS_CONFIG_URL
@@ -145,13 +168,19 @@ export class GeminiAgent {
     }
     logger.debug('MCP servers config', { mcpServers });
 
+    // Exclude Task tool for subagents to prevent recursion
+    const excludeTools = ['run_shell_command', 'write_file', 'replace'];
+    if (options.isSubAgent) {
+      excludeTools.push(TASK_TOOL_NAME);
+    }
+
     const geminiConfig = new GeminiConfig({
       sessionId: resolvedConfig.conversationId,
       targetDir: tempDir,
       cwd: tempDir,
       debugMode: false,
       model: modelString,
-      excludeTools: ['run_shell_command', 'write_file', 'replace'],
+      excludeTools,
       compressionThreshold: compressionThreshold,
       mcpServers: Object.keys(mcpServers).length > 0 ? mcpServers : undefined,
     });
@@ -162,6 +191,13 @@ export class GeminiAgent {
     (
       geminiConfig as unknown as {contentGenerator: VercelAIContentGenerator}
     ).contentGenerator = contentGenerator;
+
+    // Register Task tool for parent agents (subagents have it excluded)
+    if (!options.isSubAgent) {
+      const toolRegistry = geminiConfig.getToolRegistry();
+      toolRegistry.registerTool(new TaskDeclarativeTool());
+      logger.debug('Registered Task tool for subagent spawning');
+    }
 
     const client = geminiConfig.getGeminiClient();
     client.getChat().setSystemInstruction(getSystemPrompt());
@@ -179,6 +215,7 @@ export class GeminiAgent {
       conversationId: resolvedConfig.conversationId,
       provider: resolvedConfig.provider,
       model: resolvedConfig.model,
+      isSubAgent: options.isSubAgent ?? false,
     });
 
     return new GeminiAgent(
@@ -186,6 +223,8 @@ export class GeminiAgent {
       geminiConfig,
       contentGenerator,
       resolvedConfig.conversationId,
+      resolvedConfig,
+      options,
     );
   }
 
@@ -259,10 +298,12 @@ export class GeminiAgent {
       turnCount++;
       logger.debug(`Turn ${turnCount}`, {conversationId: this.conversationId});
 
-      if (turnCount > MAX_TURNS) {
+      if (turnCount > this.maxTurns) {
         logger.warn('Max turns exceeded', {
           conversationId: this.conversationId,
           turnCount,
+          maxTurns: this.maxTurns,
+          isSubAgent: this.isSubAgent,
         });
         break;
       }
@@ -315,6 +356,81 @@ export class GeminiAgent {
             break;
           }
 
+          // Intercept Task tool for subagent execution
+          if (requestInfo.name === TASK_TOOL_NAME && this.subAgentExecutor) {
+            try {
+              const input = TaskToolInputSchema.parse(requestInfo.args);
+
+              logger.info('Executing Task tool (spawning subagent)', {
+                conversationId: this.conversationId,
+                taskDescription: input.description,
+                subagentType: input.subagent_type,
+              });
+
+              if (uiStream) {
+                await uiStream.writeToolCall(requestInfo.callId, TASK_TOOL_NAME, {
+                  description: input.description,
+                  subagent_type: input.subagent_type,
+                });
+              }
+
+              const result = await this.subAgentExecutor.execute(
+                input,
+                honoStream,
+                abortSignal,
+              );
+
+              toolResponseParts.push({
+                functionResponse: {
+                  id: requestInfo.callId,
+                  name: TASK_TOOL_NAME,
+                  response: result.success
+                    ? {output: result.result}
+                    : {error: result.error || 'Subagent execution failed'},
+                },
+              } as Part);
+
+              if (uiStream) {
+                if (result.success) {
+                  await uiStream.writeToolResult(requestInfo.callId, {
+                    agentId: result.agentId,
+                    turnsUsed: result.turnsUsed,
+                    summary:
+                      result.result.length > 500
+                        ? result.result.substring(0, 500) + '...'
+                        : result.result,
+                  });
+                } else {
+                  await uiStream.writeToolError(
+                    requestInfo.callId,
+                    result.error || 'Unknown error',
+                  );
+                }
+              }
+            } catch (error) {
+              const errorMessage =
+                error instanceof Error ? error.message : String(error);
+              logger.error('Task tool execution failed', {
+                conversationId: this.conversationId,
+                error: errorMessage,
+              });
+
+              toolResponseParts.push({
+                functionResponse: {
+                  id: requestInfo.callId,
+                  name: TASK_TOOL_NAME,
+                  response: {error: errorMessage},
+                },
+              } as Part);
+
+              if (uiStream) {
+                await uiStream.writeToolError(requestInfo.callId, errorMessage);
+              }
+            }
+            continue; // Skip normal tool execution
+          }
+
+          // Normal tool execution
           try {
             const timeoutPromise = new Promise<never>((_, reject) => {
               setTimeout(

@@ -113,6 +113,33 @@ Use when built-in tools cannot accomplish the task.
 - \`list_network_requests(resourceTypes?)\` - Network requests
 - \`get_network_request(url)\` - Request details
 
+## Subagent (Task Tool)
+- \`Task(description, prompt, subagent_type?)\` - Spawn a subagent for complex, multi-step tasks
+
+**Use when**:
+- Task requires multiple steps or extensive exploration
+- Task is independent and benefits from isolated context
+- You want to preserve main conversation context
+
+**Parameters**:
+- \`description\` (required): Short 3-5 word task description
+- \`prompt\` (required): Detailed instructions for the subagent
+- \`subagent_type\` (optional): "default" (only option currently)
+
+**Behavior**:
+- Subagent executes with fresh context (won't see main conversation history)
+- Has access to all browser and integration tools
+- Maximum 20 turns to complete
+- Returns a summary of findings/actions
+
+**Example**:
+\`\`\`
+Task(
+  description: "Research authentication flow",
+  prompt: "Navigate to the login page and document the full authentication process including form fields, OAuth options, and error handling."
+)
+\`\`\`
+
 ---
 
 # External Integrations (Klavis Strata)

@@ -16,3 +16,8 @@ export const AgentConfigSchema = VercelAIConfigSchema.extend({
 });
 
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;
+
+export interface GeminiAgentOptions {
+  isSubAgent?: boolean;
+  maxTurns?: number;
+}
