@@ -2,10 +2,10 @@
  * @license
  * Copyright 2025 BrowserOS
  */
+import {PostHog} from 'posthog-node';
 
-const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY!;
-const POSTHOG_ENDPOINT =
-  process.env.POSTHOG_ENDPOINT || 'https://us.i.posthog.com/i/v0/e/';
+const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY;
+const POSTHOG_HOST = process.env.POSTHOG_ENDPOINT || 'https://us.i.posthog.com';
 const EVENT_PREFIX = 'browseros.server.';
 
 export interface MetricsConfig {
@@ -17,10 +17,15 @@ export interface MetricsConfig {
 }
 
 class MetricsService {
+  private client: PostHog | null = null;
   private config: MetricsConfig | null = null;
 
   initialize(config: MetricsConfig): void {
     this.config = {...this.config, ...config};
+
+    if (!this.client && POSTHOG_API_KEY && this.config.client_id) {
+      this.client = new PostHog(POSTHOG_API_KEY, {host: POSTHOG_HOST});
+    }
   }
 
   isInitialized(): boolean {
@@ -32,11 +37,7 @@ class MetricsService {
   }
 
   log(eventName: string, properties: Record<string, any> = {}): void {
-    if (!this.config?.client_id) {
-      return;
-    }
-
-    if (!POSTHOG_API_KEY) {
+    if (!this.client || !this.config?.client_id) {
       return;
     }
 
@@ -48,10 +49,9 @@ class MetricsService {
       ...defaultProperties
     } = this.config;
 
-    const payload = {
-      api_key: POSTHOG_API_KEY,
+    this.client.capture({
+      distinctId: client_id,
       event: EVENT_PREFIX + eventName,
-      distinct_id: client_id,
       properties: {
         ...defaultProperties,
         ...properties,
@@ -60,15 +60,14 @@ class MetricsService {
         ...(chromium_version && {chromium_version}),
         $process_person_profile: false,
       },
-    };
+    });
+  }
 
-    fetch(POSTHOG_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    }).catch(() => {});
+  async shutdown(): Promise<void> {
+    if (this.client) {
+      await this.client.shutdown();
+      this.client = null;
+    }
   }
 }
 
