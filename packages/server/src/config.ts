@@ -2,156 +2,293 @@
  * @license
  * Copyright 2025 BrowserOS
  *
- * JSON configuration file loader.
- * Using JSON as Chromium has native JSON support but no TOML support.
+ * Server configuration loading with multiple sources.
+ * Precedence: CLI > Config File > Environment > Defaults
  */
 import fs from 'node:fs';
 import path from 'node:path';
 
-import type {PartialServerConfig} from './types.js';
+import {Command, InvalidArgumentError} from 'commander';
+import {z} from 'zod';
 
-/**
- * Raw JSON config structure (snake_case keys matching JSON file)
- */
-interface JsonConfig {
-  ports?: {
-    cdp?: number;
-    http_mcp?: number;
-    agent?: number;
-    extension?: number;
-  };
-  directories?: {
-    resources?: string;
-    execution?: string;
-  };
-  flags?: {
-    allow_remote_in_mcp?: boolean;
-  };
-  instance?: {
-    client_id?: string;
-    install_id?: string;
-    browseros_version?: string;
-    chromium_version?: string;
+import {version} from '../../../package.json' with {type: 'json'};
+
+const portSchema = z.number().int();
+
+export const ServerConfigSchema = z.object({
+  cdpPort: portSchema.nullable(),
+  httpMcpPort: portSchema,
+  agentPort: portSchema,
+  extensionPort: portSchema,
+  resourcesDir: z.string(),
+  executionDir: z.string(),
+  mcpAllowRemote: z.boolean(),
+  instanceClientId: z.string().optional(),
+  instanceInstallId: z.string().optional(),
+  instanceBrowserosVersion: z.string().optional(),
+  instanceChromiumVersion: z.string().optional(),
+});
+
+export type ServerConfig = z.infer<typeof ServerConfigSchema>;
+
+type PartialConfig = {
+  cdpPort?: number | null;
+  httpMcpPort?: number;
+  agentPort?: number;
+  extensionPort?: number;
+  resourcesDir?: string;
+  executionDir?: string;
+  mcpAllowRemote?: boolean;
+  instanceClientId?: string;
+  instanceInstallId?: string;
+  instanceBrowserosVersion?: string;
+  instanceChromiumVersion?: string;
+};
+
+export type ConfigResult<T> = {ok: true; value: T} | {ok: false; error: string};
+
+export function loadServerConfig(
+  argv: string[] = process.argv,
+  env: NodeJS.ProcessEnv = process.env,
+): ConfigResult<ServerConfig> {
+  // 1. Parse CLI (commander with exitOverride - throws instead of exit)
+  const cli = parseCli(argv);
+  if (!cli.ok) return cli;
+
+  // 2. Load config file (only if --config provided)
+  const file = loadConfigFile(cli.value.configPath);
+  if (!file.ok) return file;
+
+  // 3. Load from environment
+  const envConfig = loadEnv(env);
+
+  // 4. Merge: Defaults < Env < File < CLI
+  const merged = merge(
+    defaults(cli.value.cwd),
+    envConfig,
+    file.value,
+    cli.value.overrides,
+  );
+
+  // 5. Validate with Zod (single source of truth)
+  const result = ServerConfigSchema.safeParse(merged);
+  if (!result.success) {
+    const errors = result.error.issues
+      .map(i => `  - ${i.path.join('.')}: ${i.message}`)
+      .join('\n');
+    return {
+      ok: false,
+      error: `Invalid server configuration:\n${errors}\n\nProvide via --config, CLI flags, or environment variables.`,
+    };
+  }
+
+  return {ok: true, value: result.data};
+}
+
+interface CliResult {
+  configPath?: string;
+  cwd: string;
+  overrides: PartialConfig;
+}
+
+function parseCli(argv: string[]): ConfigResult<CliResult> {
+  const program = new Command();
+
+  try {
+    program
+      .name('browseros-server')
+      .description('BrowserOS Unified Server - MCP + Agent')
+      .version(version)
+      .option('--config <path>', 'Path to JSON configuration file')
+      .option(
+        '--cdp-port <port>',
+        'CDP WebSocket port (optional)',
+        parsePortArg,
+      )
+      .option('--http-mcp-port <port>', 'MCP HTTP server port', parsePortArg)
+      .option('--agent-port <port>', 'Agent communication port', parsePortArg)
+      .option(
+        '--extension-port <port>',
+        'Extension WebSocket port',
+        parsePortArg,
+      )
+      .option('--resources-dir <path>', 'Resources directory path')
+      .option(
+        '--execution-dir <path>',
+        'Execution directory for logs and configs',
+      )
+      .option(
+        '--allow-remote-in-mcp',
+        'Allow non-localhost MCP connections',
+        false,
+      )
+      .option(
+        '--disable-mcp-server',
+        '[DEPRECATED] No-op, kept for backwards compatibility',
+      )
+      .exitOverride()
+      .parse(argv);
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    return {ok: false, error: message};
+  }
+
+  const opts = program.opts();
+
+  if (opts.disableMcpServer) {
+    console.warn(
+      'Warning: --disable-mcp-server is deprecated and has no effect',
+    );
+  }
+
+  const cwd = process.cwd();
+
+  return {
+    ok: true,
+    value: {
+      configPath: opts.config,
+      cwd,
+      overrides: filterUndefined({
+        cdpPort: opts.cdpPort,
+        httpMcpPort: opts.httpMcpPort,
+        agentPort: opts.agentPort,
+        extensionPort: opts.extensionPort,
+        resourcesDir: opts.resourcesDir
+          ? resolvePath(opts.resourcesDir, cwd)
+          : undefined,
+        executionDir: opts.executionDir
+          ? resolvePath(opts.executionDir, cwd)
+          : undefined,
+        mcpAllowRemote: opts.allowRemoteInMcp || undefined,
+      }),
+    },
   };
 }
 
-/**
- * Load and parse a JSON configuration file.
- * Relative paths in the config are resolved relative to the config file's directory.
- */
-export function loadConfig(configPath: string): PartialServerConfig {
-  const absoluteConfigPath = path.isAbsolute(configPath)
-    ? configPath
-    : path.resolve(process.cwd(), configPath);
+function parsePortArg(value: string): number {
+  const port = parseInt(value, 10);
+  if (isNaN(port)) {
+    throw new InvalidArgumentError('Not a valid port number');
+  }
+  return port;
+}
 
-  if (!fs.existsSync(absoluteConfigPath)) {
-    throw new Error(`Config file not found: ${absoluteConfigPath}`);
+function loadConfigFile(explicitPath?: string): ConfigResult<PartialConfig> {
+  if (!explicitPath) {
+    return {ok: true, value: {}};
   }
 
-  const configDir = path.dirname(absoluteConfigPath);
-  const content = fs.readFileSync(absoluteConfigPath, 'utf-8');
+  const absPath = path.isAbsolute(explicitPath)
+    ? explicitPath
+    : path.resolve(process.cwd(), explicitPath);
 
-  let parsed: JsonConfig;
+  if (!fs.existsSync(absPath)) {
+    return {ok: false, error: `Config file not found: ${absPath}`};
+  }
+
   try {
-    parsed = JSON.parse(content) as JsonConfig;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to parse JSON config: ${message}`);
+    const content = fs.readFileSync(absPath, 'utf-8');
+    const cfg = JSON.parse(content);
+    const configDir = path.dirname(absPath);
+
+    return {
+      ok: true,
+      value: filterUndefined({
+        cdpPort: cfg.ports?.cdp,
+        httpMcpPort: cfg.ports?.http_mcp,
+        agentPort: cfg.ports?.agent,
+        extensionPort: cfg.ports?.extension,
+        resourcesDir: resolvePathIfString(
+          cfg.directories?.resources,
+          configDir,
+        ),
+        executionDir: resolvePathIfString(
+          cfg.directories?.execution,
+          configDir,
+        ),
+        mcpAllowRemote:
+          cfg.flags?.allow_remote_in_mcp === true ? true : undefined,
+        instanceClientId:
+          typeof cfg.instance?.client_id === 'string'
+            ? cfg.instance.client_id
+            : undefined,
+        instanceInstallId:
+          typeof cfg.instance?.install_id === 'string'
+            ? cfg.instance.install_id
+            : undefined,
+        instanceBrowserosVersion:
+          typeof cfg.instance?.browseros_version === 'string'
+            ? cfg.instance.browseros_version
+            : undefined,
+        instanceChromiumVersion:
+          typeof cfg.instance?.chromium_version === 'string'
+            ? cfg.instance.chromium_version
+            : undefined,
+      }),
+    };
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    return {ok: false, error: `Config file error: ${message}`};
   }
+}
 
-  const result: PartialServerConfig = {};
+function loadEnv(env: NodeJS.ProcessEnv): PartialConfig {
+  return filterUndefined({
+    cdpPort: env.CDP_PORT ? safeParseInt(env.CDP_PORT) : undefined,
+    httpMcpPort: env.HTTP_MCP_PORT
+      ? safeParseInt(env.HTTP_MCP_PORT)
+      : undefined,
+    agentPort: env.AGENT_PORT ? safeParseInt(env.AGENT_PORT) : undefined,
+    extensionPort: env.EXTENSION_PORT
+      ? safeParseInt(env.EXTENSION_PORT)
+      : undefined,
+    resourcesDir: env.RESOURCES_DIR,
+    executionDir: env.EXECUTION_DIR,
+  });
+}
 
-  if (parsed.ports) {
-    if (parsed.ports.cdp !== undefined) {
-      result.cdpPort = validatePort(parsed.ports.cdp, 'ports.cdp');
-    }
-    if (parsed.ports.http_mcp !== undefined) {
-      result.httpMcpPort = validatePort(
-        parsed.ports.http_mcp,
-        'ports.http_mcp',
-      );
-    }
-    if (parsed.ports.agent !== undefined) {
-      result.agentPort = validatePort(parsed.ports.agent, 'ports.agent');
-    }
-    if (parsed.ports.extension !== undefined) {
-      result.extensionPort = validatePort(
-        parsed.ports.extension,
-        'ports.extension',
-      );
-    }
-  }
+function safeParseInt(value: string): number | undefined {
+  const num = parseInt(value, 10);
+  return isNaN(num) ? undefined : num;
+}
 
-  if (parsed.directories) {
-    if (parsed.directories.resources !== undefined) {
-      result.resourcesDir = resolvePath(
-        parsed.directories.resources,
-        configDir,
-      );
-    }
-    if (parsed.directories.execution !== undefined) {
-      result.executionDir = resolvePath(
-        parsed.directories.execution,
-        configDir,
-      );
-    }
-  }
+function defaults(cwd: string): PartialConfig {
+  return {
+    cdpPort: null,
+    resourcesDir: cwd,
+    executionDir: cwd,
+    mcpAllowRemote: false,
+  };
+}
 
-  if (parsed.flags) {
-    if (parsed.flags.allow_remote_in_mcp !== undefined) {
-      if (typeof parsed.flags.allow_remote_in_mcp !== 'boolean') {
-        throw new Error(
-          `Invalid config: flags.allow_remote_in_mcp must be a boolean`,
-        );
+function merge(...configs: PartialConfig[]): PartialConfig {
+  const result: PartialConfig = {};
+  for (const config of configs) {
+    for (const [key, value] of Object.entries(config)) {
+      if (value !== undefined) {
+        (result as Record<string, unknown>)[key] = value;
       }
-      result.mcpAllowRemote = parsed.flags.allow_remote_in_mcp;
-    }
-  }
-
-  if (parsed.instance) {
-    if (parsed.instance.client_id) {
-      if (typeof parsed.instance.client_id !== 'string') {
-        throw new Error(`Invalid config: instance.client_id must be a string`);
-      }
-      result.instanceClientId = parsed.instance.client_id;
-    }
-    if (parsed.instance.install_id) {
-      if (typeof parsed.instance.install_id !== 'string') {
-        throw new Error(`Invalid config: instance.install_id must be a string`);
-      }
-      result.instanceInstallId = parsed.instance.install_id;
-    }
-    if (parsed.instance.browseros_version) {
-      if (typeof parsed.instance.browseros_version !== 'string') {
-        throw new Error(
-          `Invalid config: instance.browseros_version must be a string`,
-        );
-      }
-      result.instanceBrowserosVersion = parsed.instance.browseros_version;
-    }
-    if (parsed.instance.chromium_version) {
-      if (typeof parsed.instance.chromium_version !== 'string') {
-        throw new Error(
-          `Invalid config: instance.chromium_version must be a string`,
-        );
-      }
-      result.instanceChromiumVersion = parsed.instance.chromium_version;
     }
   }
-
   return result;
 }
 
-function validatePort(value: unknown, field: string): number {
-  if (typeof value !== 'number' || !Number.isInteger(value)) {
-    throw new Error(`Invalid config: ${field} must be an integer`);
-  }
-  if (value < 1 || value > 65535) {
-    throw new Error(`Invalid config: ${field} must be between 1 and 65535`);
-  }
-  return value;
+function filterUndefined<T extends Record<string, unknown>>(
+  obj: T,
+): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, v]) => v !== undefined),
+  ) as Partial<T>;
 }
 
-function resolvePath(target: string, configDir: string): string {
-  return path.isAbsolute(target) ? target : path.resolve(configDir, target);
+function resolvePath(target: string, baseDir: string): string {
+  return path.isAbsolute(target) ? target : path.resolve(baseDir, target);
+}
+
+function resolvePathIfString(
+  val: unknown,
+  baseDir: string,
+): string | undefined {
+  if (typeof val !== 'string') return undefined;
+  return resolvePath(val, baseDir);
 }

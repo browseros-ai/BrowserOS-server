@@ -9,6 +9,7 @@
         "core-js": "3.45.1",
         "debug": "4.4.3",
         "hono": "^4.10.6",
+        "lilconfig": "^3.1.3",
         "mitt": "^3.0.1",
         "proxy-agent": "^6.5.0",
         "puppeteer-core": "24.23.0",
@@ -1096,7 +1097,7 @@
 
     "chrome-devtools-frontend": ["chrome-devtools-frontend@1.0.1524741", "", {}, "sha512-F2K56RgHeF+8JvQIcIm6GyWNEOqql0eeKwIXLziS//LPBy7/7I6zCko/poRU07U3xlIajhjkZO3dSuimn3fg8Q=="],
 
-    "chrome-devtools-mcp": ["chrome-devtools-mcp@0.12.0", "", { "bin": { "chrome-devtools-mcp": "build/src/index.js" } }, "sha512-6Giw3qYmFBqpM8+iPy/o20M4ZCfV1kxjpaFKaCfFnUskxaLWa1yDrEwI/+oImUEaRpHQy1xHddfKvSzNSZ6LSA=="],
+    "chrome-devtools-mcp": ["chrome-devtools-mcp@0.12.1", "", { "bin": { "chrome-devtools-mcp": "build/src/index.js" } }, "sha512-QREfGxJVVlBrjKdyis9px6UHyXix+Rre9nCkqX7CY7GsU8c6azOwwV8inQB8E3h2/QGqi4sCSF8fmjfAvmE07Q=="],
 
     "chrome-trace-event": ["chrome-trace-event@1.0.4", "", {}, "sha512-rNjApaLzuwaOTjCiT8lSDdGN1APCiqkChLMJxJPWLunPAt5fy8xgU9/jNOchV84wfIxrA0lRQB7oCT8jrn/wrQ=="],
 

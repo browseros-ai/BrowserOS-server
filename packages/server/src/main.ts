@@ -29,10 +29,17 @@ import {
 } from '@browseros/tools';
 import {allKlavisTools} from '@browseros/tools/klavis';
 
-import {parseArguments} from './args.js';
+import {loadServerConfig, type ServerConfig} from './config.js';
 
 const version = readVersion();
-const config = parseArguments();
+const configResult = loadServerConfig();
+
+if (!configResult.ok) {
+  console.error(configResult.error);
+  process.exit(1);
+}
+
+const config: ServerConfig = configResult.value;
 
 configureLogDirectory(config.executionDir);
 
@@ -155,7 +162,7 @@ function mergeTools(
 }
 
 function startMcpServer(params: {
-  config: ReturnType<typeof parseArguments>;
+  config: ServerConfig;
   version: string;
   tools: Array<ToolDefinition<any, any, any>>;
   cdpContext: McpContext | null;
@@ -189,7 +196,7 @@ function startMcpServer(params: {
   return mcpServer;
 }
 
-function startAgentServer(serverConfig: ReturnType<typeof parseArguments>): {
+function startAgentServer(serverConfig: ServerConfig): {
   server: any;
   config: any;
 } {
@@ -211,7 +218,7 @@ function startAgentServer(serverConfig: ReturnType<typeof parseArguments>): {
   return {server, config};
 }
 
-function logSummary(serverConfig: ReturnType<typeof parseArguments>) {
+function logSummary(serverConfig: ServerConfig) {
   logger.info('');
   logger.info('Services running:');
   logger.info(
