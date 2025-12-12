@@ -234,22 +234,30 @@ function createShutdownHandler(
   agentServer: {server: any; config: any},
   controllerBridge: ControllerBridge,
 ) {
-  return async () => {
+  return () => {
     logger.info('Shutting down server...');
 
-    await shutdownMcpServer(mcpServer, logger);
+    const forceExitTimeout = setTimeout(() => {
+      logger.warn('Graceful shutdown timed out, forcing exit');
+      process.exit(1);
+    }, 5000);
 
-    logger.info('Stopping agent server...');
-    agentServer.server.stop();
-
-    logger.info('Closing ControllerBridge...');
-    await controllerBridge.close();
-
-    logger.info('Flushing metrics...');
-    await metrics.shutdown();
-
-    logger.info('Server shutdown complete');
-    process.exit(0);
+    Promise.all([
+      shutdownMcpServer(mcpServer, logger),
+      Promise.resolve(agentServer.server.stop()),
+      controllerBridge.close(),
+      metrics.shutdown(),
+    ])
+      .then(() => {
+        clearTimeout(forceExitTimeout);
+        logger.info('Server shutdown complete');
+        process.exit(0);
+      })
+      .catch(err => {
+        clearTimeout(forceExitTimeout);
+        logger.error('Shutdown error:', err);
+        process.exit(1);
+      });
   };
 }
 
