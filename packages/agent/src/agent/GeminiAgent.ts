@@ -20,6 +20,7 @@ import type {Part} from '@google/genai';
 
 import {AgentExecutionError} from '../errors.js';
 import type {BrowserContext} from '../http/types.js';
+import {StrataManager} from '../strata/index.js';
 
 import {
   VercelAIContentGenerator,
@@ -114,6 +115,36 @@ export class GeminiAgent {
       compressesAtTokens: Math.floor(DEFAULT_COMPRESSION_RATIO * contextWindow),
     });
 
+    // Build MCP servers config
+    const mcpServers: Record<string, MCPServerConfig> = {};
+
+    // Add BrowserOS MCP server if configured
+    if (resolvedConfig.mcpServerUrl) {
+      mcpServers['browseros-mcp'] = createHttpMcpServerConfig({
+        httpUrl: resolvedConfig.mcpServerUrl,
+        headers: {Accept: 'application/json, text/event-stream'},
+        trust: true,
+      });
+    }
+
+    // Add Klavis Strata MCP server if userId is provided
+    if (resolvedConfig.klavisUserId) {
+      const strataManager = new StrataManager();
+      const strataUrl = await strataManager.getOrCreateStrataUrl(
+        resolvedConfig.klavisUserId,
+      );
+      if (strataUrl) {
+        mcpServers['klavis-strata'] = createHttpMcpServerConfig({
+          httpUrl: strataUrl,
+          trust: true,
+        });
+        logger.info('Added Klavis Strata MCP server', {
+          userId: resolvedConfig.klavisUserId,
+        });
+      }
+    }
+    logger.debug('MCP servers config', { mcpServers });
+
     const geminiConfig = new GeminiConfig({
       sessionId: resolvedConfig.conversationId,
       targetDir: tempDir,
@@ -122,15 +153,7 @@ export class GeminiAgent {
       model: modelString,
       excludeTools: ['run_shell_command', 'write_file', 'replace'],
       compressionThreshold: compressionThreshold,
-      mcpServers: resolvedConfig.mcpServerUrl
-        ? {
-            'browseros-mcp': createHttpMcpServerConfig({
-              httpUrl: resolvedConfig.mcpServerUrl,
-              headers: {Accept: 'application/json, text/event-stream'},
-              trust: true,
-            }),
-          }
-        : undefined,
+      mcpServers: Object.keys(mcpServers).length > 0 ? mcpServers : undefined,
     });
 
     await geminiConfig.initialize();

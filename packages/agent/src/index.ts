@@ -20,6 +20,8 @@ export type {AgentConfig} from './agent/index.js';
 
 export {SessionManager} from './session/index.js';
 
+export {StrataManager} from './strata/index.js';
+
 export {
   HttpAgentError,
   ValidationError,
