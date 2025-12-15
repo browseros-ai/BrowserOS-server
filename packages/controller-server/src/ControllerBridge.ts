@@ -116,7 +116,7 @@ export class ControllerBridge {
     timeoutMs = 30000,
   ): Promise<unknown> {
     if (!this.isConnected()) {
-      throw new Error('Extension not connected');
+      throw new Error('BrowserOS helper service not connected');
     }
 
     // Route by windowId if available, otherwise use primary client
@@ -142,7 +142,7 @@ export class ControllerBridge {
 
     const client = targetClientId ? this.clients.get(targetClientId) : null;
     if (!client) {
-      throw new Error('Extension not connected');
+      throw new Error('BrowserOS helper service not connected');
     }
 
     const id = `${Date.now()}-${++this.requestCounter}`;
