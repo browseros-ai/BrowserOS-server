@@ -22,16 +22,19 @@ export const searchHistory = defineTool<z.ZodRawShape, Context, Response>({
       .number()
       .optional()
       .describe('Maximum number of results to return (default: 100)'),
+    windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {query, maxResults} = request.params as {
+    const {query, maxResults, windowId} = request.params as {
       query: string;
       maxResults?: number;
+      windowId?: number;
     };
 
     const result = await context.executeAction('searchHistory', {
       query,
       maxResults,
+      windowId,
     });
     const data = result as {
       items: Array<{
@@ -77,11 +80,18 @@ export const getRecentHistory = defineTool<z.ZodRawShape, Context, Response>({
       .number()
       .optional()
       .describe('Number of recent items to retrieve (default: 20)'),
+    windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {count} = request.params as {count?: number};
+    const {count, windowId} = request.params as {
+      count?: number;
+      windowId?: number;
+    };
 
-    const result = await context.executeAction('getRecentHistory', {count});
+    const result = await context.executeAction('getRecentHistory', {
+      count,
+      windowId,
+    });
     const data = result as {
       items: Array<{
         id: string;

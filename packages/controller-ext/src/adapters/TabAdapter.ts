@@ -20,17 +20,23 @@ export class TabAdapter {
   /**
    * Get the currently active tab
    *
-   * @returns Active tab in current window
+   * @param windowId - Optional window ID. If provided, gets active tab in that window. Otherwise uses current window.
+   * @returns Active tab in specified or current window
    * @throws Error if no active tab found
    */
-  async getActiveTab(): Promise<chrome.tabs.Tab> {
-    logger.debug('[TabAdapter] Getting active tab');
+  async getActiveTab(windowId?: number): Promise<chrome.tabs.Tab> {
+    logger.debug(
+      `[TabAdapter] Getting active tab${windowId !== undefined ? ` in window ${windowId}` : ''}`,
+    );
 
     try {
-      const tabs = await chrome.tabs.query({
-        active: true,
-        currentWindow: true,
-      });
+      const query: chrome.tabs.QueryInfo = {active: true};
+      if (windowId !== undefined) {
+        query.windowId = windowId;
+      } else {
+        query.currentWindow = true;
+      }
+      const tabs = await chrome.tabs.query(query);
 
       if (tabs.length === 0) {
         throw new Error('No active tab found');
@@ -139,14 +145,23 @@ export class TabAdapter {
   /**
    * Get current window's tabs
    *
-   * @returns Array of tabs in current window
+   * @param windowId - Optional window ID. If provided, gets tabs in that window. Otherwise uses current window.
+   * @returns Array of tabs in specified or current window
    */
-  async getCurrentWindowTabs(): Promise<chrome.tabs.Tab[]> {
-    logger.debug('[TabAdapter] Getting current window tabs');
+  async getCurrentWindowTabs(windowId?: number): Promise<chrome.tabs.Tab[]> {
+    logger.debug(
+      `[TabAdapter] Getting tabs in ${windowId !== undefined ? `window ${windowId}` : 'current window'}`,
+    );
 
     try {
-      const tabs = await chrome.tabs.query({currentWindow: true});
-      logger.debug(`[TabAdapter] Found ${tabs.length} tabs in current window`);
+      const query: chrome.tabs.QueryInfo = {};
+      if (windowId !== undefined) {
+        query.windowId = windowId;
+      } else {
+        query.currentWindow = true;
+      }
+      const tabs = await chrome.tabs.query(query);
+      logger.debug(`[TabAdapter] Found ${tabs.length} tabs`);
       return tabs;
     } catch (error) {
       const errorMessage =
@@ -163,16 +178,28 @@ export class TabAdapter {
    *
    * @param url - URL to open (optional, defaults to new tab page)
    * @param active - Whether to make the new tab active (default: true)
+   * @param windowId - Optional window ID to open tab in. If not provided, opens in current window.
    * @returns Newly created tab
    */
-  async openTab(url?: string, active = true): Promise<chrome.tabs.Tab> {
+  async openTab(
+    url?: string,
+    active = true,
+    windowId?: number,
+  ): Promise<chrome.tabs.Tab> {
     const targetUrl = url || 'chrome://newtab/';
     logger.debug(
-      `[TabAdapter] Opening new tab: ${targetUrl} (active: ${active})`,
+      `[TabAdapter] Opening new tab: ${targetUrl} (active: ${active}${windowId !== undefined ? `, window: ${windowId}` : ''})`,
     );
 
     try {
-      const tab = await chrome.tabs.create({url: targetUrl, active});
+      const createProps: chrome.tabs.CreateProperties = {
+        url: targetUrl,
+        active,
+      };
+      if (windowId !== undefined) {
+        createProps.windowId = windowId;
+      }
+      const tab = await chrome.tabs.create(createProps);
 
       if (!tab.id) {
         throw new Error('Created tab has no ID');

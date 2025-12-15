@@ -86,10 +86,10 @@ export class GetTabsAction extends ActionHandler<GetTabsInput, GetTabsOutput> {
 
     // Apply filters based on input
     if (input.windowId) {
-      // Get tabs in specific window
+      // Get tabs in specific window (windowId takes precedence)
       tabs = await this.tabAdapter.getTabsInWindow(input.windowId);
     } else if (input.currentWindowOnly) {
-      // Get tabs in current window
+      // Get tabs in current window (windowId may be injected by agent for multi-window support)
       tabs = await this.tabAdapter.getCurrentWindowTabs();
     } else if (input.url || input.title) {
       // Use query API for URL/title filtering

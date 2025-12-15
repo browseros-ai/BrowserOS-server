@@ -34,15 +34,22 @@ export const getInteractiveElements = defineTool<
       .boolean()
       .optional()
       .describe('Use simplified format (default: true)'),
+    windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {tabId, simplified = true} = request.params as {
+    const {
+      tabId,
+      simplified = true,
+      windowId,
+    } = request.params as {
       tabId: number;
       simplified?: boolean;
+      windowId?: number;
     };
 
     const result = await context.executeAction('getInteractiveSnapshot', {
       tabId,
+      windowId,
     });
     const snapshot = result as {
       snapshotId: number;
@@ -127,11 +134,16 @@ export const clickElement = defineTool<z.ZodRawShape, Context, Response>({
     nodeId: z.coerce
       .number()
       .describe('Node ID from browser_get_interactive_elements'),
+    windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {tabId, nodeId} = request.params as {tabId: number; nodeId: number};
+    const {tabId, nodeId, windowId} = request.params as {
+      tabId: number;
+      nodeId: number;
+      windowId?: number;
+    };
 
-    await context.executeAction('click', {tabId, nodeId});
+    await context.executeAction('click', {tabId, nodeId, windowId});
 
     response.appendResponseLine(`Clicked element ${nodeId} in tab ${tabId}`);
   },
@@ -148,15 +160,17 @@ export const typeText = defineTool<z.ZodRawShape, Context, Response>({
     tabId: z.coerce.number().describe('Tab ID containing the element'),
     nodeId: z.coerce.number().describe('Node ID of the input element'),
     text: z.string().describe('Text to type into the element'),
+    windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {tabId, nodeId, text} = request.params as {
+    const {tabId, nodeId, text, windowId} = request.params as {
       tabId: number;
       nodeId: number;
       text: string;
+      windowId?: number;
     };
 
-    await context.executeAction('inputText', {tabId, nodeId, text});
+    await context.executeAction('inputText', {tabId, nodeId, text, windowId});
 
     response.appendResponseLine(
       `Typed text into element ${nodeId} in tab ${tabId}`,
@@ -174,11 +188,16 @@ export const clearInput = defineTool<z.ZodRawShape, Context, Response>({
   schema: {
     tabId: z.coerce.number().describe('Tab ID containing the element'),
     nodeId: z.coerce.number().describe('Node ID of the input element'),
+    windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {tabId, nodeId} = request.params as {tabId: number; nodeId: number};
+    const {tabId, nodeId, windowId} = request.params as {
+      tabId: number;
+      nodeId: number;
+      windowId?: number;
+    };
 
-    await context.executeAction('clear', {tabId, nodeId});
+    await context.executeAction('clear', {tabId, nodeId, windowId});
 
     response.appendResponseLine(`Cleared element ${nodeId} in tab ${tabId}`);
   },
@@ -194,11 +213,16 @@ export const scrollToElement = defineTool<z.ZodRawShape, Context, Response>({
   schema: {
     tabId: z.coerce.number().describe('Tab ID containing the element'),
     nodeId: z.coerce.number().describe('Node ID of the element to scroll to'),
+    windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {tabId, nodeId} = request.params as {tabId: number; nodeId: number};
+    const {tabId, nodeId, windowId} = request.params as {
+      tabId: number;
+      nodeId: number;
+      windowId?: number;
+    };
 
-    await context.executeAction('scrollToNode', {tabId, nodeId});
+    await context.executeAction('scrollToNode', {tabId, nodeId, windowId});
 
     response.appendResponseLine(
       `Scrolled to element ${nodeId} in tab ${tabId}`,

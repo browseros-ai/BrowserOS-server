@@ -18,6 +18,11 @@ const NavigateInputSchema = z.object({
     .positive()
     .optional()
     .describe('Tab ID to navigate (optional, defaults to active tab)'),
+  windowId: z
+    .number()
+    .int()
+    .optional()
+    .describe('Window ID for getting active tab when tabId not provided'),
 });
 
 // Output schema
@@ -62,11 +67,11 @@ export class NavigateAction extends ActionHandler<
   private tabAdapter = new TabAdapter();
 
   async execute(input: NavigateInput): Promise<NavigateOutput> {
-    // If no tabId provided, use the active tab
+    // If no tabId provided, use the active tab (in specified window if provided)
     let targetTabId = input.tabId;
 
     if (!targetTabId) {
-      const activeTab = await this.tabAdapter.getActiveTab();
+      const activeTab = await this.tabAdapter.getActiveTab(input.windowId);
       targetTabId = activeTab.id!;
     }
 

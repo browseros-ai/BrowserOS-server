@@ -167,6 +167,29 @@ chrome.windows.onFocusChanged.addListener(windowId => {
   });
 });
 
+chrome.windows.onCreated.addListener(window => {
+  if (window.id === undefined) {
+    return;
+  }
+
+  notifyWindowCreated(window.id).catch(error => {
+    const message =
+      error instanceof Error ? error.message : JSON.stringify(error);
+    logger.warn('Failed to notify window created', {
+      windowId: window.id,
+      error: message,
+    });
+  });
+});
+
+chrome.windows.onRemoved.addListener(windowId => {
+  notifyWindowRemoved(windowId).catch(error => {
+    const message =
+      error instanceof Error ? error.message : JSON.stringify(error);
+    logger.warn('Failed to notify window removed', {windowId, error: message});
+  });
+});
+
 chrome.runtime.onSuspend?.addListener(() => {
   logger.info('Extension suspending');
   void shutdownController('runtime.onSuspend');
@@ -175,4 +198,14 @@ chrome.runtime.onSuspend?.addListener(() => {
 async function notifyWindowFocused(windowId: number): Promise<void> {
   const controller = await getOrCreateController();
   controller.notifyWindowFocused(windowId);
+}
+
+async function notifyWindowCreated(windowId: number): Promise<void> {
+  const controller = await getOrCreateController();
+  controller.notifyWindowCreated(windowId);
+}
+
+async function notifyWindowRemoved(windowId: number): Promise<void> {
+  const controller = await getOrCreateController();
+  controller.notifyWindowRemoved(windowId);
 }
