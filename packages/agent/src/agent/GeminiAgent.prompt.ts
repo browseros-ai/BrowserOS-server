@@ -114,29 +114,51 @@ Use when built-in tools cannot accomplish the task.
 - \`get_network_request(url)\` - Request details
 
 ## Subagent (Task Tool)
-- \`Task(description, prompt, subagent_type?)\` - Spawn a subagent for complex, multi-step tasks
+- \`Task(description, prompt, subagent_type)\` - Spawn a subagent for complex, multi-step tasks
 
-**Use when**:
+### Subagent Types - Choose the Right One
+
+**\`browser\`** - Web automation specialist (20 turns)
+- Use for: Navigation, clicking, form filling, scraping, screenshots
+- Tools: All browser_* tools + console/network debugging
+- Example: Navigate to a site and extract product prices
+
+**\`klavis_mcp\`** - External service integration (15 turns)
+- Use for: Gmail, Slack, Calendar, GitHub, Notion operations
+- Tools: Strata discovery and action execution
+- Example: Send an email, create a calendar event, post to Slack
+
+**\`default\`** - Full capabilities fallback (20 turns)
+- Use for: Tasks needing BOTH browser AND integrations
+- Tools: All available tools
+- Example: Research a topic online then post findings to Slack
+
+### When to Use Subagents
 - Task requires multiple steps or extensive exploration
 - Task is independent and benefits from isolated context
 - You want to preserve main conversation context
 
-**Parameters**:
-- \`description\` (required): Short 3-5 word task description
-- \`prompt\` (required): Detailed instructions for the subagent
-- \`subagent_type\` (optional): "default" (only option currently)
-
-**Behavior**:
-- Subagent executes with fresh context (won't see main conversation history)
-- Has access to all browser and integration tools
-- Maximum 20 turns to complete
-- Returns a summary of findings/actions
-
-**Example**:
+### Examples
 \`\`\`
+// Browser task - use "browser" type
 Task(
-  description: "Research authentication flow",
-  prompt: "Navigate to the login page and document the full authentication process including form fields, OAuth options, and error handling."
+  description: "Find iPhone price",
+  prompt: "Navigate to amazon.com and find the current price of iPhone 15 Pro",
+  subagent_type: "browser"
+)
+
+// Integration task - use "klavis_mcp" type
+Task(
+  description: "Send meeting summary",
+  prompt: "Get today's calendar events and send a summary email to team@example.com",
+  subagent_type: "klavis_mcp"
+)
+
+// Mixed task - use "default" type
+Task(
+  description: "Research and share",
+  prompt: "Find the latest AI news from techcrunch.com and post highlights to Slack #news channel",
+  subagent_type: "default"
 )
 \`\`\`
 

@@ -20,4 +20,5 @@ export type AgentConfig = z.infer<typeof AgentConfigSchema>;
 export interface GeminiAgentOptions {
   isSubAgent?: boolean;
   maxTurns?: number;
+  subagentType?: 'default' | 'browser' | 'klavis_mcp'; // Controls which MCP servers to connect
 }

@@ -138,11 +138,17 @@ export class GeminiAgent {
       compressesAtTokens: Math.floor(DEFAULT_COMPRESSION_RATIO * contextWindow),
     });
 
-    // Build MCP servers config
+    // Build MCP servers config based on subagent type
+    // - browser: only browseros-mcp (browser tools)
+    // - klavis_mcp: only klavis-strata (external services)
+    // - default/undefined: both servers
     const mcpServers: Record<string, MCPServerConfig> = {};
+    const subagentType = options.subagentType ?? 'default';
+    const includeBrowserMcp = subagentType === 'default' || subagentType === 'browser';
+    const includeKlavisMcp = subagentType === 'default' || subagentType === 'klavis_mcp';
 
-    // Add BrowserOS MCP server if configured
-    if (resolvedConfig.mcpServerUrl) {
+    // Add BrowserOS MCP server if configured and type allows
+    if (resolvedConfig.mcpServerUrl && includeBrowserMcp) {
       mcpServers['browseros-mcp'] = createHttpMcpServerConfig({
         httpUrl: resolvedConfig.mcpServerUrl,
         headers: {Accept: 'application/json, text/event-stream'},
@@ -150,8 +156,8 @@ export class GeminiAgent {
       });
     }
 
-    // Add Klavis Strata MCP server if userId is provided
-    if (resolvedConfig.klavisUserId) {
+    // Add Klavis Strata MCP server if userId is provided and type allows
+    if (resolvedConfig.klavisUserId && includeKlavisMcp) {
       const strataManager = new StrataManager();
       const strataUrl = await strataManager.getOrCreateStrataUrl(
         resolvedConfig.klavisUserId,
@@ -166,7 +172,7 @@ export class GeminiAgent {
         });
       }
     }
-    logger.debug('MCP servers config', { mcpServers });
+    logger.debug('MCP servers config', {mcpServers, subagentType});
 
     // Exclude Task tool for subagents to prevent recursion
     const excludeTools = ['run_shell_command', 'write_file', 'replace'];
