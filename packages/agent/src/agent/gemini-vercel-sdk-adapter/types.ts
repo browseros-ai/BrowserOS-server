@@ -213,6 +213,7 @@ export enum AIProvider {
   LMSTUDIO = 'lmstudio',
   BEDROCK = 'bedrock',
   BROWSEROS = 'browseros',
+  OPENAI_COMPATIBLE = 'openai-compatible',
 }
 
 /**

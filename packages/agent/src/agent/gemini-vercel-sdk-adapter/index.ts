@@ -279,6 +279,7 @@ export class VercelAIContentGenerator implements ContentGenerator {
         return createOpenAICompatible({
           name: 'lmstudio',
           baseURL: config.baseUrl,
+          ...(config.apiKey && {apiKey: config.apiKey}),
         });
 
       case AIProvider.OLLAMA:
@@ -288,6 +289,7 @@ export class VercelAIContentGenerator implements ContentGenerator {
         return createOpenAICompatible({
           name: 'ollama',
           baseURL: config.baseUrl,
+          ...(config.apiKey && {apiKey: config.apiKey}),
         });
 
       case AIProvider.BEDROCK:
@@ -311,6 +313,16 @@ export class VercelAIContentGenerator implements ContentGenerator {
           name: 'browseros',
           baseURL: config.baseUrl,
           apiKey: config.apiKey,
+        });
+
+      case AIProvider.OPENAI_COMPATIBLE:
+        if (!config.baseUrl) {
+          throw new Error('OpenAI-compatible provider requires baseUrl');
+        }
+        return createOpenAICompatible({
+          name: 'openai-compatible',
+          baseURL: config.baseUrl,
+          ...(config.apiKey && {apiKey: config.apiKey}),
         });
 
       default:
