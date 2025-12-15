@@ -199,9 +199,11 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
 
     logger.info(`${req.method} ${url.pathname}`);
 
-    // Handle CORS preflight for all endpoints
+    // Set CORS headers for all responses
+    setCorsHeaders(req, res);
+
+    // Handle CORS preflight
     if (req.method === 'OPTIONS') {
-      setCorsHeaders(req, res);
       res.writeHead(204);
       res.end();
       return;
@@ -228,8 +230,6 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
 
     // MCP endpoint
     if (url.pathname === '/mcp') {
-      setCorsHeaders(req, res);
-
       try {
         // Create a new transport for each request to prevent request ID collisions.
         // Different clients may use the same JSON-RPC request IDs, which would cause
