@@ -21,7 +21,7 @@ const COLORS = {
 const RESET = '\x1b[0m';
 const CONSOLE_META_CHAR_LIMIT = 100;
 
-class Logger {
+export class Logger {
   private level: LogLevel;
   private logFilePath?: string;
 

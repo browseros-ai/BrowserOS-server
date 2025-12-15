@@ -2,7 +2,7 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import type {logger} from '@browseros/common';
+import type {Logger} from '@browseros/common';
 import type {WebSocket} from 'ws';
 import {WebSocketServer} from 'ws';
 
@@ -31,11 +31,11 @@ export class ControllerBridge {
   private primaryClientId: string | null = null;
   private requestCounter = 0;
   private pendingRequests = new Map<string, PendingRequest>();
-  private logger: typeof logger;
+  private logger: Logger;
   // Window ownership: maps windowId to clientId for multi-profile routing
   private windowOwnership = new Map<number, string>();
 
-  constructor(port: number, logger: typeof logger) {
+  constructor(port: number, logger: Logger) {
     this.logger = logger;
 
     this.wss = new WebSocketServer({

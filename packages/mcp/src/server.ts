@@ -4,7 +4,7 @@
  */
 import http from 'node:http';
 
-import type {McpContext, Mutex, logger} from '@browseros/common';
+import type {McpContext, Mutex, Logger} from '@browseros/common';
 import {metrics} from '@browseros/common';
 import type {ToolDefinition} from '@browseros/tools';
 import {McpResponse} from '@browseros/tools';
@@ -23,7 +23,7 @@ export interface McpServerConfig {
   context: McpContext;
   controllerContext?: any;
   toolMutex: Mutex;
-  logger: typeof logger;
+  logger: Logger;
   allowRemote: boolean;
 }
 
@@ -297,7 +297,7 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
  */
 export async function shutdownMcpServer(
   server: http.Server,
-  logger: typeof logger,
+  logger: Logger,
 ): Promise<void> {
   return new Promise(resolve => {
     logger.info('Closing HTTP server');
