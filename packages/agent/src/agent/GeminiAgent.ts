@@ -230,6 +230,7 @@ export class GeminiAgent {
       conversationId: this.conversationId,
       message: message.substring(0, 100),
       historyLength: this.client.getHistory().length,
+      browserContextWindowId: browserContext?.windowId,
     });
 
     while (true) {
@@ -290,6 +291,22 @@ export class GeminiAgent {
           // Check abort before each tool execution
           if (abortSignal.aborted) {
             break;
+          }
+
+          // Inject windowId into ALL browser tools for multi-window/multi-profile routing
+          // The server uses windowId to route requests to the correct extension instance
+          if (
+            browserContext?.windowId &&
+            requestInfo.name.startsWith('browser_')
+          ) {
+            logger.debug('Injecting windowId into tool args', {
+              tool: requestInfo.name,
+              windowId: browserContext.windowId,
+            });
+            requestInfo.args = {
+              ...requestInfo.args,
+              windowId: browserContext.windowId,
+            };
           }
 
           try {

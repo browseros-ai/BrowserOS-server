@@ -76,6 +76,53 @@ export class BrowserOSController {
   async start(): Promise<void> {
     logger.info('Starting BrowserOS Controller...');
     await this.wsClient.connect();
+    // Report owned windows after connection is established
+    await this.reportOwnedWindows();
+  }
+
+  private async reportOwnedWindows(): Promise<void> {
+    try {
+      const windows = await chrome.windows.getAll();
+      const windowIds = windows
+        .map(w => w.id)
+        .filter((id): id is number => id !== undefined);
+
+      if (windowIds.length > 0) {
+        this.wsClient.send({type: 'register_windows', windowIds});
+        logger.info('Reported owned windows to server', {
+          windowCount: windowIds.length,
+          windowIds,
+        });
+      }
+    } catch (error) {
+      logger.warn('Failed to report owned windows', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  notifyWindowCreated(windowId: number): void {
+    try {
+      this.wsClient.send({type: 'window_created', windowId});
+      logger.debug('Sent window_created event', {windowId});
+    } catch (error) {
+      logger.warn('Failed to send window_created event', {
+        windowId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  notifyWindowRemoved(windowId: number): void {
+    try {
+      this.wsClient.send({type: 'window_removed', windowId});
+      logger.debug('Sent window_removed event', {windowId});
+    } catch (error) {
+      logger.warn('Failed to send window_removed event', {
+        windowId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   stop(): void {

@@ -21,6 +21,13 @@ const OpenTabInputSchema = z.object({
     .optional()
     .default(true)
     .describe('Whether to make the new tab active'),
+  windowId: z
+    .number()
+    .int()
+    .optional()
+    .describe(
+      'Window ID to open the tab in. If not provided, opens in current window.',
+    ),
 });
 
 // Output schema
@@ -65,7 +72,11 @@ export class OpenTabAction extends ActionHandler<OpenTabInput, OpenTabOutput> {
   private tabAdapter = new TabAdapter();
 
   async execute(input: OpenTabInput): Promise<OpenTabOutput> {
-    const tab = await this.tabAdapter.openTab(input.url, input.active ?? true);
+    const tab = await this.tabAdapter.openTab(
+      input.url,
+      input.active ?? true,
+      input.windowId,
+    );
 
     return {
       tabId: tab.id!,

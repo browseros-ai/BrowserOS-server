@@ -16,6 +16,7 @@ export const TabSchema = z.object({
 export type Tab = z.infer<typeof TabSchema>;
 
 export const BrowserContextSchema = z.object({
+  windowId: z.number().optional(),
   activeTab: TabSchema.optional(),
   selectedTabs: z.array(TabSchema).optional(),
   tabs: z.array(TabSchema).optional(),

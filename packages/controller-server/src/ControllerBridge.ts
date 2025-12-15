@@ -32,6 +32,8 @@ export class ControllerBridge {
   private requestCounter = 0;
   private pendingRequests = new Map<string, PendingRequest>();
   private logger: typeof logger;
+  // Window ownership: maps windowId to clientId for multi-profile routing
+  private windowOwnership = new Map<number, string>();
 
   constructor(port: number, logger: typeof logger) {
     this.logger = logger;
@@ -62,6 +64,19 @@ export class ControllerBridge {
           }
           if (parsed.type === 'focused') {
             this.handleFocusEvent(clientId, parsed.windowId);
+            return;
+          }
+          // Handle window registration messages
+          if (parsed.type === 'register_windows') {
+            this.handleRegisterWindows(clientId, parsed.windowIds);
+            return;
+          }
+          if (parsed.type === 'window_created') {
+            this.handleWindowCreated(clientId, parsed.windowId);
+            return;
+          }
+          if (parsed.type === 'window_removed') {
+            this.handleWindowRemoved(clientId, parsed.windowId);
             return;
           }
 
@@ -104,7 +119,28 @@ export class ControllerBridge {
       throw new Error('Extension not connected');
     }
 
-    const client = this.getPrimaryClient();
+    // Route by windowId if available, otherwise use primary client
+    const payloadObj = payload as Record<string, unknown> | null;
+    const windowId = payloadObj?.windowId as number | undefined;
+
+    let targetClientId = this.primaryClientId;
+    if (windowId !== undefined) {
+      const ownerClientId = this.windowOwnership.get(windowId);
+      if (ownerClientId && this.clients.has(ownerClientId)) {
+        targetClientId = ownerClientId;
+        this.logger.debug('Routing request by windowId', {
+          windowId,
+          targetClientId,
+        });
+      } else {
+        this.logger.warn('No owner found for windowId, using primary', {
+          windowId,
+          primaryClientId: this.primaryClientId,
+        });
+      }
+    }
+
+    const client = targetClientId ? this.clients.get(targetClientId) : null;
     if (!client) {
       throw new Error('Extension not connected');
     }
@@ -122,9 +158,7 @@ export class ControllerBridge {
       const request: ControllerRequest = {id, action, payload};
       try {
         const message = JSON.stringify(request);
-        this.logger.debug(
-          `Sending request to ${this.primaryClientId}: ${message}`,
-        );
+        this.logger.debug(`Sending request to ${targetClientId}: ${message}`);
         client.send(message);
       } catch (error) {
         clearTimeout(timeout);
@@ -207,6 +241,16 @@ export class ControllerBridge {
     const wasPrimary = this.primaryClientId === clientId;
     this.clients.delete(clientId);
 
+    // Clean up window ownership for disconnected client
+    for (const [windowId, owner] of this.windowOwnership.entries()) {
+      if (owner === clientId) {
+        this.windowOwnership.delete(windowId);
+      }
+    }
+    this.logger.debug('Cleaned up window ownership for disconnected client', {
+      clientId,
+    });
+
     if (wasPrimary) {
       this.primaryClientId = null;
 
@@ -234,6 +278,11 @@ export class ControllerBridge {
   }
 
   private handleFocusEvent(clientId: string, windowId?: number): void {
+    // Also register window ownership on focus (confirms ownership)
+    if (windowId !== undefined) {
+      this.windowOwnership.set(windowId, clientId);
+    }
+
     if (this.primaryClientId === clientId) {
       this.logger.debug('Focus event from current primary', {
         clientId,
@@ -249,5 +298,45 @@ export class ControllerBridge {
       previousPrimary,
       windowId,
     });
+  }
+
+  private handleRegisterWindows(clientId: string, windowIds: number[]): void {
+    if (!Array.isArray(windowIds)) {
+      this.logger.warn('Invalid register_windows message', {clientId});
+      return;
+    }
+
+    for (const windowId of windowIds) {
+      this.windowOwnership.set(windowId, clientId);
+    }
+
+    this.logger.info('Registered windows for client', {
+      clientId,
+      windowCount: windowIds.length,
+      windowIds,
+    });
+  }
+
+  private handleWindowCreated(clientId: string, windowId: number): void {
+    if (typeof windowId !== 'number') {
+      this.logger.warn('Invalid window_created message', {clientId, windowId});
+      return;
+    }
+
+    this.windowOwnership.set(windowId, clientId);
+    this.logger.debug('Window created and registered', {clientId, windowId});
+  }
+
+  private handleWindowRemoved(clientId: string, windowId: number): void {
+    if (typeof windowId !== 'number') {
+      this.logger.warn('Invalid window_removed message', {clientId, windowId});
+      return;
+    }
+
+    // Only remove if this client owns the window
+    if (this.windowOwnership.get(windowId) === clientId) {
+      this.windowOwnership.delete(windowId);
+      this.logger.debug('Window removed from registry', {clientId, windowId});
+    }
   }
 }

@@ -118,6 +118,7 @@ export function createHttpServer(config: HttpServerConfig) {
       conversationId: request.conversationId,
       provider: request.provider,
       model: request.model,
+      browserContext: request.browserContext,
     });
 
     c.header('Content-Type', 'text/event-stream');

@@ -22,9 +22,17 @@ export const navigate = defineTool<z.ZodRawShape, Context, Response>({
       .number()
       .optional()
       .describe('Tab ID to navigate (optional, defaults to active tab)'),
+    windowId: z
+      .number()
+      .optional()
+      .describe('Window ID (used when tabId not provided)'),
   },
   handler: async (request, response, context) => {
-    const params = request.params as {url: string; tabId?: number};
+    const params = request.params as {
+      url: string;
+      tabId?: number;
+      windowId?: number;
+    };
 
     const result = await context.executeAction('navigate', params);
     const data = result as {tabId: number; url: string; message: string};
