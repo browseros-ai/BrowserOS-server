@@ -126,7 +126,12 @@ function parseCli(argv: string[]): ConfigResult<CliResult> {
         '--disable-mcp-server',
         '[DEPRECATED] No-op, kept for backwards compatibility',
       )
-      .exitOverride()
+      .exitOverride(err => {
+        if (err.exitCode === 0) {
+          process.exit(0);
+        }
+        throw err;
+      })
       .parse(argv);
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
