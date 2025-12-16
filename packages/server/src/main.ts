@@ -4,6 +4,9 @@
  *
  * Main server orchestration
  */
+// Sentry import should happen before any other logic
+import './services/sentry/instrument';
+
 import fs from 'node:fs';
 import type http from 'node:http';
 import path from 'node:path';
