@@ -5,7 +5,7 @@
  * Main server orchestration
  */
 // Sentry import should happen before any other logic
-import '@browseros/common/sentry';
+import {Sentry} from '@browseros/common/sentry';
 
 import fs from 'node:fs';
 import type http from 'node:http';
@@ -53,6 +53,13 @@ if (
   config.instanceChromiumVersion
 ) {
   metrics.initialize({
+    client_id: config.instanceClientId,
+    install_id: config.instanceInstallId,
+    browseros_version: config.instanceBrowserosVersion,
+    chromium_version: config.instanceChromiumVersion,
+  });
+
+  Sentry.setContext('browseros', {
     client_id: config.instanceClientId,
     install_id: config.instanceInstallId,
     browseros_version: config.instanceBrowserosVersion,
