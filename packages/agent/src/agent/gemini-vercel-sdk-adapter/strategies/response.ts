@@ -10,12 +10,21 @@
  * Handles both streaming and non-streaming responses
  */
 
-import {GenerateContentResponse, FinishReason, Part, FunctionCall} from '@google/genai';
+import {Sentry} from '@browseros/common/sentry';
+import {
+  GenerateContentResponse,
+  FinishReason,
+  Part,
+  FunctionCall,
+} from '@google/genai';
 
 import type {ProviderAdapter} from '../adapters/index.js';
 import type {ProviderMetadata} from '../adapters/types.js';
 import type {VercelFinishReason, VercelUsage} from '../types.js';
-import {VercelGenerateTextResultSchema, VercelStreamChunkSchema} from '../types.js';
+import {
+  VercelGenerateTextResultSchema,
+  VercelStreamChunkSchema,
+} from '../types.js';
 import type {UIMessageStreamWriter} from '../ui-message-stream.js';
 
 import type {ToolConversionStrategy} from './tool.js';
@@ -122,6 +131,7 @@ export class ResponseConversionStrategy {
           typeof errorChunk.error === 'object'
             ? errorChunk.error?.message
             : errorChunk.error || 'Unknown error from LLM provider';
+        Sentry.captureException(new Error(errorMessage));
         if (uiStream) {
           await uiStream.writeError(errorMessage || 'Unknown error');
           await uiStream.finish('error');
@@ -273,7 +283,9 @@ export class ResponseConversionStrategy {
   /**
    * Map Vercel finish reasons to Gemini finish reasons
    */
-  private mapFinishReason(reason: VercelFinishReason | undefined): FinishReason {
+  private mapFinishReason(
+    reason: VercelFinishReason | undefined,
+  ): FinishReason {
     switch (reason) {
       case 'stop':
       case 'tool-calls':

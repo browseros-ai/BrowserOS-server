@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import {logger} from '@browseros/common';
+import {Sentry} from '@browseros/common/sentry';
 import {Hono} from 'hono';
 import type {Context, Next} from 'hono';
 import {cors} from 'hono/cors';
@@ -113,6 +114,14 @@ export function createHttpServer(config: HttpServerConfig) {
 
   app.post('/chat', validateRequest(ChatRequestSchema), async c => {
     const request = c.get('validatedBody') as ChatRequest;
+
+    const {provider, model, baseUrl} = request;
+
+    Sentry.setContext('request', {
+      provider,
+      model,
+      baseUrl,
+    });
 
     logger.info('Chat request received', {
       conversationId: request.conversationId,
