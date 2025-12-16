@@ -38,6 +38,7 @@ const version = readVersion();
 const configResult = loadServerConfig();
 
 if (!configResult.ok) {
+  Sentry.captureException(new Error(configResult.error));
   console.error(configResult.error);
   process.exit(1);
 }

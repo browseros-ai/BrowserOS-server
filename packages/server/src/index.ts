@@ -17,6 +17,7 @@ if (typeof Bun === 'undefined') {
 
 // Import polyfills first
 import '@browseros/common/polyfill';
+import {Sentry} from '@browseros/common/sentry';
 import {CommanderError} from 'commander';
 
 // Start the main server
@@ -25,6 +26,7 @@ import('./main.js').catch(error => {
     // Commander already printed its message (help, validation error, etc)
     process.exit(error.exitCode);
   }
+  Sentry.captureException(error);
   console.error('Failed to start server:', error);
   process.exit(1);
 });
