@@ -3,6 +3,7 @@
  * Copyright 2025 BrowserOS
  */
 import type {Logger} from '@browseros/common';
+import {Sentry} from '@browseros/common/sentry';
 import type {WebSocket} from 'ws';
 import {WebSocketServer} from 'ws';
 
@@ -102,6 +103,7 @@ export class ControllerBridge {
     });
 
     this.wss.on('error', (error: Error) => {
+      Sentry.captureException(error);
       this.logger.error(`WebSocket server error: ${error.message}`);
     });
   }

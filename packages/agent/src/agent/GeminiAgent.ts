@@ -8,6 +8,7 @@ import {
   fetchBrowserOSConfig,
   getLLMConfigFromProvider,
 } from '@browseros/common';
+import {Sentry} from '@browseros/common/sentry';
 import {
   Config as GeminiConfig,
   MCPServerConfig,
@@ -262,6 +263,7 @@ export class GeminiAgent {
           toolCallRequests.push(event.value as ToolCallRequestInfo);
         } else if (event.type === GeminiEventType.Error) {
           const errorValue = event.value as {error: Error};
+          Sentry.captureException(errorValue.error);
           throw new AgentExecutionError(
             'Agent execution failed',
             errorValue.error,

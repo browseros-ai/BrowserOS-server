@@ -6,6 +6,7 @@ import http from 'node:http';
 
 import type {McpContext, Mutex, Logger} from '@browseros/common';
 import {metrics} from '@browseros/common';
+import {Sentry} from '@browseros/common/sentry';
 import type {ToolDefinition} from '@browseros/tools';
 import {McpResponse} from '@browseros/tools';
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -250,6 +251,7 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
         // Let the SDK handle the request (it will parse body, validate, and respond)
         await transport.handleRequest(req, res);
       } catch (error) {
+        Sentry.captureException(error);
         logger.error(`Error handling MCP request: ${error}`);
         if (!res.headersSent) {
           res.writeHead(500, {'Content-Type': 'application/json'});
@@ -275,6 +277,7 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
 
   // Handle port binding errors
   httpServer.on('error', (error: NodeJS.ErrnoException) => {
+    Sentry.captureException(error);
     if (error.code === 'EADDRINUSE') {
       console.error(`Error: Port ${port} already in use`);
       process.exit(3);
