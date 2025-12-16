@@ -23,8 +23,7 @@
     "puppeteer-core": "24.23.0",
     "debug": "4.4.3",
     "core-js": "3.45.1",
-    "posthog-node": "^4.17.0",
-    "@sentry/bun": "^9.2.0"
+    "posthog-node": "^4.17.0"
   },
   "devDependencies": {
     "@types/debug": "^4.1.12",
