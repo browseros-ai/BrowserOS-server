@@ -4,7 +4,6 @@
  */
 
 import {logger} from './logger.js';
-import {telemetry} from './telemetry.js';
 
 export interface Provider {
   name: string;
@@ -64,10 +63,6 @@ export async function fetchBrowserOSConfig(
 
     return config;
   } catch (error) {
-    telemetry.captureException(error, {
-      context: 'fetchBrowserOSConfig',
-      configUrl,
-    });
     logger.error('❌ Failed to fetch BrowserOS config', {
       configUrl,
       error: error instanceof Error ? error.message : String(error),
