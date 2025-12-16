@@ -11,7 +11,10 @@ import fs from 'node:fs';
 import type http from 'node:http';
 import path from 'node:path';
 
-import {createHttpServer as createAgentHttpServer} from '@browseros/agent';
+import {
+  createHttpServer as createAgentHttpServer,
+  RateLimiter,
+} from '@browseros/agent';
 import {
   ensureBrowserConnected,
   McpContext,
@@ -19,6 +22,7 @@ import {
   logger,
   metrics,
   readVersion,
+  initializeDb,
 } from '@browseros/common';
 import {
   ControllerContext,
@@ -212,12 +216,27 @@ function startAgentServer(serverConfig: ServerConfig): {
 } {
   const mcpServerUrl = `http://127.0.0.1:${serverConfig.httpMcpPort}/mcp`;
 
+  // Initialize rate limiter if we have install_id and client_id
+  let rateLimiter: RateLimiter | undefined;
+  if (serverConfig.instanceInstallId && serverConfig.instanceClientId) {
+    const dbPath = path.join(
+      serverConfig.executionDir || serverConfig.resourcesDir,
+      'browseros.db',
+    );
+    const db = initializeDb(dbPath);
+    rateLimiter = new RateLimiter(db);
+    logger.info(`[Agent Server] Rate limiter initialized at ${dbPath}`);
+  }
+
   const {server, config} = createAgentHttpServer({
     port: serverConfig.agentPort,
     host: '0.0.0.0',
     corsOrigins: ['*'],
     tempDir: serverConfig.executionDir || serverConfig.resourcesDir,
     mcpServerUrl,
+    rateLimiter,
+    installId: serverConfig.instanceInstallId,
+    clientId: serverConfig.instanceClientId,
   });
 
   logger.info(
