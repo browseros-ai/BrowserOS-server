@@ -14,7 +14,7 @@ import {
   McpContext,
   Mutex,
   logger,
-  metrics,
+  telemetry,
   readVersion,
 } from '@browseros/common';
 import {
@@ -43,19 +43,15 @@ const config: ServerConfig = configResult.value;
 
 configureLogDirectory(config.executionDir);
 
-if (
-  config.instanceClientId ||
-  config.instanceInstallId ||
-  config.instanceBrowserosVersion ||
-  config.instanceChromiumVersion
-) {
-  metrics.initialize({
-    client_id: config.instanceClientId,
-    install_id: config.instanceInstallId,
-    browseros_version: config.instanceBrowserosVersion,
-    chromium_version: config.instanceChromiumVersion,
-  });
-}
+telemetry.initialize({
+  clientId: config.instanceClientId,
+  installId: config.instanceInstallId,
+  browserosVersion: config.instanceBrowserosVersion,
+  chromiumVersion: config.instanceChromiumVersion,
+  sentryDsn: process.env.SENTRY_DSN,
+  sentryEnvironment: process.env.NODE_ENV,
+  sentryRelease: `browseros-mcp@${version}`,
+});
 
 void (async () => {
   logger.info(`Starting BrowserOS Server v${version}`);
@@ -246,7 +242,7 @@ function createShutdownHandler(
       shutdownMcpServer(mcpServer, logger),
       Promise.resolve(agentServer.server.stop()),
       controllerBridge.close(),
-      metrics.shutdown(),
+      telemetry.shutdown(),
     ])
       .then(() => {
         clearTimeout(forceExitTimeout);
