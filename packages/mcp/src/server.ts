@@ -5,7 +5,7 @@
 import http from 'node:http';
 
 import type {McpContext, Mutex, Logger} from '@browseros/common';
-import {telemetry} from '@browseros/common';
+import {metrics} from '@browseros/common';
 import type {ToolDefinition} from '@browseros/tools';
 import {McpResponse} from '@browseros/tools';
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -86,7 +86,7 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
             );
 
             // Log successful tool execution (non-blocking)
-            telemetry.log('tool_executed', {
+            metrics.log('tool_executed', {
               tool_name: tool.name,
               duration_ms: Math.round(performance.now() - startTime),
               success: true,
@@ -98,15 +98,11 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
               ...(structuredContent && {structuredContent}),
             };
           } catch (error) {
-            telemetry.captureException(error, {
-              context: 'toolExecution',
-              toolName: tool.name,
-            });
             const errorText =
               error instanceof Error ? error.message : String(error);
 
             // Log failed tool execution (non-blocking)
-            telemetry.log('tool_executed', {
+            metrics.log('tool_executed', {
               tool_name: tool.name,
               duration_ms: Math.round(performance.now() - startTime),
               success: false,
@@ -254,7 +250,6 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
         // Let the SDK handle the request (it will parse body, validate, and respond)
         await transport.handleRequest(req, res);
       } catch (error) {
-        telemetry.captureException(error, {context: 'mcpRequestHandler'});
         logger.error(`Error handling MCP request: ${error}`);
         if (!res.headersSent) {
           res.writeHead(500, {'Content-Type': 'application/json'});

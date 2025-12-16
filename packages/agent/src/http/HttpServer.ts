@@ -3,7 +3,8 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {logger, telemetry} from '@browseros/common';
+import {logger} from '@browseros/common';
+import {Sentry} from '@browseros/common/sentry';
 import {Hono} from 'hono';
 import type {Context, Next} from 'hono';
 import {cors} from 'hono/cors';
@@ -52,7 +53,6 @@ function validateRequest<T>(schema: z.ZodType<T>) {
         logger.warn('Request validation failed', {issues: zodError.issues});
         throw new ValidationError('Request validation failed', zodError.issues);
       }
-      telemetry.captureException(err, {context: 'validateRequest'});
       throw err;
     }
   };
@@ -115,6 +115,14 @@ export function createHttpServer(config: HttpServerConfig) {
   app.post('/chat', validateRequest(ChatRequestSchema), async c => {
     const request = c.get('validatedBody') as ChatRequest;
 
+    const {provider, model, baseUrl} = request;
+
+    Sentry.setContext('request', {
+      provider,
+      model,
+      baseUrl,
+    });
+
     logger.info('Chat request received', {
       conversationId: request.conversationId,
       provider: request.provider,
@@ -172,7 +180,6 @@ export function createHttpServer(config: HttpServerConfig) {
           request.browserContext,
         );
       } catch (error) {
-        telemetry.captureException(error, {context: 'agentExecution'});
         const errorMessage =
           error instanceof Error ? error.message : 'Agent execution failed';
         logger.error('Agent execution error', {

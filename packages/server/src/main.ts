@@ -4,6 +4,9 @@
  *
  * Main server orchestration
  */
+// Sentry import should happen before any other logic
+import {Sentry} from '@browseros/common/sentry';
+
 import fs from 'node:fs';
 import type http from 'node:http';
 import path from 'node:path';
@@ -14,7 +17,7 @@ import {
   McpContext,
   Mutex,
   logger,
-  telemetry,
+  metrics,
   readVersion,
 } from '@browseros/common';
 import {
@@ -43,13 +46,26 @@ const config: ServerConfig = configResult.value;
 
 configureLogDirectory(config.executionDir);
 
-telemetry.initialize({
-  clientId: config.instanceClientId,
-  installId: config.instanceInstallId,
-  browserosVersion: config.instanceBrowserosVersion,
-  chromiumVersion: config.instanceChromiumVersion,
-  sentryRelease: `browseros-mcp@${version}`,
-});
+if (
+  config.instanceClientId ||
+  config.instanceInstallId ||
+  config.instanceBrowserosVersion ||
+  config.instanceChromiumVersion
+) {
+  metrics.initialize({
+    client_id: config.instanceClientId,
+    install_id: config.instanceInstallId,
+    browseros_version: config.instanceBrowserosVersion,
+    chromium_version: config.instanceChromiumVersion,
+  });
+
+  Sentry.setContext('browseros', {
+    client_id: config.instanceClientId,
+    install_id: config.instanceInstallId,
+    browseros_version: config.instanceBrowserosVersion,
+    chromium_version: config.instanceChromiumVersion,
+  });
+}
 
 void (async () => {
   logger.info(`Starting BrowserOS Server v${version}`);
@@ -114,7 +130,6 @@ async function connectToCdp(
     logger.info(`Loaded ${allCdpTools.length} CDP tools`);
     return context;
   } catch (error) {
-    telemetry.captureException(error, {context: 'connectToCdp', cdpPort});
     logger.warn(
       `Warning: Could not connect to CDP at http://127.0.0.1:${cdpPort}`,
     );
@@ -241,7 +256,7 @@ function createShutdownHandler(
       shutdownMcpServer(mcpServer, logger),
       Promise.resolve(agentServer.server.stop()),
       controllerBridge.close(),
-      telemetry.shutdown(),
+      metrics.shutdown(),
     ])
       .then(() => {
         clearTimeout(forceExitTimeout);
@@ -265,10 +280,6 @@ function configureLogDirectory(logDirCandidate: string): void {
     fs.mkdirSync(resolvedDir, {recursive: true});
     logger.setLogFile(resolvedDir);
   } catch (error) {
-    telemetry.captureException(error, {
-      context: 'configureLogDirectory',
-      resolvedDir,
-    });
     console.warn(
       `Failed to configure log directory ${resolvedDir}: ${
         error instanceof Error ? error.message : String(error)
