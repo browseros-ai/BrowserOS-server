@@ -5,7 +5,6 @@
  */
 import {
   logger,
-  telemetry,
   fetchBrowserOSConfig,
   getLLMConfigFromProvider,
 } from '@browseros/common';
@@ -380,10 +379,6 @@ export class GeminiAgent {
               }
             }
           } catch (error) {
-            telemetry.captureException(error, {
-              context: 'geminiAgentToolExecution',
-              tool: requestInfo.name,
-            });
             const errorMessage =
               error instanceof Error ? error.message : String(error);
             logger.error('Tool execution failed', {

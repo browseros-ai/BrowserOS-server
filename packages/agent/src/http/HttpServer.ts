@@ -3,7 +3,7 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {logger, telemetry} from '@browseros/common';
+import {logger} from '@browseros/common';
 import {Hono} from 'hono';
 import type {Context, Next} from 'hono';
 import {cors} from 'hono/cors';
@@ -52,7 +52,6 @@ function validateRequest<T>(schema: z.ZodType<T>) {
         logger.warn('Request validation failed', {issues: zodError.issues});
         throw new ValidationError('Request validation failed', zodError.issues);
       }
-      telemetry.captureException(err, {context: 'validateRequest'});
       throw err;
     }
   };
@@ -172,7 +171,6 @@ export function createHttpServer(config: HttpServerConfig) {
           request.browserContext,
         );
       } catch (error) {
-        telemetry.captureException(error, {context: 'agentExecution'});
         const errorMessage =
           error instanceof Error ? error.message : 'Agent execution failed';
         logger.error('Agent execution error', {

@@ -114,7 +114,6 @@ async function connectToCdp(
     logger.info(`Loaded ${allCdpTools.length} CDP tools`);
     return context;
   } catch (error) {
-    telemetry.captureException(error, {context: 'connectToCdp', cdpPort});
     logger.warn(
       `Warning: Could not connect to CDP at http://127.0.0.1:${cdpPort}`,
     );
@@ -265,10 +264,6 @@ function configureLogDirectory(logDirCandidate: string): void {
     fs.mkdirSync(resolvedDir, {recursive: true});
     logger.setLogFile(resolvedDir);
   } catch (error) {
-    telemetry.captureException(error, {
-      context: 'configureLogDirectory',
-      resolvedDir,
-    });
     console.warn(
       `Failed to configure log directory ${resolvedDir}: ${
         error instanceof Error ? error.message : String(error)
