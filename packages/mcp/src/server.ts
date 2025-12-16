@@ -5,7 +5,7 @@
 import http from 'node:http';
 
 import type {McpContext, Mutex, Logger} from '@browseros/common';
-import {metrics} from '@browseros/common';
+import {telemetry} from '@browseros/common';
 import type {ToolDefinition} from '@browseros/tools';
 import {McpResponse} from '@browseros/tools';
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -86,7 +86,7 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
             );
 
             // Log successful tool execution (non-blocking)
-            metrics.log('tool_executed', {
+            telemetry.log('tool_executed', {
               tool_name: tool.name,
               duration_ms: Math.round(performance.now() - startTime),
               success: true,
@@ -102,7 +102,7 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
               error instanceof Error ? error.message : String(error);
 
             // Log failed tool execution (non-blocking)
-            metrics.log('tool_executed', {
+            telemetry.log('tool_executed', {
               tool_name: tool.name,
               duration_ms: Math.round(performance.now() - startTime),
               success: false,
