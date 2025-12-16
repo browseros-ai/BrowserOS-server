@@ -124,6 +124,7 @@
       "name": "@browseros/common",
       "version": "0.0.1",
       "dependencies": {
+        "@sentry/bun": "^10.31.0",
         "core-js": "3.45.1",
         "debug": "4.4.3",
         "posthog-node": "^4.17.0",

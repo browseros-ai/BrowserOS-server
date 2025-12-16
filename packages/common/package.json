@@ -13,17 +13,19 @@
     "./polyfill": "./src/polyfill.ts",
     "./utils": "./src/utils/index.ts",
     "./tests/browseros": "./tests/browseros.ts",
-    "./tests/utils": "./tests/utils.ts"
+    "./tests/utils": "./tests/utils.ts",
+    "./sentry": "./src/sentry/instrument.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "bun test"
   },
   "dependencies": {
-    "puppeteer-core": "24.23.0",
-    "debug": "4.4.3",
+    "@sentry/bun": "^10.31.0",
     "core-js": "3.45.1",
-    "posthog-node": "^4.17.0"
+    "debug": "4.4.3",
+    "posthog-node": "^4.17.0",
+    "puppeteer-core": "24.23.0"
   },
   "devDependencies": {
     "@types/debug": "^4.1.12",
