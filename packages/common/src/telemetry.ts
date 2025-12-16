@@ -7,8 +7,6 @@ import {PostHog} from 'posthog-node';
 
 const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY;
 const POSTHOG_HOST = process.env.POSTHOG_ENDPOINT || 'https://us.i.posthog.com';
-const SENTRY_DSN = process.env.SENTRY_DSN;
-const SENTRY_ENVIRONMENT = process.env.NODE_ENV || 'development';
 const EVENT_PREFIX = 'browseros.server.';
 
 export interface TelemetryConfig {
@@ -16,6 +14,8 @@ export interface TelemetryConfig {
   installId?: string;
   browserosVersion?: string;
   chromiumVersion?: string;
+  sentryDsn?: string;
+  sentryEnvironment?: string;
   sentryRelease?: string;
 }
 
@@ -31,10 +31,10 @@ class TelemetryService {
       this.posthog = new PostHog(POSTHOG_API_KEY, {host: POSTHOG_HOST});
     }
 
-    if (!this.sentryInitialized && SENTRY_DSN) {
+    if (!this.sentryInitialized && config.sentryDsn) {
       Sentry.init({
-        dsn: SENTRY_DSN,
-        environment: SENTRY_ENVIRONMENT,
+        dsn: config.sentryDsn,
+        environment: config.sentryEnvironment,
         release: config.sentryRelease,
       });
 

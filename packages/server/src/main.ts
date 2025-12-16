@@ -48,6 +48,8 @@ telemetry.initialize({
   installId: config.instanceInstallId,
   browserosVersion: config.instanceBrowserosVersion,
   chromiumVersion: config.instanceChromiumVersion,
+  sentryDsn: process.env.SENTRY_DSN,
+  sentryEnvironment: process.env.NODE_ENV,
   sentryRelease: `browseros-mcp@${version}`,
 });
 
