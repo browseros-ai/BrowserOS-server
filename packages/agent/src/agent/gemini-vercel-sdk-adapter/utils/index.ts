@@ -1,7 +1,6 @@
 /**
  * @license
- * Copyright 2025 Google LLC
- * SPDX-License-Identifier: Apache-2.0
+ * Copyright 2025 BrowserOS
  */
 
 /**
@@ -17,3 +16,5 @@ export {
   isFileDataPart,
   isImageMimeType,
 } from './type-guards.js';
+
+export {createOpenRouterCompatibleFetch} from './fetch.js';

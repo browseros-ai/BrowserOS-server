@@ -38,6 +38,7 @@ import {
 import {AIProvider} from './types.js';
 import type {VercelAIConfig} from './types.js';
 import type {UIMessageStreamWriter} from './ui-message-stream.js';
+import {createOpenRouterCompatibleFetch} from './utils/index.js';
 
 /**
  * Vercel AI ContentGenerator
@@ -261,6 +262,7 @@ export class VercelAIContentGenerator implements ContentGenerator {
           extraBody: {
             reasoning: {}, // Enable reasoning for Gemini 3 thought signatures
           },
+          fetch: createOpenRouterCompatibleFetch(),
         });
 
       case AIProvider.AZURE:
@@ -313,6 +315,7 @@ export class VercelAIContentGenerator implements ContentGenerator {
           name: 'browseros',
           baseURL: config.baseUrl,
           apiKey: config.apiKey,
+          fetch: createOpenRouterCompatibleFetch(),
         });
 
       case AIProvider.OPENAI_COMPATIBLE:
