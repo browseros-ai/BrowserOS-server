@@ -30,7 +30,7 @@ export class RateLimiter {
       FROM conversation_history
       WHERE install_id = ?
         AND is_custom_key = 0
-        AND date(created_at) = date('now', 'localtime')
+        AND date(created_at) = date('now')
     `);
 
     this.insertStmt = db.prepare(`

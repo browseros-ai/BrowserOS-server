@@ -135,18 +135,13 @@ export function createHttpServer(config: HttpServerConfig) {
       browserContext: request.browserContext,
     });
 
-    // Rate limiting for BrowserOS provider
-    if (
-      request.provider === AIProvider.BROWSEROS &&
-      rateLimiter &&
-      installId &&
-      clientId
-    ) {
+    // Rate limiting for BrowserOS provider (only requires installId)
+    if (request.provider === AIProvider.BROWSEROS && rateLimiter && installId) {
       rateLimiter.check(installId);
       rateLimiter.record({
         conversationId: request.conversationId,
         installId,
-        clientId,
+        clientId: clientId || 'unknown-client-id',
         provider: request.provider,
         initialQuery: request.message,
       });

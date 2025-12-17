@@ -216,9 +216,14 @@ function startAgentServer(serverConfig: ServerConfig): {
 } {
   const mcpServerUrl = `http://127.0.0.1:${serverConfig.httpMcpPort}/mcp`;
 
-  // Initialize rate limiter if we have install_id and client_id
+  // Initialize rate limiter if we have install_id
+  logger.info('[Agent Server] Rate limiter check', {
+    hasInstallId: !!serverConfig.instanceInstallId,
+    installId: serverConfig.instanceInstallId?.slice(0, 12) || 'not set',
+  });
+
   let rateLimiter: RateLimiter | undefined;
-  if (serverConfig.instanceInstallId && serverConfig.instanceClientId) {
+  if (serverConfig.instanceInstallId) {
     const dbPath = path.join(
       serverConfig.executionDir || serverConfig.resourcesDir,
       'browseros.db',

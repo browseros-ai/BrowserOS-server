@@ -244,6 +244,8 @@ function loadEnv(env: NodeJS.ProcessEnv): PartialConfig {
       : undefined,
     resourcesDir: env.RESOURCES_DIR,
     executionDir: env.EXECUTION_DIR,
+    instanceInstallId: env.INSTALL_ID,
+    instanceClientId: env.CLIENT_ID,
   });
 }
 
