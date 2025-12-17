@@ -6,7 +6,6 @@
 import {z} from 'zod';
 
 import {VercelAIConfigSchema} from '../agent/gemini-vercel-sdk-adapter/types.js';
-import type {RateLimiter} from '../rate-limiter/index.js';
 
 export const TabSchema = z.object({
   id: z.number(),
@@ -40,9 +39,6 @@ export interface HttpServerConfig {
   corsOrigins?: string[];
   tempDir?: string;
   mcpServerUrl?: string;
-  rateLimiter?: RateLimiter;
-  installId?: string;
-  clientId?: string;
 }
 
 export const HttpServerConfigSchema = z.object({

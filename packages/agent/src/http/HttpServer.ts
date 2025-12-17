@@ -13,10 +13,7 @@ import type {ContentfulStatusCode} from 'hono/utils/http-status';
 import type {z} from 'zod';
 
 import {testProviderConnection} from '../agent/gemini-vercel-sdk-adapter/testProvider.js';
-import {
-  VercelAIConfigSchema,
-  AIProvider,
-} from '../agent/gemini-vercel-sdk-adapter/types.js';
+import {VercelAIConfigSchema} from '../agent/gemini-vercel-sdk-adapter/types.js';
 import type {VercelAIConfig} from '../agent/gemini-vercel-sdk-adapter/types.js';
 import {
   formatUIMessageStreamEvent,
@@ -68,8 +65,6 @@ export function createHttpServer(config: HttpServerConfig) {
     validatedConfig.mcpServerUrl ||
     process.env.MCP_SERVER_URL ||
     DEFAULT_MCP_SERVER_URL;
-
-  const {rateLimiter, installId, clientId} = config;
 
   const app = new Hono<{Variables: AppVariables}>();
   const sessionManager = new SessionManager();
@@ -134,18 +129,6 @@ export function createHttpServer(config: HttpServerConfig) {
       model: request.model,
       browserContext: request.browserContext,
     });
-
-    // Rate limiting for BrowserOS provider (only requires installId)
-    if (request.provider === AIProvider.BROWSEROS && rateLimiter && installId) {
-      rateLimiter.check(installId);
-      rateLimiter.record({
-        conversationId: request.conversationId,
-        installId,
-        clientId: clientId || 'unknown-client-id',
-        provider: request.provider,
-        initialQuery: request.message,
-      });
-    }
 
     c.header('Content-Type', 'text/event-stream');
     c.header('x-vercel-ai-ui-message-stream', 'v1');
