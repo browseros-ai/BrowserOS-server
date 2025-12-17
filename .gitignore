@@ -51,7 +51,7 @@ web_modules/
 .claude
 
 # Build unpublished docs
-docs/
+# docs/
 
 # TypeScript cache
 *.tsbuildinfo
