@@ -62,53 +62,6 @@
         "zod-to-json-schema": "^3.24.6",
       },
     },
-    "packages/agent": {
-      "name": "@browseros/agent",
-      "version": "0.1.0",
-      "dependencies": {
-        "@ai-sdk/amazon-bedrock": "^3.0.59",
-        "@ai-sdk/anthropic": "^2.0.47",
-        "@ai-sdk/azure": "^2.0.74",
-        "@ai-sdk/google": "^2.0.43",
-        "@ai-sdk/openai": "^2.0.72",
-        "@ai-sdk/openai-compatible": "^1.0.27",
-        "@ai-sdk/provider": "2.0.0",
-        "@ai-sdk/ui-utils": "^1.2.11",
-        "@anthropic-ai/claude-agent-sdk": "^0.1.11",
-        "@browseros/common": "workspace:*",
-        "@browseros/server": "workspace:*",
-        "@browseros/tools": "workspace:*",
-        "@google/gemini-cli-core": "^0.16.0",
-        "@hono/node-server": "^1.19.6",
-        "@openrouter/ai-sdk-provider": "^1.5.2",
-        "ai": "^5.0.101",
-        "zod": "^4.1.12",
-      },
-      "devDependencies": {
-        "@types/bun": "latest",
-        "typescript": "^5.9.3",
-        "vitest": "^4.0.14",
-      },
-      "optionalDependencies": {
-        "chrome-devtools-mcp": "latest",
-      },
-    },
-    "packages/common": {
-      "name": "@browseros/common",
-      "version": "0.0.1",
-      "dependencies": {
-        "@sentry/bun": "^10.31.0",
-        "core-js": "3.45.1",
-        "debug": "4.4.3",
-        "posthog-node": "^4.17.0",
-        "puppeteer-core": "24.23.0",
-      },
-      "devDependencies": {
-        "@types/debug": "^4.1.12",
-        "@types/node": "^24.3.3",
-        "typescript": "^5.9.2",
-      },
-    },
     "packages/controller-ext": {
       "name": "browseros-controller",
       "version": "1.0.0",
@@ -127,33 +80,6 @@
         "ws": "^8.18.3",
       },
     },
-    "packages/controller-server": {
-      "name": "@browseros/controller-server",
-      "version": "0.0.1",
-      "dependencies": {
-        "@browseros/tools": "workspace:*",
-        "ws": "^8.18.0",
-      },
-      "devDependencies": {
-        "@types/node": "^24.3.3",
-        "@types/ws": "^8.5.13",
-        "typescript": "^5.9.2",
-      },
-    },
-    "packages/mcp": {
-      "name": "@browseros/mcp",
-      "version": "0.0.1",
-      "dependencies": {
-        "@browseros/common": "workspace:*",
-        "@browseros/tools": "workspace:*",
-        "@modelcontextprotocol/sdk": "1.19.1",
-        "zod": "3.24.3",
-      },
-      "devDependencies": {
-        "@types/node": "^24.3.3",
-        "typescript": "^5.9.2",
-      },
-    },
     "packages/server": {
       "name": "@browseros/server",
       "version": "0.0.1",
@@ -161,33 +87,42 @@
         "browseros-server": "./src/index.ts",
       },
       "dependencies": {
-        "@browseros/agent": "workspace:*",
-        "@browseros/common": "workspace:*",
-        "@browseros/controller-server": "workspace:*",
-        "@browseros/mcp": "workspace:*",
-        "@browseros/tools": "workspace:*",
+        "@ai-sdk/amazon-bedrock": "^3.0.59",
+        "@ai-sdk/anthropic": "^2.0.47",
+        "@ai-sdk/azure": "^2.0.74",
+        "@ai-sdk/google": "^2.0.43",
+        "@ai-sdk/openai": "^2.0.72",
+        "@ai-sdk/openai-compatible": "^1.0.27",
+        "@ai-sdk/provider": "2.0.0",
+        "@ai-sdk/ui-utils": "^1.2.11",
+        "@anthropic-ai/claude-agent-sdk": "^0.1.11",
+        "@google/gemini-cli-core": "^0.16.0",
+        "@hono/node-server": "^1.19.6",
+        "@modelcontextprotocol/sdk": "1.19.1",
+        "@openrouter/ai-sdk-provider": "^1.5.2",
+        "@sentry/bun": "^10.31.0",
+        "ai": "^5.0.101",
         "commander": "^14.0.1",
+        "core-js": "3.45.1",
+        "debug": "4.4.3",
+        "hono": "^4.6.0",
+        "posthog-node": "^4.17.0",
+        "puppeteer-core": "24.23.0",
         "ws": "^8.18.0",
         "zod": "^3.24.2",
       },
       "devDependencies": {
-        "@types/node": "^24.3.3",
-        "typescript": "^5.9.2",
-      },
-    },
-    "packages/tools": {
-      "name": "@browseros/tools",
-      "version": "0.0.1",
-      "dependencies": {
-        "@browseros/common": "workspace:*",
-        "@modelcontextprotocol/sdk": "1.19.1",
-        "puppeteer-core": "24.23.0",
-        "zod": "3.24.3",
-      },
-      "devDependencies": {
         "@types/bun": "latest",
+        "@types/debug": "^4.1.12",
         "@types/node": "^24.3.3",
+        "@types/ws": "^8.5.13",
+        "async-mutex": "^0.5.0",
+        "puppeteer": "^24.0.0",
         "typescript": "^5.9.2",
+        "vitest": "^4.0.14",
+      },
+      "optionalDependencies": {
+        "chrome-devtools-mcp": "latest",
       },
     },
   },
@@ -297,17 +232,7 @@
 
     "@bcoe/v8-coverage": ["@bcoe/v8-coverage@0.2.3", "", {}, "sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw=="],
 
-    "@browseros/agent": ["@browseros/agent@workspace:packages/agent"],
-
-    "@browseros/common": ["@browseros/common@workspace:packages/common"],
-
-    "@browseros/controller-server": ["@browseros/controller-server@workspace:packages/controller-server"],
-
-    "@browseros/mcp": ["@browseros/mcp@workspace:packages/mcp"],
-
     "@browseros/server": ["@browseros/server@workspace:packages/server"],
-
-    "@browseros/tools": ["@browseros/tools@workspace:packages/tools"],
 
     "@cspotcode/source-map-support": ["@cspotcode/source-map-support@0.8.1", "", { "dependencies": { "@jridgewell/trace-mapping": "0.3.9" } }, "sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw=="],
 
@@ -2455,19 +2380,9 @@
 
     "@babel/types/@babel/helper-validator-identifier": ["@babel/helper-validator-identifier@7.28.5", "", {}, "sha512-qSs4ifwzKJSV39ucNjsvc6WVHs6b7S03sOh2OcHF9UHfVPqWWALUsNUVzhSBiItjRZoLHx7nIarVjqKVusUZ1Q=="],
 
-    "@browseros/agent/@types/bun": ["@types/bun@1.3.4", "", { "dependencies": { "bun-types": "1.3.4" } }, "sha512-EEPTKXHP+zKGPkhRLv+HI0UEX8/o+65hqARxLy8Ov5rIxMBPNTjeZww00CIihrIQGEQBYg+0roO5qOnS/7boGA=="],
+    "@browseros/server/@modelcontextprotocol/sdk": ["@modelcontextprotocol/sdk@1.19.1", "", { "dependencies": { "ajv": "^6.12.6", "content-type": "^1.0.5", "cors": "^2.8.5", "cross-spawn": "^7.0.5", "eventsource": "^3.0.2", "eventsource-parser": "^3.0.0", "express": "^5.0.1", "express-rate-limit": "^7.5.0", "pkce-challenge": "^5.0.0", "raw-body": "^3.0.0", "zod": "^3.23.8", "zod-to-json-schema": "^3.24.1" } }, "sha512-3Y2h3MZKjec1eAqSTBclATlX+AbC6n1LgfVzRMJLt3v6w0RCYgwLrjbxPDbhsYHt6Wdqc/aCceNJYgj448ELQQ=="],
 
-    "@browseros/agent/zod": ["zod@4.1.12", "", {}, "sha512-JInaHOamG8pt5+Ey8kGmdcAcg3OL9reK8ltczgHTAwNhMys/6ThXHityHxVV2p3fkw/c+MAvBHFVYHFZDmjMCQ=="],
-
-    "@browseros/mcp/@modelcontextprotocol/sdk": ["@modelcontextprotocol/sdk@1.19.1", "", { "dependencies": { "ajv": "^6.12.6", "content-type": "^1.0.5", "cors": "^2.8.5", "cross-spawn": "^7.0.5", "eventsource": "^3.0.2", "eventsource-parser": "^3.0.0", "express": "^5.0.1", "express-rate-limit": "^7.5.0", "pkce-challenge": "^5.0.0", "raw-body": "^3.0.0", "zod": "^3.23.8", "zod-to-json-schema": "^3.24.1" } }, "sha512-3Y2h3MZKjec1eAqSTBclATlX+AbC6n1LgfVzRMJLt3v6w0RCYgwLrjbxPDbhsYHt6Wdqc/aCceNJYgj448ELQQ=="],
-
-    "@browseros/mcp/zod": ["zod@3.24.3", "", {}, "sha512-HhY1oqzWCQWuUqvBFnsyrtZRhyPeR7SUGv+C4+MsisMuVfSPx8HpwWqH8tRahSlt6M3PiFAcoeFhZAqIXTxoSg=="],
-
-    "@browseros/tools/@modelcontextprotocol/sdk": ["@modelcontextprotocol/sdk@1.19.1", "", { "dependencies": { "ajv": "^6.12.6", "content-type": "^1.0.5", "cors": "^2.8.5", "cross-spawn": "^7.0.5", "eventsource": "^3.0.2", "eventsource-parser": "^3.0.0", "express": "^5.0.1", "express-rate-limit": "^7.5.0", "pkce-challenge": "^5.0.0", "raw-body": "^3.0.0", "zod": "^3.23.8", "zod-to-json-schema": "^3.24.1" } }, "sha512-3Y2h3MZKjec1eAqSTBclATlX+AbC6n1LgfVzRMJLt3v6w0RCYgwLrjbxPDbhsYHt6Wdqc/aCceNJYgj448ELQQ=="],
-
-    "@browseros/tools/@types/bun": ["@types/bun@1.3.4", "", { "dependencies": { "bun-types": "1.3.4" } }, "sha512-EEPTKXHP+zKGPkhRLv+HI0UEX8/o+65hqARxLy8Ov5rIxMBPNTjeZww00CIihrIQGEQBYg+0roO5qOnS/7boGA=="],
-
-    "@browseros/tools/zod": ["zod@3.24.3", "", {}, "sha512-HhY1oqzWCQWuUqvBFnsyrtZRhyPeR7SUGv+C4+MsisMuVfSPx8HpwWqH8tRahSlt6M3PiFAcoeFhZAqIXTxoSg=="],
+    "@browseros/server/@types/bun": ["@types/bun@1.3.4", "", { "dependencies": { "bun-types": "1.3.4" } }, "sha512-EEPTKXHP+zKGPkhRLv+HI0UEX8/o+65hqARxLy8Ov5rIxMBPNTjeZww00CIihrIQGEQBYg+0roO5qOnS/7boGA=="],
 
     "@cspotcode/source-map-support/@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.9", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.0.3", "@jridgewell/sourcemap-codec": "^1.4.10" } }, "sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ=="],
 
@@ -2767,9 +2682,9 @@
 
     "@aws-crypto/util/@smithy/util-utf8/@smithy/util-buffer-from": ["@smithy/util-buffer-from@2.2.0", "", { "dependencies": { "@smithy/is-array-buffer": "^2.2.0", "tslib": "^2.6.2" } }, "sha512-IJdWBbTcMQ6DA0gdNhh/BwrLkDR+ADW5Kr1aZmd4k3DIF6ezMV4R2NIAmT08wQJ3yUK82thHWmC/TnK/wpMMIA=="],
 
-    "@browseros/agent/@types/bun/bun-types": ["bun-types@1.3.4", "", { "dependencies": { "@types/node": "*" } }, "sha512-5ua817+BZPZOlNaRgGBpZJOSAQ9RQ17pkwPD0yR7CfJg+r8DgIILByFifDTa+IPDDxzf5VNhtNlcKqFzDgJvlQ=="],
+    "@browseros/server/@modelcontextprotocol/sdk/zod": ["zod@3.24.3", "", {}, "sha512-HhY1oqzWCQWuUqvBFnsyrtZRhyPeR7SUGv+C4+MsisMuVfSPx8HpwWqH8tRahSlt6M3PiFAcoeFhZAqIXTxoSg=="],
 
-    "@browseros/tools/@types/bun/bun-types": ["bun-types@1.3.4", "", { "dependencies": { "@types/node": "*" } }, "sha512-5ua817+BZPZOlNaRgGBpZJOSAQ9RQ17pkwPD0yR7CfJg+r8DgIILByFifDTa+IPDDxzf5VNhtNlcKqFzDgJvlQ=="],
+    "@browseros/server/@types/bun/bun-types": ["bun-types@1.3.4", "", { "dependencies": { "@types/node": "*" } }, "sha512-5ua817+BZPZOlNaRgGBpZJOSAQ9RQ17pkwPD0yR7CfJg+r8DgIILByFifDTa+IPDDxzf5VNhtNlcKqFzDgJvlQ=="],
 
     "@google/gemini-cli-core/ajv/json-schema-traverse": ["json-schema-traverse@1.0.0", "", {}, "sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug=="],
 

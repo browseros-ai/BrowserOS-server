@@ -10,8 +10,8 @@ import {spawn} from 'node:child_process';
 import {describe, it, beforeAll, afterAll} from 'bun:test';
 import {URL} from 'node:url';
 
-import {ensureBrowserOS} from '@browseros/common/tests/browseros';
-import {killProcessOnPort} from '@browseros/common/tests/utils.js';
+import {ensureBrowserOS} from '../src/common/tests/browseros.js';
+import {killProcessOnPort} from '../src/common/tests/utils.js';
 import {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {StreamableHTTPClientTransport} from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 

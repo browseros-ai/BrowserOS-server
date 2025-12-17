@@ -13,17 +13,46 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@browseros/agent": "workspace:*",
-    "@browseros/common": "workspace:*",
-    "@browseros/controller-server": "workspace:*",
-    "@browseros/mcp": "workspace:*",
-    "@browseros/tools": "workspace:*",
+    "@ai-sdk/amazon-bedrock": "^3.0.59",
+    "@ai-sdk/anthropic": "^2.0.47",
+    "@ai-sdk/azure": "^2.0.74",
+    "@ai-sdk/google": "^2.0.43",
+    "@ai-sdk/openai": "^2.0.72",
+    "@ai-sdk/openai-compatible": "^1.0.27",
+    "@ai-sdk/provider": "2.0.0",
+    "@ai-sdk/ui-utils": "^1.2.11",
+    "@anthropic-ai/claude-agent-sdk": "^0.1.11",
+    "@google/gemini-cli-core": "^0.16.0",
+    "@hono/node-server": "^1.19.6",
+    "@modelcontextprotocol/sdk": "1.19.1",
+    "@openrouter/ai-sdk-provider": "^1.5.2",
+    "@sentry/bun": "^10.31.0",
+    "ai": "^5.0.101",
     "commander": "^14.0.1",
+    "core-js": "3.45.1",
+    "debug": "4.4.3",
+    "hono": "^4.6.0",
+    "posthog-node": "^4.17.0",
+    "puppeteer-core": "24.23.0",
     "ws": "^8.18.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/bun": "latest",
+    "@types/debug": "^4.1.12",
     "@types/node": "^24.3.3",
-    "typescript": "^5.9.2"
-  }
+    "@types/ws": "^8.5.13",
+    "async-mutex": "^0.5.0",
+    "puppeteer": "^24.0.0",
+    "typescript": "^5.9.2",
+    "vitest": "^4.0.14"
+  },
+  "optionalDependencies": {
+    "chrome-devtools-mcp": "latest"
+  },
+  "engines": {
+    "bun": ">=1.0.0",
+    "node": "^20.19.0 || ^22.12.0 || >=23"
+  },
+  "license": "AGPL-3.0-or-later"
 }
