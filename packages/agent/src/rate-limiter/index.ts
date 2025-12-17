@@ -9,7 +9,7 @@ import {logger} from '@browseros/common';
 
 import {RateLimitError} from './errors.js';
 
-const DAILY_LIMIT = 3;
+const DEFAULT_DAILY_LIMIT = 5;
 
 export interface RecordParams {
   conversationId: string;
@@ -21,8 +21,13 @@ export interface RecordParams {
 export class RateLimiter {
   private countStmt: ReturnType<Database['prepare']>;
   private insertStmt: ReturnType<Database['prepare']>;
+  private dailyLimit: number;
 
-  constructor(private db: Database) {
+  constructor(
+    private db: Database,
+    dailyLimit: number = DEFAULT_DAILY_LIMIT,
+  ) {
+    this.dailyLimit = dailyLimit;
     this.countStmt = db.prepare(`
       SELECT COUNT(*) as count
       FROM rate_limiter
@@ -41,13 +46,13 @@ export class RateLimiter {
 
   check(browserosId: string): void {
     const count = this.getTodayCount(browserosId);
-    if (count >= DAILY_LIMIT) {
+    if (count >= this.dailyLimit) {
       logger.warn('Rate limit exceeded', {
         browserosId,
         count,
-        limit: DAILY_LIMIT,
+        limit: this.dailyLimit,
       });
-      throw new RateLimitError(count, DAILY_LIMIT);
+      throw new RateLimitError(count, this.dailyLimit);
     }
   }
 
