@@ -41,8 +41,7 @@ export interface HttpServerConfig {
   tempDir?: string;
   mcpServerUrl?: string;
   rateLimiter?: RateLimiter;
-  installId?: string;
-  clientId?: string;
+  browserosId?: string;
 }
 
 export const HttpServerConfigSchema = z.object({

@@ -13,11 +13,9 @@ const DAILY_LIMIT = 3;
 
 export interface RecordParams {
   conversationId: string;
-  installId: string;
-  clientId: string;
+  browserosId: string;
   provider: string;
   initialQuery: string;
-  isCustomKey?: boolean;
 }
 
 export class RateLimiter {
@@ -27,24 +25,25 @@ export class RateLimiter {
   constructor(private db: Database) {
     this.countStmt = db.prepare(`
       SELECT COUNT(*) as count
-      FROM conversation_history
-      WHERE install_id = ?
-        AND is_custom_key = 0
+      FROM rate_limiter
+      WHERE browseros_id = ?
         AND date(created_at) = date('now')
     `);
 
+    // INSERT OR IGNORE: duplicate conversation_ids are silently ignored
+    // This ensures the same conversation is only counted once for rate limiting
     this.insertStmt = db.prepare(`
-      INSERT OR IGNORE INTO conversation_history
-        (id, install_id, client_id, provider, initial_query, is_custom_key)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT OR IGNORE INTO rate_limiter
+        (id, browseros_id, provider, initial_query)
+      VALUES (?, ?, ?, ?)
     `);
   }
 
-  check(installId: string): void {
-    const count = this.getTodayCount(installId);
+  check(browserosId: string): void {
+    const count = this.getTodayCount(browserosId);
     if (count >= DAILY_LIMIT) {
       logger.warn('Rate limit exceeded', {
-        installId,
+        browserosId,
         count,
         limit: DAILY_LIMIT,
       });
@@ -53,26 +52,12 @@ export class RateLimiter {
   }
 
   record(params: RecordParams): void {
-    const {
-      conversationId,
-      installId,
-      clientId,
-      provider,
-      initialQuery,
-      isCustomKey = false,
-    } = params;
-    this.insertStmt.run(
-      conversationId,
-      installId,
-      clientId,
-      provider,
-      initialQuery,
-      isCustomKey ? 1 : 0,
-    );
+    const {conversationId, browserosId, provider, initialQuery} = params;
+    this.insertStmt.run(conversationId, browserosId, provider, initialQuery);
   }
 
-  private getTodayCount(installId: string): number {
-    const row = this.countStmt.get(installId) as {count: number} | null;
+  private getTodayCount(browserosId: string): number {
+    const row = this.countStmt.get(browserosId) as {count: number} | null;
     return row?.count ?? 0;
   }
 }

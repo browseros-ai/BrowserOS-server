@@ -69,7 +69,7 @@ export function createHttpServer(config: HttpServerConfig) {
     process.env.MCP_SERVER_URL ||
     DEFAULT_MCP_SERVER_URL;
 
-  const {rateLimiter, installId, clientId} = config;
+  const {rateLimiter, browserosId} = config;
 
   const app = new Hono<{Variables: AppVariables}>();
   const sessionManager = new SessionManager();
@@ -135,13 +135,16 @@ export function createHttpServer(config: HttpServerConfig) {
       browserContext: request.browserContext,
     });
 
-    // Rate limiting for BrowserOS provider (only requires installId)
-    if (request.provider === AIProvider.BROWSEROS && rateLimiter && installId) {
-      rateLimiter.check(installId);
+    // Rate limiting for BrowserOS provider
+    if (
+      request.provider === AIProvider.BROWSEROS &&
+      rateLimiter &&
+      browserosId
+    ) {
+      rateLimiter.check(browserosId);
       rateLimiter.record({
         conversationId: request.conversationId,
-        installId,
-        clientId: clientId || 'unknown-client-id',
+        browserosId,
         provider: request.provider,
         initialQuery: request.message,
       });

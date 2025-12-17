@@ -5,22 +5,24 @@
  */
 import type {Database} from 'bun:sqlite';
 
-const CONVERSATION_HISTORY_TABLE = `
-CREATE TABLE IF NOT EXISTS conversation_history (
+// id is the conversation_id - using it as PK ensures same conversation is only counted once
+const RATE_LIMITER_TABLE = `
+CREATE TABLE IF NOT EXISTS rate_limiter (
   id TEXT PRIMARY KEY,
-  install_id TEXT NOT NULL,
-  client_id TEXT NOT NULL,
+  browseros_id TEXT NOT NULL,
   provider TEXT NOT NULL,
   initial_query TEXT NOT NULL,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  is_custom_key INTEGER NOT NULL DEFAULT 0
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
 )`;
 
-const CONVERSATION_HISTORY_INDEX = `
-CREATE INDEX IF NOT EXISTS idx_install_date
-ON conversation_history(install_id, created_at)`;
+const IDENTITY_TABLE = `
+CREATE TABLE IF NOT EXISTS identity (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  browseros_id TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`;
 
 export function initSchema(db: Database): void {
-  db.exec(CONVERSATION_HISTORY_TABLE);
-  db.exec(CONVERSATION_HISTORY_INDEX);
+  db.exec(RATE_LIMITER_TABLE);
+  db.exec(IDENTITY_TABLE);
 }

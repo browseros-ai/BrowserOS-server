@@ -23,6 +23,7 @@ import {
   metrics,
   readVersion,
   initializeDb,
+  identity,
 } from '@browseros/common';
 import {
   ControllerContext,
@@ -50,26 +51,38 @@ const config: ServerConfig = configResult.value;
 
 configureLogDirectory(config.executionDir);
 
-if (
-  config.instanceClientId ||
-  config.instanceInstallId ||
-  config.instanceBrowserosVersion ||
-  config.instanceChromiumVersion
-) {
-  metrics.initialize({
-    client_id: config.instanceClientId,
-    install_id: config.instanceInstallId,
-    browseros_version: config.instanceBrowserosVersion,
-    chromium_version: config.instanceChromiumVersion,
-  });
+// Initialize database and identity service
+const dbPath = path.join(
+  config.executionDir || config.resourcesDir,
+  'browseros.db',
+);
+const db = initializeDb(dbPath);
 
-  Sentry.setContext('browseros', {
-    client_id: config.instanceClientId,
-    install_id: config.instanceInstallId,
-    browseros_version: config.instanceBrowserosVersion,
-    chromium_version: config.instanceChromiumVersion,
-  });
-}
+identity.initialize({
+  installId: config.instanceInstallId,
+  db,
+});
+
+const browserosId = identity.getBrowserOSId();
+logger.info('[Identity] BrowserOS ID initialized', {
+  browserosId: browserosId.slice(0, 12),
+  fromConfig: !!config.instanceInstallId,
+});
+
+// Initialize metrics and Sentry (uses install_id from config for analytics)
+metrics.initialize({
+  client_id: config.instanceClientId,
+  install_id: config.instanceInstallId,
+  browseros_version: config.instanceBrowserosVersion,
+  chromium_version: config.instanceChromiumVersion,
+});
+
+Sentry.setContext('browseros', {
+  client_id: config.instanceClientId,
+  install_id: config.instanceInstallId,
+  browseros_version: config.instanceBrowserosVersion,
+  chromium_version: config.instanceChromiumVersion,
+});
 
 void (async () => {
   logger.info(`Starting BrowserOS Server v${version}`);
@@ -216,22 +229,9 @@ function startAgentServer(serverConfig: ServerConfig): {
 } {
   const mcpServerUrl = `http://127.0.0.1:${serverConfig.httpMcpPort}/mcp`;
 
-  // Initialize rate limiter if we have install_id
-  logger.info('[Agent Server] Rate limiter check', {
-    hasInstallId: !!serverConfig.instanceInstallId,
-    installId: serverConfig.instanceInstallId?.slice(0, 12) || 'not set',
-  });
-
-  let rateLimiter: RateLimiter | undefined;
-  if (serverConfig.instanceInstallId) {
-    const dbPath = path.join(
-      serverConfig.executionDir || serverConfig.resourcesDir,
-      'browseros.db',
-    );
-    const db = initializeDb(dbPath);
-    rateLimiter = new RateLimiter(db);
-    logger.info(`[Agent Server] Rate limiter initialized at ${dbPath}`);
-  }
+  // Rate limiter always initialized (uses global db and browserosId)
+  const rateLimiter = new RateLimiter(db);
+  logger.info('[Agent Server] Rate limiter initialized');
 
   const {server, config} = createAgentHttpServer({
     port: serverConfig.agentPort,
@@ -240,8 +240,7 @@ function startAgentServer(serverConfig: ServerConfig): {
     tempDir: serverConfig.executionDir || serverConfig.resourcesDir,
     mcpServerUrl,
     rateLimiter,
-    installId: serverConfig.instanceInstallId,
-    clientId: serverConfig.instanceClientId,
+    browserosId,
   });
 
   logger.info(
