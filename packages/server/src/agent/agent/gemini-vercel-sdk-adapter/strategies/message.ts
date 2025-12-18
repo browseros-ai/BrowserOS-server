@@ -139,7 +139,10 @@ export class MessageConversionStrategy {
           }
           // Skip orphaned tool results (no matching tool_use in history)
           // This prevents: "unexpected tool_use_id found in tool_result blocks"
+          // Also remove from allToolResultIds so corresponding tool_uses in later
+          // Contents will also be filtered out (cascading deletion)
           if (id && !allToolCallIds.has(id)) {
+            allToolResultIds.delete(id);
             return false;
           }
           seenToolResultIds.add(id);
@@ -218,7 +221,10 @@ export class MessageConversionStrategy {
           const toolCallId = fc.id || this.generateToolCallId();
 
           // Skip orphaned tool calls (no matching tool result in history)
+          // Also remove from allToolCallIds so corresponding tool_results in later
+          // Contents will also be filtered out (cascading deletion)
           if (fc.id && !allToolResultIds.has(fc.id)) {
+            allToolCallIds.delete(fc.id);
             continue;
           }
 
@@ -254,7 +260,11 @@ export class MessageConversionStrategy {
       }
     }
 
-    return messages;
+    // CRITICAL: Merge consecutive tool messages to satisfy API requirement
+    // The API requires ALL tool_results to be in a single message immediately following
+    // the assistant message with tool_uses. If tool_results are split across multiple
+    // messages, we get: "unexpected tool_use_id found in tool_result blocks"
+    return this.mergeConsecutiveToolMessages(messages);
   }
 
   /**
@@ -342,5 +352,58 @@ export class MessageConversionStrategy {
    */
   private generateToolCallId(): string {
     return `call_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+  }
+
+  /**
+   * Merge consecutive tool messages into a single tool message
+   *
+   * The API requires that ALL tool_results must be in a single message immediately
+   * following the assistant message with tool_uses. If tool_results are split across
+   * multiple consecutive tool messages, the API returns:
+   * "unexpected tool_use_id found in tool_result blocks"
+   *
+   * This method merges consecutive tool messages so all tool_results are grouped together.
+   */
+  private mergeConsecutiveToolMessages(messages: CoreMessage[]): CoreMessage[] {
+    if (messages.length === 0) {
+      return messages;
+    }
+
+    const merged: CoreMessage[] = [];
+    let currentToolParts: VercelContentPart[] | null = null;
+
+    for (const msg of messages) {
+      if (msg.role === 'tool') {
+        // Accumulate tool message content
+        const content = msg.content as VercelContentPart[];
+        if (currentToolParts === null) {
+          // Start a new tool message accumulator
+          currentToolParts = [...content];
+        } else {
+          // Merge into existing accumulator
+          currentToolParts.push(...content);
+        }
+      } else {
+        // Non-tool message - flush any accumulated tool parts first
+        if (currentToolParts !== null) {
+          merged.push({
+            role: 'tool',
+            content: currentToolParts,
+          } as unknown as CoreMessage);
+          currentToolParts = null;
+        }
+        merged.push(msg);
+      }
+    }
+
+    // Flush any remaining tool parts
+    if (currentToolParts !== null) {
+      merged.push({
+        role: 'tool',
+        content: currentToolParts,
+      } as unknown as CoreMessage);
+    }
+
+    return merged;
   }
 }

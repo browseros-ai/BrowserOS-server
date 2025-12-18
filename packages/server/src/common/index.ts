@@ -10,6 +10,8 @@ export {Mutex} from './Mutex.js';
 export {logger, Logger} from './logger.js';
 export {metrics, type MetricsConfig} from './metrics.js';
 export {fetchBrowserOSConfig} from './gateway.js';
+export {initializeDb, getDb, closeDb} from './db/index.js';
+export {identity, type IdentityConfig} from './identity.js';
 
 // Utils exports
 export * from './utils/index.js';
