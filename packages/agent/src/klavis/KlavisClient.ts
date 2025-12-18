@@ -17,7 +17,11 @@ export class KlavisClient {
   private apiKey: string;
 
   constructor(apiKey?: string) {
-    this.apiKey = apiKey || process.env.KLAVIS_API_KEY || '';
+    const key = apiKey || process.env.KLAVIS_API_KEY;
+    if (!key) {
+      throw new Error('KLAVIS_API_KEY not configured');
+    }
+    this.apiKey = key;
   }
 
   private async request<T>(
@@ -25,10 +29,6 @@ export class KlavisClient {
     path: string,
     body?: unknown,
   ): Promise<T> {
-    if (!this.apiKey) {
-      throw new Error('KLAVIS_API_KEY not configured');
-    }
-
     const response = await fetch(`${KLAVIS_API_BASE}${path}`, {
       method,
       headers: {

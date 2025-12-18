@@ -133,19 +133,27 @@ export class GeminiAgent {
       resolvedConfig.browserosUserId &&
       resolvedConfig.enabledMcpServers?.length
     ) {
-      const klavisClient = new KlavisClient();
-      const result = await klavisClient.createStrata(
-        resolvedConfig.browserosUserId,
-        resolvedConfig.enabledMcpServers,
-      );
-      mcpServers['klavis-strata'] = createHttpMcpServerConfig({
-        httpUrl: result.strataServerUrl,
-        trust: true,
-      });
-      logger.info('Added Klavis Strata MCP server', {
-        userId: resolvedConfig.browserosUserId,
-        servers: resolvedConfig.enabledMcpServers,
-      });
+      try {
+        const klavisClient = new KlavisClient();
+        const result = await klavisClient.createStrata(
+          resolvedConfig.browserosUserId,
+          resolvedConfig.enabledMcpServers,
+        );
+        mcpServers['klavis-strata'] = createHttpMcpServerConfig({
+          httpUrl: result.strataServerUrl,
+          trust: true,
+        });
+        logger.info('Added Klavis Strata MCP server', {
+          userId: resolvedConfig.browserosUserId,
+          servers: resolvedConfig.enabledMcpServers,
+        });
+      } catch (error) {
+        logger.error('Failed to create Klavis Strata MCP server', {
+          userId: resolvedConfig.browserosUserId,
+          servers: resolvedConfig.enabledMcpServers,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
     }
 
     // Add custom third-party MCP servers
