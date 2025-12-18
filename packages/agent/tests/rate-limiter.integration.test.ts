@@ -11,7 +11,7 @@ import {Database} from 'bun:sqlite';
 
 import {RateLimiter, RateLimitError} from '../src/rate-limiter/index.js';
 
-const DAILY_LIMIT_TEST = 3;
+const DAILY_RATE_LIMIT_TEST = 3;
 
 function createTestDb(): Database {
   const db = new Database(':memory:');
@@ -34,7 +34,7 @@ describe('RateLimiter', () => {
 
   beforeEach(() => {
     db = createTestDb();
-    rateLimiter = new RateLimiter(db, DAILY_LIMIT_TEST);
+    rateLimiter = new RateLimiter(db, DAILY_RATE_LIMIT_TEST);
   });
 
   describe('check()', () => {
