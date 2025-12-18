@@ -20,7 +20,8 @@ export type {AgentConfig} from './agent/index.js';
 
 export {SessionManager} from './session/index.js';
 
-export {StrataManager} from './strata/index.js';
+export {KlavisClient, OAUTH_MCP_SERVERS} from './klavis/index.js';
+export type {OAuthMcpServer} from './klavis/index.js';
 
 export {
   HttpAgentError,

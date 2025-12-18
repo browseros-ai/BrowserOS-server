@@ -21,6 +21,8 @@ export const BrowserContextSchema = z.object({
   activeTab: TabSchema.optional(),
   selectedTabs: z.array(TabSchema).optional(),
   tabs: z.array(TabSchema).optional(),
+  browserosUserId: z.string().optional(),
+  enabledMcpServers: z.array(z.string()).optional(),
 });
 
 export type BrowserContext = z.infer<typeof BrowserContextSchema>;
@@ -30,7 +32,6 @@ export const ChatRequestSchema = VercelAIConfigSchema.extend({
   message: z.string().min(1, 'Message cannot be empty'),
   contextWindowSize: z.number().optional(),
   browserContext: BrowserContextSchema.optional(),
-  klavisUserId: z.string().optional(),
 });
 
 export type ChatRequest = z.infer<typeof ChatRequestSchema>;

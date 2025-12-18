@@ -12,7 +12,8 @@ export const AgentConfigSchema = VercelAIConfigSchema.extend({
   tempDir: z.string(),
   mcpServerUrl: z.string().optional(),
   contextWindowSize: z.number().optional(),
-  klavisUserId: z.string().optional(),
+  browserosUserId: z.string().optional(),
+  enabledMcpServers: z.array(z.string()).optional(),
 });
 
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;

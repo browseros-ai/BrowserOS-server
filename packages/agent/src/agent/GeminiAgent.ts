@@ -21,7 +21,7 @@ import type {Part} from '@google/genai';
 
 import {AgentExecutionError} from '../errors.js';
 import type {BrowserContext} from '../http/types.js';
-import {StrataManager} from '../strata/index.js';
+import {KlavisClient} from '../klavis/index.js';
 
 import {
   VercelAIContentGenerator,
@@ -128,21 +128,24 @@ export class GeminiAgent {
       });
     }
 
-    // Add Klavis Strata MCP server if userId is provided
-    if (resolvedConfig.klavisUserId) {
-      const strataManager = new StrataManager();
-      const strataUrl = await strataManager.getOrCreateStrataUrl(
-        resolvedConfig.klavisUserId,
+    // Add Klavis Strata MCP server if userId and enabled servers are provided
+    if (
+      resolvedConfig.browserosUserId &&
+      resolvedConfig.enabledMcpServers?.length
+    ) {
+      const klavisClient = new KlavisClient();
+      const result = await klavisClient.createStrata(
+        resolvedConfig.browserosUserId,
+        resolvedConfig.enabledMcpServers,
       );
-      if (strataUrl) {
-        mcpServers['klavis-strata'] = createHttpMcpServerConfig({
-          httpUrl: strataUrl,
-          trust: true,
-        });
-        logger.info('Added Klavis Strata MCP server', {
-          userId: resolvedConfig.klavisUserId,
-        });
-      }
+      mcpServers['klavis-strata'] = createHttpMcpServerConfig({
+        httpUrl: result.strataServerUrl,
+        trust: true,
+      });
+      logger.info('Added Klavis Strata MCP server', {
+        userId: resolvedConfig.browserosUserId,
+        servers: resolvedConfig.enabledMcpServers,
+      });
     }
     logger.debug('MCP servers config', {mcpServers});
 

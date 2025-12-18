@@ -27,6 +27,7 @@ import {
   ValidationError,
   AgentExecutionError,
 } from '../errors.js';
+import {KlavisClient, OAUTH_MCP_SERVERS} from '../klavis/index.js';
 import {SessionManager} from '../session/SessionManager.js';
 
 import {ChatRequestSchema, HttpServerConfigSchema} from './types.js';
@@ -73,6 +74,7 @@ export function createHttpServer(config: HttpServerConfig) {
 
   const app = new Hono<{Variables: AppVariables}>();
   const sessionManager = new SessionManager();
+  const klavisClient = new KlavisClient();
 
   app.use(
     '/*',
@@ -116,6 +118,73 @@ export function createHttpServer(config: HttpServerConfig) {
   });
 
   app.get('/health', c => c.json({status: 'ok'}));
+
+  app.get('/klavis/servers', c => {
+    return c.json({
+      servers: OAUTH_MCP_SERVERS,
+      count: OAUTH_MCP_SERVERS.length,
+    });
+  });
+
+  app.get('/klavis/oauth-url', async c => {
+    const userId = c.req.query('userId');
+    const serverName = c.req.query('serverName');
+
+    if (!userId) {
+      return c.json({error: 'userId is required'}, 400);
+    }
+    if (!serverName) {
+      return c.json({error: 'serverName is required'}, 400);
+    }
+
+    try {
+      // Create Strata with the single server to get its OAuth URL
+      const response = await klavisClient.createStrata(userId, [serverName]);
+      const oauthUrls = response.oauthUrls;
+
+      if (!oauthUrls || Object.keys(oauthUrls).length === 0) {
+        return c.json(
+          {error: `Could not get OAuth URL for ${serverName}`},
+          404,
+        );
+      }
+
+      // Return the first (and only) OAuth URL
+      const oauthUrl = Object.values(oauthUrls)[0];
+      logger.info('Generated OAuth URL', {userId, serverName});
+      return c.json({oauthUrl, serverName, userId});
+    } catch (error) {
+      logger.error('Error getting OAuth URL', {
+        userId,
+        serverName,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return c.json({error: 'Failed to get OAuth URL'}, 500);
+    }
+  });
+
+  app.get('/klavis/user-integrations', async c => {
+    const userId = c.req.query('userId');
+
+    if (!userId) {
+      return c.json({error: 'userId is required'}, 400);
+    }
+
+    try {
+      const integrations = await klavisClient.getUserIntegrations(userId);
+      logger.info('Fetched user integrations', {
+        userId,
+        count: integrations.length,
+      });
+      return c.json({userId, integrations, count: integrations.length});
+    } catch (error) {
+      logger.error('Error fetching user integrations', {
+        userId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return c.json({error: 'Failed to fetch user integrations'}, 500);
+    }
+  });
 
   app.post('/chat', validateRequest(ChatRequestSchema), async c => {
     const request = c.get('validatedBody') as ChatRequest;
@@ -191,7 +260,8 @@ export function createHttpServer(config: HttpServerConfig) {
           contextWindowSize: request.contextWindowSize,
           tempDir: validatedConfig.tempDir || DEFAULT_TEMP_DIR,
           mcpServerUrl,
-          klavisUserId: request.klavisUserId,
+          browserosUserId: request.browserContext?.browserosUserId,
+          enabledMcpServers: request.browserContext?.enabledMcpServers,
         });
 
         await agent.execute(
