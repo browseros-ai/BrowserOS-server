@@ -16,6 +16,13 @@ export const TabSchema = z.object({
 
 export type Tab = z.infer<typeof TabSchema>;
 
+export const CustomMcpServerSchema = z.object({
+  name: z.string(),
+  url: z.string().url(),
+});
+
+export type CustomMcpServer = z.infer<typeof CustomMcpServerSchema>;
+
 export const BrowserContextSchema = z.object({
   windowId: z.number().optional(),
   activeTab: TabSchema.optional(),
@@ -23,6 +30,7 @@ export const BrowserContextSchema = z.object({
   tabs: z.array(TabSchema).optional(),
   browserosUserId: z.string().optional(),
   enabledMcpServers: z.array(z.string()).optional(),
+  customMcpServers: z.array(CustomMcpServerSchema).optional(),
 });
 
 export type BrowserContext = z.infer<typeof BrowserContextSchema>;

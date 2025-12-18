@@ -262,6 +262,7 @@ export function createHttpServer(config: HttpServerConfig) {
           mcpServerUrl,
           browserosUserId: request.browserContext?.browserosUserId,
           enabledMcpServers: request.browserContext?.enabledMcpServers,
+          customMcpServers: request.browserContext?.customMcpServers,
         });
 
         await agent.execute(

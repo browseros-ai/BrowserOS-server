@@ -147,6 +147,21 @@ export class GeminiAgent {
         servers: resolvedConfig.enabledMcpServers,
       });
     }
+
+    // Add custom third-party MCP servers
+    if (resolvedConfig.customMcpServers?.length) {
+      for (const server of resolvedConfig.customMcpServers) {
+        mcpServers[`custom-${server.name}`] = createHttpMcpServerConfig({
+          httpUrl: server.url,
+          trust: true,
+        });
+        logger.info('Added custom MCP server', {
+          name: server.name,
+          url: server.url,
+        });
+      }
+    }
+
     logger.debug('MCP servers config', {mcpServers});
 
     const geminiConfig = new GeminiConfig({
