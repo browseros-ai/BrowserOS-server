@@ -81,8 +81,14 @@ export class GeminiAgent {
         );
       }
 
-      logger.info('Fetching BrowserOS config', {configUrl});
-      const browserosConfig = await fetchBrowserOSConfig(configUrl);
+      logger.info('Fetching BrowserOS config', {
+        configUrl,
+        browserosId: config.browserosId,
+      });
+      const browserosConfig = await fetchBrowserOSConfig(
+        configUrl,
+        config.browserosId,
+      );
       const llmConfig = getLLMConfigFromProvider(browserosConfig, 'default');
 
       resolvedConfig = {

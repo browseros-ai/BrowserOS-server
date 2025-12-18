@@ -11,7 +11,7 @@ export class RateLimitError extends HttpAgentError {
     public limit: number,
   ) {
     super(
-      `Daily limit reached (${used}/${limit}). Add your own API key for unlimited usage.`,
+      `Daily limit reached (${used}/${limit}). Add your own API key for unlimited usage. https://dub.sh/browseros-usage-limit`,
       429,
       'RATE_LIMIT_EXCEEDED',
     );

@@ -9,25 +9,24 @@ import {logger} from '@browseros/common';
 
 import {RateLimitError} from './errors.js';
 
-const DEFAULT_DAILY_LIMIT = 5;
+const DEFAULT_DAILY_RATE_LIMIT = 5;
 
 export interface RecordParams {
   conversationId: string;
   browserosId: string;
   provider: string;
-  initialQuery: string;
 }
 
 export class RateLimiter {
   private countStmt: ReturnType<Database['prepare']>;
   private insertStmt: ReturnType<Database['prepare']>;
-  private dailyLimit: number;
+  private dailyRateLimit: number;
 
   constructor(
     private db: Database,
-    dailyLimit: number = DEFAULT_DAILY_LIMIT,
+    dailyRateLimit: number = DEFAULT_DAILY_RATE_LIMIT,
   ) {
-    this.dailyLimit = dailyLimit;
+    this.dailyRateLimit = dailyRateLimit;
     this.countStmt = db.prepare(`
       SELECT COUNT(*) as count
       FROM rate_limiter
@@ -39,26 +38,26 @@ export class RateLimiter {
     // This ensures the same conversation is only counted once for rate limiting
     this.insertStmt = db.prepare(`
       INSERT OR IGNORE INTO rate_limiter
-        (id, browseros_id, provider, initial_query)
-      VALUES (?, ?, ?, ?)
+        (id, browseros_id, provider)
+      VALUES (?, ?, ?)
     `);
   }
 
   check(browserosId: string): void {
     const count = this.getTodayCount(browserosId);
-    if (count >= this.dailyLimit) {
+    if (count >= this.dailyRateLimit) {
       logger.warn('Rate limit exceeded', {
         browserosId,
         count,
-        limit: this.dailyLimit,
+        dailyRateLimit: this.dailyRateLimit,
       });
-      throw new RateLimitError(count, this.dailyLimit);
+      throw new RateLimitError(count, this.dailyRateLimit);
     }
   }
 
   record(params: RecordParams): void {
-    const {conversationId, browserosId, provider, initialQuery} = params;
-    this.insertStmt.run(conversationId, browserosId, provider, initialQuery);
+    const {conversationId, browserosId, provider} = params;
+    this.insertStmt.run(conversationId, browserosId, provider);
   }
 
   private getTodayCount(browserosId: string): number {

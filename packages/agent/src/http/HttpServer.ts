@@ -146,7 +146,6 @@ export function createHttpServer(config: HttpServerConfig) {
         conversationId: request.conversationId,
         browserosId,
         provider: request.provider,
-        initialQuery: request.message,
       });
     }
 
@@ -191,6 +190,7 @@ export function createHttpServer(config: HttpServerConfig) {
           contextWindowSize: request.contextWindowSize,
           tempDir: validatedConfig.tempDir || DEFAULT_TEMP_DIR,
           mcpServerUrl,
+          browserosId,
         });
 
         await agent.execute(
