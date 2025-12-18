@@ -15,7 +15,6 @@ export interface RecordParams {
   conversationId: string;
   browserosId: string;
   provider: string;
-  initialQuery: string;
 }
 
 export class RateLimiter {
@@ -39,8 +38,8 @@ export class RateLimiter {
     // This ensures the same conversation is only counted once for rate limiting
     this.insertStmt = db.prepare(`
       INSERT OR IGNORE INTO rate_limiter
-        (id, browseros_id, provider, initial_query)
-      VALUES (?, ?, ?, ?)
+        (id, browseros_id, provider)
+      VALUES (?, ?, ?)
     `);
   }
 
@@ -57,8 +56,8 @@ export class RateLimiter {
   }
 
   record(params: RecordParams): void {
-    const {conversationId, browserosId, provider, initialQuery} = params;
-    this.insertStmt.run(conversationId, browserosId, provider, initialQuery);
+    const {conversationId, browserosId, provider} = params;
+    this.insertStmt.run(conversationId, browserosId, provider);
   }
 
   private getTodayCount(browserosId: string): number {

@@ -11,7 +11,6 @@ CREATE TABLE IF NOT EXISTS rate_limiter (
   id TEXT PRIMARY KEY,
   browseros_id TEXT NOT NULL,
   provider TEXT NOT NULL,
-  initial_query TEXT NOT NULL,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 )`;
 
