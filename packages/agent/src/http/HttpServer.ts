@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import {logger} from '@browseros/common';
+import {Sentry} from '@browseros/common/sentry';
 import {Hono} from 'hono';
 import type {Context, Next} from 'hono';
 import {cors} from 'hono/cors';
@@ -12,7 +13,10 @@ import type {ContentfulStatusCode} from 'hono/utils/http-status';
 import type {z} from 'zod';
 
 import {testProviderConnection} from '../agent/gemini-vercel-sdk-adapter/testProvider.js';
-import {VercelAIConfigSchema} from '../agent/gemini-vercel-sdk-adapter/types.js';
+import {
+  VercelAIConfigSchema,
+  AIProvider,
+} from '../agent/gemini-vercel-sdk-adapter/types.js';
 import type {VercelAIConfig} from '../agent/gemini-vercel-sdk-adapter/types.js';
 import {
   formatUIMessageStreamEvent,
@@ -65,6 +69,8 @@ export function createHttpServer(config: HttpServerConfig) {
     process.env.MCP_SERVER_URL ||
     DEFAULT_MCP_SERVER_URL;
 
+  const {rateLimiter, browserosId} = config;
+
   const app = new Hono<{Variables: AppVariables}>();
   const sessionManager = new SessionManager();
 
@@ -114,11 +120,35 @@ export function createHttpServer(config: HttpServerConfig) {
   app.post('/chat', validateRequest(ChatRequestSchema), async c => {
     const request = c.get('validatedBody') as ChatRequest;
 
+    const {provider, model, baseUrl} = request;
+
+    Sentry.setContext('request', {
+      provider,
+      model,
+      baseUrl,
+    });
+
     logger.info('Chat request received', {
       conversationId: request.conversationId,
       provider: request.provider,
       model: request.model,
+      browserContext: request.browserContext,
     });
+
+    // Rate limiting for BrowserOS provider
+    if (
+      request.provider === AIProvider.BROWSEROS &&
+      rateLimiter &&
+      browserosId
+    ) {
+      rateLimiter.check(browserosId);
+      rateLimiter.record({
+        conversationId: request.conversationId,
+        browserosId,
+        provider: request.provider,
+        initialQuery: request.message,
+      });
+    }
 
     c.header('Content-Type', 'text/event-stream');
     c.header('x-vercel-ai-ui-message-stream', 'v1');

@@ -9,6 +9,10 @@ lerna-debug.log*
 .env.dev
 .env.prod
 
+# sqlite database
+browseros.db
+browseros.db-*
+
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
@@ -51,7 +55,7 @@ web_modules/
 .claude
 
 # Build unpublished docs
-docs/
+# docs/
 
 # TypeScript cache
 *.tsbuildinfo

@@ -4,8 +4,9 @@
  */
 import http from 'node:http';
 
-import type {McpContext, Mutex,logger} from '@browseros/common';
-import { metrics} from '@browseros/common';
+import type {McpContext, Mutex, Logger} from '@browseros/common';
+import {metrics} from '@browseros/common';
+import {Sentry} from '@browseros/common/sentry';
 import type {ToolDefinition} from '@browseros/tools';
 import {McpResponse} from '@browseros/tools';
 import {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -23,8 +24,8 @@ export interface McpServerConfig {
   context: McpContext;
   controllerContext?: any;
   toolMutex: Mutex;
-  logger: typeof logger;
-  mcpServerEnabled: boolean;
+  logger: Logger;
+  allowRemote: boolean;
 }
 
 /**
@@ -135,12 +136,8 @@ function createMcpServerWithTools(config: McpServerConfig): McpServer {
  * Handles transport and protocol concerns
  */
 export function createHttpMcpServer(config: McpServerConfig): http.Server {
-  const {port, logger, mcpServerEnabled} = config;
+  const {port, logger, allowRemote} = config;
 
-  // Runtime state - can be toggled via control endpoint
-  let mcpEnabled = mcpServerEnabled;
-
-  // Always create MCP server (access controlled via mcpEnabled flag)
   const mcpServer = createMcpServerWithTools(config);
 
   /**
@@ -183,90 +180,6 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
   };
 
   /**
-   * Handles MCP control endpoint for enabling/disabling
-   */
-  const handleControlEndpoint = async (
-    req: http.IncomingMessage,
-    res: http.ServerResponse,
-  ): Promise<void> => {
-    if (req.method !== 'POST') {
-      res.writeHead(405, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({error: 'Method not allowed'}));
-      return;
-    }
-
-    try {
-      // Read request body
-      const chunks: Buffer[] = [];
-      for await (const chunk of req) {
-        chunks.push(chunk);
-      }
-      const body = Buffer.concat(chunks).toString();
-
-      // Parse and validate
-      const data = JSON.parse(body);
-      if (typeof data.enabled !== 'boolean') {
-        res.writeHead(400, {'Content-Type': 'application/json'});
-        res.end(
-          JSON.stringify({error: 'Invalid request: enabled must be boolean'}),
-        );
-        return;
-      }
-
-      // Update state
-      mcpEnabled = data.enabled;
-      logger.info(
-        `MCP server ${mcpEnabled ? 'enabled' : 'disabled'} via control endpoint`,
-      );
-
-      res.writeHead(200, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({success: true, enabled: mcpEnabled}));
-    } catch (error) {
-      res.writeHead(400, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({error: 'Invalid JSON'}));
-    }
-  };
-
-  /**
-   * Handles /init endpoint for metrics initialization
-   */
-  const handleInitEndpoint = async (
-    req: http.IncomingMessage,
-    res: http.ServerResponse,
-  ): Promise<void> => {
-    if (req.method !== 'POST') {
-      res.writeHead(405, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({error: 'Method not allowed'}));
-      return;
-    }
-
-    try {
-      const chunks: Buffer[] = [];
-      for await (const chunk of req) {
-        chunks.push(chunk);
-      }
-      const body = Buffer.concat(chunks).toString();
-
-      const data = JSON.parse(body);
-      if (!data.client_id) {
-        res.writeHead(400, {'Content-Type': 'application/json'});
-        res.end(JSON.stringify({error: 'client_id is required'}));
-        return;
-      }
-
-      metrics.initialize(data);
-      logger.info(`Metrics initialized with client_id: ${data.client_id}`);
-
-      res.writeHead(200, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({success: true}));
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Invalid JSON';
-      res.writeHead(400, {'Content-Type': 'application/json'});
-      res.end(JSON.stringify({error: errorMsg}));
-    }
-  };
-
-  /**
    * Sets CORS headers - permissive since server is localhost-only
    */
   const setCorsHeaders = (
@@ -287,9 +200,11 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
 
     logger.info(`${req.method} ${url.pathname}`);
 
-    // Handle CORS preflight for all endpoints
+    // Set CORS headers for all responses
+    setCorsHeaders(req, res);
+
+    // Handle CORS preflight
     if (req.method === 'OPTIONS') {
-      setCorsHeaders(req, res);
       res.writeHead(204);
       res.end();
       return;
@@ -302,8 +217,8 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
       return;
     }
 
-    // Security check for all other endpoints
-    if (!isLocalhostRequest(req)) {
+    // Security check for all other endpoints (unless allowRemote is enabled)
+    if (!allowRemote && !isLocalhostRequest(req)) {
       logger.warn(
         `Rejected non-localhost request from ${req.socket.remoteAddress}`,
       );
@@ -314,37 +229,8 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
       return;
     }
 
-    // Control endpoint
-    if (url.pathname === '/mcp/control') {
-      await handleControlEndpoint(req, res);
-      return;
-    }
-
-    // Init endpoint
-    if (url.pathname === '/init') {
-      await handleInitEndpoint(req, res);
-      return;
-    }
-
     // MCP endpoint
     if (url.pathname === '/mcp') {
-      setCorsHeaders(req, res);
-
-      if (!mcpEnabled) {
-        res.writeHead(503, {'Content-Type': 'application/json'});
-        res.end(
-          JSON.stringify({
-            jsonrpc: '2.0',
-            error: {
-              code: -32000,
-              message: 'MCP server is disabled',
-            },
-            id: null,
-          }),
-        );
-        return;
-      }
-
       try {
         // Create a new transport for each request to prevent request ID collisions.
         // Different clients may use the same JSON-RPC request IDs, which would cause
@@ -365,6 +251,7 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
         // Let the SDK handle the request (it will parse body, validate, and respond)
         await transport.handleRequest(req, res);
       } catch (error) {
+        Sentry.captureException(error);
         logger.error(`Error handling MCP request: ${error}`);
         if (!res.headersSent) {
           res.writeHead(500, {'Content-Type': 'application/json'});
@@ -390,6 +277,7 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
 
   // Handle port binding errors
   httpServer.on('error', (error: NodeJS.ErrnoException) => {
+    Sentry.captureException(error);
     if (error.code === 'EADDRINUSE') {
       console.error(`Error: Port ${port} already in use`);
       process.exit(3);
@@ -412,7 +300,7 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
  */
 export async function shutdownMcpServer(
   server: http.Server,
-  logger: typeof logger,
+  logger: Logger,
 ): Promise<void> {
   return new Promise(resolve => {
     logger.info('Closing HTTP server');

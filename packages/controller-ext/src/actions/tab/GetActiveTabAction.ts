@@ -39,8 +39,18 @@ import {TabAdapter} from '@/adapters/TabAdapter';
  * }
  */
 
-// Input schema - no input needed (accepts any payload, will be ignored)
-const GetActiveTabInputSchema = z.any();
+// Input schema - accepts optional windowId for multi-window support
+const GetActiveTabInputSchema = z
+  .object({
+    windowId: z
+      .number()
+      .int()
+      .optional()
+      .describe(
+        'Window ID to get active tab from. If not provided, uses current window.',
+      ),
+  })
+  .passthrough();
 
 // Output type
 export interface GetActiveTabOutput {
@@ -50,7 +60,12 @@ export interface GetActiveTabOutput {
   windowId: number;
 }
 
-export class GetActiveTabAction extends ActionHandler<any, GetActiveTabOutput> {
+type GetActiveTabInput = z.infer<typeof GetActiveTabInputSchema>;
+
+export class GetActiveTabAction extends ActionHandler<
+  GetActiveTabInput,
+  GetActiveTabOutput
+> {
   readonly inputSchema = GetActiveTabInputSchema;
   private tabAdapter = new TabAdapter();
 
@@ -58,17 +73,17 @@ export class GetActiveTabAction extends ActionHandler<any, GetActiveTabOutput> {
    * Execute getActiveTab action
    *
    * Logic:
-   * 1. Get active tab via TabAdapter
+   * 1. Get active tab via TabAdapter (using windowId if provided)
    * 2. Extract relevant fields
    * 3. Return typed result
    *
-   * @param _input - Ignored (no input needed)
+   * @param input - Optional windowId to specify which window
    * @returns Active tab information
    * @throws Error if no active tab found
    */
-  async execute(_input: any): Promise<GetActiveTabOutput> {
-    // Get active tab from Chrome
-    const tab = await this.tabAdapter.getActiveTab();
+  async execute(input: GetActiveTabInput): Promise<GetActiveTabOutput> {
+    // Get active tab from Chrome (use windowId if provided)
+    const tab = await this.tabAdapter.getActiveTab(input.windowId);
 
     // Validate required fields exist
     if (tab.id === undefined) {

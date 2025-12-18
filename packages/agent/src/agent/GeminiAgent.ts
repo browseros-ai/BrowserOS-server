@@ -8,6 +8,7 @@ import {
   fetchBrowserOSConfig,
   getLLMConfigFromProvider,
 } from '@browseros/common';
+import {Sentry} from '@browseros/common/sentry';
 import {
   Config as GeminiConfig,
   MCPServerConfig,
@@ -143,7 +144,7 @@ export class GeminiAgent {
         });
       }
     }
-    logger.debug('MCP servers config', { mcpServers });
+    logger.debug('MCP servers config', {mcpServers});
 
     const geminiConfig = new GeminiConfig({
       sessionId: resolvedConfig.conversationId,
@@ -253,6 +254,7 @@ export class GeminiAgent {
       conversationId: this.conversationId,
       message: message.substring(0, 100),
       historyLength: this.client.getHistory().length,
+      browserContextWindowId: browserContext?.windowId,
     });
 
     while (true) {
@@ -284,6 +286,7 @@ export class GeminiAgent {
           toolCallRequests.push(event.value as ToolCallRequestInfo);
         } else if (event.type === GeminiEventType.Error) {
           const errorValue = event.value as {error: Error};
+          Sentry.captureException(errorValue.error);
           throw new AgentExecutionError(
             'Agent execution failed',
             errorValue.error,
@@ -313,6 +316,22 @@ export class GeminiAgent {
           // Check abort before each tool execution
           if (abortSignal.aborted) {
             break;
+          }
+
+          // Inject windowId into ALL browser tools for multi-window/multi-profile routing
+          // The server uses windowId to route requests to the correct extension instance
+          if (
+            browserContext?.windowId &&
+            requestInfo.name.startsWith('browser_')
+          ) {
+            logger.debug('Injecting windowId into tool args', {
+              tool: requestInfo.name,
+              windowId: browserContext.windowId,
+            });
+            requestInfo.args = {
+              ...requestInfo.args,
+              windowId: browserContext.windowId,
+            };
           }
 
           try {

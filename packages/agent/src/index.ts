@@ -28,3 +28,5 @@ export {
   SessionNotFoundError,
   AgentExecutionError,
 } from './errors.js';
+
+export {RateLimiter, RateLimitError} from './rate-limiter/index.js';

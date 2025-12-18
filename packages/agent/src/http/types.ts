@@ -6,6 +6,7 @@
 import {z} from 'zod';
 
 import {VercelAIConfigSchema} from '../agent/gemini-vercel-sdk-adapter/types.js';
+import type {RateLimiter} from '../rate-limiter/index.js';
 
 export const TabSchema = z.object({
   id: z.number(),
@@ -16,6 +17,7 @@ export const TabSchema = z.object({
 export type Tab = z.infer<typeof TabSchema>;
 
 export const BrowserContextSchema = z.object({
+  windowId: z.number().optional(),
   activeTab: TabSchema.optional(),
   selectedTabs: z.array(TabSchema).optional(),
   tabs: z.array(TabSchema).optional(),
@@ -39,6 +41,8 @@ export interface HttpServerConfig {
   corsOrigins?: string[];
   tempDir?: string;
   mcpServerUrl?: string;
+  rateLimiter?: RateLimiter;
+  browserosId?: string;
 }
 
 export const HttpServerConfigSchema = z.object({

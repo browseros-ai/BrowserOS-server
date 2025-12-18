@@ -16,9 +16,12 @@ export const getActiveTab = defineTool<z.ZodRawShape, Context, Response>({
     category: ToolCategories.TAB_MANAGEMENT,
     readOnlyHint: true,
   },
-  schema: {},
-  handler: async (_request, response, context) => {
-    const result = await context.executeAction('getActiveTab', {});
+  schema: {
+    windowId: z.number().optional().describe('Window ID (injected by agent)'),
+  },
+  handler: async (request, response, context) => {
+    const params = request.params as {windowId?: number};
+    const result = await context.executeAction('getActiveTab', params);
     const data = result as {
       tabId: number;
       url: string;
@@ -45,9 +48,12 @@ export const listTabs = defineTool<z.ZodRawShape, Context, Response>({
     category: ToolCategories.TAB_MANAGEMENT,
     readOnlyHint: true,
   },
-  schema: {},
-  handler: async (_request, response, context) => {
-    const result = await context.executeAction('getTabs', {});
+  schema: {
+    windowId: z.number().optional().describe('Window ID (injected by agent)'),
+  },
+  handler: async (request, response, context) => {
+    const params = request.params as {windowId?: number};
+    const result = await context.executeAction('getTabs', params);
     const data = result as {
       tabs: Array<{
         id: number;
@@ -93,9 +99,14 @@ export const openTab = defineTool<z.ZodRawShape, Context, Response>({
       .boolean()
       .optional()
       .describe('Whether to make the new tab active (default: true)'),
+    windowId: z.number().optional().describe('Window ID (injected by agent)'),
   },
   handler: async (request, response, context) => {
-    const params = request.params as {url?: string; active?: boolean};
+    const params = request.params as {
+      url?: string;
+      active?: boolean;
+      windowId?: number;
+    };
 
     const result = await context.executeAction('openTab', params);
     const data = result as {tabId: number; url: string; title?: string};
@@ -115,11 +126,15 @@ export const closeTab = defineTool<z.ZodRawShape, Context, Response>({
   },
   schema: {
     tabId: z.coerce.number().describe('ID of the tab to close'),
+    windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {tabId} = request.params as {tabId: number};
+    const {tabId, windowId} = request.params as {
+      tabId: number;
+      windowId?: number;
+    };
 
-    await context.executeAction('closeTab', {tabId});
+    await context.executeAction('closeTab', {tabId, windowId});
 
     response.appendResponseLine(`Closed tab ${tabId}`);
   },
@@ -134,11 +149,15 @@ export const switchTab = defineTool<z.ZodRawShape, Context, Response>({
   },
   schema: {
     tabId: z.coerce.number().describe('ID of the tab to switch to'),
+    windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {tabId} = request.params as {tabId: number};
+    const {tabId, windowId} = request.params as {
+      tabId: number;
+      windowId?: number;
+    };
 
-    const result = await context.executeAction('switchTab', {tabId});
+    const result = await context.executeAction('switchTab', {tabId, windowId});
     const data = result as {tabId: number; url: string; title: string};
 
     response.appendResponseLine(`Switched to tab: ${data.title}`);
@@ -155,11 +174,18 @@ export const getLoadStatus = defineTool<z.ZodRawShape, Context, Response>({
   },
   schema: {
     tabId: z.coerce.number().describe('Tab ID to check'),
+    windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {tabId} = request.params as {tabId: number};
+    const {tabId, windowId} = request.params as {
+      tabId: number;
+      windowId?: number;
+    };
 
-    const result = await context.executeAction('getPageLoadStatus', {tabId});
+    const result = await context.executeAction('getPageLoadStatus', {
+      tabId,
+      windowId,
+    });
     const data = result as {
       tabId: number;
       isResourcesLoading: boolean;

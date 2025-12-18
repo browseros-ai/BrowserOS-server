@@ -4,17 +4,26 @@
  *
  * Main server orchestration
  */
+// Sentry import should happen before any other logic
+import {Sentry} from '@browseros/common/sentry';
+
 import fs from 'node:fs';
 import type http from 'node:http';
 import path from 'node:path';
 
-import {createHttpServer as createAgentHttpServer} from '@browseros/agent';
+import {
+  createHttpServer as createAgentHttpServer,
+  RateLimiter,
+} from '@browseros/agent';
 import {
   ensureBrowserConnected,
   McpContext,
   Mutex,
   logger,
+  metrics,
   readVersion,
+  initializeDb,
+  identity,
 } from '@browseros/common';
 import {
   ControllerContext,
@@ -28,24 +37,65 @@ import {
 } from '@browseros/tools';
 import {allKlavisTools} from '@browseros/tools/klavis';
 
-import {parseArguments} from './args.js';
+import {loadServerConfig, type ServerConfig} from './config.js';
 
 const version = readVersion();
-const ports = parseArguments();
+const configResult = loadServerConfig();
 
-configureLogDirectory(ports.executionDir);
+if (!configResult.ok) {
+  Sentry.captureException(new Error(configResult.error));
+  console.error(configResult.error);
+  process.exit(1);
+}
+
+const config: ServerConfig = configResult.value;
+
+configureLogDirectory(config.executionDir);
+
+// Initialize database and identity service
+const dbPath = path.join(
+  config.executionDir || config.resourcesDir,
+  'browseros.db',
+);
+const db = initializeDb(dbPath);
+
+identity.initialize({
+  installId: config.instanceInstallId,
+  db,
+});
+
+const browserosId = identity.getBrowserOSId();
+logger.info('[Identity] BrowserOS ID initialized', {
+  browserosId: browserosId.slice(0, 12),
+  fromConfig: !!config.instanceInstallId,
+});
+
+// Initialize metrics and Sentry (uses install_id from config for analytics)
+metrics.initialize({
+  client_id: config.instanceClientId,
+  install_id: config.instanceInstallId,
+  browseros_version: config.instanceBrowserosVersion,
+  chromium_version: config.instanceChromiumVersion,
+});
+
+Sentry.setContext('browseros', {
+  client_id: config.instanceClientId,
+  install_id: config.instanceInstallId,
+  browseros_version: config.instanceBrowserosVersion,
+  chromium_version: config.instanceChromiumVersion,
+});
 
 void (async () => {
   logger.info(`Starting BrowserOS Server v${version}`);
 
   logger.info(
-    `[Controller Server] Starting on ws://127.0.0.1:${ports.extensionPort}`,
+    `[Controller Server] Starting on ws://127.0.0.1:${config.extensionPort}`,
   );
   const {controllerBridge, controllerContext} = createController(
-    ports.extensionPort,
+    config.extensionPort,
   );
 
-  const cdpContext = await connectToCdp(ports.cdpPort);
+  const cdpContext = await connectToCdp(config.cdpPort);
 
   logger.info(
     `Loaded ${allControllerTools.length} controller (extension) tools`,
@@ -54,7 +104,7 @@ void (async () => {
   const toolMutex = new Mutex();
 
   const mcpServer = startMcpServer({
-    ports,
+    config,
     version,
     tools,
     cdpContext,
@@ -62,9 +112,9 @@ void (async () => {
     toolMutex,
   });
 
-  const agentServer = startAgentServer(ports);
+  const agentServer = startAgentServer(config);
 
-  logSummary(ports);
+  logSummary(config);
 
   const shutdown = createShutdownHandler(
     mcpServer,
@@ -139,74 +189,77 @@ function mergeTools(
   return [...cdpTools, ...wrappedControllerTools, ...klavisTools];
 }
 
-function startMcpServer(config: {
-  ports: ReturnType<typeof parseArguments>;
+function startMcpServer(params: {
+  config: ServerConfig;
   version: string;
   tools: Array<ToolDefinition<any, any, any>>;
   cdpContext: McpContext | null;
   controllerContext: ControllerContext;
   toolMutex: Mutex;
 }): http.Server {
-  const {ports, version, tools, cdpContext, controllerContext, toolMutex} =
-    config;
+  const {config, version, tools, cdpContext, controllerContext, toolMutex} =
+    params;
 
   const mcpServer = createHttpMcpServer({
-    port: ports.httpMcpPort,
+    port: config.httpMcpPort,
     version,
     tools,
     context: cdpContext || ({} as any),
     controllerContext,
     toolMutex,
     logger,
-    mcpServerEnabled: ports.mcpServerEnabled,
+    allowRemote: config.mcpAllowRemote,
   });
 
-  if (!ports.mcpServerEnabled) {
-    logger.info('[MCP Server] Disabled (--disable-mcp-server)');
-  } else {
-    logger.info(
-      `[MCP Server] Listening on http://127.0.0.1:${ports.httpMcpPort}/mcp`,
-    );
-    logger.info(
-      `[MCP Server] Health check: http://127.0.0.1:${ports.httpMcpPort}/health`,
-    );
+  logger.info(
+    `[MCP Server] Listening on http://127.0.0.1:${config.httpMcpPort}/mcp`,
+  );
+  logger.info(
+    `[MCP Server] Health check: http://127.0.0.1:${config.httpMcpPort}/health`,
+  );
+  if (config.mcpAllowRemote) {
+    logger.warn('[MCP Server] Remote connections enabled (--mcp-allow-remote)');
   }
 
   return mcpServer;
 }
 
-function startAgentServer(ports: ReturnType<typeof parseArguments>): {
+function startAgentServer(serverConfig: ServerConfig): {
   server: any;
   config: any;
 } {
-  const mcpServerUrl = `http://127.0.0.1:${ports.httpMcpPort}/mcp`;
+  const mcpServerUrl = `http://127.0.0.1:${serverConfig.httpMcpPort}/mcp`;
+
+  // Rate limiter always initialized (uses global db and browserosId)
+  const rateLimiter = new RateLimiter(db);
+  logger.info('[Agent Server] Rate limiter initialized');
 
   const {server, config} = createAgentHttpServer({
-    port: ports.agentPort,
+    port: serverConfig.agentPort,
     host: '0.0.0.0',
     corsOrigins: ['*'],
-    tempDir: ports.executionDir || ports.resourcesDir,
+    tempDir: serverConfig.executionDir || serverConfig.resourcesDir,
     mcpServerUrl,
+    rateLimiter,
+    browserosId,
   });
 
-  const test = 'hello';
-
   logger.info(
-    `[Agent Server] Listening on http://127.0.0.1:${ports.agentPort}`,
+    `[Agent Server] Listening on http://127.0.0.1:${serverConfig.agentPort}`,
   );
   logger.info(`[Agent Server] MCP Server URL: ${mcpServerUrl}`);
 
   return {server, config};
 }
 
-function logSummary(ports: ReturnType<typeof parseArguments>) {
+function logSummary(serverConfig: ServerConfig) {
   logger.info('');
   logger.info('Services running:');
-  logger.info(`  Controller Server: ws://127.0.0.1:${ports.extensionPort}`);
-  logger.info(`  Agent Server: http://127.0.0.1:${ports.agentPort}`);
-  if (ports.mcpServerEnabled) {
-    logger.info(`  MCP Server: http://127.0.0.1:${ports.httpMcpPort}/mcp`);
-  }
+  logger.info(
+    `  Controller Server: ws://127.0.0.1:${serverConfig.extensionPort}`,
+  );
+  logger.info(`  Agent Server: http://127.0.0.1:${serverConfig.agentPort}`);
+  logger.info(`  MCP Server: http://127.0.0.1:${serverConfig.httpMcpPort}/mcp`);
   logger.info('');
 }
 
@@ -215,19 +268,30 @@ function createShutdownHandler(
   agentServer: {server: any; config: any},
   controllerBridge: ControllerBridge,
 ) {
-  return async () => {
+  return () => {
     logger.info('Shutting down server...');
 
-    await shutdownMcpServer(mcpServer, logger);
+    const forceExitTimeout = setTimeout(() => {
+      logger.warn('Graceful shutdown timed out, forcing exit');
+      process.exit(1);
+    }, 5000);
 
-    logger.info('Stopping agent server...');
-    agentServer.server.stop();
-
-    logger.info('Closing ControllerBridge...');
-    await controllerBridge.close();
-
-    logger.info('Server shutdown complete');
-    process.exit(0);
+    Promise.all([
+      shutdownMcpServer(mcpServer, logger),
+      Promise.resolve(agentServer.server.stop()),
+      controllerBridge.close(),
+      metrics.shutdown(),
+    ])
+      .then(() => {
+        clearTimeout(forceExitTimeout);
+        logger.info('Server shutdown complete');
+        process.exit(0);
+      })
+      .catch(err => {
+        clearTimeout(forceExitTimeout);
+        logger.error('Shutdown error:', err);
+        process.exit(1);
+      });
   };
 }
 
