@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-const KLAVIS_API_BASE = 'https://api.klavis.ai';
+const KLAVIS_PROXY_URL = 'https://llm.browseros.com/klavis';
 
 export interface StrataCreateResponse {
   strataServerUrl: string;
@@ -14,14 +14,10 @@ export interface StrataCreateResponse {
 }
 
 export class KlavisClient {
-  private apiKey: string;
+  private baseUrl: string;
 
-  constructor(apiKey?: string) {
-    const key = apiKey || process.env.KLAVIS_API_KEY;
-    if (!key) {
-      throw new Error('KLAVIS_API_KEY not configured');
-    }
-    this.apiKey = key;
+  constructor(baseUrl?: string) {
+    this.baseUrl = baseUrl || KLAVIS_PROXY_URL;
   }
 
   private async request<T>(
@@ -29,10 +25,9 @@ export class KlavisClient {
     path: string,
     body?: unknown,
   ): Promise<T> {
-    const response = await fetch(`${KLAVIS_API_BASE}${path}`, {
+    const response = await fetch(`${this.baseUrl}${path}`, {
       method,
       headers: {
-        Authorization: `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
       },
       body: body ? JSON.stringify(body) : undefined,
@@ -41,7 +36,7 @@ export class KlavisClient {
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(
-        `Klavis API error: ${response.status} ${response.statusText} - ${errorText}`,
+        `Klavis error: ${response.status} ${response.statusText} - ${errorText}`,
       );
     }
 
