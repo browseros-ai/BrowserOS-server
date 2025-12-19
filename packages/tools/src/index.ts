@@ -13,10 +13,6 @@ export * as cdpTools from './cdp-based/index.js';
 export {allControllerTools} from './controller-based/index.js';
 export * as controllerTools from './controller-based/index.js';
 
-// Export Klavis MCP tools (Gmail, Google Calendar, Sheets, Docs, Notion, etc.)
-export {allKlavisTools} from './klavis/index.js';
-export * as klavisTools from './klavis/index.js';
-
 // Export types
 export * from './types/index.js';
 
