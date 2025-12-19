@@ -27,6 +27,7 @@ import {
   ValidationError,
   AgentExecutionError,
 } from '../errors.js';
+import {KlavisClient, OAUTH_MCP_SERVERS} from '../klavis/index.js';
 import {SessionManager} from '../session/SessionManager.js';
 
 import {ChatRequestSchema, HttpServerConfigSchema} from './types.js';
@@ -73,6 +74,7 @@ export function createHttpServer(config: HttpServerConfig) {
 
   const app = new Hono<{Variables: AppVariables}>();
   const sessionManager = new SessionManager();
+  const klavisClient = new KlavisClient();
 
   app.use(
     '/*',
@@ -116,6 +118,64 @@ export function createHttpServer(config: HttpServerConfig) {
   });
 
   app.get('/health', c => c.json({status: 'ok'}));
+
+  app.get('/klavis/servers', c => {
+    return c.json({
+      servers: OAUTH_MCP_SERVERS,
+      count: OAUTH_MCP_SERVERS.length,
+    });
+  });
+
+  app.get('/klavis/oauth-urls', async c => {
+    if (!browserosId) {
+      return c.json({error: 'browserosId not configured'}, 500);
+    }
+
+    try {
+      const serverNames = OAUTH_MCP_SERVERS.map(s => s.name);
+      const response = await klavisClient.createStrata(
+        browserosId,
+        serverNames,
+      );
+
+      logger.info('Generated OAuth URLs', {
+        browserosId: browserosId.slice(0, 12),
+        serverCount: serverNames.length,
+      });
+
+      return c.json({
+        oauthUrls: response.oauthUrls || {},
+        servers: serverNames,
+      });
+    } catch (error) {
+      logger.error('Error getting OAuth URLs', {
+        browserosId: browserosId?.slice(0, 12),
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return c.json({error: 'Failed to get OAuth URLs'}, 500);
+    }
+  });
+
+  app.get('/klavis/user-integrations', async c => {
+    if (!browserosId) {
+      return c.json({error: 'browserosId not configured'}, 500);
+    }
+
+    try {
+      const integrations = await klavisClient.getUserIntegrations(browserosId);
+      logger.info('Fetched user integrations', {
+        browserosId: browserosId.slice(0, 12),
+        count: integrations.length,
+      });
+      return c.json({integrations, count: integrations.length});
+    } catch (error) {
+      logger.error('Error fetching user integrations', {
+        browserosId: browserosId?.slice(0, 12),
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return c.json({error: 'Failed to fetch user integrations'}, 500);
+    }
+  });
 
   app.post('/chat', validateRequest(ChatRequestSchema), async c => {
     const request = c.get('validatedBody') as ChatRequest;
@@ -191,6 +251,8 @@ export function createHttpServer(config: HttpServerConfig) {
           tempDir: validatedConfig.tempDir || DEFAULT_TEMP_DIR,
           mcpServerUrl,
           browserosId,
+          enabledMcpServers: request.browserContext?.enabledMcpServers,
+          customMcpServers: request.browserContext?.customMcpServers,
         });
 
         await agent.execute(

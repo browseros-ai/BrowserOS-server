@@ -21,6 +21,7 @@ import type {Part} from '@google/genai';
 
 import {AgentExecutionError} from '../errors.js';
 import type {BrowserContext} from '../http/types.js';
+import {KlavisClient} from '../klavis/index.js';
 
 import {
   VercelAIContentGenerator,
@@ -121,6 +122,62 @@ export class GeminiAgent {
       compressesAtTokens: Math.floor(DEFAULT_COMPRESSION_RATIO * contextWindow),
     });
 
+    // Build MCP servers config
+    const mcpServers: Record<string, MCPServerConfig> = {};
+
+    // Add BrowserOS MCP server if configured
+    if (resolvedConfig.mcpServerUrl) {
+      mcpServers['browseros-mcp'] = createHttpMcpServerConfig({
+        httpUrl: resolvedConfig.mcpServerUrl,
+        headers: {Accept: 'application/json, text/event-stream'},
+        trust: true,
+      });
+    }
+
+    // Add Klavis Strata MCP server if browserosId and enabled servers are provided
+    if (
+      resolvedConfig.browserosId &&
+      resolvedConfig.enabledMcpServers?.length
+    ) {
+      try {
+        const klavisClient = new KlavisClient();
+        const result = await klavisClient.createStrata(
+          resolvedConfig.browserosId,
+          resolvedConfig.enabledMcpServers,
+        );
+        mcpServers['klavis-strata'] = createHttpMcpServerConfig({
+          httpUrl: result.strataServerUrl,
+          trust: true,
+        });
+        logger.info('Added Klavis Strata MCP server', {
+          browserosId: resolvedConfig.browserosId.slice(0, 12),
+          servers: resolvedConfig.enabledMcpServers,
+        });
+      } catch (error) {
+        logger.error('Failed to create Klavis Strata MCP server', {
+          browserosId: resolvedConfig.browserosId?.slice(0, 12),
+          servers: resolvedConfig.enabledMcpServers,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    // Add custom third-party MCP servers
+    if (resolvedConfig.customMcpServers?.length) {
+      for (const server of resolvedConfig.customMcpServers) {
+        mcpServers[`custom-${server.name}`] = createHttpMcpServerConfig({
+          httpUrl: server.url,
+          trust: true,
+        });
+        logger.info('Added custom MCP server', {
+          name: server.name,
+          url: server.url,
+        });
+      }
+    }
+
+    logger.debug('MCP servers config', {mcpServers});
+
     const geminiConfig = new GeminiConfig({
       sessionId: resolvedConfig.conversationId,
       targetDir: tempDir,
@@ -129,15 +186,7 @@ export class GeminiAgent {
       model: modelString,
       excludeTools: ['run_shell_command', 'write_file', 'replace'],
       compressionThreshold: compressionThreshold,
-      mcpServers: resolvedConfig.mcpServerUrl
-        ? {
-            'browseros-mcp': createHttpMcpServerConfig({
-              httpUrl: resolvedConfig.mcpServerUrl,
-              headers: {Accept: 'application/json, text/event-stream'},
-              trust: true,
-            }),
-          }
-        : undefined,
+      mcpServers: Object.keys(mcpServers).length > 0 ? mcpServers : undefined,
     });
 
     await geminiConfig.initialize();

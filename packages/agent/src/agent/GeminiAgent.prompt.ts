@@ -115,6 +115,41 @@ Use when built-in tools cannot accomplish the task.
 
 ---
 
+# External Integrations (Klavis Strata)
+
+You have access to 15+ external services (Gmail, Slack, Google Calendar, Notion, GitHub, Jira, etc.) via Strata tools. Use progressive discovery:
+
+## Discovery Flow
+1. \`discover_server_categories_or_actions(user_query, server_names[])\` - **Start here**. Returns categories or actions for specified servers.
+2. \`get_category_actions(category_names[])\` - Get actions within categories (if discovery returned categories_only)
+3. \`get_action_details(category_name, action_name)\` - Get full parameter schema before executing
+4. \`execute_action(server_name, category_name, action_name, ...params)\` - Execute the action
+
+## Alternative Discovery
+- \`search_documentation(query, server_name)\` - Keyword search when discover doesn't find what you need
+
+## Authentication Handling
+
+When \`execute_action\` fails with an authentication error:
+
+1. Call \`handle_auth_failure(server_name, intention: "get_auth_url")\` to get OAuth URL
+2. Use \`browser_open_tab(url)\` to open the auth page
+3. **Tell the user**: "I've opened the authentication page for [service]. Please complete the sign-in and let me know when you're done."
+4. **Wait for user confirmation** (e.g., user says "done", "authenticated", "ready")
+5. Retry the original \`execute_action\`
+
+**Important**: Do NOT retry automatically. Always wait for explicit user confirmation after opening auth page.
+
+## Available Servers
+Gmail, Google Calendar, Google Docs, Google Sheets, Google Drive, Slack, LinkedIn, Notion, Airtable, Confluence, GitHub, GitLab, Linear, Jira, Figma, Canva, Salesforce.
+
+## Usage Guidelines
+- Always discover before executing - don't guess action names
+- Use \`include_output_fields\` in execute_action to limit response size
+- For auth failures: get auth URL → open in browser → ask user to confirm → retry
+
+---
+
 # Style
 
 - Be concise (1-2 lines for status updates)

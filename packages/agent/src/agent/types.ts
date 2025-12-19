@@ -5,6 +5,8 @@
  */
 import {z} from 'zod';
 
+import {CustomMcpServerSchema} from '../http/types.js';
+
 import {VercelAIConfigSchema} from './gemini-vercel-sdk-adapter/types.js';
 
 export const AgentConfigSchema = VercelAIConfigSchema.extend({
@@ -13,6 +15,8 @@ export const AgentConfigSchema = VercelAIConfigSchema.extend({
   mcpServerUrl: z.string().optional(),
   contextWindowSize: z.number().optional(),
   browserosId: z.string().optional(),
+  enabledMcpServers: z.array(z.string()).optional(),
+  customMcpServers: z.array(CustomMcpServerSchema).optional(),
 });
 
 export type AgentConfig = z.infer<typeof AgentConfigSchema>;
