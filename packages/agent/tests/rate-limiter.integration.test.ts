@@ -11,7 +11,7 @@ import {Database} from 'bun:sqlite';
 
 import {RateLimiter, RateLimitError} from '../src/rate-limiter/index.js';
 
-const DAILY_LIMIT_TEST = 3;
+const DAILY_RATE_LIMIT_TEST = 3;
 
 function createTestDb(): Database {
   const db = new Database(':memory:');
@@ -21,7 +21,6 @@ function createTestDb(): Database {
       id TEXT PRIMARY KEY,
       browseros_id TEXT NOT NULL,
       provider TEXT NOT NULL,
-      initial_query TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
@@ -34,7 +33,7 @@ describe('RateLimiter', () => {
 
   beforeEach(() => {
     db = createTestDb();
-    rateLimiter = new RateLimiter(db, DAILY_LIMIT_TEST);
+    rateLimiter = new RateLimiter(db, DAILY_RATE_LIMIT_TEST);
   });
 
   describe('check()', () => {
@@ -48,7 +47,6 @@ describe('RateLimiter', () => {
           conversationId: `conv-${i}`,
           browserosId,
           provider: 'browseros',
-          initialQuery: `Test query ${i}`,
         });
       }
     });
@@ -63,7 +61,6 @@ describe('RateLimiter', () => {
           conversationId: `conv-${i}`,
           browserosId,
           provider: 'browseros',
-          initialQuery: `Test query ${i}`,
         });
       }
 
@@ -93,7 +90,6 @@ describe('RateLimiter', () => {
           conversationId: sameConversationId,
           browserosId,
           provider: 'browseros',
-          initialQuery: 'Duplicate query',
         });
       }
 
@@ -105,13 +101,11 @@ describe('RateLimiter', () => {
         conversationId: 'unique-conv-1',
         browserosId,
         provider: 'browseros',
-        initialQuery: 'Query 1',
       });
       rateLimiter.record({
         conversationId: 'unique-conv-2',
         browserosId,
         provider: 'browseros',
-        initialQuery: 'Query 2',
       });
 
       // Now at limit (3 unique conversations)
@@ -130,7 +124,6 @@ describe('RateLimiter', () => {
           conversationId: `user1-conv-${i}`,
           browserosId: user1,
           provider: 'browseros',
-          initialQuery: `User 1 query ${i}`,
         });
       }
 
@@ -145,7 +138,6 @@ describe('RateLimiter', () => {
         conversationId: 'user2-conv-1',
         browserosId: user2,
         provider: 'browseros',
-        initialQuery: 'User 2 query 1',
       });
       expect(() => rateLimiter.check(user2)).not.toThrow();
     });

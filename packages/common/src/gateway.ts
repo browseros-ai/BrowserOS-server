@@ -10,6 +10,7 @@ export interface Provider {
   model: string;
   apiKey: string;
   baseUrl?: string;
+  dailyRateLimit?: number;
 }
 
 export interface BrowserOSConfig {
@@ -25,15 +26,22 @@ export interface LLMConfig {
 
 export async function fetchBrowserOSConfig(
   configUrl: string,
+  browserosId?: string,
 ): Promise<BrowserOSConfig> {
-  logger.debug('Fetching BrowserOS config', {configUrl});
+  logger.debug('Fetching BrowserOS config', {configUrl, browserosId});
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (browserosId) {
+    headers['X-BrowserOS-ID'] = browserosId;
+  }
 
   try {
     const response = await fetch(configUrl, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -57,8 +65,10 @@ export async function fetchBrowserOSConfig(
       }
     }
 
-    logger.info('✅ BrowserOS config fetched with', {
-      count: config.providers.length,
+    const defaultProvider = config.providers.find(p => p.name === 'default');
+    logger.info('✅ BrowserOS config fetched', {
+      providerCount: config.providers.length,
+      dailyRateLimit: defaultProvider?.dailyRateLimit,
     });
 
     return config;

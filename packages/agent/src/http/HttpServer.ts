@@ -206,7 +206,6 @@ export function createHttpServer(config: HttpServerConfig) {
         conversationId: request.conversationId,
         browserosId,
         provider: request.provider,
-        initialQuery: request.message,
       });
     }
 

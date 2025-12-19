@@ -24,6 +24,7 @@ import {
   readVersion,
   initializeDb,
   identity,
+  fetchBrowserOSConfig,
 } from '@browseros/common';
 import {
   ControllerContext,
@@ -85,8 +86,14 @@ Sentry.setContext('browseros', {
   chromium_version: config.instanceChromiumVersion,
 });
 
+const DEFAULT_DAILY_RATE_LIMIT = 5;
+const DEV_DAILY_RATE_LIMIT = 100;
+
 void (async () => {
   logger.info(`Starting BrowserOS Server v${version}`);
+
+  // Fetch rate limit config from Cloudflare worker
+  const dailyRateLimit = await fetchDailyRateLimit();
 
   logger.info(
     `[Controller Server] Starting on ws://127.0.0.1:${config.extensionPort}`,
@@ -112,7 +119,7 @@ void (async () => {
     toolMutex,
   });
 
-  const agentServer = startAgentServer(config);
+  const agentServer = startAgentServer(config, dailyRateLimit);
 
   logSummary(config);
 
@@ -224,15 +231,53 @@ function startMcpServer(params: {
   return mcpServer;
 }
 
-function startAgentServer(serverConfig: ServerConfig): {
+async function fetchDailyRateLimit(): Promise<number> {
+  // Dev mode: skip fetch, use higher limit for local development
+  if (process.env.NODE_ENV === 'development') {
+    logger.info('[Config] Dev mode: using dev rate limit', {
+      dailyRateLimit: DEV_DAILY_RATE_LIMIT,
+    });
+    return DEV_DAILY_RATE_LIMIT;
+  }
+
+  const configUrl = process.env.BROWSEROS_CONFIG_URL;
+  if (!configUrl) {
+    logger.info('[Config] No BROWSEROS_CONFIG_URL, using default rate limit', {
+      dailyRateLimit: DEFAULT_DAILY_RATE_LIMIT,
+    });
+    return DEFAULT_DAILY_RATE_LIMIT;
+  }
+
+  try {
+    const browserosConfig = await fetchBrowserOSConfig(configUrl, browserosId);
+    const defaultProvider = browserosConfig.providers.find(
+      p => p.name === 'default',
+    );
+    const dailyRateLimit =
+      defaultProvider?.dailyRateLimit ?? DEFAULT_DAILY_RATE_LIMIT;
+
+    logger.info('[Config] Rate limit config fetched', {dailyRateLimit});
+    return dailyRateLimit;
+  } catch (error) {
+    logger.warn('[Config] Failed to fetch rate limit config, using default', {
+      error: error instanceof Error ? error.message : String(error),
+      dailyRateLimit: DEFAULT_DAILY_RATE_LIMIT,
+    });
+    return DEFAULT_DAILY_RATE_LIMIT;
+  }
+}
+
+function startAgentServer(
+  serverConfig: ServerConfig,
+  dailyRateLimit: number,
+): {
   server: any;
   config: any;
 } {
   const mcpServerUrl = `http://127.0.0.1:${serverConfig.httpMcpPort}/mcp`;
 
-  // Rate limiter always initialized (uses global db and browserosId)
-  const rateLimiter = new RateLimiter(db);
-  logger.info('[Agent Server] Rate limiter initialized');
+  const rateLimiter = new RateLimiter(db, dailyRateLimit);
+  logger.info('[Agent Server] Rate limiter initialized', {dailyRateLimit});
 
   const {server, config} = createAgentHttpServer({
     port: serverConfig.agentPort,
