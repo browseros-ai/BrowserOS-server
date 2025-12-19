@@ -177,6 +177,70 @@ export function createHttpServer(config: HttpServerConfig) {
     }
   });
 
+  app.post('/klavis/servers/add', async c => {
+    if (!browserosId) {
+      return c.json({error: 'browserosId not configured'}, 500);
+    }
+
+    try {
+      const body = await c.req.json();
+      const serverName = body.serverName as string;
+
+      if (!serverName) {
+        return c.json({error: 'serverName is required'}, 400);
+      }
+
+      // createStrata adds servers - same userId always returns same strataId
+      const result = await klavisClient.createStrata(browserosId, [serverName]);
+      logger.info('Added server to Strata', {
+        browserosId: browserosId.slice(0, 12),
+        serverName,
+        strataId: result.strataId,
+      });
+      return c.json({
+        success: true,
+        serverName,
+        strataId: result.strataId,
+        addedServers: result.addedServers,
+        oauthUrl: result.oauthUrls?.[serverName],
+      });
+    } catch (error) {
+      logger.error('Error adding server', {
+        browserosId: browserosId?.slice(0, 12),
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return c.json({error: 'Failed to add server'}, 500);
+    }
+  });
+
+  app.delete('/klavis/servers/remove', async c => {
+    if (!browserosId) {
+      return c.json({error: 'browserosId not configured'}, 500);
+    }
+
+    try {
+      const body = await c.req.json();
+      const serverName = body.serverName as string;
+
+      if (!serverName) {
+        return c.json({error: 'serverName is required'}, 400);
+      }
+
+      await klavisClient.removeServer(browserosId, serverName);
+      logger.info('Removed server from Strata', {
+        browserosId: browserosId.slice(0, 12),
+        serverName,
+      });
+      return c.json({success: true, serverName});
+    } catch (error) {
+      logger.error('Error removing server', {
+        browserosId: browserosId?.slice(0, 12),
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return c.json({error: 'Failed to remove server'}, 500);
+    }
+  });
+
   app.post('/chat', validateRequest(ChatRequestSchema), async c => {
     const request = c.get('validatedBody') as ChatRequest;
 
