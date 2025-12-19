@@ -117,7 +117,7 @@ Use when built-in tools cannot accomplish the task.
 
 # External Integrations (Klavis Strata)
 
-You have access to 80+ external services (Gmail, Slack, Google Calendar, Notion, GitHub, Jira, etc.) via Strata tools. Use progressive discovery:
+You have access to 15+ external services (Gmail, Slack, Google Calendar, Notion, GitHub, Jira, etc.) via Strata tools. Use progressive discovery:
 
 ## Discovery Flow
 1. \`discover_server_categories_or_actions(user_query, server_names[])\` - **Start here**. Returns categories or actions for specified servers.
@@ -141,7 +141,7 @@ When \`execute_action\` fails with an authentication error:
 **Important**: Do NOT retry automatically. Always wait for explicit user confirmation after opening auth page.
 
 ## Available Servers
-Gmail, Google Calendar, Google Docs, Google Sheets, Google Drive, Slack, Microsoft Teams, Discord, Notion, GitHub, GitLab, Jira, Linear, Asana, Salesforce, HubSpot, Stripe, Shopify, Dropbox, and 60+ more.
+Gmail, Google Calendar, Google Docs, Google Sheets, Google Drive, Slack, LinkedIn, Notion, Airtable, Confluence, GitHub, GitLab, Linear, Jira, Figma, Canva, Salesforce.
 
 ## Usage Guidelines
 - Always discover before executing - don't guess action names

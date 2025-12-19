@@ -126,60 +126,51 @@ export function createHttpServer(config: HttpServerConfig) {
     });
   });
 
-  app.get('/klavis/oauth-url', async c => {
-    const userId = c.req.query('userId');
-    const serverName = c.req.query('serverName');
-
-    if (!userId) {
-      return c.json({error: 'userId is required'}, 400);
-    }
-    if (!serverName) {
-      return c.json({error: 'serverName is required'}, 400);
+  app.get('/klavis/oauth-urls', async c => {
+    if (!browserosId) {
+      return c.json({error: 'browserosId not configured'}, 500);
     }
 
     try {
-      // Create Strata with the single server to get its OAuth URL
-      const response = await klavisClient.createStrata(userId, [serverName]);
-      const oauthUrls = response.oauthUrls;
+      const serverNames = OAUTH_MCP_SERVERS.map(s => s.name);
+      const response = await klavisClient.createStrata(
+        browserosId,
+        serverNames,
+      );
 
-      if (!oauthUrls || Object.keys(oauthUrls).length === 0) {
-        return c.json(
-          {error: `Could not get OAuth URL for ${serverName}`},
-          404,
-        );
-      }
+      logger.info('Generated OAuth URLs', {
+        browserosId: browserosId.slice(0, 12),
+        serverCount: serverNames.length,
+      });
 
-      // Return the first (and only) OAuth URL
-      const oauthUrl = Object.values(oauthUrls)[0];
-      logger.info('Generated OAuth URL', {userId, serverName});
-      return c.json({oauthUrl, serverName, userId});
+      return c.json({
+        oauthUrls: response.oauthUrls || {},
+        servers: serverNames,
+      });
     } catch (error) {
-      logger.error('Error getting OAuth URL', {
-        userId,
-        serverName,
+      logger.error('Error getting OAuth URLs', {
+        browserosId: browserosId?.slice(0, 12),
         error: error instanceof Error ? error.message : String(error),
       });
-      return c.json({error: 'Failed to get OAuth URL'}, 500);
+      return c.json({error: 'Failed to get OAuth URLs'}, 500);
     }
   });
 
   app.get('/klavis/user-integrations', async c => {
-    const userId = c.req.query('userId');
-
-    if (!userId) {
-      return c.json({error: 'userId is required'}, 400);
+    if (!browserosId) {
+      return c.json({error: 'browserosId not configured'}, 500);
     }
 
     try {
-      const integrations = await klavisClient.getUserIntegrations(userId);
+      const integrations = await klavisClient.getUserIntegrations(browserosId);
       logger.info('Fetched user integrations', {
-        userId,
+        browserosId: browserosId.slice(0, 12),
         count: integrations.length,
       });
-      return c.json({userId, integrations, count: integrations.length});
+      return c.json({integrations, count: integrations.length});
     } catch (error) {
       logger.error('Error fetching user integrations', {
-        userId,
+        browserosId: browserosId?.slice(0, 12),
         error: error instanceof Error ? error.message : String(error),
       });
       return c.json({error: 'Failed to fetch user integrations'}, 500);
@@ -260,7 +251,7 @@ export function createHttpServer(config: HttpServerConfig) {
           contextWindowSize: request.contextWindowSize,
           tempDir: validatedConfig.tempDir || DEFAULT_TEMP_DIR,
           mcpServerUrl,
-          browserosUserId: request.browserContext?.browserosUserId,
+          browserosId,
           enabledMcpServers: request.browserContext?.enabledMcpServers,
           customMcpServers: request.browserContext?.customMcpServers,
         });

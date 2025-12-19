@@ -128,15 +128,15 @@ export class GeminiAgent {
       });
     }
 
-    // Add Klavis Strata MCP server if userId and enabled servers are provided
+    // Add Klavis Strata MCP server if browserosId and enabled servers are provided
     if (
-      resolvedConfig.browserosUserId &&
+      resolvedConfig.browserosId &&
       resolvedConfig.enabledMcpServers?.length
     ) {
       try {
         const klavisClient = new KlavisClient();
         const result = await klavisClient.createStrata(
-          resolvedConfig.browserosUserId,
+          resolvedConfig.browserosId,
           resolvedConfig.enabledMcpServers,
         );
         mcpServers['klavis-strata'] = createHttpMcpServerConfig({
@@ -144,12 +144,12 @@ export class GeminiAgent {
           trust: true,
         });
         logger.info('Added Klavis Strata MCP server', {
-          userId: resolvedConfig.browserosUserId,
+          browserosId: resolvedConfig.browserosId.slice(0, 12),
           servers: resolvedConfig.enabledMcpServers,
         });
       } catch (error) {
         logger.error('Failed to create Klavis Strata MCP server', {
-          userId: resolvedConfig.browserosUserId,
+          browserosId: resolvedConfig.browserosId?.slice(0, 12),
           servers: resolvedConfig.enabledMcpServers,
           error: error instanceof Error ? error.message : String(error),
         });

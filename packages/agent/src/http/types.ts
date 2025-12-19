@@ -28,7 +28,6 @@ export const BrowserContextSchema = z.object({
   activeTab: TabSchema.optional(),
   selectedTabs: z.array(TabSchema).optional(),
   tabs: z.array(TabSchema).optional(),
-  browserosUserId: z.string().optional(),
   enabledMcpServers: z.array(z.string()).optional(),
   customMcpServers: z.array(CustomMcpServerSchema).optional(),
 });
