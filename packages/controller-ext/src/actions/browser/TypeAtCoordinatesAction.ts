@@ -8,6 +8,7 @@ import {z} from 'zod';
 import {ActionHandler} from '../ActionHandler';
 
 import {getBrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
+import {PointerOverlay} from '@/utils/PointerOverlay';
 
 // Input schema for typeAtCoordinates action
 const TypeAtCoordinatesInputSchema = z.object({
@@ -64,6 +65,11 @@ export class TypeAtCoordinatesAction extends ActionHandler<
     input: TypeAtCoordinatesInput,
   ): Promise<TypeAtCoordinatesOutput> {
     const {tabId, x, y, text} = input;
+
+    // Show pointer overlay before typing
+    const textPreview =
+      text.length > 20 ? `Type: ${text.substring(0, 20)}...` : `Type: ${text}`;
+    await PointerOverlay.showPointerAndWait(tabId, x, y, textPreview);
 
     await this.browserOS.typeAtCoordinates(tabId, x, y, text);
 

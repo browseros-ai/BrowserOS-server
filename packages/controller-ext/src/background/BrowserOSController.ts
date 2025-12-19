@@ -8,6 +8,7 @@ import {CreateBookmarkAction} from '@/actions/bookmark/CreateBookmarkAction';
 import {GetBookmarksAction} from '@/actions/bookmark/GetBookmarksAction';
 import {RemoveBookmarkAction} from '@/actions/bookmark/RemoveBookmarkAction';
 import {CaptureScreenshotAction} from '@/actions/browser/CaptureScreenshotAction';
+import {CaptureScreenshotPointerAction} from '@/actions/browser/CaptureScreenshotPointerAction';
 import {ClearAction} from '@/actions/browser/ClearAction';
 import {ClickAction} from '@/actions/browser/ClickAction';
 import {ClickCoordinatesAction} from '@/actions/browser/ClickCoordinatesAction';
@@ -205,6 +206,10 @@ export class BrowserOSController {
     this.actionRegistry.register(
       'captureScreenshot',
       new CaptureScreenshotAction(),
+    );
+    this.actionRegistry.register(
+      'captureScreenshotPointer',
+      new CaptureScreenshotPointerAction(),
     );
 
     this.actionRegistry.register('scrollDown', new ScrollDownAction());

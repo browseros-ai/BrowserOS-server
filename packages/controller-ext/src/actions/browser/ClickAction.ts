@@ -8,6 +8,8 @@ import {z} from 'zod';
 import {ActionHandler, ActionResponse} from '../ActionHandler';
 
 import {BrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
+import {SnapshotCache} from '@/utils/SnapshotCache';
+import {PointerOverlay} from '@/utils/PointerOverlay';
 
 // Input schema
 const ClickInputSchema = z.object({
@@ -49,6 +51,13 @@ export class ClickAction extends ActionHandler<ClickInput, ClickOutput> {
   private browserOSAdapter = BrowserOSAdapter.getInstance();
 
   async execute(input: ClickInput): Promise<ClickOutput> {
+    // Show pointer overlay before click
+    const rect = SnapshotCache.getNodeRect(input.tabId, input.nodeId);
+    if (rect) {
+      const {x, y} = PointerOverlay.getCenterCoordinates(rect);
+      await PointerOverlay.showPointerAndWait(input.tabId, x, y, 'Click');
+    }
+
     await this.browserOSAdapter.click(input.tabId, input.nodeId);
     return {success: true};
   }

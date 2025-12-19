@@ -12,6 +12,7 @@ import type {
   InteractiveSnapshot,
   InteractiveSnapshotOptions,
 } from '@/adapters/BrowserOSAdapter';
+import {SnapshotCache} from '@/utils/SnapshotCache';
 
 // Input schema
 const GetInteractiveSnapshotInputSchema = z.object({
@@ -59,9 +60,14 @@ export class GetInteractiveSnapshotAction extends ActionHandler<
   async execute(
     input: GetInteractiveSnapshotInput,
   ): Promise<InteractiveSnapshot> {
-    return await this.browserOSAdapter.getInteractiveSnapshot(
+    const snapshot = await this.browserOSAdapter.getInteractiveSnapshot(
       input.tabId,
       input.options as InteractiveSnapshotOptions | undefined,
     );
+
+    // Cache snapshot for pointer overlay lookup
+    SnapshotCache.set(input.tabId, snapshot);
+
+    return snapshot;
   }
 }

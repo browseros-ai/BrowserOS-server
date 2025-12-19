@@ -8,6 +8,8 @@ import {z} from 'zod';
 import {ActionHandler, ActionResponse} from '../ActionHandler';
 
 import {BrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
+import {SnapshotCache} from '@/utils/SnapshotCache';
+import {PointerOverlay} from '@/utils/PointerOverlay';
 
 // Input schema
 const InputTextInputSchema = z.object({
@@ -58,6 +60,17 @@ export class InputTextAction extends ActionHandler<
   private browserOSAdapter = BrowserOSAdapter.getInstance();
 
   async execute(input: InputTextInput): Promise<InputTextOutput> {
+    // Show pointer overlay before typing
+    const rect = SnapshotCache.getNodeRect(input.tabId, input.nodeId);
+    if (rect) {
+      const {x, y} = PointerOverlay.getLeftCenterCoordinates(rect);
+      const textPreview =
+        input.text.length > 20
+          ? `Type: ${input.text.substring(0, 20)}...`
+          : `Type: ${input.text}`;
+      await PointerOverlay.showPointerAndWait(input.tabId, x, y, textPreview);
+    }
+
     await this.browserOSAdapter.inputText(
       input.tabId,
       input.nodeId,

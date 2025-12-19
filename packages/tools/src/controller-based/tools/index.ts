@@ -29,7 +29,7 @@ export {
 export {scrollDown, scrollUp} from './scrolling.js';
 
 // Screenshots
-export {getScreenshot} from './screenshot.js';
+export {getScreenshot, getScreenshotPointer} from './screenshot.js';
 
 // Content Extraction
 export {getPageContent} from './content.js';

@@ -38,7 +38,7 @@ import {
   scrollToElement,
 } from './tools/interaction.js';
 import {navigate} from './tools/navigation.js';
-import {getScreenshot} from './tools/screenshot.js';
+import {getScreenshot, getScreenshotPointer} from './tools/screenshot.js';
 import {scrollDown, scrollUp} from './tools/scrolling.js';
 import {
   getActiveTab,
@@ -66,6 +66,7 @@ export const allControllerTools = [
   scrollDown,
   scrollUp,
   getScreenshot,
+  getScreenshotPointer,
   getPageContent,
   executeJavaScript,
   sendKeys,

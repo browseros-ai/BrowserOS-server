@@ -8,6 +8,7 @@ import {z} from 'zod';
 import {ActionHandler} from '../ActionHandler';
 
 import {getBrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
+import {PointerOverlay} from '@/utils/PointerOverlay';
 
 // Input schema for clickCoordinates action
 const ClickCoordinatesInputSchema = z.object({
@@ -55,6 +56,9 @@ export class ClickCoordinatesAction extends ActionHandler<
 
   async execute(input: ClickCoordinatesInput): Promise<ClickCoordinatesOutput> {
     const {tabId, x, y} = input;
+
+    // Show pointer overlay before click
+    await PointerOverlay.showPointerAndWait(tabId, x, y, 'Click');
 
     await this.browserOS.clickCoordinates(tabId, x, y);
 
