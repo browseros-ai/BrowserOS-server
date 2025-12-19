@@ -541,11 +541,14 @@ describe('MessageConversionStrategy', () => {
         // Adjacency validation filters out non-adjacent pairs:
         // - tool_use is filtered because next message is not a tool message
         // - tool_result is filtered because previous message is not an assistant with matching tool_use
-        // Result: user text, assistant (text only, tool_use removed), assistant text
+        // Result: user text, assistant (text only as array, tool_use removed), assistant text
         expect(result).toHaveLength(3);
         expect(result[0].role).toBe('user');
         expect(result[1].role).toBe('assistant');
-        expect(result[1].content).toBe('Let me search'); // Only text, tool_use removed
+        // Content is an array with text part after tool_call removal
+        expect(result[1].content).toEqual([
+          {type: 'text', text: 'Let me search'},
+        ]);
         expect(result[2].role).toBe('assistant');
         expect(result[2].content).toBe('Search complete');
       },
@@ -1159,6 +1162,379 @@ describe('MessageConversionStrategy', () => {
         null as unknown as ContentUnion,
       );
       expect(result).toBeUndefined();
+    });
+  });
+
+  // PROVIDER COMPATIBILITY TESTS
+  // These tests verify that the message conversion works correctly for all supported providers
+  describe('Provider Compatibility', () => {
+    // Anthropic/OpenAI: Always have IDs
+    t('Anthropic-style: tool_use and tool_result with matching IDs', () => {
+      const contents: Content[] = [
+        {
+          role: 'model',
+          parts: [
+            {
+              functionCall: {
+                id: 'toolu_01abc123',
+                name: 'search',
+                args: {query: 'test'},
+              },
+            },
+          ],
+        },
+        {
+          role: 'user',
+          parts: [
+            {
+              functionResponse: {
+                id: 'toolu_01abc123',
+                name: 'search',
+                response: {results: []},
+              },
+            },
+          ],
+        },
+      ];
+
+      const result = strategy.geminiToVercel(contents);
+
+      expect(result).toHaveLength(2);
+      const toolCall = (
+        result[0].content as VercelContentPart[]
+      )[0] as VercelToolCallPart;
+      const toolResult = (
+        result[1].content as VercelContentPart[]
+      )[0] as VercelToolResultPart;
+      expect(toolCall.toolCallId).toBe('toolu_01abc123');
+      expect(toolResult.toolCallId).toBe('toolu_01abc123');
+    });
+
+    // Gemini: Empty IDs, match by name
+    t('Gemini-style: empty IDs matched by tool name', () => {
+      const contents: Content[] = [
+        {
+          role: 'model',
+          parts: [
+            {
+              functionCall: {
+                name: 'get_weather',
+                args: {location: 'NYC'},
+              } as Partial<FunctionCall> as FunctionCall,
+            },
+          ],
+        },
+        {
+          role: 'user',
+          parts: [
+            {
+              functionResponse: {
+                name: 'get_weather',
+                response: {temp: 72},
+              } as Partial<FunctionResponse> as FunctionResponse,
+            },
+          ],
+        },
+      ];
+
+      const result = strategy.geminiToVercel(contents);
+
+      expect(result).toHaveLength(2);
+      const toolCall = (
+        result[0].content as VercelContentPart[]
+      )[0] as VercelToolCallPart;
+      const toolResult = (
+        result[1].content as VercelContentPart[]
+      )[0] as VercelToolResultPart;
+      // Both should have the same generated ID
+      expect(toolCall.toolCallId).toBe(toolResult.toolCallId);
+      expect(toolCall.toolCallId).toMatch(/^call_\d+_[a-z0-9]+$/);
+    });
+
+    // Mixed: Call has ID, result doesn't
+    t('Mixed: call has ID, result matched by name uses call ID', () => {
+      const contents: Content[] = [
+        {
+          role: 'model',
+          parts: [
+            {
+              functionCall: {
+                id: 'call_from_ollama',
+                name: 'calculate',
+                args: {x: 1},
+              },
+            },
+          ],
+        },
+        {
+          role: 'user',
+          parts: [
+            {
+              functionResponse: {
+                name: 'calculate',
+                response: {result: 2},
+              } as Partial<FunctionResponse> as FunctionResponse,
+            },
+          ],
+        },
+      ];
+
+      const result = strategy.geminiToVercel(contents);
+
+      expect(result).toHaveLength(2);
+      const toolCall = (
+        result[0].content as VercelContentPart[]
+      )[0] as VercelToolCallPart;
+      const toolResult = (
+        result[1].content as VercelContentPart[]
+      )[0] as VercelToolResultPart;
+      expect(toolCall.toolCallId).toBe('call_from_ollama');
+      expect(toolResult.toolCallId).toBe('call_from_ollama');
+    });
+
+    // Mixed: Result has ID, call doesn't
+    t('Mixed: result has ID, call matched by name uses result ID', () => {
+      const contents: Content[] = [
+        {
+          role: 'model',
+          parts: [
+            {
+              functionCall: {
+                name: 'fetch_data',
+                args: {},
+              } as Partial<FunctionCall> as FunctionCall,
+            },
+          ],
+        },
+        {
+          role: 'user',
+          parts: [
+            {
+              functionResponse: {
+                id: 'result_id_123',
+                name: 'fetch_data',
+                response: {data: 'test'},
+              },
+            },
+          ],
+        },
+      ];
+
+      const result = strategy.geminiToVercel(contents);
+
+      expect(result).toHaveLength(2);
+      const toolCall = (
+        result[0].content as VercelContentPart[]
+      )[0] as VercelToolCallPart;
+      const toolResult = (
+        result[1].content as VercelContentPart[]
+      )[0] as VercelToolResultPart;
+      expect(toolCall.toolCallId).toBe('result_id_123');
+      expect(toolResult.toolCallId).toBe('result_id_123');
+    });
+
+    // Multiple tools: Anthropic-style parallel tool calls
+    t('Multiple parallel tool calls with IDs (Anthropic-style)', () => {
+      const contents: Content[] = [
+        {
+          role: 'model',
+          parts: [
+            {functionCall: {id: 'toolu_1', name: 'search', args: {q: 'a'}}},
+            {functionCall: {id: 'toolu_2', name: 'fetch', args: {url: 'b'}}},
+          ],
+        },
+        {
+          role: 'user',
+          parts: [
+            {
+              functionResponse: {
+                id: 'toolu_1',
+                name: 'search',
+                response: {r: 1},
+              },
+            },
+            {
+              functionResponse: {
+                id: 'toolu_2',
+                name: 'fetch',
+                response: {r: 2},
+              },
+            },
+          ],
+        },
+      ];
+
+      const result = strategy.geminiToVercel(contents);
+
+      expect(result).toHaveLength(2);
+      const calls = result[0].content as VercelContentPart[];
+      const results = result[1].content as VercelContentPart[];
+      expect(calls).toHaveLength(2);
+      expect(results).toHaveLength(2);
+      expect((calls[0] as VercelToolCallPart).toolCallId).toBe('toolu_1');
+      expect((calls[1] as VercelToolCallPart).toolCallId).toBe('toolu_2');
+      expect((results[0] as VercelToolResultPart).toolCallId).toBe('toolu_1');
+      expect((results[1] as VercelToolResultPart).toolCallId).toBe('toolu_2');
+    });
+
+    // Multiple tools: Gemini-style (empty IDs)
+    t('Multiple parallel tool calls without IDs (Gemini-style)', () => {
+      const contents: Content[] = [
+        {
+          role: 'model',
+          parts: [
+            {
+              functionCall: {
+                name: 'tool_a',
+                args: {},
+              } as Partial<FunctionCall> as FunctionCall,
+            },
+            {
+              functionCall: {
+                name: 'tool_b',
+                args: {},
+              } as Partial<FunctionCall> as FunctionCall,
+            },
+          ],
+        },
+        {
+          role: 'user',
+          parts: [
+            {
+              functionResponse: {
+                name: 'tool_a',
+                response: {},
+              } as Partial<FunctionResponse> as FunctionResponse,
+            },
+            {
+              functionResponse: {
+                name: 'tool_b',
+                response: {},
+              } as Partial<FunctionResponse> as FunctionResponse,
+            },
+          ],
+        },
+      ];
+
+      const result = strategy.geminiToVercel(contents);
+
+      expect(result).toHaveLength(2);
+      const calls = result[0].content as VercelContentPart[];
+      const results = result[1].content as VercelContentPart[];
+      expect(calls).toHaveLength(2);
+      expect(results).toHaveLength(2);
+      // Each call should have matching result ID
+      expect((calls[0] as VercelToolCallPart).toolCallId).toBe(
+        (results[0] as VercelToolResultPart).toolCallId,
+      );
+      expect((calls[1] as VercelToolCallPart).toolCallId).toBe(
+        (results[1] as VercelToolResultPart).toolCallId,
+      );
+      // IDs should be different from each other
+      expect((calls[0] as VercelToolCallPart).toolCallId).not.toBe(
+        (calls[1] as VercelToolCallPart).toolCallId,
+      );
+    });
+
+    // Edge case: Different names, no matching
+    t('Different names with no IDs are filtered as orphans', () => {
+      const contents: Content[] = [
+        {
+          role: 'model',
+          parts: [
+            {
+              functionCall: {
+                name: 'tool_x',
+                args: {},
+              } as Partial<FunctionCall> as FunctionCall,
+            },
+          ],
+        },
+        {
+          role: 'user',
+          parts: [
+            {
+              functionResponse: {
+                name: 'tool_y',
+                response: {},
+              } as Partial<FunctionResponse> as FunctionResponse,
+            },
+          ],
+        },
+      ];
+
+      const result = strategy.geminiToVercel(contents);
+
+      // Both should be filtered out - no matching pairs
+      expect(result).toHaveLength(0);
+    });
+
+    // Edge case: Mismatched IDs are matched by name (fallback behavior)
+    t('Mismatched IDs fall back to name matching', () => {
+      const contents: Content[] = [
+        {
+          role: 'model',
+          parts: [{functionCall: {id: 'call_1', name: 'tool', args: {}}}],
+        },
+        {
+          role: 'user',
+          parts: [
+            {functionResponse: {id: 'call_2', name: 'tool', response: {}}},
+          ],
+        },
+      ];
+
+      const result = strategy.geminiToVercel(contents);
+
+      // IDs don't match in PHASE 1, but PHASE 2 matches by name
+      // Uses call's ID as the synchronized ID
+      expect(result).toHaveLength(2);
+      const toolCall = (
+        result[0].content as VercelContentPart[]
+      )[0] as VercelToolCallPart;
+      const toolResult = (
+        result[1].content as VercelContentPart[]
+      )[0] as VercelToolResultPart;
+      expect(toolCall.toolCallId).toBe('call_1');
+      expect(toolResult.toolCallId).toBe('call_1');
+    });
+
+    // Bedrock: Uses toolu_bdrk_ prefix
+    t('Bedrock-style: tool_use with toolu_bdrk_ prefix', () => {
+      const contents: Content[] = [
+        {
+          role: 'model',
+          parts: [
+            {
+              functionCall: {
+                id: 'toolu_bdrk_01XYZ',
+                name: 'invoke_lambda',
+                args: {fn: 'test'},
+              },
+            },
+          ],
+        },
+        {
+          role: 'user',
+          parts: [
+            {
+              functionResponse: {
+                id: 'toolu_bdrk_01XYZ',
+                name: 'invoke_lambda',
+                response: {status: 'ok'},
+              },
+            },
+          ],
+        },
+      ];
+
+      const result = strategy.geminiToVercel(contents);
+
+      expect(result).toHaveLength(2);
+      const toolCall = (
+        result[0].content as VercelContentPart[]
+      )[0] as VercelToolCallPart;
+      expect(toolCall.toolCallId).toBe('toolu_bdrk_01XYZ');
     });
   });
 });

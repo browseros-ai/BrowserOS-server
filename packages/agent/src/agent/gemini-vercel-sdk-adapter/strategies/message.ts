@@ -47,6 +47,10 @@ export class MessageConversionStrategy {
     const {pairedToolCallIds, pairedToolResultIds, idMapping} =
       this.buildToolPairs(contents);
 
+    // Track global indices to match special keys used in buildToolPairs for empty IDs
+    let globalCallIndex = 0;
+    let globalResultIndex = 0;
+
     for (const content of contents) {
       const role = content.role === 'model' ? 'assistant' : 'user';
 
@@ -122,25 +126,36 @@ export class MessageConversionStrategy {
       // CASE 2: Tool results (user providing tool execution results)
       if (functionResponses.length > 0) {
         // Filter out duplicate tool results AND orphaned tool results (no matching tool_use)
-        const uniqueResponses = functionResponses.filter(fr => {
-          // Use synchronized ID from pairing, or original ID if not in mapping
+        // We need to track indices for empty ID lookup, so use explicit loop
+        const uniqueResponses: Array<{
+          id?: string;
+          name?: string;
+          response?: Record<string, unknown>;
+          lookupKey: string;
+        }> = [];
+
+        for (const fr of functionResponses) {
           const originalId = fr.id || '';
-          const synchronizedId = idMapping.get(originalId) || originalId;
+          // For empty IDs, use the special key format that buildToolPairs uses
+          const lookupKey = originalId || `__empty_result_${globalResultIndex}`;
+          globalResultIndex++;
+
+          const synchronizedId = idMapping.get(lookupKey) || originalId;
 
           // Skip duplicates
           if (synchronizedId && seenToolResultIds.has(synchronizedId)) {
-            return false;
+            continue;
           }
           // Skip orphaned tool results (no matching tool_use in paired set)
           // This prevents: "unexpected tool_use_id found in tool_result blocks"
-          if (originalId && !pairedToolResultIds.has(originalId)) {
-            return false;
+          if (!pairedToolResultIds.has(lookupKey)) {
+            continue;
           }
           if (synchronizedId) {
             seenToolResultIds.add(synchronizedId);
           }
-          return true;
-        });
+          uniqueResponses.push({...fr, lookupKey});
+        }
 
         // If all tool results were duplicates, skip this message entirely
         if (uniqueResponses.length === 0) {
@@ -216,17 +231,18 @@ export class MessageConversionStrategy {
         let isFirst = true;
         for (const fc of functionCalls) {
           const originalId = fc.id || '';
+          // For empty IDs, use the special key format that buildToolPairs uses
+          const lookupKey = originalId || `__empty_call_${globalCallIndex}`;
+          globalCallIndex++;
 
           // Skip orphaned tool calls (no matching tool result in paired set)
-          if (originalId && !pairedToolCallIds.has(originalId)) {
+          if (!pairedToolCallIds.has(lookupKey)) {
             continue;
           }
 
           // Use synchronized ID from pairing - this ensures tool_call and tool_result have SAME ID
           const toolCallId =
-            idMapping.get(originalId) ||
-            originalId ||
-            this.generateToolCallId();
+            idMapping.get(lookupKey) || originalId || this.generateToolCallId();
 
           const toolCallPart: Record<string, unknown> = {
             type: 'tool-call' as const,
@@ -311,6 +327,7 @@ export class MessageConversionStrategy {
       id?: string;
       name?: string;
       response?: Record<string, unknown>;
+      lookupKey: string;
     }>,
     idMapping: Map<string, string>,
   ): VercelContentPart[] {
@@ -346,9 +363,8 @@ export class MessageConversionStrategy {
       }
 
       // Use synchronized ID from pairing - this ensures tool_result matches tool_call
-      const originalId = fr.id || '';
       const synchronizedId =
-        idMapping.get(originalId) || originalId || this.generateToolCallId();
+        idMapping.get(fr.lookupKey) || fr.id || this.generateToolCallId();
 
       return {
         type: 'tool-result' as const,
@@ -489,34 +505,10 @@ export class MessageConversionStrategy {
       }
     }
 
-    // PHASE 3: Match remaining by position (fallback for edge cases)
-    const unmatchedCalls = toolCalls.filter(
-      c => !c.id || !pairedToolCallIds.has(c.id),
-    );
-    const unmatchedResults = toolResults.filter(
-      r => !usedResultIndices.has(r.index),
-    );
-
-    // Simple positional matching for remaining unmatched items
-    const minLength = Math.min(unmatchedCalls.length, unmatchedResults.length);
-    for (let i = 0; i < minLength; i++) {
-      const call = unmatchedCalls[i];
-      const result = unmatchedResults[i];
-
-      // Only match if result comes after call in the conversation
-      if (result.contentIndex > call.contentIndex) {
-        const syncId = call.id || result.id || this.generateToolCallId();
-
-        if (call.id) {
-          pairedToolCallIds.add(call.id);
-          idMapping.set(call.id, syncId);
-        }
-        if (result.id) {
-          pairedToolResultIds.add(result.id);
-          idMapping.set(result.id, syncId);
-        }
-      }
-    }
+    // PHASE 3: REMOVED - Positional matching is too risky
+    // It could incorrectly pair unrelated tools (e.g., call_A with result_B)
+    // If a call/result has no ID AND no matching name, it's truly orphaned
+    // and should be filtered out rather than incorrectly paired
 
     return {pairedToolCallIds, pairedToolResultIds, idMapping};
   }
