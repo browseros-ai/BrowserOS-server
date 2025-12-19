@@ -42,19 +42,10 @@ export class MessageConversionStrategy {
     const messages: CoreMessage[] = [];
     const seenToolResultIds = new Set<string>();
 
-    // First pass: collect all tool call IDs and tool result IDs
-    const allToolCallIds = new Set<string>();
-    const allToolResultIds = new Set<string>();
-    for (const content of contents) {
-      for (const part of content.parts || []) {
-        if (isFunctionCallPart(part) && part.functionCall?.id) {
-          allToolCallIds.add(part.functionCall.id);
-        }
-        if (isFunctionResponsePart(part) && part.functionResponse?.id) {
-          allToolResultIds.add(part.functionResponse.id);
-        }
-      }
-    }
+    // PHASE 1: Build tool call/result pairs with synchronized IDs
+    // This ensures that even when IDs are missing, we generate consistent IDs for pairs
+    const {pairedToolCallIds, pairedToolResultIds, idMapping} =
+      this.buildToolPairs(contents);
 
     for (const content of contents) {
       const role = content.role === 'model' ? 'assistant' : 'user';
@@ -132,20 +123,22 @@ export class MessageConversionStrategy {
       if (functionResponses.length > 0) {
         // Filter out duplicate tool results AND orphaned tool results (no matching tool_use)
         const uniqueResponses = functionResponses.filter(fr => {
-          const id = fr.id || '';
+          // Use synchronized ID from pairing, or original ID if not in mapping
+          const originalId = fr.id || '';
+          const synchronizedId = idMapping.get(originalId) || originalId;
+
           // Skip duplicates
-          if (seenToolResultIds.has(id)) {
+          if (synchronizedId && seenToolResultIds.has(synchronizedId)) {
             return false;
           }
-          // Skip orphaned tool results (no matching tool_use in history)
+          // Skip orphaned tool results (no matching tool_use in paired set)
           // This prevents: "unexpected tool_use_id found in tool_result blocks"
-          // Also remove from allToolResultIds so corresponding tool_uses in later
-          // Contents will also be filtered out (cascading deletion)
-          if (id && !allToolCallIds.has(id)) {
-            allToolResultIds.delete(id);
+          if (originalId && !pairedToolResultIds.has(originalId)) {
             return false;
           }
-          seenToolResultIds.add(id);
+          if (synchronizedId) {
+            seenToolResultIds.add(synchronizedId);
+          }
           return true;
         });
 
@@ -156,8 +149,10 @@ export class MessageConversionStrategy {
 
         // If there are NO images → standard tool message
         if (imageParts.length === 0) {
-          const toolResultParts =
-            this.convertFunctionResponsesToToolResults(uniqueResponses);
+          const toolResultParts = this.convertFunctionResponsesToToolResults(
+            uniqueResponses,
+            idMapping,
+          );
           messages.push({
             role: 'tool',
             content: toolResultParts,
@@ -170,8 +165,10 @@ export class MessageConversionStrategy {
         // 2. User message with images (tool messages don't support images)
 
         // Message 1: Tool message with tool results (no images)
-        const toolResultParts =
-          this.convertFunctionResponsesToToolResults(uniqueResponses);
+        const toolResultParts = this.convertFunctionResponsesToToolResults(
+          uniqueResponses,
+          idMapping,
+        );
         messages.push({
           role: 'tool',
           content: toolResultParts,
@@ -218,15 +215,18 @@ export class MessageConversionStrategy {
         // This prevents Anthropic error: "tool_use ids were found without tool_result blocks"
         let isFirst = true;
         for (const fc of functionCalls) {
-          const toolCallId = fc.id || this.generateToolCallId();
+          const originalId = fc.id || '';
 
-          // Skip orphaned tool calls (no matching tool result in history)
-          // Also remove from allToolCallIds so corresponding tool_results in later
-          // Contents will also be filtered out (cascading deletion)
-          if (fc.id && !allToolResultIds.has(fc.id)) {
-            allToolCallIds.delete(fc.id);
+          // Skip orphaned tool calls (no matching tool result in paired set)
+          if (originalId && !pairedToolCallIds.has(originalId)) {
             continue;
           }
+
+          // Use synchronized ID from pairing - this ensures tool_call and tool_result have SAME ID
+          const toolCallId =
+            idMapping.get(originalId) ||
+            originalId ||
+            this.generateToolCallId();
 
           const toolCallPart: Record<string, unknown> = {
             type: 'tool-call' as const,
@@ -264,7 +264,12 @@ export class MessageConversionStrategy {
     // The API requires ALL tool_results to be in a single message immediately following
     // the assistant message with tool_uses. If tool_results are split across multiple
     // messages, we get: "unexpected tool_use_id found in tool_result blocks"
-    return this.mergeConsecutiveToolMessages(messages);
+    const merged = this.mergeConsecutiveToolMessages(messages);
+
+    // CRITICAL: Validate adjacency - tool_use must be immediately followed by tool_result
+    // After compression, pairs may exist but not be adjacent, causing:
+    // "Each tool_result block must have a corresponding tool_use block in the previous message"
+    return this.validateToolAdjacency(merged);
   }
 
   /**
@@ -299,6 +304,7 @@ export class MessageConversionStrategy {
 
   /**
    * Convert function responses to tool result parts for AI SDK v5
+   * Uses idMapping to ensure tool_result IDs match corresponding tool_call IDs
    */
   private convertFunctionResponsesToToolResults(
     responses: Array<{
@@ -306,6 +312,7 @@ export class MessageConversionStrategy {
       name?: string;
       response?: Record<string, unknown>;
     }>,
+    idMapping: Map<string, string>,
   ): VercelContentPart[] {
     return responses.map(fr => {
       // Convert Gemini response to AI SDK v5 structured output format
@@ -338,9 +345,14 @@ export class MessageConversionStrategy {
             : {type: 'json', value: response as JSONValue};
       }
 
+      // Use synchronized ID from pairing - this ensures tool_result matches tool_call
+      const originalId = fr.id || '';
+      const synchronizedId =
+        idMapping.get(originalId) || originalId || this.generateToolCallId();
+
       return {
         type: 'tool-result' as const,
-        toolCallId: fr.id || this.generateToolCallId(),
+        toolCallId: synchronizedId,
         toolName: fr.name || 'unknown',
         output: output,
       };
@@ -352,6 +364,161 @@ export class MessageConversionStrategy {
    */
   private generateToolCallId(): string {
     return `call_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+  }
+
+  /**
+   * Build tool call/result pairs with synchronized IDs
+   *
+   * This method solves the root cause of "unexpected tool_use_id" errors:
+   * When IDs are missing or inconsistent, we need to:
+   * 1. Match tool calls with their corresponding results (by ID, name, or position)
+   * 2. Generate a single synchronized ID for pairs where IDs are missing
+   * 3. Track which IDs are valid (have both call and result)
+   *
+   * @returns pairedToolCallIds - Set of original tool call IDs that have matching results
+   * @returns pairedToolResultIds - Set of original tool result IDs that have matching calls
+   * @returns idMapping - Map from original ID to synchronized ID (for ID generation/consistency)
+   */
+  private buildToolPairs(contents: readonly Content[]): {
+    pairedToolCallIds: Set<string>;
+    pairedToolResultIds: Set<string>;
+    idMapping: Map<string, string>;
+  } {
+    // Collect all tool calls and results with their metadata
+    const toolCalls: Array<{
+      id: string;
+      name: string;
+      index: number;
+      contentIndex: number;
+    }> = [];
+    const toolResults: Array<{
+      id: string;
+      name: string;
+      index: number;
+      contentIndex: number;
+    }> = [];
+
+    let globalCallIndex = 0;
+    let globalResultIndex = 0;
+
+    for (let contentIndex = 0; contentIndex < contents.length; contentIndex++) {
+      const content = contents[contentIndex];
+      for (const part of content.parts || []) {
+        if (isFunctionCallPart(part)) {
+          toolCalls.push({
+            id: part.functionCall?.id || '',
+            name: part.functionCall?.name || '',
+            index: globalCallIndex++,
+            contentIndex,
+          });
+        }
+        if (isFunctionResponsePart(part)) {
+          toolResults.push({
+            id: part.functionResponse?.id || '',
+            name: part.functionResponse?.name || '',
+            index: globalResultIndex++,
+            contentIndex,
+          });
+        }
+      }
+    }
+
+    const pairedToolCallIds = new Set<string>();
+    const pairedToolResultIds = new Set<string>();
+    const idMapping = new Map<string, string>();
+    const usedResultIndices = new Set<number>();
+
+    // PHASE 1: Match by exact ID (when both have IDs that match)
+    for (const call of toolCalls) {
+      if (!call.id) continue;
+
+      const matchingResult = toolResults.find(
+        r => r.id === call.id && !usedResultIndices.has(r.index),
+      );
+
+      if (matchingResult) {
+        pairedToolCallIds.add(call.id);
+        pairedToolResultIds.add(matchingResult.id);
+        usedResultIndices.add(matchingResult.index);
+        // ID is already synchronized (same value)
+        idMapping.set(call.id, call.id);
+        idMapping.set(matchingResult.id, call.id);
+      }
+    }
+
+    // PHASE 2: Match by name for calls/results without IDs or unmatched IDs
+    for (const call of toolCalls) {
+      // Skip if already paired
+      if (call.id && pairedToolCallIds.has(call.id)) continue;
+
+      // Find a result with same name that hasn't been used
+      const matchingResult = toolResults.find(
+        r =>
+          r.name === call.name &&
+          !usedResultIndices.has(r.index) &&
+          r.contentIndex > call.contentIndex, // Result must come after call
+      );
+
+      if (matchingResult) {
+        // Generate a synchronized ID for this pair
+        const syncId =
+          call.id || matchingResult.id || this.generateToolCallId();
+
+        if (call.id) {
+          pairedToolCallIds.add(call.id);
+          idMapping.set(call.id, syncId);
+        }
+        if (matchingResult.id) {
+          pairedToolResultIds.add(matchingResult.id);
+          idMapping.set(matchingResult.id, syncId);
+        }
+
+        // For empty IDs, we use empty string as key with unique suffix
+        if (!call.id) {
+          const emptyCallKey = `__empty_call_${call.index}`;
+          pairedToolCallIds.add(emptyCallKey);
+          idMapping.set(emptyCallKey, syncId);
+        }
+        if (!matchingResult.id) {
+          const emptyResultKey = `__empty_result_${matchingResult.index}`;
+          pairedToolResultIds.add(emptyResultKey);
+          idMapping.set(emptyResultKey, syncId);
+        }
+
+        usedResultIndices.add(matchingResult.index);
+      }
+    }
+
+    // PHASE 3: Match remaining by position (fallback for edge cases)
+    const unmatchedCalls = toolCalls.filter(
+      c => !c.id || !pairedToolCallIds.has(c.id),
+    );
+    const unmatchedResults = toolResults.filter(
+      r => !usedResultIndices.has(r.index),
+    );
+
+    // Simple positional matching for remaining unmatched items
+    const minLength = Math.min(unmatchedCalls.length, unmatchedResults.length);
+    for (let i = 0; i < minLength; i++) {
+      const call = unmatchedCalls[i];
+      const result = unmatchedResults[i];
+
+      // Only match if result comes after call in the conversation
+      if (result.contentIndex > call.contentIndex) {
+        const syncId = call.id || result.id || this.generateToolCallId();
+
+        if (call.id) {
+          pairedToolCallIds.add(call.id);
+          idMapping.set(call.id, syncId);
+        }
+        if (result.id) {
+          pairedToolResultIds.add(result.id);
+          idMapping.set(result.id, syncId);
+        }
+      }
+    }
+
+    return {pairedToolCallIds, pairedToolResultIds, idMapping};
   }
 
   /**
@@ -405,5 +572,142 @@ export class MessageConversionStrategy {
     }
 
     return merged;
+  }
+
+  /**
+   * Validate tool_use/tool_result adjacency and remove non-adjacent pairs
+   *
+   * Anthropic requires: "Each tool_result block must have a corresponding
+   * tool_use block in the previous message."
+   *
+   * After compression, tool_use and tool_result may exist but not be adjacent.
+   * This method removes any:
+   * - tool_use that is not immediately followed by a tool message with matching tool_result
+   * - tool_result that doesn't have a matching tool_use in the immediately preceding assistant message
+   */
+  private validateToolAdjacency(messages: CoreMessage[]): CoreMessage[] {
+    if (messages.length === 0) {
+      return messages;
+    }
+
+    const result: CoreMessage[] = [];
+
+    for (let i = 0; i < messages.length; i++) {
+      const msg = messages[i];
+      const nextMsg = messages[i + 1];
+      const prevMsg = i > 0 ? result[result.length - 1] : undefined;
+
+      if (msg.role === 'assistant') {
+        const content = msg.content;
+
+        // Check if this assistant message has tool_call parts
+        if (Array.isArray(content)) {
+          const toolCallParts = content.filter(
+            (p): p is VercelContentPart =>
+              typeof p === 'object' &&
+              p !== null &&
+              (p as {type?: string}).type === 'tool-call',
+          );
+
+          if (toolCallParts.length > 0) {
+            // Get tool_use IDs from this assistant message
+            const toolUseIds = new Set(
+              toolCallParts
+                .map(p => (p as {toolCallId?: string}).toolCallId)
+                .filter(Boolean),
+            );
+
+            // Get tool_result IDs from the next message (if it's a tool message)
+            const nextToolResultIds = new Set<string>();
+            if (
+              nextMsg &&
+              nextMsg.role === 'tool' &&
+              Array.isArray(nextMsg.content)
+            ) {
+              for (const part of nextMsg.content as VercelContentPart[]) {
+                if ((part as {type?: string}).type === 'tool-result') {
+                  const id = (part as {toolCallId?: string}).toolCallId;
+                  if (id) nextToolResultIds.add(id);
+                }
+              }
+            }
+
+            // Filter tool_call parts to only those with matching tool_result in next message
+            const validToolCalls = toolCallParts.filter(p => {
+              const id = (p as {toolCallId?: string}).toolCallId;
+              return id && nextToolResultIds.has(id);
+            });
+
+            // Keep non-tool-call parts (text, etc.) + valid tool calls
+            const nonToolCallParts = content.filter(
+              (p): p is VercelContentPart =>
+                typeof p === 'object' &&
+                p !== null &&
+                (p as {type?: string}).type !== 'tool-call',
+            );
+
+            const newContent = [...nonToolCallParts, ...validToolCalls];
+
+            // Only add message if there's content left
+            if (newContent.length > 0) {
+              result.push({
+                role: 'assistant',
+                content: newContent,
+              } as CoreMessage);
+            } else if (
+              nonToolCallParts.length === 0 &&
+              toolCallParts.length > 0 &&
+              validToolCalls.length === 0
+            ) {
+              // All tool_calls were filtered out, skip this message entirely
+              continue;
+            }
+            continue;
+          }
+        }
+
+        // No tool_call parts, keep as-is
+        result.push(msg);
+      } else if (msg.role === 'tool') {
+        const content = msg.content as VercelContentPart[];
+
+        // Get tool_use IDs from the previous assistant message
+        const prevToolUseIds = new Set<string>();
+        if (
+          prevMsg &&
+          prevMsg.role === 'assistant' &&
+          Array.isArray(prevMsg.content)
+        ) {
+          for (const part of prevMsg.content as VercelContentPart[]) {
+            if ((part as {type?: string}).type === 'tool-call') {
+              const id = (part as {toolCallId?: string}).toolCallId;
+              if (id) prevToolUseIds.add(id);
+            }
+          }
+        }
+
+        // Filter tool_result parts to only those with matching tool_use in previous message
+        const validToolResults = content.filter(part => {
+          if ((part as {type?: string}).type !== 'tool-result') {
+            return true; // Keep non-tool-result parts
+          }
+          const id = (part as {toolCallId?: string}).toolCallId;
+          return id && prevToolUseIds.has(id);
+        });
+
+        // Only add message if there are valid tool results
+        if (validToolResults.length > 0) {
+          result.push({
+            role: 'tool',
+            content: validToolResults,
+          } as unknown as CoreMessage);
+        }
+      } else {
+        // User or other messages, keep as-is
+        result.push(msg);
+      }
+    }
+
+    return result;
   }
 }

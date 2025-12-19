@@ -311,7 +311,19 @@ describe('MessageConversionStrategy', () => {
     );
 
     t('tests that function response without id generates one', () => {
+      // Must include matching tool_use for adjacency validation
       const contents: Content[] = [
+        {
+          role: 'model',
+          parts: [
+            {
+              functionCall: {
+                name: 'test_tool',
+                args: {},
+              } as Partial<FunctionCall> as FunctionCall,
+            },
+          ],
+        },
         {
           role: 'user',
           parts: [
@@ -327,8 +339,10 @@ describe('MessageConversionStrategy', () => {
 
       const result = strategy.geminiToVercel(contents);
 
-      const content = result[0].content as VercelContentPart[];
-      const toolResult = content[0] as VercelToolResultPart;
+      // Both tool_call and tool_result generate IDs
+      expect(result).toHaveLength(2);
+      const toolContent = result[1].content as VercelContentPart[];
+      const toolResult = toolContent[0] as VercelToolResultPart;
       expect(toolResult.toolCallId).toBeDefined();
       expect(toolResult.toolCallId).toMatch(/^call_\d+_[a-z0-9]+$/);
     });
@@ -483,14 +497,13 @@ describe('MessageConversionStrategy', () => {
     );
 
     t(
-      'tests that tool_result is filtered when its tool_use was filtered earlier',
+      'tests that non-adjacent tool_use/tool_result pairs are filtered (adjacency validation)',
       () => {
-        // This tests the critical fix: when a tool_use is filtered out because
-        // its result doesn't exist, any tool_result with that ID that comes later
-        // should also be filtered out.
+        // This tests adjacency validation: tool_use must be IMMEDIATELY followed by tool_result
+        // After compression, tool_use and tool_result may exist but not be adjacent.
+        // Anthropic requires: "Each tool_result must have a corresponding tool_use in the previous message"
         //
-        // Scenario: compression removed the tool_result, tool_use gets filtered,
-        // but then a stale/duplicate tool_result appears later in history
+        // Scenario: tool_use and tool_result exist but have other messages between them
         const contents: Content[] = [
           {role: 'user', parts: [{text: 'Hello'}]},
           {
@@ -506,9 +519,9 @@ describe('MessageConversionStrategy', () => {
               },
             ],
           },
-          // Note: NO tool_result here - simulating compression removed it
+          // Another message in between - breaks adjacency!
           {role: 'model', parts: [{text: 'Search complete'}]},
-          // Later, a stale tool_result appears (shouldn't happen but might due to bugs)
+          // Tool_result is NOT adjacent to its tool_use
           {
             role: 'user',
             parts: [
@@ -525,15 +538,16 @@ describe('MessageConversionStrategy', () => {
 
         const result = strategy.geminiToVercel(contents);
 
-        // First pass collects: allToolCallIds = {filter_cascade}, allToolResultIds = {filter_cascade}
-        // Both IDs exist, so both pass initial filter.
-        // But the ordering is wrong - tool_use at index 1, tool_result at index 3
-        // with unrelated content in between.
-        //
-        // Actually, since both IDs match, both should be kept.
-        // The API will accept this because tool_use comes before tool_result.
-        // This is actually a valid (if unusual) conversation.
-        expect(result).toHaveLength(4); // user text, assistant with tool_use, assistant text, tool
+        // Adjacency validation filters out non-adjacent pairs:
+        // - tool_use is filtered because next message is not a tool message
+        // - tool_result is filtered because previous message is not an assistant with matching tool_use
+        // Result: user text, assistant (text only, tool_use removed), assistant text
+        expect(result).toHaveLength(3);
+        expect(result[0].role).toBe('user');
+        expect(result[1].role).toBe('assistant');
+        expect(result[1].content).toBe('Let me search'); // Only text, tool_use removed
+        expect(result[2].role).toBe('assistant');
+        expect(result[2].content).toBe('Search complete');
       },
     );
 
@@ -843,6 +857,7 @@ describe('MessageConversionStrategy', () => {
     );
 
     t('tests that function call without id generates one', () => {
+      // Must include matching tool_result for adjacency validation
       const contents: Content[] = [
         {
           role: 'model',
@@ -855,12 +870,25 @@ describe('MessageConversionStrategy', () => {
             },
           ],
         },
+        {
+          role: 'user',
+          parts: [
+            {
+              functionResponse: {
+                name: 'test_tool',
+                response: {result: 'ok'},
+              } as Partial<FunctionResponse> as FunctionResponse,
+            },
+          ],
+        },
       ];
 
       const result = strategy.geminiToVercel(contents);
 
-      const content = result[0].content as VercelContentPart[];
-      const toolCall = content[0] as VercelToolCallPart;
+      // Both get generated IDs, and they match each other
+      expect(result).toHaveLength(2);
+      const assistantContent = result[0].content as VercelContentPart[];
+      const toolCall = assistantContent[0] as VercelToolCallPart;
       expect(toolCall.toolCallId).toBeDefined();
       expect(toolCall.toolCallId).toMatch(/^call_\d+_[a-z0-9]+$/);
     });
