@@ -12,6 +12,7 @@ import {AIProvider} from '../types.js';
 
 import {BaseProviderAdapter} from './base.js';
 import type {ProviderAdapter} from './base.js';
+import {GoogleAdapter} from './google.js';
 import {OpenRouterAdapter} from './openrouter.js';
 
 /**
@@ -20,6 +21,8 @@ import {OpenRouterAdapter} from './openrouter.js';
  */
 export function createProviderAdapter(provider: AIProvider): ProviderAdapter {
   switch (provider) {
+    case AIProvider.GOOGLE:
+      return new GoogleAdapter();
     case AIProvider.OPENROUTER:
       return new OpenRouterAdapter();
     default:
@@ -30,5 +33,6 @@ export function createProviderAdapter(provider: AIProvider): ProviderAdapter {
 // Re-exports
 export type {ProviderAdapter} from './base.js';
 export {BaseProviderAdapter} from './base.js';
+export {GoogleAdapter} from './google.js';
 export {OpenRouterAdapter} from './openrouter.js';
 export type {ProviderMetadata, FunctionCallWithMetadata} from './types.js';
