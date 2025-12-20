@@ -40,6 +40,7 @@
   },
   "homepage": "https://github.com/browseros-ai/BrowserOS#readme",
   "dependencies": {
+    "@google/genai": "1.30.0",
     "@modelcontextprotocol/sdk": "1.20.0",
     "@sentry/bun": "^10.31.0",
     "commander": "^14.0.1",
