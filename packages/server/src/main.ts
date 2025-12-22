@@ -5,7 +5,7 @@
  * Main server orchestration
  */
 // Sentry import should happen before any other logic
-import {Sentry} from '@browseros/common/sentry';
+import {Sentry} from './common/sentry/instrument.js';
 
 import fs from 'node:fs';
 import type http from 'node:http';
@@ -14,7 +14,7 @@ import path from 'node:path';
 import {
   createHttpServer as createAgentHttpServer,
   RateLimiter,
-} from '@browseros/agent';
+} from './agent/index.js';
 import {
   ensureBrowserConnected,
   McpContext,
@@ -25,17 +25,17 @@ import {
   initializeDb,
   identity,
   fetchBrowserOSConfig,
-} from '@browseros/common';
+} from './common/index.js';
 import {
   ControllerContext,
   ControllerBridge,
-} from '@browseros/controller-server';
-import {createHttpMcpServer, shutdownMcpServer} from '@browseros/mcp';
+} from './controller-server/index.js';
+import {createHttpMcpServer, shutdownMcpServer} from './mcp/index.js';
 import {
   allCdpTools,
   allControllerTools,
   type ToolDefinition,
-} from '@browseros/tools';
+} from './tools/index.js';
 
 import {loadServerConfig, type ServerConfig} from './config.js';
 

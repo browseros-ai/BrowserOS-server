@@ -1,18 +1,12 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "rootDir": "./src",
     "outDir": "./dist",
     "composite": true,
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "resolveJsonModule": true
   },
-  "include": ["src/**/*", "tests/**/*"],
-  "exclude": ["node_modules", "dist/**/*"],
-  "references": [
-    {"path": "../common"},
-    {"path": "../tools"},
-    {"path": "../mcp"},
-    {"path": "../controller-server"}
-  ]
+  "include": ["src/**/*", "tests/**/*", "package.json"],
+  "exclude": ["node_modules", "dist/**/*"]
 }

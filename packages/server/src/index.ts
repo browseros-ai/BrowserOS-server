@@ -16,8 +16,8 @@ if (typeof Bun === 'undefined') {
 }
 
 // Import polyfills first
-import '@browseros/common/polyfill';
-import {Sentry} from '@browseros/common/sentry';
+import './common/polyfill.js';
+import {Sentry} from './common/sentry/instrument.js';
 import {CommanderError} from 'commander';
 
 // Start the main server
