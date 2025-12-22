@@ -161,7 +161,7 @@ async function buildTarget(
   const args = [
     'build',
     '--compile',
-    'packages/server/src/index.ts',
+    'apps/server/src/index.ts',
     '--outfile',
     target.outfile,
     '--minify',

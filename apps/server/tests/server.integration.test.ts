@@ -81,7 +81,7 @@ describe('MCP Server Integration Tests', () => {
     serverProcess = spawn(
       'bun',
       [
-        'packages/server/src/index.ts',
+        'apps/server/src/index.ts',
         '--cdp-port',
         CDP_PORT.toString(),
         '--http-mcp-port',

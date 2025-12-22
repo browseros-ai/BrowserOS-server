@@ -11,7 +11,6 @@ export type {
   ChatRequest,
 } from './http/index.js';
 
-// Alias for backwards compatibility with packages/server
 export {createHttpServer as createAgentServer} from './http/index.js';
 export type {HttpServerConfig as AgentServerConfig} from './http/index.js';
 
