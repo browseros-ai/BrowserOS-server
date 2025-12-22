@@ -24,14 +24,7 @@
     "declaration": true,
     "declarationMap": true
   },
-  "references": [
-    {"path": "./packages/common"},
-    {"path": "./packages/tools"},
-    {"path": "./packages/mcp"},
-    {"path": "./packages/controller-server"},
-    {"path": "./packages/server"},
-    {"path": "./packages/agent"}
-  ],
+  "references": [{"path": "./apps/server"}, {"path": "./apps/controller-ext"}],
   "include": [],
   "exclude": ["node_modules", "dist", "build", "*.config.js"]
 }
