@@ -7,8 +7,8 @@
  * Image content data for screenshot attachments
  */
 export interface ImageContentData {
-  data: string; // base64-encoded image data
-  mimeType: string; // e.g., 'image/png'
+  data: string // base64-encoded image data
+  mimeType: string // e.g., 'image/png'
 }
 
 /**
@@ -19,25 +19,25 @@ export interface Response {
   /**
    * Append a line of text to the response
    */
-  appendResponseLine(value: string): void;
+  appendResponseLine(value: string): void
 
   /**
    * Attach an image to the response (for screenshots)
    */
-  attachImage(value: ImageContentData): void;
+  attachImage(value: ImageContentData): void
 
   /**
    * Get all response lines (read-only)
    */
-  readonly responseLines: readonly string[];
+  readonly responseLines: readonly string[]
 
   /**
    * Get all attached images (read-only)
    */
-  readonly images: ImageContentData[];
+  readonly images: ImageContentData[]
 
   /**
    * Add a key-value pair to structured content (flat, no nesting)
    */
-  addStructuredContent(key: string, value: unknown): void;
+  addStructuredContent(key: string, value: unknown): void
 }

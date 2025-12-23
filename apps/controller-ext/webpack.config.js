@@ -1,10 +1,10 @@
-const path = require('path');
-const webpack = require('webpack');
-const TerserPlugin = require('terser-webpack-plugin');
-const CopyPlugin = require('copy-webpack-plugin');
+const path = require('node:path')
+const webpack = require('webpack')
+const TerserPlugin = require('terser-webpack-plugin')
+const CopyPlugin = require('copy-webpack-plugin')
 
-module.exports = (env, argv) => {
-  const isProduction = argv.mode === 'production';
+module.exports = (_env, argv) => {
+  const isProduction = argv.mode === 'production'
 
   return {
     mode: isProduction ? 'production' : 'development',
@@ -46,8 +46,8 @@ module.exports = (env, argv) => {
       }),
       new CopyPlugin({
         patterns: [
-          {from: 'manifest.json', to: '.'},
-          {from: 'assets', to: 'assets'},
+          { from: 'manifest.json', to: '.' },
+          { from: 'assets', to: 'assets' },
         ],
       }),
     ],
@@ -79,5 +79,5 @@ module.exports = (env, argv) => {
       maxEntrypointSize: 512000,
       maxAssetSize: 512000,
     },
-  };
-};
+  }
+}

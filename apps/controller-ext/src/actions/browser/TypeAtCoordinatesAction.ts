@@ -3,11 +3,9 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler} from '../ActionHandler';
-
-import {getBrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
+import { z } from 'zod'
+import { getBrowserOSAdapter } from '@/adapters/BrowserOSAdapter'
+import { ActionHandler } from '../ActionHandler'
 
 // Input schema for typeAtCoordinates action
 const TypeAtCoordinatesInputSchema = z.object({
@@ -15,19 +13,19 @@ const TypeAtCoordinatesInputSchema = z.object({
   x: z.number().int().nonnegative().describe('X coordinate in viewport pixels'),
   y: z.number().int().nonnegative().describe('Y coordinate in viewport pixels'),
   text: z.string().min(1).describe('Text to type at the location'),
-});
+})
 
-type TypeAtCoordinatesInput = z.infer<typeof TypeAtCoordinatesInputSchema>;
+type TypeAtCoordinatesInput = z.infer<typeof TypeAtCoordinatesInputSchema>
 
 // Output confirms the typing
 export interface TypeAtCoordinatesOutput {
-  success: boolean;
-  message: string;
+  success: boolean
+  message: string
   coordinates: {
-    x: number;
-    y: number;
-  };
-  textLength: number;
+    x: number
+    y: number
+  }
+  textLength: number
 }
 
 /**
@@ -57,21 +55,21 @@ export class TypeAtCoordinatesAction extends ActionHandler<
   TypeAtCoordinatesInput,
   TypeAtCoordinatesOutput
 > {
-  readonly inputSchema = TypeAtCoordinatesInputSchema;
-  private browserOS = getBrowserOSAdapter();
+  readonly inputSchema = TypeAtCoordinatesInputSchema
+  private browserOS = getBrowserOSAdapter()
 
   async execute(
     input: TypeAtCoordinatesInput,
   ): Promise<TypeAtCoordinatesOutput> {
-    const {tabId, x, y, text} = input;
+    const { tabId, x, y, text } = input
 
-    await this.browserOS.typeAtCoordinates(tabId, x, y, text);
+    await this.browserOS.typeAtCoordinates(tabId, x, y, text)
 
     return {
       success: true,
       message: `Successfully typed "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}" at coordinates (${x}, ${y}) in tab ${tabId}`,
-      coordinates: {x, y},
+      coordinates: { x, y },
       textLength: text.length,
-    };
+    }
   }
 }

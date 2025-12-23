@@ -3,14 +3,14 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-const currentYear = new Date().getFullYear();
+const currentYear = new Date().getFullYear()
 const licenseHeader = `
 /**
  * @license
  * Copyright ${currentYear} BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-`;
+`
 
 export default {
   name: 'check-license',
@@ -27,34 +27,34 @@ export default {
   },
   defaultOptions: [],
   create(context) {
-    const sourceCode = context.getSourceCode();
-    const comments = sourceCode.getAllComments();
-    let insertAfter = [0, 0];
-    let header = null;
+    const sourceCode = context.getSourceCode()
+    const comments = sourceCode.getAllComments()
+    let insertAfter = [0, 0]
+    let header = null
     // Check only the first 2 comments
     for (let index = 0; index < 2; index++) {
-      const comment = comments[index];
+      const comment = comments[index]
       if (!comment) {
-        break;
+        break
       }
       // Shebang comments should be at the top
       if (
         comment.type === 'Shebang' ||
         (comment.type === 'Line' && comment.value.startsWith('#!'))
       ) {
-        insertAfter = comment.range;
-        continue;
+        insertAfter = comment.range
+        continue
       }
       if (comment.type === 'Block') {
-        header = comment;
-        break;
+        header = comment
+        break
       }
     }
 
     return {
       Program(node) {
         if (context.getFilename().endsWith('.json')) {
-          return;
+          return
         }
 
         if (
@@ -63,7 +63,7 @@ export default {
             header.value.includes('License') ||
             header.value.includes('Copyright'))
         ) {
-          return;
+          return
         }
 
         // Add header license
@@ -72,11 +72,11 @@ export default {
             node: node,
             messageId: 'licenseRule',
             fix(fixer) {
-              return fixer.insertTextAfterRange(insertAfter, licenseHeader);
+              return fixer.insertTextAfterRange(insertAfter, licenseHeader)
             },
-          });
+          })
         }
       },
-    };
+    }
   },
-};
+}

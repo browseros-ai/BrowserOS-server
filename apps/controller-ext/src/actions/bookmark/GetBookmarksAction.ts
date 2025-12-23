@@ -3,11 +3,9 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler} from '../ActionHandler';
-
-import {BookmarkAdapter} from '@/adapters/BookmarkAdapter';
+import { z } from 'zod'
+import { BookmarkAdapter } from '@/adapters/BookmarkAdapter'
+import { ActionHandler } from '../ActionHandler'
 
 // Input schema
 const GetBookmarksInputSchema = z.object({
@@ -29,7 +27,7 @@ const GetBookmarksInputSchema = z.object({
     .optional()
     .default(false)
     .describe('Get recent bookmarks instead of searching'),
-});
+})
 
 // Output schema
 const GetBookmarksOutputSchema = z.object({
@@ -43,10 +41,10 @@ const GetBookmarksOutputSchema = z.object({
     }),
   ),
   count: z.number(),
-});
+})
 
-type GetBookmarksInput = z.infer<typeof GetBookmarksInputSchema>;
-type GetBookmarksOutput = z.infer<typeof GetBookmarksOutputSchema>;
+type GetBookmarksInput = z.infer<typeof GetBookmarksInputSchema>
+type GetBookmarksOutput = z.infer<typeof GetBookmarksOutputSchema>
 
 /**
  * GetBookmarksAction - Get or search bookmarks
@@ -78,36 +76,36 @@ export class GetBookmarksAction extends ActionHandler<
   GetBookmarksInput,
   GetBookmarksOutput
 > {
-  readonly inputSchema = GetBookmarksInputSchema;
-  private bookmarkAdapter = new BookmarkAdapter();
+  readonly inputSchema = GetBookmarksInputSchema
+  private bookmarkAdapter = new BookmarkAdapter()
 
   async execute(input: GetBookmarksInput): Promise<GetBookmarksOutput> {
-    let results: chrome.bookmarks.BookmarkTreeNode[];
+    let results: chrome.bookmarks.BookmarkTreeNode[]
 
     if (input.recent) {
       // Get recent bookmarks
-      results = await this.bookmarkAdapter.getRecentBookmarks(input.limit);
+      results = await this.bookmarkAdapter.getRecentBookmarks(input.limit)
     } else if (input.query) {
       // Search bookmarks
-      results = await this.bookmarkAdapter.searchBookmarks(input.query);
-      results = results.slice(0, input.limit);
+      results = await this.bookmarkAdapter.searchBookmarks(input.query)
+      results = results.slice(0, input.limit)
     } else {
       // Get recent by default
-      results = await this.bookmarkAdapter.getRecentBookmarks(input.limit);
+      results = await this.bookmarkAdapter.getRecentBookmarks(input.limit)
     }
 
     // Map to output format
-    const bookmarks = results.map(b => ({
+    const bookmarks = results.map((b) => ({
       id: b.id,
       title: b.title,
       url: b.url,
       dateAdded: b.dateAdded,
       parentId: b.parentId,
-    }));
+    }))
 
     return {
       bookmarks,
       count: bookmarks.length,
-    };
+    }
   }
 }

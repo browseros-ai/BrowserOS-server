@@ -5,7 +5,7 @@
  * Re-exports from config.ts for backward compatibility.
  */
 export {
-  ServerConfigSchema,
-  type ServerConfig,
   type ConfigResult,
-} from './config.js';
+  type ServerConfig,
+  ServerConfigSchema,
+} from './config.js'

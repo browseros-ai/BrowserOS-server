@@ -3,11 +3,9 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler} from '../ActionHandler';
-
-import {TabAdapter} from '@/adapters/TabAdapter';
+import { z } from 'zod'
+import { TabAdapter } from '@/adapters/TabAdapter'
+import { ActionHandler } from '../ActionHandler'
 
 // Input schema
 const OpenTabInputSchema = z.object({
@@ -28,17 +26,17 @@ const OpenTabInputSchema = z.object({
     .describe(
       'Window ID to open the tab in. If not provided, opens in current window.',
     ),
-});
+})
 
 // Output schema
 const OpenTabOutputSchema = z.object({
   tabId: z.number().describe('ID of the newly created tab'),
   url: z.string().describe('URL of the new tab'),
   title: z.string().optional().describe('Title of the new tab'),
-});
+})
 
-type OpenTabInput = z.infer<typeof OpenTabInputSchema>;
-type OpenTabOutput = z.infer<typeof OpenTabOutputSchema>;
+type OpenTabInput = z.infer<typeof OpenTabInputSchema>
+type OpenTabOutput = z.infer<typeof OpenTabOutputSchema>
 
 /**
  * OpenTabAction - Open a new browser tab
@@ -68,20 +66,20 @@ type OpenTabOutput = z.infer<typeof OpenTabOutputSchema>;
  * // Returns: { tabId: 456, url: "https://www.google.com", title: "Google" }
  */
 export class OpenTabAction extends ActionHandler<OpenTabInput, OpenTabOutput> {
-  readonly inputSchema = OpenTabInputSchema;
-  private tabAdapter = new TabAdapter();
+  readonly inputSchema = OpenTabInputSchema
+  private tabAdapter = new TabAdapter()
 
   async execute(input: OpenTabInput): Promise<OpenTabOutput> {
     const tab = await this.tabAdapter.openTab(
       input.url,
       input.active ?? true,
       input.windowId,
-    );
+    )
 
     return {
       tabId: tab.id!,
       url: tab.url || tab.pendingUrl || input.url || 'chrome://newtab/',
       title: tab.title,
-    };
+    }
   }
 }

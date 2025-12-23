@@ -3,25 +3,23 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler} from '../ActionHandler';
-
-import {BrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
+import { z } from 'zod'
+import { BrowserOSAdapter } from '@/adapters/BrowserOSAdapter'
+import { ActionHandler } from '../ActionHandler'
 
 // Input schema
 const ExecuteJavaScriptInputSchema = z.object({
   tabId: z.number().describe('The tab ID to execute code in'),
   code: z.string().describe('JavaScript code to execute'),
-});
+})
 
 // Output schema
 const ExecuteJavaScriptOutputSchema = z.object({
   result: z.any().describe('The result of the code execution'),
-});
+})
 
-type ExecuteJavaScriptInput = z.infer<typeof ExecuteJavaScriptInputSchema>;
-type ExecuteJavaScriptOutput = z.infer<typeof ExecuteJavaScriptOutputSchema>;
+type ExecuteJavaScriptInput = z.infer<typeof ExecuteJavaScriptInputSchema>
+type ExecuteJavaScriptOutput = z.infer<typeof ExecuteJavaScriptOutputSchema>
 
 /**
  * ExecuteJavaScriptAction - Execute JavaScript code in page context
@@ -51,8 +49,8 @@ export class ExecuteJavaScriptAction extends ActionHandler<
   ExecuteJavaScriptInput,
   ExecuteJavaScriptOutput
 > {
-  readonly inputSchema = ExecuteJavaScriptInputSchema;
-  private browserOSAdapter = BrowserOSAdapter.getInstance();
+  readonly inputSchema = ExecuteJavaScriptInputSchema
+  private browserOSAdapter = BrowserOSAdapter.getInstance()
 
   async execute(
     input: ExecuteJavaScriptInput,
@@ -60,7 +58,7 @@ export class ExecuteJavaScriptAction extends ActionHandler<
     const result = await this.browserOSAdapter.executeJavaScript(
       input.tabId,
       input.code,
-    );
-    return {result};
+    )
+    return { result }
   }
 }

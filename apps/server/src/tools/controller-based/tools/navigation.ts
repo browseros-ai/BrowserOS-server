@@ -2,12 +2,12 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import {z} from 'zod';
+import { z } from 'zod'
 
-import {ToolCategories} from '../../types/ToolCategories.js';
-import {defineTool} from '../../types/ToolDefinition.js';
-import type {Context} from '../types/Context.js';
-import type {Response} from '../types/Response.js';
+import { ToolCategories } from '../../types/ToolCategories.js'
+import { defineTool } from '../../types/ToolDefinition.js'
+import type { Context } from '../types/Context.js'
+import type { Response } from '../types/Response.js'
 
 export const navigate = defineTool<z.ZodRawShape, Context, Response>({
   name: 'browser_navigate',
@@ -29,15 +29,15 @@ export const navigate = defineTool<z.ZodRawShape, Context, Response>({
   },
   handler: async (request, response, context) => {
     const params = request.params as {
-      url: string;
-      tabId?: number;
-      windowId?: number;
-    };
+      url: string
+      tabId?: number
+      windowId?: number
+    }
 
-    const result = await context.executeAction('navigate', params);
-    const data = result as {tabId: number; url: string; message: string};
+    const result = await context.executeAction('navigate', params)
+    const data = result as { tabId: number; url: string; message: string }
 
-    response.appendResponseLine(data.message);
-    response.appendResponseLine(`Tab ID: ${data.tabId}`);
+    response.appendResponseLine(data.message)
+    response.appendResponseLine(`Tab ID: ${data.tabId}`)
   },
-});
+})

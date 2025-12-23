@@ -3,11 +3,9 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler} from '../ActionHandler';
-
-import {BookmarkAdapter} from '@/adapters/BookmarkAdapter';
+import { z } from 'zod'
+import { BookmarkAdapter } from '@/adapters/BookmarkAdapter'
+import { ActionHandler } from '../ActionHandler'
 
 // Input schema
 const CreateBookmarkInputSchema = z.object({
@@ -17,7 +15,7 @@ const CreateBookmarkInputSchema = z.object({
     .string()
     .optional()
     .describe('Parent folder ID (optional, defaults to "Other Bookmarks")'),
-});
+})
 
 // Output schema
 const CreateBookmarkOutputSchema = z.object({
@@ -28,10 +26,10 @@ const CreateBookmarkOutputSchema = z.object({
     .number()
     .optional()
     .describe('Timestamp when bookmark was created'),
-});
+})
 
-type CreateBookmarkInput = z.infer<typeof CreateBookmarkInputSchema>;
-type CreateBookmarkOutput = z.infer<typeof CreateBookmarkOutputSchema>;
+type CreateBookmarkInput = z.infer<typeof CreateBookmarkInputSchema>
+type CreateBookmarkOutput = z.infer<typeof CreateBookmarkOutputSchema>
 
 /**
  * CreateBookmarkAction - Create a new bookmark
@@ -63,21 +61,21 @@ export class CreateBookmarkAction extends ActionHandler<
   CreateBookmarkInput,
   CreateBookmarkOutput
 > {
-  readonly inputSchema = CreateBookmarkInputSchema;
-  private bookmarkAdapter = new BookmarkAdapter();
+  readonly inputSchema = CreateBookmarkInputSchema
+  private bookmarkAdapter = new BookmarkAdapter()
 
   async execute(input: CreateBookmarkInput): Promise<CreateBookmarkOutput> {
     const created = await this.bookmarkAdapter.createBookmark({
       title: input.title,
       url: input.url,
       parentId: input.parentId,
-    });
+    })
 
     return {
       id: created.id,
       title: created.title,
       url: created.url || '',
       dateAdded: created.dateAdded,
-    };
+    }
   }
 }

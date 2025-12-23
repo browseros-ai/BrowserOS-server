@@ -8,7 +8,7 @@
  * Provides no-op defaults for all methods. Extend and override only what you need.
  */
 
-import type {ProviderMetadata, FunctionCallWithMetadata} from './types.js';
+import type { FunctionCallWithMetadata, ProviderMetadata } from './types.js'
 
 /**
  * Provider Adapter Interface
@@ -16,21 +16,21 @@ import type {ProviderMetadata, FunctionCallWithMetadata} from './types.js';
  */
 export interface ProviderAdapter {
   /** Process each stream chunk. Use for accumulating provider metadata. */
-  processStreamChunk(chunk: unknown): void;
+  processStreamChunk(chunk: unknown): void
 
   /** Get metadata to attach to function call parts in response. */
-  getResponseMetadata(): ProviderMetadata | undefined;
+  getResponseMetadata(): ProviderMetadata | undefined
 
   /** Extract provider options from stored function call for outbound requests. */
   getToolCallProviderOptions(
     fc: FunctionCallWithMetadata,
-  ): ProviderMetadata | undefined;
+  ): ProviderMetadata | undefined
 
   /** Transform provider error into normalized error. */
-  normalizeError(error: unknown): Error;
+  normalizeError(error: unknown): Error
 
   /** Reset state between conversation turns. */
-  reset(): void;
+  reset(): void
 }
 
 /**
@@ -43,18 +43,18 @@ export class BaseProviderAdapter implements ProviderAdapter {
   }
 
   getResponseMetadata(): ProviderMetadata | undefined {
-    return undefined;
+    return undefined
   }
 
   getToolCallProviderOptions(
     _fc: FunctionCallWithMetadata,
   ): ProviderMetadata | undefined {
-    return undefined;
+    return undefined
   }
 
   normalizeError(error: unknown): Error {
-    if (error instanceof Error) return error;
-    return new Error(String(error));
+    if (error instanceof Error) return error
+    return new Error(String(error))
   }
 
   reset(): void {

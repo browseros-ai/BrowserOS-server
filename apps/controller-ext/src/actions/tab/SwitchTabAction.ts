@@ -3,26 +3,24 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler} from '../ActionHandler';
-
-import {TabAdapter} from '@/adapters/TabAdapter';
+import { z } from 'zod'
+import { TabAdapter } from '@/adapters/TabAdapter'
+import { ActionHandler } from '../ActionHandler'
 
 // Input schema
 const SwitchTabInputSchema = z.object({
   tabId: z.number().int().positive().describe('Tab ID to switch to'),
-});
+})
 
 // Output schema
 const SwitchTabOutputSchema = z.object({
   tabId: z.number().describe('ID of the tab that is now active'),
   url: z.string().describe('URL of the active tab'),
   title: z.string().describe('Title of the active tab'),
-});
+})
 
-type SwitchTabInput = z.infer<typeof SwitchTabInputSchema>;
-type SwitchTabOutput = z.infer<typeof SwitchTabOutputSchema>;
+type SwitchTabInput = z.infer<typeof SwitchTabInputSchema>
+type SwitchTabOutput = z.infer<typeof SwitchTabOutputSchema>
 
 /**
  * SwitchTabAction - Switch to (focus) a specific tab
@@ -50,16 +48,16 @@ export class SwitchTabAction extends ActionHandler<
   SwitchTabInput,
   SwitchTabOutput
 > {
-  readonly inputSchema = SwitchTabInputSchema;
-  private tabAdapter = new TabAdapter();
+  readonly inputSchema = SwitchTabInputSchema
+  private tabAdapter = new TabAdapter()
 
   async execute(input: SwitchTabInput): Promise<SwitchTabOutput> {
-    const tab = await this.tabAdapter.switchTab(input.tabId);
+    const tab = await this.tabAdapter.switchTab(input.tabId)
 
     return {
       tabId: tab.id!,
       url: tab.url || '',
       title: tab.title || '',
-    };
+    }
   }
 }

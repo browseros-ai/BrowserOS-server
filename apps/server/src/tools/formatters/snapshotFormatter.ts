@@ -2,22 +2,22 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import type {TextSnapshotNode} from '../../common/index.js';
+import type { TextSnapshotNode } from '../../common/index.js'
 
 export function formatA11ySnapshot(
   serializedAXNodeRoot: TextSnapshotNode,
   depth = 0,
 ): string {
-  let result = '';
-  const attributes = getAttributes(serializedAXNodeRoot);
-  const line = ' '.repeat(depth * 2) + attributes.join(' ') + '\n';
-  result += line;
+  let result = ''
+  const attributes = getAttributes(serializedAXNodeRoot)
+  const line = `${' '.repeat(depth * 2) + attributes.join(' ')}\n`
+  result += line
 
   for (const child of serializedAXNodeRoot.children) {
-    result += formatA11ySnapshot(child, depth + 1);
+    result += formatA11ySnapshot(child, depth + 1)
   }
 
-  return result;
+  return result
 }
 
 function getAttributes(serializedAXNodeRoot: TextSnapshotNode): string[] {
@@ -25,7 +25,7 @@ function getAttributes(serializedAXNodeRoot: TextSnapshotNode): string[] {
     `uid=${serializedAXNodeRoot.id}`,
     serializedAXNodeRoot.role,
     `"${serializedAXNodeRoot.name || ''}"`, // Corrected: Added quotes around name
-  ];
+  ]
 
   // Value properties
   const valueProperties = [
@@ -41,13 +41,13 @@ function getAttributes(serializedAXNodeRoot: TextSnapshotNode): string[] {
     'description',
     'keyshortcuts',
     'roledescription',
-  ] as const;
+  ] as const
   for (const property of valueProperties) {
     if (
       property in serializedAXNodeRoot &&
       serializedAXNodeRoot[property] !== undefined
     ) {
-      attributes.push(`${property}="${serializedAXNodeRoot[property]}"`);
+      attributes.push(`${property}="${serializedAXNodeRoot[property]}"`)
     }
   }
 
@@ -57,12 +57,12 @@ function getAttributes(serializedAXNodeRoot: TextSnapshotNode): string[] {
     expanded: 'expandable',
     focused: 'focusable',
     selected: 'selectable',
-  };
+  }
   for (const [property, ableAttribute] of Object.entries(booleanPropertyMap)) {
     if (property in serializedAXNodeRoot) {
-      attributes.push(ableAttribute);
+      attributes.push(ableAttribute)
       if (serializedAXNodeRoot[property as keyof typeof booleanPropertyMap]) {
-        attributes.push(property);
+        attributes.push(property)
       }
     }
   }
@@ -73,23 +73,23 @@ function getAttributes(serializedAXNodeRoot: TextSnapshotNode): string[] {
     'readonly',
     'required',
     'multiselectable',
-  ] as const;
+  ] as const
 
   for (const property of booleanProperties) {
     if (property in serializedAXNodeRoot && serializedAXNodeRoot[property]) {
-      attributes.push(property);
+      attributes.push(property)
     }
   }
 
   // Mixed boolean/string attributes
   for (const property of ['pressed', 'checked'] as const) {
     if (property in serializedAXNodeRoot) {
-      attributes.push(property);
+      attributes.push(property)
       if (serializedAXNodeRoot[property]) {
-        attributes.push(`${property}="${serializedAXNodeRoot[property]}"`);
+        attributes.push(`${property}="${serializedAXNodeRoot[property]}"`)
       }
     }
   }
 
-  return attributes;
+  return attributes
 }

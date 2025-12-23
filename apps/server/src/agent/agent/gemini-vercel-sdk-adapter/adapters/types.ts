@@ -9,12 +9,12 @@
  */
 
 /** Base constraint for provider metadata - provider name → provider data */
-export type ProviderMetadata = Record<string, Record<string, unknown>>;
+export type ProviderMetadata = Record<string, Record<string, unknown>>
 
 /** Function call with optional provider metadata attached */
 export interface FunctionCallWithMetadata {
-  id?: string;
-  name?: string;
-  args?: Record<string, unknown>;
-  providerMetadata?: ProviderMetadata;
+  id?: string
+  name?: string
+  args?: Record<string, unknown>
+  providerMetadata?: ProviderMetadata
 }

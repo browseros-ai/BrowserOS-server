@@ -3,11 +3,9 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler} from '../ActionHandler';
-
-import {TabAdapter} from '@/adapters/TabAdapter';
+import { z } from 'zod'
+import { TabAdapter } from '@/adapters/TabAdapter'
+import { ActionHandler } from '../ActionHandler'
 
 // Input schema for getTabs action
 const GetTabsInputSchema = z
@@ -31,24 +29,24 @@ const GetTabsInputSchema = z
       ),
     title: z.string().optional().describe('Title pattern to filter tabs'),
   })
-  .describe('Optional filters for querying tabs');
+  .describe('Optional filters for querying tabs')
 
-type GetTabsInput = z.infer<typeof GetTabsInputSchema>;
+type GetTabsInput = z.infer<typeof GetTabsInputSchema>
 
 // Tab info in output
 interface TabInfo {
-  id: number;
-  url: string;
-  title: string;
-  windowId: number;
-  active: boolean;
-  index: number;
+  id: number
+  url: string
+  title: string
+  windowId: number
+  active: boolean
+  index: number
 }
 
 // Output with array of tabs
 export interface GetTabsOutput {
-  tabs: TabInfo[];
-  count: number;
+  tabs: TabInfo[]
+  count: number
 }
 
 /**
@@ -78,45 +76,45 @@ export interface GetTabsOutput {
  * { "url": "*://*.google.com/*" }
  */
 export class GetTabsAction extends ActionHandler<GetTabsInput, GetTabsOutput> {
-  readonly inputSchema = GetTabsInputSchema;
-  private tabAdapter = new TabAdapter();
+  readonly inputSchema = GetTabsInputSchema
+  private tabAdapter = new TabAdapter()
 
   async execute(input: GetTabsInput): Promise<GetTabsOutput> {
-    let tabs: chrome.tabs.Tab[];
+    let tabs: chrome.tabs.Tab[]
 
     // Apply filters based on input
     if (input.windowId) {
       // Get tabs in specific window (windowId takes precedence)
-      tabs = await this.tabAdapter.getTabsInWindow(input.windowId);
+      tabs = await this.tabAdapter.getTabsInWindow(input.windowId)
     } else if (input.currentWindowOnly) {
       // Get tabs in current window (windowId may be injected by agent for multi-window support)
-      tabs = await this.tabAdapter.getCurrentWindowTabs();
+      tabs = await this.tabAdapter.getCurrentWindowTabs()
     } else if (input.url || input.title) {
       // Use query API for URL/title filtering
-      const query: chrome.tabs.QueryInfo = {};
-      if (input.url) query.url = input.url;
-      if (input.title) query.title = input.title;
-      tabs = await this.tabAdapter.queryTabs(query);
+      const query: chrome.tabs.QueryInfo = {}
+      if (input.url) query.url = input.url
+      if (input.title) query.title = input.title
+      tabs = await this.tabAdapter.queryTabs(query)
     } else {
       // Get all tabs
-      tabs = await this.tabAdapter.getAllTabs();
+      tabs = await this.tabAdapter.getAllTabs()
     }
 
     // Convert to simplified TabInfo format
     const tabInfos: TabInfo[] = tabs
-      .filter(tab => tab.id !== undefined && tab.windowId !== undefined)
-      .map(tab => ({
+      .filter((tab) => tab.id !== undefined && tab.windowId !== undefined)
+      .map((tab) => ({
         id: tab.id!,
         url: tab.url || '',
         title: tab.title || '',
         windowId: tab.windowId!,
         active: tab.active || false,
         index: tab.index,
-      }));
+      }))
 
     return {
       tabs: tabInfos,
       count: tabInfos.length,
-    };
+    }
   }
 }

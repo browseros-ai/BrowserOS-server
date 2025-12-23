@@ -2,11 +2,11 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import type {ElementHandle, Page} from 'puppeteer-core';
-import z from 'zod';
+import type { ElementHandle, Page } from 'puppeteer-core'
+import z from 'zod'
 
-import {ToolCategories} from '../types/ToolCategories.js';
-import {defineTool} from '../types/ToolDefinition.js';
+import { ToolCategories } from '../types/ToolCategories.js'
+import { defineTool } from '../types/ToolDefinition.js'
 
 export const screenshot = defineTool({
   name: 'take_screenshot',
@@ -49,14 +49,14 @@ export const screenshot = defineTool({
   },
   handler: async (request, response, context) => {
     if (request.params.uid && request.params.fullPage) {
-      throw new Error('Providing both "uid" and "fullPage" is not allowed.');
+      throw new Error('Providing both "uid" and "fullPage" is not allowed.')
     }
 
-    let pageOrHandle: Page | ElementHandle;
+    let pageOrHandle: Page | ElementHandle
     if (request.params.uid) {
-      pageOrHandle = await context.getElementByUid(request.params.uid);
+      pageOrHandle = await context.getElementByUid(request.params.uid)
     } else {
-      pageOrHandle = context.getSelectedPage();
+      pageOrHandle = context.getSelectedPage()
     }
 
     const screenshot = await pageOrHandle.screenshot({
@@ -64,39 +64,37 @@ export const screenshot = defineTool({
       fullPage: request.params.fullPage,
       quality: request.params.quality,
       optimizeForSpeed: true, // Bonus: optimize encoding for speed
-    });
+    })
 
     if (request.params.uid) {
       response.appendResponseLine(
         `Took a screenshot of node with uid "${request.params.uid}".`,
-      );
+      )
     } else if (request.params.fullPage) {
-      response.appendResponseLine(
-        'Took a screenshot of the full current page.',
-      );
+      response.appendResponseLine('Took a screenshot of the full current page.')
     } else {
       response.appendResponseLine(
         "Took a screenshot of the current page's viewport.",
-      );
+      )
     }
 
     if (request.params.filePath) {
-      const file = await context.saveFile(screenshot, request.params.filePath);
-      response.appendResponseLine(`Saved screenshot to ${file.filename}.`);
+      const file = await context.saveFile(screenshot, request.params.filePath)
+      response.appendResponseLine(`Saved screenshot to ${file.filename}.`)
     } else if (screenshot.length >= 2_000_000) {
-      const {filename} = await context.saveTemporaryFile(
+      const { filename } = await context.saveTemporaryFile(
         screenshot,
         `image/${request.params.format}` as
           | 'image/png'
           | 'image/jpeg'
           | 'image/webp',
-      );
-      response.appendResponseLine(`Saved screenshot to ${filename}.`);
+      )
+      response.appendResponseLine(`Saved screenshot to ${filename}.`)
     } else {
       response.attachImage({
         mimeType: `image/${request.params.format}`,
         data: Buffer.from(screenshot).toString('base64'),
-      });
+      })
     }
   },
-});
+})

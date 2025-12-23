@@ -2,12 +2,12 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import {z} from 'zod';
+import { z } from 'zod'
 
-import {ToolCategories} from '../../types/ToolCategories.js';
-import {defineTool} from '../../types/ToolDefinition.js';
-import type {Context} from '../types/Context.js';
-import type {Response} from '../types/Response.js';
+import { ToolCategories } from '../../types/ToolCategories.js'
+import { defineTool } from '../../types/ToolDefinition.js'
+import type { Context } from '../types/Context.js'
+import type { Response } from '../types/Response.js'
 
 export const getBookmarks = defineTool<z.ZodRawShape, Context, Response>({
   name: 'browser_get_bookmarks',
@@ -24,39 +24,39 @@ export const getBookmarks = defineTool<z.ZodRawShape, Context, Response>({
     windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {folderId, windowId} = request.params as {
-      folderId?: string;
-      windowId?: number;
-    };
+    const { folderId, windowId } = request.params as {
+      folderId?: string
+      windowId?: number
+    }
 
     const result = await context.executeAction('getBookmarks', {
       folderId,
       windowId,
-    });
+    })
     const data = result as {
       bookmarks: Array<{
-        id: string;
-        title: string;
-        url?: string;
-        parentId?: string;
-      }>;
-    };
+        id: string
+        title: string
+        url?: string
+        parentId?: string
+      }>
+    }
 
-    response.appendResponseLine(`Found ${data.bookmarks.length} bookmarks:`);
-    response.appendResponseLine('');
+    response.appendResponseLine(`Found ${data.bookmarks.length} bookmarks:`)
+    response.appendResponseLine('')
 
     for (const bookmark of data.bookmarks) {
       if (bookmark.url) {
-        response.appendResponseLine(`[${bookmark.id}] ${bookmark.title}`);
-        response.appendResponseLine(`    ${bookmark.url}`);
+        response.appendResponseLine(`[${bookmark.id}] ${bookmark.title}`)
+        response.appendResponseLine(`    ${bookmark.url}`)
       } else {
         response.appendResponseLine(
           `[${bookmark.id}] 📁 ${bookmark.title} (folder)`,
-        );
+        )
       }
     }
   },
-});
+})
 
 export const createBookmark = defineTool<z.ZodRawShape, Context, Response>({
   name: 'browser_create_bookmark',
@@ -72,26 +72,26 @@ export const createBookmark = defineTool<z.ZodRawShape, Context, Response>({
     windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {title, url, parentId, windowId} = request.params as {
-      title: string;
-      url: string;
-      parentId?: string;
-      windowId?: number;
-    };
+    const { title, url, parentId, windowId } = request.params as {
+      title: string
+      url: string
+      parentId?: string
+      windowId?: number
+    }
 
     const result = await context.executeAction('createBookmark', {
       title,
       url,
       parentId,
       windowId,
-    });
-    const data = result as {id: string; title: string; url: string};
+    })
+    const data = result as { id: string; title: string; url: string }
 
-    response.appendResponseLine(`Created bookmark: ${data.title}`);
-    response.appendResponseLine(`URL: ${data.url}`);
-    response.appendResponseLine(`ID: ${data.id}`);
+    response.appendResponseLine(`Created bookmark: ${data.title}`)
+    response.appendResponseLine(`URL: ${data.url}`)
+    response.appendResponseLine(`ID: ${data.id}`)
   },
-});
+})
 
 export const removeBookmark = defineTool<z.ZodRawShape, Context, Response>({
   name: 'browser_remove_bookmark',
@@ -105,13 +105,13 @@ export const removeBookmark = defineTool<z.ZodRawShape, Context, Response>({
     windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {bookmarkId, windowId} = request.params as {
-      bookmarkId: string;
-      windowId?: number;
-    };
+    const { bookmarkId, windowId } = request.params as {
+      bookmarkId: string
+      windowId?: number
+    }
 
-    await context.executeAction('removeBookmark', {id: bookmarkId, windowId});
+    await context.executeAction('removeBookmark', { id: bookmarkId, windowId })
 
-    response.appendResponseLine(`Removed bookmark ${bookmarkId}`);
+    response.appendResponseLine(`Removed bookmark ${bookmarkId}`)
   },
-});
+})

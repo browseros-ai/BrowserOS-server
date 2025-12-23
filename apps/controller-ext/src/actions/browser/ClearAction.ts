@@ -3,11 +3,9 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler} from '../ActionHandler';
-
-import {BrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
+import { z } from 'zod'
+import { BrowserOSAdapter } from '@/adapters/BrowserOSAdapter'
+import { ActionHandler } from '../ActionHandler'
 
 const ClearInputSchema = z.object({
   tabId: z.number().describe('The tab ID containing the element'),
@@ -16,11 +14,11 @@ const ClearInputSchema = z.object({
     .int()
     .positive()
     .describe('The nodeId from interactive snapshot'),
-});
+})
 
-type ClearInput = z.infer<typeof ClearInputSchema>;
+type ClearInput = z.infer<typeof ClearInputSchema>
 interface ClearOutput {
-  success: boolean;
+  success: boolean
 }
 
 /**
@@ -30,11 +28,11 @@ interface ClearOutput {
  * Used before inputText or to reset form fields.
  */
 export class ClearAction extends ActionHandler<ClearInput, ClearOutput> {
-  readonly inputSchema = ClearInputSchema;
-  private browserOSAdapter = BrowserOSAdapter.getInstance();
+  readonly inputSchema = ClearInputSchema
+  private browserOSAdapter = BrowserOSAdapter.getInstance()
 
   async execute(input: ClearInput): Promise<ClearOutput> {
-    await this.browserOSAdapter.clear(input.tabId, input.nodeId);
-    return {success: true};
+    await this.browserOSAdapter.clear(input.tabId, input.nodeId)
+    return { success: true }
   }
 }

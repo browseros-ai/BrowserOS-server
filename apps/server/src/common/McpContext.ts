@@ -2,9 +2,9 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import fs from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
+import fs from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
 
 import type {
   Browser,
@@ -13,381 +13,381 @@ import type {
   ElementHandle,
   HTTPRequest,
   Page,
-  SerializedAXNode,
   PredefinedNetworkConditions,
-} from 'puppeteer-core';
+  SerializedAXNode,
+} from 'puppeteer-core'
 
-import type {Logger} from './logger.js';
-import {NetworkCollector, PageCollector} from './PageCollector.js';
+import type { Logger } from './logger.js'
+import { NetworkCollector, PageCollector } from './PageCollector.js'
 // These will be injected from tools package
-import type {TraceResult} from './types.js';
-import {WaitForHelper} from './WaitForHelper.js';
+import type { TraceResult } from './types.js'
+import { WaitForHelper } from './WaitForHelper.js'
 
 export interface TextSnapshotNode extends SerializedAXNode {
-  id: string;
-  children: TextSnapshotNode[];
+  id: string
+  children: TextSnapshotNode[]
 }
 
 export interface TextSnapshot {
-  root: TextSnapshotNode;
-  idToNode: Map<string, TextSnapshotNode>;
-  snapshotId: string;
+  root: TextSnapshotNode
+  idToNode: Map<string, TextSnapshotNode>
+  snapshotId: string
 }
 
-const DEFAULT_TIMEOUT = 5_000;
-const NAVIGATION_TIMEOUT = 10_000;
+const DEFAULT_TIMEOUT = 5_000
+const NAVIGATION_TIMEOUT = 10_000
 
 function getNetworkMultiplierFromString(condition: string | null): number {
   const puppeteerCondition =
-    condition as keyof typeof PredefinedNetworkConditions;
+    condition as keyof typeof PredefinedNetworkConditions
 
   switch (puppeteerCondition) {
     case 'Fast 4G':
-      return 1;
+      return 1
     case 'Slow 4G':
-      return 2.5;
+      return 2.5
     case 'Fast 3G':
-      return 5;
+      return 5
     case 'Slow 3G':
-      return 10;
+      return 10
   }
-  return 1;
+  return 1
 }
 
 function getExtensionFromMimeType(mimeType: string) {
   switch (mimeType) {
     case 'image/png':
-      return 'png';
+      return 'png'
     case 'image/jpeg':
-      return 'jpeg';
+      return 'jpeg'
     case 'image/webp':
-      return 'webp';
+      return 'webp'
   }
-  throw new Error(`No mapping for Mime type ${mimeType}.`);
+  throw new Error(`No mapping for Mime type ${mimeType}.`)
 }
 
 export class McpContext {
-  browser: Browser;
-  logger: Logger;
+  browser: Browser
+  logger: Logger
 
   // The most recent page state.
-  #pages: Page[] = [];
-  #selectedPageIdx = 0;
+  #pages: Page[] = []
+  #selectedPageIdx = 0
   // The most recent snapshot.
-  #textSnapshot: TextSnapshot | null = null;
-  #networkCollector: NetworkCollector;
-  #consoleCollector: PageCollector<ConsoleMessage | Error>;
+  #textSnapshot: TextSnapshot | null = null
+  #networkCollector: NetworkCollector
+  #consoleCollector: PageCollector<ConsoleMessage | Error>
 
-  #isRunningTrace = false;
-  #networkConditionsMap = new WeakMap<Page, string>();
-  #cpuThrottlingRateMap = new WeakMap<Page, number>();
-  #dialog?: Dialog;
+  #isRunningTrace = false
+  #networkConditionsMap = new WeakMap<Page, string>()
+  #cpuThrottlingRateMap = new WeakMap<Page, number>()
+  #dialog?: Dialog
 
-  #nextSnapshotId = 1;
-  #traceResults: TraceResult[] = [];
+  #nextSnapshotId = 1
+  #traceResults: TraceResult[] = []
 
   private constructor(browser: Browser, logger: Logger) {
-    this.browser = browser;
-    this.logger = logger;
+    this.browser = browser
+    this.logger = logger
 
     this.#networkCollector = new NetworkCollector(
       this.browser,
       (page, collect) => {
-        page.on('request', request => {
-          collect(request);
-        });
+        page.on('request', (request) => {
+          collect(request)
+        })
       },
-    );
+    )
 
     this.#consoleCollector = new PageCollector(
       this.browser,
       (page, collect) => {
-        page.on('console', event => {
-          collect(event);
-        });
-        page.on('pageerror', event => {
-          collect(event);
-        });
+        page.on('console', (event) => {
+          collect(event)
+        })
+        page.on('pageerror', (event) => {
+          collect(event)
+        })
       },
-    );
+    )
   }
 
   async #init() {
-    await this.createPagesSnapshot();
-    this.setSelectedPageIdx(0);
-    await this.#networkCollector.init();
-    await this.#consoleCollector.init();
+    await this.createPagesSnapshot()
+    this.setSelectedPageIdx(0)
+    await this.#networkCollector.init()
+    await this.#consoleCollector.init()
   }
 
   static async from(browser: Browser, logger: Logger) {
-    const context = new McpContext(browser, logger);
-    await context.#init();
-    return context;
+    const context = new McpContext(browser, logger)
+    await context.#init()
+    return context
   }
 
   getNetworkRequests(): HTTPRequest[] {
-    const page = this.getSelectedPage();
-    return this.#networkCollector.getData(page);
+    const page = this.getSelectedPage()
+    return this.#networkCollector.getData(page)
   }
 
   getConsoleData(): Array<ConsoleMessage | Error> {
-    const page = this.getSelectedPage();
-    return this.#consoleCollector.getData(page);
+    const page = this.getSelectedPage()
+    return this.#consoleCollector.getData(page)
   }
 
   async newPage(): Promise<Page> {
-    const page = await this.browser.newPage();
-    const pages = await this.createPagesSnapshot();
-    this.setSelectedPageIdx(pages.indexOf(page));
-    this.#networkCollector.addPage(page);
-    this.#consoleCollector.addPage(page);
-    return page;
+    const page = await this.browser.newPage()
+    const pages = await this.createPagesSnapshot()
+    this.setSelectedPageIdx(pages.indexOf(page))
+    this.#networkCollector.addPage(page)
+    this.#consoleCollector.addPage(page)
+    return page
   }
   async closePage(pageIdx: number): Promise<void> {
     if (this.#pages.length === 1) {
       throw new Error(
         'The last open page cannot be closed. It is fine to keep it open.',
-      );
+      )
     }
-    const page = this.getPageByIdx(pageIdx);
-    this.setSelectedPageIdx(0);
-    await page.close({runBeforeUnload: false});
+    const page = this.getPageByIdx(pageIdx)
+    this.setSelectedPageIdx(0)
+    await page.close({ runBeforeUnload: false })
   }
 
   getNetworkRequestByUrl(url: string): HTTPRequest {
-    const requests = this.getNetworkRequests();
+    const requests = this.getNetworkRequests()
     if (!requests.length) {
-      throw new Error('No requests found for selected page');
+      throw new Error('No requests found for selected page')
     }
 
     for (const request of requests) {
       if (request.url() === url) {
-        return request;
+        return request
       }
     }
 
-    throw new Error('Request not found for selected page');
+    throw new Error('Request not found for selected page')
   }
 
   setNetworkConditions(conditions: string | null): void {
-    const page = this.getSelectedPage();
+    const page = this.getSelectedPage()
     if (conditions === null) {
-      this.#networkConditionsMap.delete(page);
+      this.#networkConditionsMap.delete(page)
     } else {
-      this.#networkConditionsMap.set(page, conditions);
+      this.#networkConditionsMap.set(page, conditions)
     }
-    this.#updateSelectedPageTimeouts();
+    this.#updateSelectedPageTimeouts()
   }
 
   getNetworkConditions(): string | null {
-    const page = this.getSelectedPage();
-    return this.#networkConditionsMap.get(page) ?? null;
+    const page = this.getSelectedPage()
+    return this.#networkConditionsMap.get(page) ?? null
   }
 
   setCpuThrottlingRate(rate: number): void {
-    const page = this.getSelectedPage();
-    this.#cpuThrottlingRateMap.set(page, rate);
-    this.#updateSelectedPageTimeouts();
+    const page = this.getSelectedPage()
+    this.#cpuThrottlingRateMap.set(page, rate)
+    this.#updateSelectedPageTimeouts()
   }
 
   getCpuThrottlingRate(): number {
-    const page = this.getSelectedPage();
-    return this.#cpuThrottlingRateMap.get(page) ?? 1;
+    const page = this.getSelectedPage()
+    return this.#cpuThrottlingRateMap.get(page) ?? 1
   }
 
   setIsRunningPerformanceTrace(x: boolean): void {
-    this.#isRunningTrace = x;
+    this.#isRunningTrace = x
   }
 
   isRunningPerformanceTrace(): boolean {
-    return this.#isRunningTrace;
+    return this.#isRunningTrace
   }
 
   getDialog(): Dialog | undefined {
-    return this.#dialog;
+    return this.#dialog
   }
 
   clearDialog(): void {
-    this.#dialog = undefined;
+    this.#dialog = undefined
   }
 
   getSelectedPage(): Page {
-    const page = this.#pages[this.#selectedPageIdx];
+    const page = this.#pages[this.#selectedPageIdx]
     if (!page) {
-      throw new Error('No page selected');
+      throw new Error('No page selected')
     }
     if (page.isClosed()) {
       throw new Error(
         `The selected page has been closed. Call list_pages to see open pages.`,
-      );
+      )
     }
-    return page;
+    return page
   }
 
   getPageByIdx(idx: number): Page {
-    const pages = this.#pages;
-    const page = pages[idx];
+    const pages = this.#pages
+    const page = pages[idx]
     if (!page) {
-      throw new Error('No page found');
+      throw new Error('No page found')
     }
-    return page;
+    return page
   }
 
   getSelectedPageIdx(): number {
-    return this.#selectedPageIdx;
+    return this.#selectedPageIdx
   }
 
   #dialogHandler = (dialog: Dialog): void => {
-    this.#dialog = dialog;
-  };
+    this.#dialog = dialog
+  }
 
   setSelectedPageIdx(idx: number): void {
-    const oldPage = this.#pages[this.#selectedPageIdx];
+    const oldPage = this.#pages[this.#selectedPageIdx]
     if (oldPage && !oldPage.isClosed()) {
-      oldPage.off('dialog', this.#dialogHandler);
+      oldPage.off('dialog', this.#dialogHandler)
     }
-    this.#selectedPageIdx = idx;
-    const newPage = this.getSelectedPage();
-    newPage.on('dialog', this.#dialogHandler);
-    this.#updateSelectedPageTimeouts();
+    this.#selectedPageIdx = idx
+    const newPage = this.getSelectedPage()
+    newPage.on('dialog', this.#dialogHandler)
+    this.#updateSelectedPageTimeouts()
   }
 
   #updateSelectedPageTimeouts() {
-    const page = this.getSelectedPage();
+    const page = this.getSelectedPage()
     // For waiters 5sec timeout should be sufficient.
     // Increased in case we throttle the CPU
-    const cpuMultiplier = this.getCpuThrottlingRate();
-    page.setDefaultTimeout(DEFAULT_TIMEOUT * cpuMultiplier);
+    const cpuMultiplier = this.getCpuThrottlingRate()
+    page.setDefaultTimeout(DEFAULT_TIMEOUT * cpuMultiplier)
     // 10sec should be enough for the load event to be emitted during
     // navigations.
     // Increased in case we throttle the network requests
     const networkMultiplier = getNetworkMultiplierFromString(
       this.getNetworkConditions(),
-    );
-    page.setDefaultNavigationTimeout(NAVIGATION_TIMEOUT * networkMultiplier);
+    )
+    page.setDefaultNavigationTimeout(NAVIGATION_TIMEOUT * networkMultiplier)
   }
 
   getNavigationTimeout() {
-    const page = this.getSelectedPage();
-    return page.getDefaultNavigationTimeout();
+    const page = this.getSelectedPage()
+    return page.getDefaultNavigationTimeout()
   }
 
   async getElementByUid(uid: string): Promise<ElementHandle<Element>> {
     if (!this.#textSnapshot?.idToNode.size) {
-      throw new Error(`No snapshot found. Use take_snapshot to capture one.`);
+      throw new Error(`No snapshot found. Use take_snapshot to capture one.`)
     }
-    const [snapshotId] = uid.split('_');
+    const [snapshotId] = uid.split('_')
 
     if (this.#textSnapshot.snapshotId !== snapshotId) {
       throw new Error(
         'This uid is coming from a stale snapshot. Call take_snapshot to get a fresh snapshot.',
-      );
+      )
     }
 
-    const node = this.#textSnapshot?.idToNode.get(uid);
+    const node = this.#textSnapshot?.idToNode.get(uid)
     if (!node) {
-      throw new Error('No such element found in the snapshot');
+      throw new Error('No such element found in the snapshot')
     }
-    const handle = await node.elementHandle();
+    const handle = await node.elementHandle()
     if (!handle) {
-      throw new Error('No such element found in the snapshot');
+      throw new Error('No such element found in the snapshot')
     }
-    return handle;
+    return handle
   }
 
   /**
    * Creates a snapshot of the pages.
    */
   async createPagesSnapshot(): Promise<Page[]> {
-    this.#pages = await this.browser.pages();
-    return this.#pages;
+    this.#pages = await this.browser.pages()
+    return this.#pages
   }
 
   getPages(): Page[] {
-    return this.#pages;
+    return this.#pages
   }
 
   /**
    * Creates a text snapshot of a page.
    */
   async createTextSnapshot(): Promise<void> {
-    const page = this.getSelectedPage();
+    const page = this.getSelectedPage()
     const rootNode = await page.accessibility.snapshot({
       includeIframes: true,
-    });
+    })
     if (!rootNode) {
-      return;
+      return
     }
 
-    const snapshotId = this.#nextSnapshotId++;
+    const snapshotId = this.#nextSnapshotId++
     // Iterate through the whole accessibility node tree and assign node ids that
     // will be used for the tree serialization and mapping ids back to nodes.
-    let idCounter = 0;
-    const idToNode = new Map<string, TextSnapshotNode>();
+    let idCounter = 0
+    const idToNode = new Map<string, TextSnapshotNode>()
     const assignIds = (node: SerializedAXNode): TextSnapshotNode => {
       const nodeWithId: TextSnapshotNode = {
         ...node,
         id: `${snapshotId}_${idCounter++}`,
         children: node.children
-          ? node.children.map(child => assignIds(child))
+          ? node.children.map((child) => assignIds(child))
           : [],
-      };
-      idToNode.set(nodeWithId.id, nodeWithId);
-      return nodeWithId;
-    };
+      }
+      idToNode.set(nodeWithId.id, nodeWithId)
+      return nodeWithId
+    }
 
-    const rootNodeWithId = assignIds(rootNode);
+    const rootNodeWithId = assignIds(rootNode)
     this.#textSnapshot = {
       root: rootNodeWithId,
       snapshotId: String(snapshotId),
       idToNode,
-    };
+    }
   }
 
   getTextSnapshot(): TextSnapshot | null {
-    return this.#textSnapshot;
+    return this.#textSnapshot
   }
 
   async saveTemporaryFile(
     data: Uint8Array<ArrayBufferLike>,
     mimeType: 'image/png' | 'image/jpeg' | 'image/webp',
-  ): Promise<{filename: string}> {
+  ): Promise<{ filename: string }> {
     try {
       const dir = await fs.mkdtemp(
         path.join(os.tmpdir(), 'chrome-devtools-mcp-'),
-      );
+      )
 
       const filename = path.join(
         dir,
         `screenshot.${getExtensionFromMimeType(mimeType)}`,
-      );
-      await fs.writeFile(filename, data);
-      return {filename};
+      )
+      await fs.writeFile(filename, data)
+      return { filename }
     } catch (err) {
-      this.logger.error(err);
-      throw new Error('Could not save a screenshot to a file', {cause: err});
+      this.logger.error(err)
+      throw new Error('Could not save a screenshot to a file', { cause: err })
     }
   }
   async saveFile(
     data: Uint8Array<ArrayBufferLike>,
     filename: string,
-  ): Promise<{filename: string}> {
+  ): Promise<{ filename: string }> {
     try {
-      const filePath = path.resolve(filename);
-      await fs.writeFile(filePath, data);
-      return {filename};
+      const filePath = path.resolve(filename)
+      await fs.writeFile(filePath, data)
+      return { filename }
     } catch (err) {
-      this.logger.error(err);
-      throw new Error('Could not save a screenshot to a file', {cause: err});
+      this.logger.error(err)
+      throw new Error('Could not save a screenshot to a file', { cause: err })
     }
   }
 
   storeTraceRecording(result: TraceResult): void {
-    this.#traceResults.push(result);
+    this.#traceResults.push(result)
   }
 
   recordedTraces(): TraceResult[] {
-    return this.#traceResults;
+    return this.#traceResults
   }
 
   getWaitForHelper(
@@ -395,20 +395,20 @@ export class McpContext {
     cpuMultiplier: number,
     networkMultiplier: number,
   ) {
-    return new WaitForHelper(page, cpuMultiplier, networkMultiplier);
+    return new WaitForHelper(page, cpuMultiplier, networkMultiplier)
   }
 
   waitForEventsAfterAction(action: () => Promise<unknown>): Promise<void> {
-    const page = this.getSelectedPage();
-    const cpuMultiplier = this.getCpuThrottlingRate();
+    const page = this.getSelectedPage()
+    const cpuMultiplier = this.getCpuThrottlingRate()
     const networkMultiplier = getNetworkMultiplierFromString(
       this.getNetworkConditions(),
-    );
+    )
     const waitForHelper = this.getWaitForHelper(
       page,
       cpuMultiplier,
       networkMultiplier,
-    );
-    return waitForHelper.waitForEventsAfterAction(action);
+    )
+    return waitForHelper.waitForEventsAfterAction(action)
   }
 }

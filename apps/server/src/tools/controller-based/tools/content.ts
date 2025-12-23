@@ -2,22 +2,22 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import {z} from 'zod';
+import { z } from 'zod'
 
-import {ToolCategories} from '../../types/ToolCategories.js';
-import {defineTool} from '../../types/ToolDefinition.js';
-import type {Context} from '../types/Context.js';
-import type {Response} from '../types/Response.js';
+import { ToolCategories } from '../../types/ToolCategories.js'
+import { defineTool } from '../../types/ToolDefinition.js'
+import type { Context } from '../types/Context.js'
+import type { Response } from '../types/Response.js'
 
 interface Snapshot {
-  items: SnapshotItem[];
+  items: SnapshotItem[]
 }
 
 interface SnapshotItem {
-  text: string;
-  type: 'heading' | 'link' | 'text';
-  level?: number;
-  url?: string;
+  text: string
+  type: 'heading' | 'link' | 'text'
+  level?: number
+  url?: string
 }
 
 export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
@@ -76,113 +76,113 @@ export const getPageContent = defineTool<z.ZodRawShape, Context, Response>({
   },
   handler: async (request, response, context) => {
     const params = request.params as {
-      tabId: number;
-      type: 'text' | 'text-with-links';
-      page?: string;
-      contextWindow?: string;
-      options?: {context?: 'visible' | 'full'; includeSections?: string[]};
-      windowId?: number;
-    };
+      tabId: number
+      type: 'text' | 'text-with-links'
+      page?: string
+      contextWindow?: string
+      options?: { context?: 'visible' | 'full'; includeSections?: string[] }
+      windowId?: number
+    }
 
     try {
-      const includeLinks = params.type === 'text-with-links';
-      const requestedPage = params.page || 'all';
-      const contextWindowStr = params.contextWindow || '20k';
+      const includeLinks = params.type === 'text-with-links'
+      const requestedPage = params.page || 'all'
+      const contextWindowStr = params.contextWindow || '20k'
 
       // Parse context window size
       const parseContextWindow = (cw: string): number => {
-        const match = cw.match(/^(\d+)k$/i);
-        if (!match) return 20000; // default 20k
-        return parseInt(match[1]) * 1000;
-      };
+        const match = cw.match(/^(\d+)k$/i)
+        if (!match) return 20000 // default 20k
+        return parseInt(match[1], 10) * 1000
+      }
 
-      const contextWindowSize = parseContextWindow(contextWindowStr);
+      const contextWindowSize = parseContextWindow(contextWindowStr)
 
       const snapshotResult = await context.executeAction('getSnapshot', {
         tabId: params.tabId,
         type: includeLinks ? 'links' : 'text',
         windowId: params.windowId,
-      });
-      const snapshot = snapshotResult as Snapshot;
+      })
+      const snapshot = snapshotResult as Snapshot
 
       if (!snapshot || !snapshot.items) {
-        response.appendResponseLine('No content found on the page.');
-        return;
+        response.appendResponseLine('No content found on the page.')
+        return
       }
 
       // Build full content
-      let fullContent = '';
-      snapshot.items.forEach(item => {
+      let fullContent = ''
+      snapshot.items.forEach((item) => {
         if (item.type === 'heading') {
-          const prefix = '#'.repeat(item.level || 1);
-          fullContent += `${prefix} ${item.text}\n`;
+          const prefix = '#'.repeat(item.level || 1)
+          fullContent += `${prefix} ${item.text}\n`
         } else if (item.type === 'text') {
-          fullContent += `${item.text}\n`;
+          fullContent += `${item.text}\n`
         } else if (item.type === 'link' && includeLinks) {
-          fullContent += `[${item.text}](${item.url})\n`;
+          fullContent += `[${item.text}](${item.url})\n`
         }
-      });
+      })
 
       if (!fullContent) {
-        response.appendResponseLine('No content extracted.');
-        return;
+        response.appendResponseLine('No content extracted.')
+        return
       }
 
       // Split content into pages
-      const pages: string[] = [];
-      let currentPage = '';
-      const lines = fullContent.split('\n');
+      const pages: string[] = []
+      let currentPage = ''
+      const lines = fullContent.split('\n')
 
       for (const line of lines) {
         if (
-          (currentPage + line + '\n').length > contextWindowSize &&
+          `${currentPage + line}\n`.length > contextWindowSize &&
           currentPage.length > 0
         ) {
-          pages.push(currentPage.trim());
-          currentPage = '';
+          pages.push(currentPage.trim())
+          currentPage = ''
         }
-        currentPage += line + '\n';
+        currentPage += `${line}\n`
       }
       if (currentPage.trim()) {
-        pages.push(currentPage.trim());
+        pages.push(currentPage.trim())
       }
 
-      const totalPages = pages.length;
+      const totalPages = pages.length
 
       // Return requested page(s)
       if (requestedPage === 'all') {
         response.appendResponseLine(
           `Total pages: ${totalPages} (${contextWindowStr} per page)`,
-        );
-        response.appendResponseLine('');
-        response.appendResponseLine(fullContent.trim());
-        response.appendResponseLine('');
-        response.appendResponseLine(`(${fullContent.length} characters total)`);
+        )
+        response.appendResponseLine('')
+        response.appendResponseLine(fullContent.trim())
+        response.appendResponseLine('')
+        response.appendResponseLine(`(${fullContent.length} characters total)`)
       } else {
-        const pageNum = parseInt(requestedPage);
-        if (isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
+        const pageNum = parseInt(requestedPage, 10)
+        if (Number.isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
           response.appendResponseLine(
             `Error: Invalid page number "${requestedPage}". Valid pages: 1-${totalPages} or "all"`,
-          );
-          return;
+          )
+          return
         }
 
-        const pageIndex = pageNum - 1;
+        const pageIndex = pageNum - 1
         response.appendResponseLine(
           `Page ${pageNum} of ${totalPages} (${contextWindowStr} limit per page)`,
-        );
-        response.appendResponseLine('');
-        response.appendResponseLine(pages[pageIndex]);
-        response.appendResponseLine('');
-        response.appendResponseLine(`(${pages[pageIndex].length} characters)`);
+        )
+        response.appendResponseLine('')
+        response.appendResponseLine(pages[pageIndex])
+        response.appendResponseLine('')
+        response.appendResponseLine(`(${pages[pageIndex].length} characters)`)
       }
 
-      response.appendResponseLine('');
-      response.appendResponseLine('='.repeat(60));
+      response.appendResponseLine('')
+      response.appendResponseLine('='.repeat(60))
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      response.appendResponseLine(`Error: ${errorMessage}`);
+        error instanceof Error ? error.message : String(error)
+      response.appendResponseLine(`Error: ${errorMessage}`)
     }
   },
-});
+})

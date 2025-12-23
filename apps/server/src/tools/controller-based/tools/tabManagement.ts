@@ -2,12 +2,12 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import {z} from 'zod';
+import { z } from 'zod'
 
-import {ToolCategories} from '../../types/ToolCategories.js';
-import {defineTool} from '../../types/ToolDefinition.js';
-import type {Context} from '../types/Context.js';
-import type {Response} from '../types/Response.js';
+import { ToolCategories } from '../../types/ToolCategories.js'
+import { defineTool } from '../../types/ToolDefinition.js'
+import type { Context } from '../types/Context.js'
+import type { Response } from '../types/Response.js'
 
 export const getActiveTab = defineTool<z.ZodRawShape, Context, Response>({
   name: 'browser_get_active_tab',
@@ -20,26 +20,26 @@ export const getActiveTab = defineTool<z.ZodRawShape, Context, Response>({
     windowId: z.number().optional().describe('Window ID (injected by agent)'),
   },
   handler: async (request, response, context) => {
-    const params = request.params as {windowId?: number};
-    const result = await context.executeAction('getActiveTab', params);
+    const params = request.params as { windowId?: number }
+    const result = await context.executeAction('getActiveTab', params)
     const data = result as {
-      tabId: number;
-      url: string;
-      title: string;
-      windowId: number;
-    };
+      tabId: number
+      url: string
+      title: string
+      windowId: number
+    }
 
-    response.appendResponseLine(`Active Tab: ${data.title}`);
-    response.appendResponseLine(`URL: ${data.url}`);
-    response.appendResponseLine(`Tab ID: ${data.tabId}`);
-    response.appendResponseLine(`Window ID: ${data.windowId}`);
+    response.appendResponseLine(`Active Tab: ${data.title}`)
+    response.appendResponseLine(`URL: ${data.url}`)
+    response.appendResponseLine(`Tab ID: ${data.tabId}`)
+    response.appendResponseLine(`Window ID: ${data.windowId}`)
 
-    response.addStructuredContent('tabId', data.tabId);
-    response.addStructuredContent('url', data.url);
-    response.addStructuredContent('title', data.title);
-    response.addStructuredContent('windowId', data.windowId);
+    response.addStructuredContent('tabId', data.tabId)
+    response.addStructuredContent('url', data.url)
+    response.addStructuredContent('title', data.title)
+    response.addStructuredContent('windowId', data.windowId)
   },
-});
+})
 
 export const listTabs = defineTool<z.ZodRawShape, Context, Response>({
   name: 'browser_list_tabs',
@@ -52,36 +52,36 @@ export const listTabs = defineTool<z.ZodRawShape, Context, Response>({
     windowId: z.number().optional().describe('Window ID (injected by agent)'),
   },
   handler: async (request, response, context) => {
-    const params = request.params as {windowId?: number};
-    const result = await context.executeAction('getTabs', params);
+    const params = request.params as { windowId?: number }
+    const result = await context.executeAction('getTabs', params)
     const data = result as {
       tabs: Array<{
-        id: number;
-        url: string;
-        title: string;
-        windowId: number;
-        active: boolean;
-        index: number;
-      }>;
-      count: number;
-    };
-
-    response.appendResponseLine(`Found ${data.count} open tabs:`);
-    response.appendResponseLine('');
-
-    for (const tab of data.tabs) {
-      const activeMarker = tab.active ? ' [ACTIVE]' : '';
-      response.appendResponseLine(`[${tab.id}]${activeMarker} ${tab.title}`);
-      response.appendResponseLine(`    ${tab.url}`);
-      response.appendResponseLine(
-        `    Window: ${tab.windowId} | Position: ${tab.index}`,
-      );
+        id: number
+        url: string
+        title: string
+        windowId: number
+        active: boolean
+        index: number
+      }>
+      count: number
     }
 
-    response.addStructuredContent('tabs', data.tabs);
-    response.addStructuredContent('count', data.count);
+    response.appendResponseLine(`Found ${data.count} open tabs:`)
+    response.appendResponseLine('')
+
+    for (const tab of data.tabs) {
+      const activeMarker = tab.active ? ' [ACTIVE]' : ''
+      response.appendResponseLine(`[${tab.id}]${activeMarker} ${tab.title}`)
+      response.appendResponseLine(`    ${tab.url}`)
+      response.appendResponseLine(
+        `    Window: ${tab.windowId} | Position: ${tab.index}`,
+      )
+    }
+
+    response.addStructuredContent('tabs', data.tabs)
+    response.addStructuredContent('count', data.count)
   },
-});
+})
 
 export const openTab = defineTool<z.ZodRawShape, Context, Response>({
   name: 'browser_open_tab',
@@ -103,19 +103,19 @@ export const openTab = defineTool<z.ZodRawShape, Context, Response>({
   },
   handler: async (request, response, context) => {
     const params = request.params as {
-      url?: string;
-      active?: boolean;
-      windowId?: number;
-    };
+      url?: string
+      active?: boolean
+      windowId?: number
+    }
 
-    const result = await context.executeAction('openTab', params);
-    const data = result as {tabId: number; url: string; title?: string};
+    const result = await context.executeAction('openTab', params)
+    const data = result as { tabId: number; url: string; title?: string }
 
-    response.appendResponseLine(`Opened new tab: ${data.title || 'Untitled'}`);
-    response.appendResponseLine(`URL: ${data.url}`);
-    response.appendResponseLine(`Tab ID: ${data.tabId}`);
+    response.appendResponseLine(`Opened new tab: ${data.title || 'Untitled'}`)
+    response.appendResponseLine(`URL: ${data.url}`)
+    response.appendResponseLine(`Tab ID: ${data.tabId}`)
   },
-});
+})
 
 export const closeTab = defineTool<z.ZodRawShape, Context, Response>({
   name: 'browser_close_tab',
@@ -129,16 +129,16 @@ export const closeTab = defineTool<z.ZodRawShape, Context, Response>({
     windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {tabId, windowId} = request.params as {
-      tabId: number;
-      windowId?: number;
-    };
+    const { tabId, windowId } = request.params as {
+      tabId: number
+      windowId?: number
+    }
 
-    await context.executeAction('closeTab', {tabId, windowId});
+    await context.executeAction('closeTab', { tabId, windowId })
 
-    response.appendResponseLine(`Closed tab ${tabId}`);
+    response.appendResponseLine(`Closed tab ${tabId}`)
   },
-});
+})
 
 export const switchTab = defineTool<z.ZodRawShape, Context, Response>({
   name: 'browser_switch_tab',
@@ -152,18 +152,18 @@ export const switchTab = defineTool<z.ZodRawShape, Context, Response>({
     windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {tabId, windowId} = request.params as {
-      tabId: number;
-      windowId?: number;
-    };
+    const { tabId, windowId } = request.params as {
+      tabId: number
+      windowId?: number
+    }
 
-    const result = await context.executeAction('switchTab', {tabId, windowId});
-    const data = result as {tabId: number; url: string; title: string};
+    const result = await context.executeAction('switchTab', { tabId, windowId })
+    const data = result as { tabId: number; url: string; title: string }
 
-    response.appendResponseLine(`Switched to tab: ${data.title}`);
-    response.appendResponseLine(`URL: ${data.url}`);
+    response.appendResponseLine(`Switched to tab: ${data.title}`)
+    response.appendResponseLine(`URL: ${data.url}`)
   },
-});
+})
 
 export const getLoadStatus = defineTool<z.ZodRawShape, Context, Response>({
   name: 'browser_get_load_status',
@@ -177,31 +177,31 @@ export const getLoadStatus = defineTool<z.ZodRawShape, Context, Response>({
     windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {tabId, windowId} = request.params as {
-      tabId: number;
-      windowId?: number;
-    };
+    const { tabId, windowId } = request.params as {
+      tabId: number
+      windowId?: number
+    }
 
     const result = await context.executeAction('getPageLoadStatus', {
       tabId,
       windowId,
-    });
+    })
     const data = result as {
-      tabId: number;
-      isResourcesLoading: boolean;
-      isDOMContentLoaded: boolean;
-      isPageComplete: boolean;
-    };
+      tabId: number
+      isResourcesLoading: boolean
+      isDOMContentLoaded: boolean
+      isPageComplete: boolean
+    }
 
-    response.appendResponseLine(`Tab ${tabId} load status:`);
+    response.appendResponseLine(`Tab ${tabId} load status:`)
     response.appendResponseLine(
       `Resources Loading: ${data.isResourcesLoading ? 'Yes' : 'No'}`,
-    );
+    )
     response.appendResponseLine(
       `DOM Content Loaded: ${data.isDOMContentLoaded ? 'Yes' : 'No'}`,
-    );
+    )
     response.appendResponseLine(
       `Page Complete: ${data.isPageComplete ? 'Yes' : 'No'}`,
-    );
+    )
   },
-});
+})

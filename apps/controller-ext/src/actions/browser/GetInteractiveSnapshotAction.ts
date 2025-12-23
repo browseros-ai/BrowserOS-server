@@ -3,15 +3,14 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler, ActionResponse} from '../ActionHandler';
-
-import {BrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
+import { z } from 'zod'
 import type {
   InteractiveSnapshot,
   InteractiveSnapshotOptions,
-} from '@/adapters/BrowserOSAdapter';
+} from '@/adapters/BrowserOSAdapter'
+
+import { BrowserOSAdapter } from '@/adapters/BrowserOSAdapter'
+import { ActionHandler } from '../ActionHandler'
 
 // Input schema
 const GetInteractiveSnapshotInputSchema = z.object({
@@ -26,11 +25,11 @@ const GetInteractiveSnapshotInputSchema = z.object({
     })
     .optional()
     .describe('Optional snapshot options'),
-});
+})
 
 type GetInteractiveSnapshotInput = z.infer<
   typeof GetInteractiveSnapshotInputSchema
->;
+>
 
 /**
  * GetInteractiveSnapshotAction - Get interactive elements from the page
@@ -53,8 +52,8 @@ export class GetInteractiveSnapshotAction extends ActionHandler<
   GetInteractiveSnapshotInput,
   InteractiveSnapshot
 > {
-  readonly inputSchema = GetInteractiveSnapshotInputSchema;
-  private browserOSAdapter = BrowserOSAdapter.getInstance();
+  readonly inputSchema = GetInteractiveSnapshotInputSchema
+  private browserOSAdapter = BrowserOSAdapter.getInstance()
 
   async execute(
     input: GetInteractiveSnapshotInput,
@@ -62,6 +61,6 @@ export class GetInteractiveSnapshotAction extends ActionHandler<
     return await this.browserOSAdapter.getInteractiveSnapshot(
       input.tabId,
       input.options as InteractiveSnapshotOptions | undefined,
-    );
+    )
   }
 }

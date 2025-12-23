@@ -10,10 +10,10 @@
  */
 
 export {
-  isTextPart,
+  isFileDataPart,
   isFunctionCallPart,
   isFunctionResponsePart,
-  isInlineDataPart,
-  isFileDataPart,
   isImageMimeType,
-} from './type-guards.js';
+  isInlineDataPart,
+  isTextPart,
+} from './type-guards.js'

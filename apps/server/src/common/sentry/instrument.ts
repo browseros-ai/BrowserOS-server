@@ -2,11 +2,11 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import * as Sentry from '@sentry/bun';
+import * as Sentry from '@sentry/bun'
 
-import pkg from '../../../package.json';
+import pkg from '../../../package.json'
 
-const SENTRY_ENVIRONMENT = process.env.NODE_ENV || 'development';
+const SENTRY_ENVIRONMENT = process.env.NODE_ENV || 'development'
 
 // Ensure to call this before importing any other modules!
 Sentry.init({
@@ -16,6 +16,6 @@ Sentry.init({
   sendDefaultPii: true,
   environment: SENTRY_ENVIRONMENT,
   release: pkg?.version ?? undefined,
-});
+})
 
-export {Sentry};
+export { Sentry }

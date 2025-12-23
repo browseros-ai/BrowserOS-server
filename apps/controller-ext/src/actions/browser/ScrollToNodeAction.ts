@@ -3,20 +3,18 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler} from '../ActionHandler';
-
-import {BrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
+import { z } from 'zod'
+import { BrowserOSAdapter } from '@/adapters/BrowserOSAdapter'
+import { ActionHandler } from '../ActionHandler'
 
 const ScrollToNodeInputSchema = z.object({
   tabId: z.number().describe('The tab ID containing the element'),
   nodeId: z.number().int().positive().describe('The nodeId to scroll to'),
-});
+})
 
-type ScrollToNodeInput = z.infer<typeof ScrollToNodeInputSchema>;
+type ScrollToNodeInput = z.infer<typeof ScrollToNodeInputSchema>
 interface ScrollToNodeOutput {
-  scrolled: boolean;
+  scrolled: boolean
 }
 
 /**
@@ -31,14 +29,14 @@ export class ScrollToNodeAction extends ActionHandler<
   ScrollToNodeInput,
   ScrollToNodeOutput
 > {
-  readonly inputSchema = ScrollToNodeInputSchema;
-  private browserOSAdapter = BrowserOSAdapter.getInstance();
+  readonly inputSchema = ScrollToNodeInputSchema
+  private browserOSAdapter = BrowserOSAdapter.getInstance()
 
   async execute(input: ScrollToNodeInput): Promise<ScrollToNodeOutput> {
     const scrolled = await this.browserOSAdapter.scrollToNode(
       input.tabId,
       input.nodeId,
-    );
-    return {scrolled};
+    )
+    return { scrolled }
   }
 }

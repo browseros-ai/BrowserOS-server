@@ -3,26 +3,26 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {BrowserOSController} from './BrowserOSController';
 
-import {getWebSocketPort} from '@/utils/ConfigHelper';
-import {KeepAlive} from '@/utils/KeepAlive';
-import {logger} from '@/utils/Logger';
+import { getWebSocketPort } from '@/utils/ConfigHelper'
+import { KeepAlive } from '@/utils/KeepAlive'
+import { logger } from '@/utils/Logger'
+import { BrowserOSController } from './BrowserOSController'
 
-const STATS_LOG_INTERVAL_MS = 30000;
+const STATS_LOG_INTERVAL_MS = 30000
 
 interface ControllerState {
-  controller: BrowserOSController | null;
-  initPromise: Promise<BrowserOSController> | null;
-  statsTimer: ReturnType<typeof setInterval> | null;
+  controller: BrowserOSController | null
+  initPromise: Promise<BrowserOSController> | null
+  statsTimer: ReturnType<typeof setInterval> | null
 }
 
 type BrowserOSGlobals = typeof globalThis & {
-  __browserosControllerState?: ControllerState;
-  __browserosController?: BrowserOSController | null;
-};
+  __browserosControllerState?: ControllerState
+  __browserosController?: BrowserOSController | null
+}
 
-const globals = globalThis as BrowserOSGlobals;
+const globals = globalThis as BrowserOSGlobals
 const controllerState: ControllerState =
   globals.__browserosControllerState ??
   (() => {
@@ -30,182 +30,182 @@ const controllerState: ControllerState =
       controller: globals.__browserosController ?? null,
       initPromise: null,
       statsTimer: null,
-    };
-    globals.__browserosControllerState = state;
-    return state;
-  })();
+    }
+    globals.__browserosControllerState = state
+    return state
+  })()
 
 function setDebugController(controller: BrowserOSController | null): void {
-  globals.__browserosController = controller;
+  globals.__browserosController = controller
 }
 
 function startStatsTimer(): void {
   if (controllerState.statsTimer) {
-    return;
+    return
   }
 
   controllerState.statsTimer = setInterval(() => {
-    controllerState.controller?.logStats();
-  }, STATS_LOG_INTERVAL_MS);
+    controllerState.controller?.logStats()
+  }, STATS_LOG_INTERVAL_MS)
 }
 
 function stopStatsTimer(): void {
   if (!controllerState.statsTimer) {
-    return;
+    return
   }
 
-  clearInterval(controllerState.statsTimer);
-  controllerState.statsTimer = null;
+  clearInterval(controllerState.statsTimer)
+  controllerState.statsTimer = null
 }
 
 async function getOrCreateController(): Promise<BrowserOSController> {
   if (controllerState.controller) {
-    return controllerState.controller;
+    return controllerState.controller
   }
 
   if (!controllerState.initPromise) {
     controllerState.initPromise = (async () => {
       try {
-        await KeepAlive.start();
-        const controller = new BrowserOSController(getWebSocketPort);
-        await controller.start();
+        await KeepAlive.start()
+        const controller = new BrowserOSController(getWebSocketPort)
+        await controller.start()
 
-        controllerState.controller = controller;
-        setDebugController(controller);
-        startStatsTimer();
+        controllerState.controller = controller
+        setDebugController(controller)
+        startStatsTimer()
 
-        return controller;
+        return controller
       } catch (error) {
-        controllerState.controller = null;
-        setDebugController(null);
-        stopStatsTimer();
+        controllerState.controller = null
+        setDebugController(null)
+        stopStatsTimer()
         try {
-          await KeepAlive.stop();
+          await KeepAlive.stop()
         } catch {
           // ignore
         }
-        throw error;
+        throw error
       } finally {
-        controllerState.initPromise = null;
+        controllerState.initPromise = null
       }
-    })();
+    })()
   }
 
-  const initPromise = controllerState.initPromise;
+  const initPromise = controllerState.initPromise
   if (!initPromise) {
-    throw new Error('Controller init promise missing');
+    throw new Error('Controller init promise missing')
   }
-  return initPromise;
+  return initPromise
 }
 
 async function shutdownController(reason: string): Promise<void> {
-  logger.info('Controller shutdown requested', {reason});
+  logger.info('Controller shutdown requested', { reason })
 
   if (controllerState.initPromise) {
     try {
-      await controllerState.initPromise;
+      await controllerState.initPromise
     } catch {
       // ignore start errors during shutdown
     }
   }
 
-  const controller = controllerState.controller;
+  const controller = controllerState.controller
   if (!controller) {
     try {
-      await KeepAlive.stop();
+      await KeepAlive.stop()
     } catch {
       // ignore
     }
-    stopStatsTimer();
-    setDebugController(null);
-    return;
+    stopStatsTimer()
+    setDebugController(null)
+    return
   }
 
-  controller.stop();
-  controllerState.controller = null;
-  setDebugController(null);
-  stopStatsTimer();
+  controller.stop()
+  controllerState.controller = null
+  setDebugController(null)
+  stopStatsTimer()
 
   try {
-    await KeepAlive.stop();
+    await KeepAlive.stop()
   } catch {
     // ignore
   }
 }
 
 function ensureControllerRunning(trigger: string): void {
-  getOrCreateController().catch(error => {
+  getOrCreateController().catch((error) => {
     const message =
-      error instanceof Error ? error.message : JSON.stringify(error);
-    logger.error('Controller failed to start', {trigger, error: message});
-  });
+      error instanceof Error ? error.message : JSON.stringify(error)
+    logger.error('Controller failed to start', { trigger, error: message })
+  })
 }
 
-logger.info('Extension loaded');
+logger.info('Extension loaded')
 
 chrome.runtime.onInstalled.addListener(() => {
-  logger.info('Extension installed');
-});
+  logger.info('Extension installed')
+})
 
 chrome.runtime.onStartup.addListener(() => {
-  logger.info('Browser startup event');
-  ensureControllerRunning('runtime.onStartup');
-});
+  logger.info('Browser startup event')
+  ensureControllerRunning('runtime.onStartup')
+})
 
 // Immediately attempt to start the controller when the service worker initializes
-ensureControllerRunning('service-worker-init');
+ensureControllerRunning('service-worker-init')
 
-chrome.windows.onFocusChanged.addListener(windowId => {
+chrome.windows.onFocusChanged.addListener((windowId) => {
   if (windowId === chrome.windows.WINDOW_ID_NONE) {
-    return;
+    return
   }
 
-  notifyWindowFocused(windowId).catch(error => {
+  notifyWindowFocused(windowId).catch((error) => {
     const message =
-      error instanceof Error ? error.message : JSON.stringify(error);
-    logger.warn('Failed to notify focus change', {windowId, error: message});
-  });
-});
+      error instanceof Error ? error.message : JSON.stringify(error)
+    logger.warn('Failed to notify focus change', { windowId, error: message })
+  })
+})
 
-chrome.windows.onCreated.addListener(window => {
+chrome.windows.onCreated.addListener((window) => {
   if (window.id === undefined) {
-    return;
+    return
   }
 
-  notifyWindowCreated(window.id).catch(error => {
+  notifyWindowCreated(window.id).catch((error) => {
     const message =
-      error instanceof Error ? error.message : JSON.stringify(error);
+      error instanceof Error ? error.message : JSON.stringify(error)
     logger.warn('Failed to notify window created', {
       windowId: window.id,
       error: message,
-    });
-  });
-});
+    })
+  })
+})
 
-chrome.windows.onRemoved.addListener(windowId => {
-  notifyWindowRemoved(windowId).catch(error => {
+chrome.windows.onRemoved.addListener((windowId) => {
+  notifyWindowRemoved(windowId).catch((error) => {
     const message =
-      error instanceof Error ? error.message : JSON.stringify(error);
-    logger.warn('Failed to notify window removed', {windowId, error: message});
-  });
-});
+      error instanceof Error ? error.message : JSON.stringify(error)
+    logger.warn('Failed to notify window removed', { windowId, error: message })
+  })
+})
 
 chrome.runtime.onSuspend?.addListener(() => {
-  logger.info('Extension suspending');
-  void shutdownController('runtime.onSuspend');
-});
+  logger.info('Extension suspending')
+  void shutdownController('runtime.onSuspend')
+})
 
 async function notifyWindowFocused(windowId: number): Promise<void> {
-  const controller = await getOrCreateController();
-  controller.notifyWindowFocused(windowId);
+  const controller = await getOrCreateController()
+  controller.notifyWindowFocused(windowId)
 }
 
 async function notifyWindowCreated(windowId: number): Promise<void> {
-  const controller = await getOrCreateController();
-  controller.notifyWindowCreated(windowId);
+  const controller = await getOrCreateController()
+  controller.notifyWindowCreated(windowId)
 }
 
 async function notifyWindowRemoved(windowId: number): Promise<void> {
-  const controller = await getOrCreateController();
-  controller.notifyWindowRemoved(windowId);
+  const controller = await getOrCreateController()
+  controller.notifyWindowRemoved(windowId)
 }

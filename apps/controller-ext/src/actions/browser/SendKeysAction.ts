@@ -3,11 +3,9 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler} from '../ActionHandler';
-
-import {getBrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
+import { z } from 'zod'
+import { getBrowserOSAdapter } from '@/adapters/BrowserOSAdapter'
+import { ActionHandler } from '../ActionHandler'
 
 // Input schema for sendKeys action
 const SendKeysInputSchema = z.object({
@@ -29,14 +27,14 @@ const SendKeysInputSchema = z.object({
       'PageDown',
     ])
     .describe('Keyboard key to send'),
-});
+})
 
-type SendKeysInput = z.infer<typeof SendKeysInputSchema>;
+type SendKeysInput = z.infer<typeof SendKeysInputSchema>
 
 // Output is just success (void result)
 export interface SendKeysOutput {
-  success: boolean;
-  message: string;
+  success: boolean
+  message: string
 }
 
 /**
@@ -55,17 +53,17 @@ export class SendKeysAction extends ActionHandler<
   SendKeysInput,
   SendKeysOutput
 > {
-  readonly inputSchema = SendKeysInputSchema;
-  private browserOS = getBrowserOSAdapter();
+  readonly inputSchema = SendKeysInputSchema
+  private browserOS = getBrowserOSAdapter()
 
   async execute(input: SendKeysInput): Promise<SendKeysOutput> {
-    const {tabId, key} = input;
+    const { tabId, key } = input
 
-    await this.browserOS.sendKeys(tabId, key as chrome.browserOS.Key);
+    await this.browserOS.sendKeys(tabId, key as chrome.browserOS.Key)
 
     return {
       success: true,
       message: `Successfully sent "${key}" to tab ${tabId}`,
-    };
+    }
   }
 }

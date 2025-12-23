@@ -2,11 +2,12 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import {logger} from '../../common/index.js';
-import z from 'zod';
 
-import {ToolCategories} from '../types/ToolCategories.js';
-import {ERRORS, defineTool, commonSchemas} from '../types/ToolDefinition.js';
+import z from 'zod'
+import { logger } from '../../common/index.js'
+
+import { ToolCategories } from '../types/ToolCategories.js'
+import { commonSchemas, defineTool, ERRORS } from '../types/ToolDefinition.js'
 
 export const listPages = defineTool({
   name: 'list_pages',
@@ -17,9 +18,9 @@ export const listPages = defineTool({
   },
   schema: {},
   handler: async (_request, response) => {
-    response.setIncludePages(true);
+    response.setIncludePages(true)
   },
-});
+})
 
 export const selectPage = defineTool({
   name: 'select_page',
@@ -36,12 +37,12 @@ export const selectPage = defineTool({
       ),
   },
   handler: async (request, response, context) => {
-    const page = context.getPageByIdx(request.params.pageIdx);
-    await page.bringToFront();
-    context.setSelectedPageIdx(request.params.pageIdx);
-    response.setIncludePages(true);
+    const page = context.getPageByIdx(request.params.pageIdx)
+    await page.bringToFront()
+    context.setSelectedPageIdx(request.params.pageIdx)
+    response.setIncludePages(true)
   },
-});
+})
 
 export const closePage = defineTool({
   name: 'close_page',
@@ -59,17 +60,17 @@ export const closePage = defineTool({
   },
   handler: async (request, response, context) => {
     try {
-      await context.closePage(request.params.pageIdx);
+      await context.closePage(request.params.pageIdx)
     } catch (err) {
       if (err.message === ERRORS.CLOSE_PAGE) {
-        response.appendResponseLine(err.message);
+        response.appendResponseLine(err.message)
       } else {
-        throw err;
+        throw err
       }
     }
-    response.setIncludePages(true);
+    response.setIncludePages(true)
   },
-});
+})
 
 export const newPage = defineTool({
   name: 'new_page',
@@ -83,17 +84,17 @@ export const newPage = defineTool({
     ...commonSchemas.timeout,
   },
   handler: async (request, response, context) => {
-    const page = await context.newPage();
+    const page = await context.newPage()
 
     await context.waitForEventsAfterAction(async () => {
       await page.goto(request.params.url, {
         timeout: request.params.timeout,
-      });
-    });
+      })
+    })
 
-    response.setIncludePages(true);
+    response.setIncludePages(true)
   },
-});
+})
 
 export const navigatePage = defineTool({
   name: 'navigate_page',
@@ -107,17 +108,17 @@ export const navigatePage = defineTool({
     ...commonSchemas.timeout,
   },
   handler: async (request, response, context) => {
-    const page = context.getSelectedPage();
+    const page = context.getSelectedPage()
 
     await context.waitForEventsAfterAction(async () => {
       await page.goto(request.params.url, {
         timeout: request.params.timeout,
-      });
-    });
+      })
+    })
 
-    response.setIncludePages(true);
+    response.setIncludePages(true)
   },
-});
+})
 
 export const navigatePageHistory = defineTool({
   name: 'navigate_page_history',
@@ -135,25 +136,25 @@ export const navigatePageHistory = defineTool({
     ...commonSchemas.timeout,
   },
   handler: async (request, response, context) => {
-    const page = context.getSelectedPage();
+    const page = context.getSelectedPage()
     const options = {
       timeout: request.params.timeout,
-    };
+    }
     try {
       if (request.params.navigate === 'back') {
-        await page.goBack(options);
+        await page.goBack(options)
       } else {
-        await page.goForward(options);
+        await page.goForward(options)
       }
     } catch {
       response.appendResponseLine(
         `Unable to navigate ${request.params.navigate} in currently selected page.`,
-      );
+      )
     }
 
-    response.setIncludePages(true);
+    response.setIncludePages(true)
   },
-});
+})
 
 export const resizePage = defineTool({
   name: 'resize_page',
@@ -167,17 +168,17 @@ export const resizePage = defineTool({
     height: z.number().describe('Page height'),
   },
   handler: async (request, response, context) => {
-    const page = context.getSelectedPage();
+    const page = context.getSelectedPage()
 
     // @ts-expect-error internal API for now.
     await page.resize({
       contentWidth: request.params.width,
       contentHeight: request.params.height,
-    });
+    })
 
-    response.setIncludePages(true);
+    response.setIncludePages(true)
   },
-});
+})
 
 export const handleDialog = defineTool({
   name: 'handle_dialog',
@@ -196,35 +197,35 @@ export const handleDialog = defineTool({
       .describe('Optional prompt text to enter into the dialog.'),
   },
   handler: async (request, response, context) => {
-    const dialog = context.getDialog();
+    const dialog = context.getDialog()
     if (!dialog) {
-      throw new Error('No open dialog found');
+      throw new Error('No open dialog found')
     }
 
     switch (request.params.action) {
       case 'accept': {
         try {
-          await dialog.accept(request.params.promptText);
+          await dialog.accept(request.params.promptText)
         } catch (err) {
           // Likely already handled by the user outside of MCP.
-          logger.error(err);
+          logger.error(err)
         }
-        response.appendResponseLine('Successfully accepted the dialog');
-        break;
+        response.appendResponseLine('Successfully accepted the dialog')
+        break
       }
       case 'dismiss': {
         try {
-          await dialog.dismiss();
+          await dialog.dismiss()
         } catch (err) {
           // Likely already handled.
-          logger.error(err);
+          logger.error(err)
         }
-        response.appendResponseLine('Successfully dismissed the dialog');
-        break;
+        response.appendResponseLine('Successfully dismissed the dialog')
+        break
       }
     }
 
-    context.clearDialog();
-    response.setIncludePages(true);
+    context.clearDialog()
+    response.setIncludePages(true)
   },
-});
+})
