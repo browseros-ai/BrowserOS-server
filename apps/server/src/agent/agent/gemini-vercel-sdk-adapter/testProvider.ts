@@ -9,20 +9,18 @@
  * through the full VercelAIContentGenerator pipeline.
  */
 
-import type {Content} from '@google/genai';
-
-import type {VercelAIConfig} from './types.js';
-
-import {VercelAIContentGenerator} from './index.js';
+import type { Content } from '@google/genai'
+import { VercelAIContentGenerator } from './index.js'
+import type { VercelAIConfig } from './types.js'
 
 export interface ProviderTestResult {
-  success: boolean;
-  message: string;
-  responseTime?: number;
+  success: boolean
+  message: string
+  responseTime?: number
 }
 
-const TEST_PROMPT = "Respond with exactly: 'ok'";
-const TEST_TIMEOUT_MS = 15000;
+const TEST_PROMPT = "Respond with exactly: 'ok'"
+const TEST_TIMEOUT_MS = 15000
 
 /**
  * Test a provider connection by making a minimal generateContent call.
@@ -32,17 +30,17 @@ const TEST_TIMEOUT_MS = 15000;
 export async function testProviderConnection(
   config: VercelAIConfig,
 ): Promise<ProviderTestResult> {
-  const startTime = performance.now();
+  const startTime = performance.now()
 
   try {
-    const generator = new VercelAIContentGenerator(config);
+    const generator = new VercelAIContentGenerator(config)
 
     const contents: Content[] = [
       {
         role: 'user',
-        parts: [{text: TEST_PROMPT}],
+        parts: [{ text: TEST_PROMPT }],
       },
-    ];
+    ]
 
     const response = await generator.generateContent(
       {
@@ -53,36 +51,36 @@ export async function testProviderConnection(
         },
       },
       'provider-test',
-    );
+    )
 
-    const responseTime = Math.round(performance.now() - startTime);
+    const responseTime = Math.round(performance.now() - startTime)
 
-    const candidate = response.candidates?.[0];
-    const part = candidate?.content?.parts?.[0];
-    const text = part && 'text' in part ? (part.text as string) : null;
+    const candidate = response.candidates?.[0]
+    const part = candidate?.content?.parts?.[0]
+    const text = part && 'text' in part ? (part.text as string) : null
 
     if (text) {
-      const preview = text.length > 100 ? `${text.slice(0, 100)}...` : text;
+      const preview = text.length > 100 ? `${text.slice(0, 100)}...` : text
       return {
         success: true,
         message: `Connection successful. Response: "${preview}"`,
         responseTime,
-      };
+      }
     }
 
     return {
       success: true,
       message: 'Connection successful. Provider responded.',
       responseTime,
-    };
+    }
   } catch (error) {
-    const responseTime = Math.round(performance.now() - startTime);
-    const errorMsg = error instanceof Error ? error.message : String(error);
+    const responseTime = Math.round(performance.now() - startTime)
+    const errorMsg = error instanceof Error ? error.message : String(error)
 
     return {
       success: false,
       message: `[${config.provider}] ${errorMsg}`,
       responseTime,
-    };
+    }
   }
 }

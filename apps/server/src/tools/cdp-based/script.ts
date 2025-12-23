@@ -2,11 +2,11 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import type {JSHandle} from 'puppeteer-core';
-import z from 'zod';
+import type { JSHandle } from 'puppeteer-core'
+import z from 'zod'
 
-import {ToolCategories} from '../types/ToolCategories.js';
-import {defineTool} from '../types/ToolDefinition.js';
+import { ToolCategories } from '../types/ToolCategories.js'
+import { defineTool } from '../types/ToolDefinition.js'
 
 export const evaluateScript = defineTool({
   name: 'evaluate_script',
@@ -43,30 +43,30 @@ Example with arguments: \`(el) => {
       .describe(`An optional list of arguments to pass to the function.`),
   },
   handler: async (request, response, context) => {
-    const page = context.getSelectedPage();
-    const fn = await page.evaluateHandle(`(${request.params.function})`);
-    const args: Array<JSHandle<unknown>> = [fn];
+    const page = context.getSelectedPage()
+    const fn = await page.evaluateHandle(`(${request.params.function})`)
+    const args: Array<JSHandle<unknown>> = [fn]
     try {
       for (const el of request.params.args ?? []) {
-        args.push(await context.getElementByUid(el.uid));
+        args.push(await context.getElementByUid(el.uid))
       }
       await context.waitForEventsAfterAction(async () => {
         const result = await page.evaluate(
           async (fn, ...args) => {
             // @ts-expect-error no types.
-            return JSON.stringify(await fn(...args));
+            return JSON.stringify(await fn(...args))
           },
           ...args,
-        );
-        response.appendResponseLine('Script ran on page and returned:');
-        response.appendResponseLine('```json');
-        response.appendResponseLine(`${result}`);
-        response.appendResponseLine('```');
-      });
+        )
+        response.appendResponseLine('Script ran on page and returned:')
+        response.appendResponseLine('```json')
+        response.appendResponseLine(`${result}`)
+        response.appendResponseLine('```')
+      })
     } finally {
-      Promise.allSettled(args.map(arg => arg.dispose())).catch(() => {
+      Promise.allSettled(args.map((arg) => arg.dispose())).catch(() => {
         // Ignore errors
-      });
+      })
     }
   },
-});
+})

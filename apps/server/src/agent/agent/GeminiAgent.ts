@@ -3,44 +3,44 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
+
 import {
-  logger,
-  fetchBrowserOSConfig,
-  getLLMConfigFromProvider,
-} from '../../common/index.js';
-import {Sentry} from '../../common/sentry/instrument.js';
-import {
-  Config as GeminiConfig,
-  MCPServerConfig,
-  GeminiEventType,
   executeToolCall,
   type GeminiClient,
+  Config as GeminiConfig,
+  GeminiEventType,
+  MCPServerConfig,
   type ToolCallRequestInfo,
-} from '@google/gemini-cli-core';
-import type {Part} from '@google/genai';
-
-import {AgentExecutionError} from '../errors.js';
-import type {BrowserContext} from '../http/types.js';
-import {KlavisClient} from '../klavis/index.js';
-
+} from '@google/gemini-cli-core'
+import type { Part } from '@google/genai'
 import {
-  VercelAIContentGenerator,
-  AIProvider,
-} from './gemini-vercel-sdk-adapter/index.js';
-import type {HonoSSEStream} from './gemini-vercel-sdk-adapter/types.js';
-import {UIMessageStreamWriter} from './gemini-vercel-sdk-adapter/ui-message-stream.js';
-import {getSystemPrompt} from './GeminiAgent.prompt.js';
-import type {AgentConfig} from './types.js';
+  fetchBrowserOSConfig,
+  getLLMConfigFromProvider,
+  logger,
+} from '../../common/index.js'
+import { Sentry } from '../../common/sentry/instrument.js'
 
-const MAX_TURNS = 100;
-const TOOL_TIMEOUT_MS = 120000; // 2 minutes timeout per tool call
-const DEFAULT_CONTEXT_WINDOW = 1000000; // 1M tokens (gemini-cli-core default)
-const DEFAULT_COMPRESSION_RATIO = 0.75; // Compress at 75% of context window
+import { AgentExecutionError } from '../errors.js'
+import type { BrowserContext } from '../http/types.js'
+import { KlavisClient } from '../klavis/index.js'
+import { getSystemPrompt } from './GeminiAgent.prompt.js'
+import {
+  AIProvider,
+  VercelAIContentGenerator,
+} from './gemini-vercel-sdk-adapter/index.js'
+import type { HonoSSEStream } from './gemini-vercel-sdk-adapter/types.js'
+import { UIMessageStreamWriter } from './gemini-vercel-sdk-adapter/ui-message-stream.js'
+import type { AgentConfig } from './types.js'
+
+const MAX_TURNS = 100
+const TOOL_TIMEOUT_MS = 120000 // 2 minutes timeout per tool call
+const DEFAULT_CONTEXT_WINDOW = 1000000 // 1M tokens (gemini-cli-core default)
+const DEFAULT_COMPRESSION_RATIO = 0.75 // Compress at 75% of context window
 
 interface McpHttpServerOptions {
-  httpUrl: string;
-  headers?: Record<string, string>;
-  trust?: boolean;
+  httpUrl: string
+  headers?: Record<string, string>
+  trust?: boolean
 }
 
 // MCP Server Config for HTTP is a positional argument in the constructor (can't be passed as an object)
@@ -58,7 +58,7 @@ function createHttpMcpServerConfig(
     undefined, // tcp (websocket)
     undefined, // timeout
     options.trust, // trust
-  );
+  )
 }
 
 export class GeminiAgent {
@@ -70,68 +70,68 @@ export class GeminiAgent {
   ) {}
 
   static async create(config: AgentConfig): Promise<GeminiAgent> {
-    const tempDir = config.tempDir;
+    const tempDir = config.tempDir
 
     // If provider is BROWSEROS, fetch config from BROWSEROS_CONFIG_URL
-    let resolvedConfig = {...config};
+    let resolvedConfig = { ...config }
     if (config.provider === AIProvider.BROWSEROS) {
-      const configUrl = process.env.BROWSEROS_CONFIG_URL;
+      const configUrl = process.env.BROWSEROS_CONFIG_URL
       if (!configUrl) {
         throw new Error(
           'BROWSEROS_CONFIG_URL environment variable is required for BrowserOS provider',
-        );
+        )
       }
 
       logger.info('Fetching BrowserOS config', {
         configUrl,
         browserosId: config.browserosId,
-      });
+      })
       const browserosConfig = await fetchBrowserOSConfig(
         configUrl,
         config.browserosId,
-      );
-      const llmConfig = getLLMConfigFromProvider(browserosConfig, 'default');
+      )
+      const llmConfig = getLLMConfigFromProvider(browserosConfig, 'default')
 
       resolvedConfig = {
         ...config,
         model: llmConfig.modelName,
         apiKey: llmConfig.apiKey,
         baseUrl: llmConfig.baseUrl,
-      };
+      }
 
       logger.info('Using BrowserOS config', {
         model: resolvedConfig.model,
         baseUrl: resolvedConfig.baseUrl,
-      });
+      })
     }
 
-    const modelString = `${resolvedConfig.provider}/${resolvedConfig.model}`;
+    const modelString = `${resolvedConfig.provider}/${resolvedConfig.model}`
 
     // Calculate compression threshold based on context window size
     // Formula: (DEFAULT_COMPRESSION_RATIO * contextWindowSize) / DEFAULT_CONTEXT_WINDOW
     // This converts absolute token threshold to gemini-cli-core's multiplier format
     const contextWindow =
-      resolvedConfig.contextWindowSize ?? DEFAULT_CONTEXT_WINDOW;
+      resolvedConfig.contextWindowSize ?? DEFAULT_CONTEXT_WINDOW
     const compressionThreshold =
-      (DEFAULT_COMPRESSION_RATIO * contextWindow) / DEFAULT_CONTEXT_WINDOW;
+      (DEFAULT_COMPRESSION_RATIO * contextWindow) / DEFAULT_CONTEXT_WINDOW
 
     logger.info('Compression config', {
       contextWindow,
       compressionRatio: compressionThreshold,
       compressionThreshold,
       compressesAtTokens: Math.floor(DEFAULT_COMPRESSION_RATIO * contextWindow),
-    });
+    })
 
     // Build MCP servers config
-    const mcpServers: Record<string, MCPServerConfig> = {};
+    const mcpServers: Record<string, MCPServerConfig> = {}
 
     // Add BrowserOS MCP server if configured
     if (resolvedConfig.mcpServerUrl) {
       mcpServers['browseros-mcp'] = createHttpMcpServerConfig({
         httpUrl: resolvedConfig.mcpServerUrl,
-        headers: {Accept: 'application/json, text/event-stream'},
+        headers: { Accept: 'application/json, text/event-stream' },
         trust: true,
-      });
+      })
     }
 
     // Add Klavis Strata MCP server if browserosId and enabled servers are provided
@@ -140,25 +140,25 @@ export class GeminiAgent {
       resolvedConfig.enabledMcpServers?.length
     ) {
       try {
-        const klavisClient = new KlavisClient();
+        const klavisClient = new KlavisClient()
         const result = await klavisClient.createStrata(
           resolvedConfig.browserosId,
           resolvedConfig.enabledMcpServers,
-        );
+        )
         mcpServers['klavis-strata'] = createHttpMcpServerConfig({
           httpUrl: result.strataServerUrl,
           trust: true,
-        });
+        })
         logger.info('Added Klavis Strata MCP server', {
           browserosId: resolvedConfig.browserosId.slice(0, 12),
           servers: resolvedConfig.enabledMcpServers,
-        });
+        })
       } catch (error) {
         logger.error('Failed to create Klavis Strata MCP server', {
           browserosId: resolvedConfig.browserosId?.slice(0, 12),
           servers: resolvedConfig.enabledMcpServers,
           error: error instanceof Error ? error.message : String(error),
-        });
+        })
       }
     }
 
@@ -168,15 +168,15 @@ export class GeminiAgent {
         mcpServers[`custom-${server.name}`] = createHttpMcpServerConfig({
           httpUrl: server.url,
           trust: true,
-        });
+        })
         logger.info('Added custom MCP server', {
           name: server.name,
           url: server.url,
-        });
+        })
       }
     }
 
-    logger.debug('MCP servers config', {mcpServers});
+    logger.debug('MCP servers config', { mcpServers })
 
     const geminiConfig = new GeminiConfig({
       sessionId: resolvedConfig.conversationId,
@@ -187,43 +187,43 @@ export class GeminiAgent {
       excludeTools: ['run_shell_command', 'write_file', 'replace'],
       compressionThreshold: compressionThreshold,
       mcpServers: Object.keys(mcpServers).length > 0 ? mcpServers : undefined,
-    });
+    })
 
-    await geminiConfig.initialize();
-    const contentGenerator = new VercelAIContentGenerator(resolvedConfig);
+    await geminiConfig.initialize()
+    const contentGenerator = new VercelAIContentGenerator(resolvedConfig)
 
-    (
-      geminiConfig as unknown as {contentGenerator: VercelAIContentGenerator}
-    ).contentGenerator = contentGenerator;
+    ;(
+      geminiConfig as unknown as { contentGenerator: VercelAIContentGenerator }
+    ).contentGenerator = contentGenerator
 
-    const client = geminiConfig.getGeminiClient();
-    client.getChat().setSystemInstruction(getSystemPrompt());
-    await client.setTools();
+    const client = geminiConfig.getGeminiClient()
+    client.getChat().setSystemInstruction(getSystemPrompt())
+    await client.setTools()
 
     // Disable chat recording to prevent disk writes
-    const recordingService = client.getChatRecordingService();
+    const recordingService = client.getChatRecordingService()
     if (recordingService) {
-      (
-        recordingService as unknown as {conversationFile: string | null}
-      ).conversationFile = null;
+      ;(
+        recordingService as unknown as { conversationFile: string | null }
+      ).conversationFile = null
     }
 
     logger.info('GeminiAgent created', {
       conversationId: resolvedConfig.conversationId,
       provider: resolvedConfig.provider,
       model: resolvedConfig.model,
-    });
+    })
 
     return new GeminiAgent(
       client,
       geminiConfig,
       contentGenerator,
       resolvedConfig.conversationId,
-    );
+    )
   }
 
   getHistory() {
-    return this.client.getHistory();
+    return this.client.getHistory()
   }
 
   async execute(
@@ -232,54 +232,54 @@ export class GeminiAgent {
     signal?: AbortSignal,
     browserContext?: BrowserContext,
   ): Promise<void> {
-    const abortSignal = signal || new AbortController().signal;
-    const promptId = `${this.conversationId}-${Date.now()}`;
+    const abortSignal = signal || new AbortController().signal
+    const promptId = `${this.conversationId}-${Date.now()}`
 
     // Prepend browser context to the message if provided
-    let messageWithContext = message;
+    let messageWithContext = message
     if (browserContext?.activeTab || browserContext?.selectedTabs?.length) {
-      const formatTab = (tab: {id: number; url?: string; title?: string}) =>
-        `Tab ${tab.id}${tab.title ? ` - "${tab.title}"` : ''}${tab.url ? ` (${tab.url})` : ''}`;
+      const formatTab = (tab: { id: number; url?: string; title?: string }) =>
+        `Tab ${tab.id}${tab.title ? ` - "${tab.title}"` : ''}${tab.url ? ` (${tab.url})` : ''}`
 
-      const contextLines: string[] = ['## Browser Context'];
+      const contextLines: string[] = ['## Browser Context']
 
       if (browserContext.activeTab) {
         contextLines.push(
           `**User's Active Tab:** ${formatTab(browserContext.activeTab)}`,
-        );
+        )
       }
 
       if (browserContext.selectedTabs?.length) {
         contextLines.push(
           `**User's Selected Tabs (${browserContext.selectedTabs.length}):**`,
-        );
+        )
         browserContext.selectedTabs.forEach((tab, i) => {
-          contextLines.push(`  ${i + 1}. ${formatTab(tab)}`);
-        });
+          contextLines.push(`  ${i + 1}. ${formatTab(tab)}`)
+        })
       }
 
-      messageWithContext = `${contextLines.join('\n')}\n\n---\n\n${message}`;
+      messageWithContext = `${contextLines.join('\n')}\n\n---\n\n${message}`
     }
 
-    let currentParts: Part[] = [{text: messageWithContext}];
-    let turnCount = 0;
+    let currentParts: Part[] = [{ text: messageWithContext }]
+    let turnCount = 0
 
     // Create single UIMessageStreamWriter to manage entire stream lifecycle
     const uiStream = honoStream
-      ? new UIMessageStreamWriter(async data => {
+      ? new UIMessageStreamWriter(async (data) => {
           try {
-            await honoStream.write(data);
+            await honoStream.write(data)
           } catch {
             // Failed to write to stream
           }
         })
-      : null;
+      : null
 
     // Pass shared writer to content generator for LLM streaming
-    this.contentGenerator.setUIStream(uiStream ?? undefined);
+    this.contentGenerator.setUIStream(uiStream ?? undefined)
 
     if (uiStream) {
-      await uiStream.start();
+      await uiStream.start()
     }
 
     logger.info('Starting agent execution', {
@@ -287,42 +287,42 @@ export class GeminiAgent {
       message: message.substring(0, 100),
       historyLength: this.client.getHistory().length,
       browserContextWindowId: browserContext?.windowId,
-    });
+    })
 
     while (true) {
-      turnCount++;
-      logger.debug(`Turn ${turnCount}`, {conversationId: this.conversationId});
+      turnCount++
+      logger.debug(`Turn ${turnCount}`, { conversationId: this.conversationId })
 
       if (turnCount > MAX_TURNS) {
         logger.warn('Max turns exceeded', {
           conversationId: this.conversationId,
           turnCount,
-        });
-        break;
+        })
+        break
       }
 
-      const toolCallRequests: ToolCallRequestInfo[] = [];
+      const toolCallRequests: ToolCallRequestInfo[] = []
 
       const responseStream = this.client.sendMessageStream(
         currentParts,
         abortSignal,
         promptId,
-      );
+      )
 
       for await (const event of responseStream) {
         if (abortSignal.aborted) {
-          break;
+          break
         }
 
         if (event.type === GeminiEventType.ToolCallRequest) {
-          toolCallRequests.push(event.value as ToolCallRequestInfo);
+          toolCallRequests.push(event.value as ToolCallRequestInfo)
         } else if (event.type === GeminiEventType.Error) {
-          const errorValue = event.value as {error: Error};
-          Sentry.captureException(errorValue.error);
+          const errorValue = event.value as { error: Error }
+          Sentry.captureException(errorValue.error)
           throw new AgentExecutionError(
             'Agent execution failed',
             errorValue.error,
-          );
+          )
         }
         // Other events are handled by the content generator
       }
@@ -332,22 +332,22 @@ export class GeminiAgent {
         logger.info('Agent execution aborted', {
           conversationId: this.conversationId,
           turnCount,
-        });
-        break;
+        })
+        break
       }
 
       if (toolCallRequests.length > 0) {
         logger.debug(`Executing ${toolCallRequests.length} tool(s)`, {
           conversationId: this.conversationId,
-          tools: toolCallRequests.map(r => r.name),
-        });
+          tools: toolCallRequests.map((r) => r.name),
+        })
 
-        const toolResponseParts: Part[] = [];
+        const toolResponseParts: Part[] = []
 
         for (const requestInfo of toolCallRequests) {
           // Check abort before each tool execution
           if (abortSignal.aborted) {
-            break;
+            break
           }
 
           // Inject windowId into ALL browser tools for multi-window/multi-profile routing
@@ -359,11 +359,11 @@ export class GeminiAgent {
             logger.debug('Injecting windowId into tool args', {
               tool: requestInfo.name,
               windowId: browserContext.windowId,
-            });
+            })
             requestInfo.args = {
               ...requestInfo.args,
               windowId: browserContext.windowId,
-            };
+            }
           }
 
           try {
@@ -376,110 +376,110 @@ export class GeminiAgent {
                     ),
                   ),
                 TOOL_TIMEOUT_MS,
-              );
-            });
+              )
+            })
 
             const completedToolCall = await Promise.race([
               executeToolCall(this.geminiConfig, requestInfo, abortSignal),
               timeoutPromise,
-            ]);
+            ])
 
-            const toolResponse = completedToolCall.response;
+            const toolResponse = completedToolCall.response
 
             if (toolResponse.error) {
               logger.warn('Tool execution error', {
                 conversationId: this.conversationId,
                 tool: requestInfo.name,
                 error: toolResponse.error.message,
-              });
+              })
               toolResponseParts.push({
                 functionResponse: {
                   id: requestInfo.callId,
                   name: requestInfo.name,
-                  response: {error: toolResponse.error.message},
+                  response: { error: toolResponse.error.message },
                 },
-              } as Part);
+              } as Part)
               if (uiStream) {
                 await uiStream.writeToolError(
                   requestInfo.callId,
                   toolResponse.error.message,
-                );
+                )
               }
             } else if (
               toolResponse.responseParts &&
               toolResponse.responseParts.length > 0
             ) {
-              toolResponseParts.push(...(toolResponse.responseParts as Part[]));
+              toolResponseParts.push(...(toolResponse.responseParts as Part[]))
               if (uiStream) {
                 await uiStream.writeToolResult(
                   requestInfo.callId,
                   toolResponse.responseParts,
-                );
+                )
               }
             } else {
               logger.warn('Tool returned empty response', {
                 conversationId: this.conversationId,
                 tool: requestInfo.name,
-              });
+              })
               toolResponseParts.push({
                 functionResponse: {
                   id: requestInfo.callId,
                   name: requestInfo.name,
-                  response: {output: 'Tool executed but returned no output.'},
+                  response: { output: 'Tool executed but returned no output.' },
                 },
-              } as Part);
+              } as Part)
               if (uiStream) {
                 await uiStream.writeToolError(
                   requestInfo.callId,
                   'Tool executed but returned no output.',
-                );
+                )
               }
             }
           } catch (error) {
             const errorMessage =
-              error instanceof Error ? error.message : String(error);
+              error instanceof Error ? error.message : String(error)
             logger.error('Tool execution failed', {
               conversationId: this.conversationId,
               tool: requestInfo.name,
               error: errorMessage,
-            });
+            })
 
             toolResponseParts.push({
               functionResponse: {
                 id: requestInfo.callId,
                 name: requestInfo.name,
-                response: {error: errorMessage},
+                response: { error: errorMessage },
               },
-            } as Part);
+            } as Part)
             if (uiStream) {
-              await uiStream.writeToolError(requestInfo.callId, errorMessage);
+              await uiStream.writeToolError(requestInfo.callId, errorMessage)
             }
           }
         }
 
         // Check if aborted during tool execution
         if (abortSignal.aborted) {
-          break;
+          break
         }
 
         // Finish the step after all tool outputs are written
         if (uiStream) {
-          await uiStream.finishStep();
+          await uiStream.finishStep()
         }
 
-        currentParts = toolResponseParts;
+        currentParts = toolResponseParts
       } else {
         logger.info('Agent execution complete', {
           conversationId: this.conversationId,
           totalTurns: turnCount,
-        });
-        break;
+        })
+        break
       }
     }
 
     // Finish the UI stream after all turns complete
     if (uiStream) {
-      await uiStream.finish();
+      await uiStream.finish()
     }
   }
 }

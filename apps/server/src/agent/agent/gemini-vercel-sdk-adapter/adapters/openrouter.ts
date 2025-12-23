@@ -11,10 +11,10 @@
  * - Extracts metadata for injection into subsequent requests
  */
 
-import {z} from 'zod';
+import { z } from 'zod'
 
-import {BaseProviderAdapter} from './base.js';
-import type {ProviderMetadata, FunctionCallWithMetadata} from './types.js';
+import { BaseProviderAdapter } from './base.js'
+import type { FunctionCallWithMetadata, ProviderMetadata } from './types.js'
 
 /**
  * OpenRouter reasoning chunk schema
@@ -35,38 +35,38 @@ const OpenRouterReasoningChunkSchema = z
       .passthrough()
       .optional(),
   })
-  .passthrough();
+  .passthrough()
 
 export class OpenRouterAdapter extends BaseProviderAdapter {
-  private reasoningDetails: unknown[] = [];
+  private reasoningDetails: unknown[] = []
 
   override processStreamChunk(chunk: unknown): void {
-    const parsed = OpenRouterReasoningChunkSchema.safeParse(chunk);
-    if (!parsed.success) return;
+    const parsed = OpenRouterReasoningChunkSchema.safeParse(chunk)
+    if (!parsed.success) return
 
-    const details = parsed.data.providerMetadata?.openrouter?.reasoning_details;
+    const details = parsed.data.providerMetadata?.openrouter?.reasoning_details
     if (details && Array.isArray(details)) {
-      this.reasoningDetails.push(...details);
+      this.reasoningDetails.push(...details)
     }
   }
 
   override getResponseMetadata(): ProviderMetadata | undefined {
-    if (this.reasoningDetails.length === 0) return undefined;
+    if (this.reasoningDetails.length === 0) return undefined
 
     return {
       openrouter: {
         reasoning_details: this.reasoningDetails,
       },
-    };
+    }
   }
 
   override getToolCallProviderOptions(
     fc: FunctionCallWithMetadata,
   ): ProviderMetadata | undefined {
-    return fc.providerMetadata;
+    return fc.providerMetadata
   }
 
   override reset(): void {
-    this.reasoningDetails = [];
+    this.reasoningDetails = []
   }
 }

@@ -3,14 +3,12 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler} from '../ActionHandler';
-
+import { z } from 'zod'
 import {
   BrowserOSAdapter,
   type ScreenshotSizeKey,
-} from '@/adapters/BrowserOSAdapter';
+} from '@/adapters/BrowserOSAdapter'
+import { ActionHandler } from '../ActionHandler'
 
 // Input schema
 const CaptureScreenshotInputSchema = z.object({
@@ -27,15 +25,15 @@ const CaptureScreenshotInputSchema = z.object({
     .describe('Show element highlights (default: true)'),
   width: z.number().optional().describe('Exact width in pixels'),
   height: z.number().optional().describe('Exact height in pixels'),
-});
+})
 
 // Output schema
 const CaptureScreenshotOutputSchema = z.object({
   dataUrl: z.string().describe('Base64-encoded PNG data URL'),
-});
+})
 
-type CaptureScreenshotInput = z.infer<typeof CaptureScreenshotInputSchema>;
-type CaptureScreenshotOutput = z.infer<typeof CaptureScreenshotOutputSchema>;
+type CaptureScreenshotInput = z.infer<typeof CaptureScreenshotInputSchema>
+type CaptureScreenshotOutput = z.infer<typeof CaptureScreenshotOutputSchema>
 
 /**
  * CaptureScreenshotAction - Capture a screenshot of the page
@@ -63,8 +61,8 @@ export class CaptureScreenshotAction extends ActionHandler<
   CaptureScreenshotInput,
   CaptureScreenshotOutput
 > {
-  readonly inputSchema = CaptureScreenshotInputSchema;
-  private browserOSAdapter = BrowserOSAdapter.getInstance();
+  readonly inputSchema = CaptureScreenshotInputSchema
+  private browserOSAdapter = BrowserOSAdapter.getInstance()
 
   async execute(
     input: CaptureScreenshotInput,
@@ -75,7 +73,7 @@ export class CaptureScreenshotAction extends ActionHandler<
       input.showHighlights,
       input.width,
       input.height,
-    );
-    return {dataUrl};
+    )
+    return { dataUrl }
   }
 }

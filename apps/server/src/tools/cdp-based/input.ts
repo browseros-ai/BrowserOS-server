@@ -2,11 +2,11 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import type {ElementHandle} from 'puppeteer-core';
-import z from 'zod';
+import type { ElementHandle } from 'puppeteer-core'
+import z from 'zod'
 
-import {ToolCategories} from '../types/ToolCategories.js';
-import {defineTool} from '../types/ToolDefinition.js';
+import { ToolCategories } from '../types/ToolCategories.js'
+import { defineTool } from '../types/ToolDefinition.js'
 
 export const click = defineTool({
   name: 'click',
@@ -27,25 +27,25 @@ export const click = defineTool({
       .describe('Set to true for double clicks. Default is false.'),
   },
   handler: async (request, response, context) => {
-    const uid = request.params.uid;
-    const handle = await context.getElementByUid(uid);
+    const uid = request.params.uid
+    const handle = await context.getElementByUid(uid)
     try {
       await context.waitForEventsAfterAction(async () => {
         await handle.asLocator().click({
           count: request.params.dblClick ? 2 : 1,
-        });
-      });
+        })
+      })
       response.appendResponseLine(
         request.params.dblClick
           ? `Successfully double clicked on the element`
           : `Successfully clicked on the element`,
-      );
-      response.setIncludeSnapshot(true);
+      )
+      response.setIncludeSnapshot(true)
     } finally {
-      void handle.dispose();
+      void handle.dispose()
     }
   },
-});
+})
 
 export const hover = defineTool({
   name: 'hover',
@@ -62,19 +62,19 @@ export const hover = defineTool({
       ),
   },
   handler: async (request, response, context) => {
-    const uid = request.params.uid;
-    const handle = await context.getElementByUid(uid);
+    const uid = request.params.uid
+    const handle = await context.getElementByUid(uid)
     try {
       await context.waitForEventsAfterAction(async () => {
-        await handle.asLocator().hover();
-      });
-      response.appendResponseLine(`Successfully hovered over the element`);
-      response.setIncludeSnapshot(true);
+        await handle.asLocator().hover()
+      })
+      response.appendResponseLine(`Successfully hovered over the element`)
+      response.setIncludeSnapshot(true)
     } finally {
-      void handle.dispose();
+      void handle.dispose()
     }
   },
-});
+})
 
 export const fill = defineTool({
   name: 'fill',
@@ -92,18 +92,18 @@ export const fill = defineTool({
     value: z.string().describe('The value to fill in'),
   },
   handler: async (request, response, context) => {
-    const handle = await context.getElementByUid(request.params.uid);
+    const handle = await context.getElementByUid(request.params.uid)
     try {
       await context.waitForEventsAfterAction(async () => {
-        await handle.asLocator().fill(request.params.value);
-      });
-      response.appendResponseLine(`Successfully filled out the element`);
-      response.setIncludeSnapshot(true);
+        await handle.asLocator().fill(request.params.value)
+      })
+      response.appendResponseLine(`Successfully filled out the element`)
+      response.setIncludeSnapshot(true)
     } finally {
-      void handle.dispose();
+      void handle.dispose()
     }
   },
-});
+})
 
 export const drag = defineTool({
   name: 'drag',
@@ -117,22 +117,22 @@ export const drag = defineTool({
     to_uid: z.string().describe('The uid of the element to drop into'),
   },
   handler: async (request, response, context) => {
-    const fromHandle = await context.getElementByUid(request.params.from_uid);
-    const toHandle = await context.getElementByUid(request.params.to_uid);
+    const fromHandle = await context.getElementByUid(request.params.from_uid)
+    const toHandle = await context.getElementByUid(request.params.to_uid)
     try {
       await context.waitForEventsAfterAction(async () => {
-        await fromHandle.drag(toHandle);
-        await new Promise(resolve => setTimeout(resolve, 50));
-        await toHandle.drop(fromHandle);
-      });
-      response.appendResponseLine(`Successfully dragged an element`);
-      response.setIncludeSnapshot(true);
+        await fromHandle.drag(toHandle)
+        await new Promise((resolve) => setTimeout(resolve, 50))
+        await toHandle.drop(fromHandle)
+      })
+      response.appendResponseLine(`Successfully dragged an element`)
+      response.setIncludeSnapshot(true)
     } finally {
-      void fromHandle.dispose();
-      void toHandle.dispose();
+      void fromHandle.dispose()
+      void toHandle.dispose()
     }
   },
-});
+})
 
 export const fillForm = defineTool({
   name: 'fill_form',
@@ -153,19 +153,19 @@ export const fillForm = defineTool({
   },
   handler: async (request, response, context) => {
     for (const element of request.params.elements) {
-      const handle = await context.getElementByUid(element.uid);
+      const handle = await context.getElementByUid(element.uid)
       try {
         await context.waitForEventsAfterAction(async () => {
-          await handle.asLocator().fill(element.value);
-        });
+          await handle.asLocator().fill(element.value)
+        })
       } finally {
-        void handle.dispose();
+        void handle.dispose()
       }
     }
-    response.appendResponseLine(`Successfully filled out the form`);
-    response.setIncludeSnapshot(true);
+    response.appendResponseLine(`Successfully filled out the form`)
+    response.setIncludeSnapshot(true)
   },
-});
+})
 
 export const uploadFile = defineTool({
   name: 'upload_file',
@@ -183,34 +183,34 @@ export const uploadFile = defineTool({
     filePath: z.string().describe('The local path of the file to upload'),
   },
   handler: async (request, response, context) => {
-    const {uid, filePath} = request.params;
+    const { uid, filePath } = request.params
     const handle = (await context.getElementByUid(
       uid,
-    )) as ElementHandle<HTMLInputElement>;
+    )) as ElementHandle<HTMLInputElement>
     try {
       try {
-        await handle.uploadFile(filePath);
+        await handle.uploadFile(filePath)
       } catch {
         // Some sites use a proxy element to trigger file upload instead of
         // a type=file element. In this case, we want to default to
         // Page.waitForFileChooser() and upload the file this way.
         try {
-          const page = context.getSelectedPage();
+          const page = context.getSelectedPage()
           const [fileChooser] = await Promise.all([
-            page.waitForFileChooser({timeout: 3000}),
+            page.waitForFileChooser({ timeout: 3000 }),
             handle.asLocator().click(),
-          ]);
-          await fileChooser.accept([filePath]);
+          ])
+          await fileChooser.accept([filePath])
         } catch {
           throw new Error(
             `Failed to upload file. The element could not accept the file directly, and clicking it did not trigger a file chooser.`,
-          );
+          )
         }
       }
-      response.setIncludeSnapshot(true);
-      response.appendResponseLine(`File uploaded from ${filePath}.`);
+      response.setIncludeSnapshot(true)
+      response.appendResponseLine(`File uploaded from ${filePath}.`)
     } finally {
-      void handle.dispose();
+      void handle.dispose()
     }
   },
-});
+})

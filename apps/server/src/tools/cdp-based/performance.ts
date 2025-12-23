@@ -2,24 +2,25 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import {logger} from '../../common/index.js';
-import type {McpContext} from '../../common/index.js';
-import type {Page} from 'puppeteer-core';
-import z from 'zod';
 
-import type {InsightName} from '../trace-processing/parse.js';
+import type { Page } from 'puppeteer-core'
+import z from 'zod'
+import type { McpContext } from '../../common/index.js'
+import { logger } from '../../common/index.js'
+
+import type { InsightName } from '../trace-processing/parse.js'
 import {
   getInsightOutput,
   getTraceSummary,
   parseRawTraceBuffer,
   traceResultIsSuccess,
-} from '../trace-processing/parse.js';
-import type {Response} from '../types/Response.js';
-import {ToolCategories} from '../types/ToolCategories.js';
-import {defineTool} from '../types/ToolDefinition.js';
+} from '../trace-processing/parse.js'
+import type { Response } from '../types/Response.js'
+import { ToolCategories } from '../types/ToolCategories.js'
+import { defineTool } from '../types/ToolDefinition.js'
 
 // Type aliases for compatibility
-type Context = McpContext;
+type Context = McpContext
 
 export const startTrace = defineTool({
   name: 'performance_start_trace',
@@ -45,19 +46,19 @@ export const startTrace = defineTool({
     if (context.isRunningPerformanceTrace()) {
       response.appendResponseLine(
         'Error: a performance trace is already running. Use performance_stop_trace to stop it. Only one trace can be running at any given time.',
-      );
-      return;
+      )
+      return
     }
-    context.setIsRunningPerformanceTrace(true);
+    context.setIsRunningPerformanceTrace(true)
 
-    const page = context.getSelectedPage();
-    const pageUrlForTracing = page.url();
+    const page = context.getSelectedPage()
+    const pageUrlForTracing = page.url()
 
     if (request.params.reload) {
       // Before starting the recording, navigate to about:blank to clear out any state.
       await page.goto('about:blank', {
         waitUntil: ['networkidle0'],
-      });
+      })
     }
 
     // Keep in sync with the categories arrays in:
@@ -80,28 +81,28 @@ export const startTrace = defineTool({
       'disabled-by-default-lighthouse',
       'v8.execute',
       'v8',
-    ];
+    ]
     await page.tracing.start({
       categories,
-    });
+    })
 
     if (request.params.reload) {
       await page.goto(pageUrlForTracing, {
         waitUntil: ['load'],
-      });
+      })
     }
 
     if (request.params.autoStop) {
-      await new Promise(resolve => setTimeout(resolve, 5_000));
+      await new Promise((resolve) => setTimeout(resolve, 5_000))
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await stopTracingAndAppendOutput(page, response, context as any);
+      await stopTracingAndAppendOutput(page, response, context as any)
     } else {
       response.appendResponseLine(
         `The performance trace is being recorded. Use performance_stop_trace to stop it.`,
-      );
+      )
     }
   },
-});
+})
 
 export const stopTrace = defineTool({
   name: 'performance_stop_trace',
@@ -114,13 +115,13 @@ export const stopTrace = defineTool({
   schema: {},
   handler: async (_request, response, context) => {
     if (!context.isRunningPerformanceTrace()) {
-      return;
+      return
     }
-    const page = context.getSelectedPage();
+    const page = context.getSelectedPage()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await stopTracingAndAppendOutput(page, response, context as any);
+    await stopTracingAndAppendOutput(page, response, context as any)
   },
-});
+})
 
 export const analyzeInsight = defineTool({
   name: 'performance_analyze_insight',
@@ -138,26 +139,26 @@ export const analyzeInsight = defineTool({
       ),
   },
   handler: async (request, response, context) => {
-    const lastRecording = context.recordedTraces().at(-1);
+    const lastRecording = context.recordedTraces().at(-1)
     if (!lastRecording) {
       response.appendResponseLine(
         'No recorded traces found. Record a performance trace so you have Insights to analyze.',
-      );
-      return;
+      )
+      return
     }
 
     const insightOutput = getInsightOutput(
       lastRecording,
       request.params.insightName as InsightName,
-    );
+    )
     if ('error' in insightOutput) {
-      response.appendResponseLine(insightOutput.error);
-      return;
+      response.appendResponseLine(insightOutput.error)
+      return
     }
 
-    response.appendResponseLine(insightOutput.output);
+    response.appendResponseLine(insightOutput.output)
   },
-});
+})
 
 async function stopTracingAndAppendOutput(
   page: Page,
@@ -165,37 +166,37 @@ async function stopTracingAndAppendOutput(
   context: Context,
 ): Promise<void> {
   try {
-    const traceEventsBuffer = await page.tracing.stop();
+    const traceEventsBuffer = await page.tracing.stop()
     if (!traceEventsBuffer) {
-      response.appendResponseLine('No trace data available.');
-      return;
+      response.appendResponseLine('No trace data available.')
+      return
     }
-    const result = await parseRawTraceBuffer(traceEventsBuffer as Buffer);
-    response.appendResponseLine('The performance trace has been stopped.');
+    const result = await parseRawTraceBuffer(traceEventsBuffer as Buffer)
+    response.appendResponseLine('The performance trace has been stopped.')
     if (traceResultIsSuccess(result)) {
       // Convert to core TraceResult type
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const coreResult = {...result, name: 'trace'} as any;
-      context.storeTraceRecording(coreResult);
+      const coreResult = { ...result, name: 'trace' } as any
+      context.storeTraceRecording(coreResult)
       response.appendResponseLine(
         'Here is a high level summary of the trace and the Insights that were found:',
-      );
-      const traceSummaryText = getTraceSummary(result);
-      response.appendResponseLine(traceSummaryText);
+      )
+      const traceSummaryText = getTraceSummary(result)
+      response.appendResponseLine(traceSummaryText)
     } else {
       response.appendResponseLine(
         'There was an unexpected error parsing the trace:',
-      );
-      response.appendResponseLine(result.error || 'Unknown error');
+      )
+      response.appendResponseLine(result.error || 'Unknown error')
     }
   } catch (e) {
-    const errorText = e instanceof Error ? e.message : JSON.stringify(e);
-    logger.error(`Error stopping performance trace: ${errorText}`);
+    const errorText = e instanceof Error ? e.message : JSON.stringify(e)
+    logger.error(`Error stopping performance trace: ${errorText}`)
     response.appendResponseLine(
       'An error occurred generating the response for this trace:',
-    );
-    response.appendResponseLine(errorText);
+    )
+    response.appendResponseLine(errorText)
   } finally {
-    context.setIsRunningPerformanceTrace(false);
+    context.setIsRunningPerformanceTrace(false)
   }
 }

@@ -19,10 +19,8 @@
     "test:server": "bun run --filter @browseros/server test",
     "test:cleanup": "./scripts/cleanup-test-resources.sh",
     "typecheck": "tsc --build",
-    "format": "prettier --write --cache .",
-    "lint": "eslint --cache --fix .",
-    "check-format": "prettier --check --cache .",
-    "check-lint": "eslint --cache .",
+    "lint": "bunx biome check",
+    "lint:fix": "bunx biome check --write --unsafe",
     "docs": "npm run docs:generate && npm run format",
     "docs:generate": "node --experimental-strip-types scripts/generate-docs.ts",
     "clean": "rimraf dist"
@@ -35,24 +33,13 @@
   },
   "homepage": "https://github.com/browseros-ai/BrowserOS#readme",
   "devDependencies": {
-    "@eslint/js": "^9.35.0",
-    "@stylistic/eslint-plugin": "^5.4.0",
+    "@biomejs/biome": "2.3.10",
     "@types/node": "^24.3.3",
-    "@typescript-eslint/eslint-plugin": "^8.43.0",
-    "@typescript-eslint/parser": "^8.43.0",
     "dotenv": "^17.2.3",
-    "eslint": "^9.35.0",
-    "eslint-config-prettier": "^9.1.2",
-    "eslint-import-resolver-typescript": "^4.4.4",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-jest": "^29.0.1",
-    "eslint-plugin-node-import": "^1.0.5",
     "globals": "^16.4.0",
     "lefthook": "^1.11.13",
-    "prettier": "^3.6.2",
     "rimraf": "^6.0.1",
-    "typescript": "^5.9.2",
-    "typescript-eslint": "^8.43.0"
+    "typescript": "^5.9.2"
   },
   "trustedDependencies": [
     "lefthook"

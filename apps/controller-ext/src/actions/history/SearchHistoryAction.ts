@@ -3,11 +3,9 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler} from '../ActionHandler';
-
-import {HistoryAdapter} from '@/adapters/HistoryAdapter';
+import { z } from 'zod'
+import { HistoryAdapter } from '@/adapters/HistoryAdapter'
+import { ActionHandler } from '../ActionHandler'
 
 // Input schema
 const SearchHistoryInputSchema = z.object({
@@ -27,7 +25,7 @@ const SearchHistoryInputSchema = z.object({
     .number()
     .optional()
     .describe('End time in milliseconds since epoch (optional)'),
-});
+})
 
 // Output schema
 const SearchHistoryOutputSchema = z.object({
@@ -42,10 +40,10 @@ const SearchHistoryOutputSchema = z.object({
     }),
   ),
   count: z.number(),
-});
+})
 
-type SearchHistoryInput = z.infer<typeof SearchHistoryInputSchema>;
-type SearchHistoryOutput = z.infer<typeof SearchHistoryOutputSchema>;
+type SearchHistoryInput = z.infer<typeof SearchHistoryInputSchema>
+type SearchHistoryOutput = z.infer<typeof SearchHistoryOutputSchema>
 
 /**
  * SearchHistoryAction - Search browser history
@@ -78,8 +76,8 @@ export class SearchHistoryAction extends ActionHandler<
   SearchHistoryInput,
   SearchHistoryOutput
 > {
-  readonly inputSchema = SearchHistoryInputSchema;
-  private historyAdapter = new HistoryAdapter();
+  readonly inputSchema = SearchHistoryInputSchema
+  private historyAdapter = new HistoryAdapter()
 
   async execute(input: SearchHistoryInput): Promise<SearchHistoryOutput> {
     const results = await this.historyAdapter.searchHistory(
@@ -87,20 +85,20 @@ export class SearchHistoryAction extends ActionHandler<
       input.maxResults,
       input.startTime,
       input.endTime,
-    );
+    )
 
-    const items = results.map(item => ({
+    const items = results.map((item) => ({
       id: item.id,
       url: item.url,
       title: item.title,
       lastVisitTime: item.lastVisitTime,
       visitCount: item.visitCount,
       typedCount: item.typedCount,
-    }));
+    }))
 
     return {
       items,
       count: items.length,
-    };
+    }
   }
 }

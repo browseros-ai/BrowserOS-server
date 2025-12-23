@@ -3,9 +3,9 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import type {ActionHandler, ActionResponse} from './ActionHandler';
 
-import {logger} from '@/utils/Logger';
+import { logger } from '@/utils/Logger'
+import type { ActionHandler, ActionResponse } from './ActionHandler'
 
 /**
  * ActionRegistry - Central dispatcher for all actions
@@ -22,7 +22,7 @@ import {logger} from '@/utils/Logger';
  * const response = await registry.dispatch('getActiveTab', {});
  */
 export class ActionRegistry {
-  private handlers = new Map<string, ActionHandler>();
+  private handlers = new Map<string, ActionHandler>()
 
   /**
    * Register an action handler
@@ -34,11 +34,11 @@ export class ActionRegistry {
     if (this.handlers.has(actionName)) {
       logger.warn(
         `[ActionRegistry] Action "${actionName}" already registered, overwriting`,
-      );
+      )
     }
 
-    this.handlers.set(actionName, handler);
-    logger.info(`[ActionRegistry] Registered action: ${actionName}`);
+    this.handlers.set(actionName, handler)
+    logger.info(`[ActionRegistry] Registered action: ${actionName}`)
   }
 
   /**
@@ -59,39 +59,39 @@ export class ActionRegistry {
     actionName: string,
     payload: unknown,
   ): Promise<ActionResponse> {
-    logger.debug(`[ActionRegistry] Dispatching action: ${actionName}`);
+    logger.debug(`[ActionRegistry] Dispatching action: ${actionName}`)
 
     // Check if action exists
-    const handler = this.handlers.get(actionName);
+    const handler = this.handlers.get(actionName)
 
     if (!handler) {
-      const availableActions = Array.from(this.handlers.keys()).join(', ');
-      const errorMessage = `Unknown action: "${actionName}". Available actions: ${availableActions || 'none'}`;
-      logger.error(`[ActionRegistry] ${errorMessage}`);
+      const availableActions = Array.from(this.handlers.keys()).join(', ')
+      const errorMessage = `Unknown action: "${actionName}". Available actions: ${availableActions || 'none'}`
+      logger.error(`[ActionRegistry] ${errorMessage}`)
       return {
         ok: false,
         error: errorMessage,
-      };
+      }
     }
 
     // Delegate to handler
     try {
-      const response = await handler.handle(payload);
+      const response = await handler.handle(payload)
       logger.debug(
         `[ActionRegistry] Action "${actionName}" ${response.ok ? 'succeeded' : 'failed'}`,
-      );
-      return response;
+      )
+      return response
     } catch (error) {
       // Catch any unexpected errors from handler
       const errorMessage =
-        error instanceof Error ? error.message : String(error);
+        error instanceof Error ? error.message : String(error)
       logger.error(
         `[ActionRegistry] Unexpected error in "${actionName}": ${errorMessage}`,
-      );
+      )
       return {
         ok: false,
         error: `Action execution failed: ${errorMessage}`,
-      };
+      }
     }
   }
 
@@ -101,7 +101,7 @@ export class ActionRegistry {
    * @returns Array of action names
    */
   getAvailableActions(): string[] {
-    return Array.from(this.handlers.keys());
+    return Array.from(this.handlers.keys())
   }
 
   /**
@@ -111,7 +111,7 @@ export class ActionRegistry {
    * @returns True if action exists
    */
   hasAction(actionName: string): boolean {
-    return this.handlers.has(actionName);
+    return this.handlers.has(actionName)
   }
 
   /**
@@ -120,7 +120,7 @@ export class ActionRegistry {
    * @returns Count of registered actions
    */
   getActionCount(): number {
-    return this.handlers.size;
+    return this.handlers.size
   }
 
   /**
@@ -130,19 +130,19 @@ export class ActionRegistry {
    * @returns True if action was removed
    */
   unregister(actionName: string): boolean {
-    const removed = this.handlers.delete(actionName);
+    const removed = this.handlers.delete(actionName)
     if (removed) {
-      logger.info(`[ActionRegistry] Unregistered action: ${actionName}`);
+      logger.info(`[ActionRegistry] Unregistered action: ${actionName}`)
     }
-    return removed;
+    return removed
   }
 
   /**
    * Clear all registered actions (useful for testing)
    */
   clear(): void {
-    const count = this.handlers.size;
-    this.handlers.clear();
-    logger.info(`[ActionRegistry] Cleared ${count} registered actions`);
+    const count = this.handlers.size
+    this.handlers.clear()
+    logger.info(`[ActionRegistry] Cleared ${count} registered actions`)
   }
 }

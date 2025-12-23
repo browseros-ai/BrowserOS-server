@@ -3,24 +3,22 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler} from '../ActionHandler';
-
-import {BrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
+import { z } from 'zod'
+import { BrowserOSAdapter } from '@/adapters/BrowserOSAdapter'
+import { ActionHandler } from '../ActionHandler'
 
 // Input schema
 const ScrollUpInputSchema = z.object({
   tabId: z.number().describe('The tab ID to scroll'),
-});
+})
 
 // Output schema
 const ScrollUpOutputSchema = z.object({
   success: z.boolean().describe('Whether the scroll succeeded'),
-});
+})
 
-type ScrollUpInput = z.infer<typeof ScrollUpInputSchema>;
-type ScrollUpOutput = z.infer<typeof ScrollUpOutputSchema>;
+type ScrollUpInput = z.infer<typeof ScrollUpInputSchema>
+type ScrollUpOutput = z.infer<typeof ScrollUpOutputSchema>
 
 /**
  * ScrollUpAction - Scroll page up
@@ -41,16 +39,16 @@ export class ScrollUpAction extends ActionHandler<
   ScrollUpInput,
   ScrollUpOutput
 > {
-  readonly inputSchema = ScrollUpInputSchema;
-  private browserOSAdapter = BrowserOSAdapter.getInstance();
+  readonly inputSchema = ScrollUpInputSchema
+  private browserOSAdapter = BrowserOSAdapter.getInstance()
 
   async execute(input: ScrollUpInput): Promise<ScrollUpOutput> {
     // Use sendKeys with PageUp instead of scrollUp API (more reliable)
-    await this.browserOSAdapter.sendKeys(input.tabId, 'PageUp');
+    await this.browserOSAdapter.sendKeys(input.tabId, 'PageUp')
 
     // Add small delay for scroll to complete
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100))
 
-    return {success: true};
+    return { success: true }
   }
 }

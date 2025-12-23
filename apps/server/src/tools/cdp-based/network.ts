@@ -2,11 +2,11 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import type {ResourceType} from 'puppeteer-core';
-import z from 'zod';
+import type { ResourceType } from 'puppeteer-core'
+import z from 'zod'
 
-import {ToolCategories} from '../types/ToolCategories.js';
-import {defineTool} from '../types/ToolDefinition.js';
+import { ToolCategories } from '../types/ToolCategories.js'
+import { defineTool } from '../types/ToolDefinition.js'
 
 const FILTERABLE_RESOURCE_TYPES: readonly [ResourceType, ...ResourceType[]] = [
   'document',
@@ -28,7 +28,7 @@ const FILTERABLE_RESOURCE_TYPES: readonly [ResourceType, ...ResourceType[]] = [
   'preflight',
   'fedcm',
   'other',
-];
+]
 
 export const listNetworkRequests = defineTool({
   name: 'list_network_requests',
@@ -66,9 +66,9 @@ export const listNetworkRequests = defineTool({
       pageSize: request.params.pageSize,
       pageIdx: request.params.pageIdx,
       resourceTypes: request.params.resourceTypes,
-    });
+    })
   },
-});
+})
 
 export const getNetworkRequest = defineTool({
   name: 'get_network_request',
@@ -81,6 +81,6 @@ export const getNetworkRequest = defineTool({
     url: z.string().describe('The URL of the request.'),
   },
   handler: async (request, response, _context) => {
-    response.attachNetworkRequest(request.params.url);
+    response.attachNetworkRequest(request.params.url)
   },
-});
+})

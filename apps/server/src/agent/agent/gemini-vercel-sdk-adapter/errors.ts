@@ -12,25 +12,25 @@
  * Structured error compatible with Gemini CLI error handling
  */
 export interface StructuredError {
-  message: string;
-  status?: number;
+  message: string
+  status?: number
 }
 
 export interface ConversionErrorDetails {
   /** Stage where conversion failed */
-  stage: 'tool' | 'message' | 'response' | 'stream';
+  stage: 'tool' | 'message' | 'response' | 'stream'
 
   /** Specific operation that failed */
-  operation: string;
+  operation: string
 
   /** Input that caused the failure (sanitized, no secrets) */
-  input?: unknown;
+  input?: unknown
 
   /** Underlying error if available */
-  cause?: Error;
+  cause?: Error
 
   /** Additional context for debugging */
-  context?: Record<string, unknown>;
+  context?: Record<string, unknown>
 }
 
 export class ConversionError extends Error {
@@ -38,12 +38,12 @@ export class ConversionError extends Error {
     message: string,
     readonly details: ConversionErrorDetails,
   ) {
-    super(message);
-    this.name = 'ConversionError';
+    super(message)
+    this.name = 'ConversionError'
 
     // Maintain proper stack trace
     if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, ConversionError);
+      Error.captureStackTrace(this, ConversionError)
     }
   }
 
@@ -54,7 +54,7 @@ export class ConversionError extends Error {
     return {
       message: `[${this.details.stage}] ${this.details.operation}: ${this.message}`,
       status: 500,
-    };
+    }
   }
 
   /**
@@ -62,7 +62,7 @@ export class ConversionError extends Error {
    */
   toFriendlyMessage(): string {
     const stage =
-      this.details.stage.charAt(0).toUpperCase() + this.details.stage.slice(1);
-    return `${stage} conversion failed: ${this.message}`;
+      this.details.stage.charAt(0).toUpperCase() + this.details.stage.slice(1)
+    return `${stage} conversion failed: ${this.message}`
   }
 }

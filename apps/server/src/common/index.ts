@@ -4,25 +4,22 @@
  */
 
 // Core module exports
-export {ensureBrowserConnected} from './browser.js';
-export {McpContext} from './McpContext.js';
-export {Mutex} from './Mutex.js';
-export {logger, Logger} from './logger.js';
-export {metrics, type MetricsConfig} from './metrics.js';
-export {fetchBrowserOSConfig} from './gateway.js';
-export {initializeDb, getDb, closeDb} from './db/index.js';
-export {identity, type IdentityConfig} from './identity.js';
-
-// Utils exports
-export * from './utils/index.js';
-export {readVersion} from './utils/index.js';
-
+export { ensureBrowserConnected } from './browser.js'
+export { closeDb, getDb, initializeDb } from './db/index.js'
+export type { BrowserOSConfig, LLMConfig, Provider } from './gateway.js'
+export { fetchBrowserOSConfig, getLLMConfigFromProvider } from './gateway.js'
+export { type IdentityConfig, identity } from './identity.js'
+export { Logger, logger } from './logger.js'
 // Type exports
 export type {
   McpContext as McpContextType,
-  TextSnapshotNode,
   TextSnapshot,
-} from './McpContext.js';
-export type {TraceResult} from './types.js';
-export type {BrowserOSConfig, Provider, LLMConfig} from './gateway.js';
-export {getLLMConfigFromProvider} from './gateway.js';
+  TextSnapshotNode,
+} from './McpContext.js'
+export { McpContext } from './McpContext.js'
+export { Mutex } from './Mutex.js'
+export { type MetricsConfig, metrics } from './metrics.js'
+export type { TraceResult } from './types.js'
+// Utils exports
+export * from './utils/index.js'
+export { readVersion } from './utils/index.js'

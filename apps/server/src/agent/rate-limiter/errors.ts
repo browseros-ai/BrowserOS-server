@@ -3,7 +3,7 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {HttpAgentError} from '../errors.js';
+import { HttpAgentError } from '../errors.js'
 
 export class RateLimitError extends HttpAgentError {
   constructor(
@@ -14,7 +14,7 @@ export class RateLimitError extends HttpAgentError {
       `Daily limit reached (${used}/${limit}). Add your own API key for unlimited usage. https://dub.sh/browseros-usage-limit`,
       429,
       'RATE_LIMIT_EXCEEDED',
-    );
+    )
   }
 
   override toJSON() {
@@ -27,6 +27,6 @@ export class RateLimitError extends HttpAgentError {
         used: this.used,
         limit: this.limit,
       },
-    };
+    }
   }
 }

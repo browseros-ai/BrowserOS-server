@@ -3,16 +3,14 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler} from '../ActionHandler';
-
-import {BookmarkAdapter} from '@/adapters/BookmarkAdapter';
+import { z } from 'zod'
+import { BookmarkAdapter } from '@/adapters/BookmarkAdapter'
+import { ActionHandler } from '../ActionHandler'
 
 // Input schema
 const RemoveBookmarkInputSchema = z.object({
   id: z.string().describe('Bookmark ID to remove'),
-});
+})
 
 // Output schema
 const RemoveBookmarkOutputSchema = z.object({
@@ -20,10 +18,10 @@ const RemoveBookmarkOutputSchema = z.object({
     .boolean()
     .describe('Whether the bookmark was successfully removed'),
   message: z.string().describe('Confirmation message'),
-});
+})
 
-type RemoveBookmarkInput = z.infer<typeof RemoveBookmarkInputSchema>;
-type RemoveBookmarkOutput = z.infer<typeof RemoveBookmarkOutputSchema>;
+type RemoveBookmarkInput = z.infer<typeof RemoveBookmarkInputSchema>
+type RemoveBookmarkOutput = z.infer<typeof RemoveBookmarkOutputSchema>
 
 /**
  * RemoveBookmarkAction - Remove a bookmark
@@ -50,15 +48,15 @@ export class RemoveBookmarkAction extends ActionHandler<
   RemoveBookmarkInput,
   RemoveBookmarkOutput
 > {
-  readonly inputSchema = RemoveBookmarkInputSchema;
-  private bookmarkAdapter = new BookmarkAdapter();
+  readonly inputSchema = RemoveBookmarkInputSchema
+  private bookmarkAdapter = new BookmarkAdapter()
 
   async execute(input: RemoveBookmarkInput): Promise<RemoveBookmarkOutput> {
-    await this.bookmarkAdapter.removeBookmark(input.id);
+    await this.bookmarkAdapter.removeBookmark(input.id)
 
     return {
       success: true,
       message: `Removed bookmark ${input.id}`,
-    };
+    }
   }
 }

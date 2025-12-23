@@ -2,11 +2,11 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import {Locator} from 'puppeteer-core';
-import z from 'zod';
+import { Locator } from 'puppeteer-core'
+import z from 'zod'
 
-import {ToolCategories} from '../types/ToolCategories.js';
-import {defineTool, commonSchemas} from '../types/ToolDefinition.js';
+import { ToolCategories } from '../types/ToolCategories.js'
+import { commonSchemas, defineTool } from '../types/ToolDefinition.js'
 
 export const takeSnapshot = defineTool({
   name: 'take_snapshot',
@@ -18,9 +18,9 @@ identifier (uid). Always use the latest snapshot. Prefer taking a snapshot over 
   },
   schema: {},
   handler: async (_request, response) => {
-    response.setIncludeSnapshot(true);
+    response.setIncludeSnapshot(true)
   },
-});
+})
 
 export const waitFor = defineTool({
   name: 'wait_for',
@@ -34,26 +34,26 @@ export const waitFor = defineTool({
     ...commonSchemas.timeout,
   },
   handler: async (request, response, context) => {
-    const page = context.getSelectedPage();
-    const frames = page.frames();
+    const page = context.getSelectedPage()
+    const frames = page.frames()
 
     const locator = Locator.race(
-      frames.flatMap(frame => [
+      frames.flatMap((frame) => [
         frame.locator(`aria/${request.params.text}`),
         frame.locator(`text/${request.params.text}`),
       ]),
-    );
+    )
 
     if (request.params.timeout) {
-      locator.setTimeout(request.params.timeout);
+      locator.setTimeout(request.params.timeout)
     }
 
-    await locator.wait();
+    await locator.wait()
 
     response.appendResponseLine(
       `Element with text "${request.params.text}" found.`,
-    );
+    )
 
-    response.setIncludeSnapshot(true);
+    response.setIncludeSnapshot(true)
   },
-});
+})

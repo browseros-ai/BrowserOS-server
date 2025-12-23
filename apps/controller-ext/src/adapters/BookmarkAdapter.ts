@@ -3,7 +3,7 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {logger} from '@/utils/Logger';
+import { logger } from '@/utils/Logger'
 
 /**
  * BookmarkAdapter - Wrapper for Chrome bookmarks API
@@ -20,21 +20,21 @@ export class BookmarkAdapter {
    * @returns Bookmark tree root nodes
    */
   async getBookmarkTree(): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
-    logger.debug('[BookmarkAdapter] Getting bookmark tree');
+    logger.debug('[BookmarkAdapter] Getting bookmark tree')
 
     try {
-      const tree = await chrome.bookmarks.getTree();
+      const tree = await chrome.bookmarks.getTree()
       logger.debug(
         `[BookmarkAdapter] Retrieved bookmark tree with ${tree.length} root nodes`,
-      );
-      return tree;
+      )
+      return tree
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : String(error);
+        error instanceof Error ? error.message : String(error)
       logger.error(
         `[BookmarkAdapter] Failed to get bookmark tree: ${errorMessage}`,
-      );
-      throw new Error(`Failed to get bookmark tree: ${errorMessage}`);
+      )
+      throw new Error(`Failed to get bookmark tree: ${errorMessage}`)
     }
   }
 
@@ -47,21 +47,21 @@ export class BookmarkAdapter {
   async searchBookmarks(
     query: string,
   ): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
-    logger.debug(`[BookmarkAdapter] Searching bookmarks: "${query}"`);
+    logger.debug(`[BookmarkAdapter] Searching bookmarks: "${query}"`)
 
     try {
-      const results = await chrome.bookmarks.search(query);
+      const results = await chrome.bookmarks.search(query)
       logger.debug(
         `[BookmarkAdapter] Found ${results.length} bookmarks matching "${query}"`,
-      );
-      return results;
+      )
+      return results
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : String(error);
+        error instanceof Error ? error.message : String(error)
       logger.error(
         `[BookmarkAdapter] Failed to search bookmarks: ${errorMessage}`,
-      );
-      throw new Error(`Failed to search bookmarks: ${errorMessage}`);
+      )
+      throw new Error(`Failed to search bookmarks: ${errorMessage}`)
     }
   }
 
@@ -72,20 +72,20 @@ export class BookmarkAdapter {
    * @returns Bookmark node
    */
   async getBookmark(id: string): Promise<chrome.bookmarks.BookmarkTreeNode> {
-    logger.debug(`[BookmarkAdapter] Getting bookmark: ${id}`);
+    logger.debug(`[BookmarkAdapter] Getting bookmark: ${id}`)
 
     try {
-      const results = await chrome.bookmarks.get(id);
+      const results = await chrome.bookmarks.get(id)
       if (results.length === 0) {
-        throw new Error('Bookmark not found');
+        throw new Error('Bookmark not found')
       }
-      logger.debug(`[BookmarkAdapter] Retrieved bookmark: ${id}`);
-      return results[0];
+      logger.debug(`[BookmarkAdapter] Retrieved bookmark: ${id}`)
+      return results[0]
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      logger.error(`[BookmarkAdapter] Failed to get bookmark: ${errorMessage}`);
-      throw new Error(`Failed to get bookmark: ${errorMessage}`);
+        error instanceof Error ? error.message : String(error)
+      logger.error(`[BookmarkAdapter] Failed to get bookmark: ${errorMessage}`)
+      throw new Error(`Failed to get bookmark: ${errorMessage}`)
     }
   }
 
@@ -96,27 +96,27 @@ export class BookmarkAdapter {
    * @returns Created bookmark node
    */
   async createBookmark(bookmark: {
-    title: string;
-    url: string;
-    parentId?: string;
+    title: string
+    url: string
+    parentId?: string
   }): Promise<chrome.bookmarks.BookmarkTreeNode> {
     logger.debug(
       `[BookmarkAdapter] Creating bookmark: ${bookmark.title || 'Untitled'}`,
-    );
+    )
 
     try {
-      const created = await chrome.bookmarks.create(bookmark);
+      const created = await chrome.bookmarks.create(bookmark)
       logger.debug(
         `[BookmarkAdapter] Created bookmark: ${created.id} - ${created.title}`,
-      );
-      return created;
+      )
+      return created
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : String(error);
+        error instanceof Error ? error.message : String(error)
       logger.error(
         `[BookmarkAdapter] Failed to create bookmark: ${errorMessage}`,
-      );
-      throw new Error(`Failed to create bookmark: ${errorMessage}`);
+      )
+      throw new Error(`Failed to create bookmark: ${errorMessage}`)
     }
   }
 
@@ -126,18 +126,18 @@ export class BookmarkAdapter {
    * @param id - Bookmark ID to remove
    */
   async removeBookmark(id: string): Promise<void> {
-    logger.debug(`[BookmarkAdapter] Removing bookmark: ${id}`);
+    logger.debug(`[BookmarkAdapter] Removing bookmark: ${id}`)
 
     try {
-      await chrome.bookmarks.remove(id);
-      logger.debug(`[BookmarkAdapter] Removed bookmark: ${id}`);
+      await chrome.bookmarks.remove(id)
+      logger.debug(`[BookmarkAdapter] Removed bookmark: ${id}`)
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : String(error);
+        error instanceof Error ? error.message : String(error)
       logger.error(
         `[BookmarkAdapter] Failed to remove bookmark ${id}: ${errorMessage}`,
-      );
-      throw new Error(`Failed to remove bookmark: ${errorMessage}`);
+      )
+      throw new Error(`Failed to remove bookmark: ${errorMessage}`)
     }
   }
 
@@ -150,23 +150,23 @@ export class BookmarkAdapter {
    */
   async updateBookmark(
     id: string,
-    changes: {title?: string; url?: string},
+    changes: { title?: string; url?: string },
   ): Promise<chrome.bookmarks.BookmarkTreeNode> {
-    logger.debug(`[BookmarkAdapter] Updating bookmark: ${id}`);
+    logger.debug(`[BookmarkAdapter] Updating bookmark: ${id}`)
 
     try {
-      const updated = await chrome.bookmarks.update(id, changes);
+      const updated = await chrome.bookmarks.update(id, changes)
       logger.debug(
         `[BookmarkAdapter] Updated bookmark: ${id} - ${updated.title}`,
-      );
-      return updated;
+      )
+      return updated
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : String(error);
+        error instanceof Error ? error.message : String(error)
       logger.error(
         `[BookmarkAdapter] Failed to update bookmark ${id}: ${errorMessage}`,
-      );
-      throw new Error(`Failed to update bookmark: ${errorMessage}`);
+      )
+      throw new Error(`Failed to update bookmark: ${errorMessage}`)
     }
   }
 
@@ -179,29 +179,29 @@ export class BookmarkAdapter {
   async getRecentBookmarks(
     limit = 20,
   ): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
-    logger.debug(`[BookmarkAdapter] Getting ${limit} recent bookmarks`);
+    logger.debug(`[BookmarkAdapter] Getting ${limit} recent bookmarks`)
 
     try {
-      const tree = await chrome.bookmarks.getTree();
-      const bookmarks = this._flattenBookmarkTree(tree);
+      const tree = await chrome.bookmarks.getTree()
+      const bookmarks = this._flattenBookmarkTree(tree)
 
       // Filter to only URL bookmarks (not folders) and sort by dateAdded
       const urlBookmarks = bookmarks
-        .filter(b => b.url && b.dateAdded)
+        .filter((b) => b.url && b.dateAdded)
         .sort((a, b) => (b.dateAdded || 0) - (a.dateAdded || 0))
-        .slice(0, limit);
+        .slice(0, limit)
 
       logger.debug(
         `[BookmarkAdapter] Found ${urlBookmarks.length} recent bookmarks`,
-      );
-      return urlBookmarks;
+      )
+      return urlBookmarks
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : String(error);
+        error instanceof Error ? error.message : String(error)
       logger.error(
         `[BookmarkAdapter] Failed to get recent bookmarks: ${errorMessage}`,
-      );
-      throw new Error(`Failed to get recent bookmarks: ${errorMessage}`);
+      )
+      throw new Error(`Failed to get recent bookmarks: ${errorMessage}`)
     }
   }
 
@@ -212,15 +212,15 @@ export class BookmarkAdapter {
   private _flattenBookmarkTree(
     nodes: chrome.bookmarks.BookmarkTreeNode[],
   ): chrome.bookmarks.BookmarkTreeNode[] {
-    const result: chrome.bookmarks.BookmarkTreeNode[] = [];
+    const result: chrome.bookmarks.BookmarkTreeNode[] = []
 
     for (const node of nodes) {
-      result.push(node);
+      result.push(node)
       if (node.children) {
-        result.push(...this._flattenBookmarkTree(node.children));
+        result.push(...this._flattenBookmarkTree(node.children))
       }
     }
 
-    return result;
+    return result
   }
 }

@@ -2,12 +2,12 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import {z} from 'zod';
+import { z } from 'zod'
 
-import {ToolCategories} from '../../types/ToolCategories.js';
-import {defineTool} from '../../types/ToolDefinition.js';
-import type {Context} from '../types/Context.js';
-import type {Response} from '../types/Response.js';
+import { ToolCategories } from '../../types/ToolCategories.js'
+import { defineTool } from '../../types/ToolDefinition.js'
+import type { Context } from '../types/Context.js'
+import type { Response } from '../types/Response.js'
 
 export const searchHistory = defineTool<z.ZodRawShape, Context, Response>({
   name: 'browser_search_history',
@@ -25,48 +25,48 @@ export const searchHistory = defineTool<z.ZodRawShape, Context, Response>({
     windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {query, maxResults, windowId} = request.params as {
-      query: string;
-      maxResults?: number;
-      windowId?: number;
-    };
+    const { query, maxResults, windowId } = request.params as {
+      query: string
+      maxResults?: number
+      windowId?: number
+    }
 
     const result = await context.executeAction('searchHistory', {
       query,
       maxResults,
       windowId,
-    });
+    })
     const data = result as {
       items: Array<{
-        id: string;
-        url?: string;
-        title?: string;
-        lastVisitTime?: number;
-        visitCount?: number;
-        typedCount?: number;
-      }>;
-      count: number;
-    };
+        id: string
+        url?: string
+        title?: string
+        lastVisitTime?: number
+        visitCount?: number
+        typedCount?: number
+      }>
+      count: number
+    }
 
     response.appendResponseLine(
       `Found ${data.count} history items matching "${query}":`,
-    );
-    response.appendResponseLine('');
+    )
+    response.appendResponseLine('')
 
     for (const item of data.items) {
       const date = item.lastVisitTime
         ? new Date(item.lastVisitTime).toISOString()
-        : 'Unknown date';
-      response.appendResponseLine(`[${item.id}] ${item.title || 'Untitled'}`);
-      response.appendResponseLine(`    ${item.url || 'No URL'}`);
-      response.appendResponseLine(`    Last visited: ${date}`);
+        : 'Unknown date'
+      response.appendResponseLine(`[${item.id}] ${item.title || 'Untitled'}`)
+      response.appendResponseLine(`    ${item.url || 'No URL'}`)
+      response.appendResponseLine(`    Last visited: ${date}`)
       if (item.visitCount !== undefined) {
-        response.appendResponseLine(`    Visit count: ${item.visitCount}`);
+        response.appendResponseLine(`    Visit count: ${item.visitCount}`)
       }
-      response.appendResponseLine('');
+      response.appendResponseLine('')
     }
   },
-});
+})
 
 export const getRecentHistory = defineTool<z.ZodRawShape, Context, Response>({
   name: 'browser_get_recent_history',
@@ -83,42 +83,40 @@ export const getRecentHistory = defineTool<z.ZodRawShape, Context, Response>({
     windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {count, windowId} = request.params as {
-      count?: number;
-      windowId?: number;
-    };
+    const { count, windowId } = request.params as {
+      count?: number
+      windowId?: number
+    }
 
     const result = await context.executeAction('getRecentHistory', {
       count,
       windowId,
-    });
+    })
     const data = result as {
       items: Array<{
-        id: string;
-        url?: string;
-        title?: string;
-        lastVisitTime?: number;
-        visitCount?: number;
-      }>;
-      count: number;
-    };
+        id: string
+        url?: string
+        title?: string
+        lastVisitTime?: number
+        visitCount?: number
+      }>
+      count: number
+    }
 
-    response.appendResponseLine(
-      `Retrieved ${data.count} recent history items:`,
-    );
-    response.appendResponseLine('');
+    response.appendResponseLine(`Retrieved ${data.count} recent history items:`)
+    response.appendResponseLine('')
 
     for (const item of data.items) {
       const date = item.lastVisitTime
         ? new Date(item.lastVisitTime).toISOString()
-        : 'Unknown date';
-      response.appendResponseLine(`[${item.id}] ${item.title || 'Untitled'}`);
-      response.appendResponseLine(`    ${item.url || 'No URL'}`);
-      response.appendResponseLine(`    ${date}`);
+        : 'Unknown date'
+      response.appendResponseLine(`[${item.id}] ${item.title || 'Untitled'}`)
+      response.appendResponseLine(`    ${item.url || 'No URL'}`)
+      response.appendResponseLine(`    ${date}`)
       if (item.visitCount !== undefined) {
-        response.appendResponseLine(`    Visits: ${item.visitCount}`);
+        response.appendResponseLine(`    Visits: ${item.visitCount}`)
       }
-      response.appendResponseLine('');
+      response.appendResponseLine('')
     }
   },
-});
+})

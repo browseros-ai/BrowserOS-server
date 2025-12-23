@@ -2,16 +2,16 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import {PredefinedNetworkConditions} from 'puppeteer-core';
-import z from 'zod';
+import { PredefinedNetworkConditions } from 'puppeteer-core'
+import z from 'zod'
 
-import {ToolCategories} from '../types/ToolCategories.js';
-import {defineTool} from '../types/ToolDefinition.js';
+import { ToolCategories } from '../types/ToolCategories.js'
+import { defineTool } from '../types/ToolDefinition.js'
 
 const throttlingOptions: [string, ...string[]] = [
   'No emulation',
   ...Object.keys(PredefinedNetworkConditions),
-];
+]
 
 export const emulateNetwork = defineTool({
   name: 'emulate_network',
@@ -28,25 +28,25 @@ export const emulateNetwork = defineTool({
       ),
   },
   handler: async (request, _response, context) => {
-    const page = context.getSelectedPage();
-    const conditions = request.params.throttlingOption;
+    const page = context.getSelectedPage()
+    const conditions = request.params.throttlingOption
 
     if (conditions === 'No emulation') {
-      await page.emulateNetworkConditions(null);
-      context.setNetworkConditions(null);
-      return;
+      await page.emulateNetworkConditions(null)
+      context.setNetworkConditions(null)
+      return
     }
 
     if (conditions in PredefinedNetworkConditions) {
       const networkCondition =
         PredefinedNetworkConditions[
           conditions as keyof typeof PredefinedNetworkConditions
-        ];
-      await page.emulateNetworkConditions(networkCondition);
-      context.setNetworkConditions(conditions);
+        ]
+      await page.emulateNetworkConditions(networkCondition)
+      context.setNetworkConditions(conditions)
     }
   },
-});
+})
 
 export const emulateCpu = defineTool({
   name: 'emulate_cpu',
@@ -65,10 +65,10 @@ export const emulateCpu = defineTool({
       ),
   },
   handler: async (request, _response, context) => {
-    const page = context.getSelectedPage();
-    const {throttlingRate} = request.params;
+    const page = context.getSelectedPage()
+    const { throttlingRate } = request.params
 
-    await page.emulateCPUThrottling(throttlingRate);
-    context.setCpuThrottlingRate(throttlingRate);
+    await page.emulateCPUThrottling(throttlingRate)
+    context.setCpuThrottlingRate(throttlingRate)
   },
-});
+})

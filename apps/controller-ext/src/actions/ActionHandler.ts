@@ -3,15 +3,15 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
+import { z } from 'zod'
 
-import type {ActionResponse} from '@/protocol/types';
-import {ActionResponseSchema} from '@/protocol/types';
-import {logger} from '@/utils/Logger';
+import type { ActionResponse } from '@/protocol/types'
+import { ActionResponseSchema } from '@/protocol/types'
+import { logger } from '@/utils/Logger'
 
 // Re-export for convenience
-export type {ActionResponse};
-export {ActionResponseSchema};
+export type { ActionResponse }
+export { ActionResponseSchema }
 
 /**
  * ActionHandler - Abstract base class for all actions
@@ -33,7 +33,7 @@ export abstract class ActionHandler<TInput = any, TOutput = any> {
    * Zod schema for input validation
    * Must be implemented by concrete actions
    */
-  abstract readonly inputSchema: z.ZodSchema<TInput>;
+  abstract readonly inputSchema: z.ZodSchema<TInput>
 
   /**
    * Execute the action logic
@@ -42,7 +42,7 @@ export abstract class ActionHandler<TInput = any, TOutput = any> {
    * @param input - Validated input (guaranteed to match inputSchema)
    * @returns Action result
    */
-  abstract execute(input: TInput): Promise<TOutput>;
+  abstract execute(input: TInput): Promise<TOutput>
 
   /**
    * Handle request with validation and error handling
@@ -57,25 +57,25 @@ export abstract class ActionHandler<TInput = any, TOutput = any> {
    * @returns Standardized action response
    */
   async handle(payload: unknown): Promise<ActionResponse> {
-    const actionName = this.constructor.name;
+    const actionName = this.constructor.name
 
     try {
       // Step 1: Validate input
-      logger.debug(`[${actionName}] Validating input`);
-      const validatedInput = this.inputSchema.parse(payload);
+      logger.debug(`[${actionName}] Validating input`)
+      const validatedInput = this.inputSchema.parse(payload)
 
       // Step 2: Execute action
-      logger.debug(`[${actionName}] Executing action`);
-      const result = await this.execute(validatedInput);
+      logger.debug(`[${actionName}] Executing action`)
+      const result = await this.execute(validatedInput)
 
       // Step 3: Return success response
-      logger.debug(`[${actionName}] Action completed successfully`);
-      return {ok: true, data: result};
+      logger.debug(`[${actionName}] Action completed successfully`)
+      return { ok: true, data: result }
     } catch (error) {
       // Handle validation or execution errors
-      const errorMessage = this._formatError(error);
-      logger.error(`[${actionName}] Action failed: ${errorMessage}`);
-      return {ok: false, error: errorMessage};
+      const errorMessage = this._formatError(error)
+      logger.error(`[${actionName}] Action failed: ${errorMessage}`)
+      return { ok: false, error: errorMessage }
     }
   }
 
@@ -89,18 +89,18 @@ export abstract class ActionHandler<TInput = any, TOutput = any> {
     // Zod validation error
     if (error instanceof z.ZodError) {
       const errors = error.issues.map((e: any) => {
-        const path = e.path.length > 0 ? `${e.path.join('.')}: ` : '';
-        return `${path}${e.message}`;
-      });
-      return `Validation error: ${errors.join(', ')}`;
+        const path = e.path.length > 0 ? `${e.path.join('.')}: ` : ''
+        return `${path}${e.message}`
+      })
+      return `Validation error: ${errors.join(', ')}`
     }
 
     // Standard Error
     if (error instanceof Error) {
-      return error.message;
+      return error.message
     }
 
     // Unknown error
-    return String(error);
+    return String(error)
   }
 }

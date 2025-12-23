@@ -3,16 +3,10 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler} from '../ActionHandler';
-
-import {
-  BrowserOSAdapter,
-  type Snapshot,
-  type SnapshotOptions,
-} from '@/adapters/BrowserOSAdapter';
-import {logger} from '@/utils/Logger';
+import { z } from 'zod'
+import { BrowserOSAdapter, type Snapshot } from '@/adapters/BrowserOSAdapter'
+import { logger } from '@/utils/Logger'
+import { ActionHandler } from '../ActionHandler'
 
 // Input schema for getSnapshot action
 const GetSnapshotInputSchema = z.object({
@@ -39,12 +33,12 @@ const GetSnapshotInputSchema = z.object({
     })
     .optional()
     .describe('Optional snapshot configuration'),
-});
+})
 
-type GetSnapshotInput = z.infer<typeof GetSnapshotInputSchema>;
+type GetSnapshotInput = z.infer<typeof GetSnapshotInputSchema>
 
 // Output is the full snapshot structure
-export type GetSnapshotOutput = Snapshot;
+export type GetSnapshotOutput = Snapshot
 
 /**
  * GetSnapshotAction - Extract page content snapshot
@@ -66,15 +60,15 @@ export class GetSnapshotAction extends ActionHandler<
   GetSnapshotInput,
   GetSnapshotOutput
 > {
-  readonly inputSchema = GetSnapshotInputSchema;
-  private browserOSAdapter = BrowserOSAdapter.getInstance();
+  readonly inputSchema = GetSnapshotInputSchema
+  private browserOSAdapter = BrowserOSAdapter.getInstance()
 
   async execute(input: GetSnapshotInput): Promise<GetSnapshotOutput> {
-    const {tabId, type} = input;
+    const { tabId, type } = input
     logger.info(
       `[GetSnapshotAction] Getting snapshot for tab ${tabId} with type ${type}`,
-    );
-    const snapshot = await this.browserOSAdapter.getSnapshot(tabId, type);
-    return snapshot;
+    )
+    const snapshot = await this.browserOSAdapter.getSnapshot(tabId, type)
+    return snapshot
   }
 }

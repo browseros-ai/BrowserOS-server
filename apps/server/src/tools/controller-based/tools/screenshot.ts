@@ -2,13 +2,13 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import {z} from 'zod';
+import { z } from 'zod'
 
-import {ToolCategories} from '../../types/ToolCategories.js';
-import {defineTool} from '../../types/ToolDefinition.js';
-import type {Context} from '../types/Context.js';
-import type {Response} from '../types/Response.js';
-import {parseDataUrl} from '../utils/parseDataUrl.js';
+import { ToolCategories } from '../../types/ToolCategories.js'
+import { defineTool } from '../../types/ToolDefinition.js'
+import type { Context } from '../types/Context.js'
+import type { Response } from '../types/Response.js'
+import { parseDataUrl } from '../utils/parseDataUrl.js'
 
 export const getScreenshot = defineTool<z.ZodRawShape, Context, Response>({
   name: 'browser_get_screenshot',
@@ -41,22 +41,22 @@ export const getScreenshot = defineTool<z.ZodRawShape, Context, Response>({
   },
   handler: async (request, response, context) => {
     const params = request.params as {
-      tabId: number;
-      size?: string;
-      showHighlights?: boolean;
-      width?: number;
-      height?: number;
-      windowId?: number;
-    };
+      tabId: number
+      size?: string
+      showHighlights?: boolean
+      width?: number
+      height?: number
+      windowId?: number
+    }
 
-    const result = await context.executeAction('captureScreenshot', params);
-    const {dataUrl} = result as {dataUrl: string};
+    const result = await context.executeAction('captureScreenshot', params)
+    const { dataUrl } = result as { dataUrl: string }
 
     // Parse data URL to extract MIME type and base64 data
-    const {mimeType, data} = parseDataUrl(dataUrl);
+    const { mimeType, data } = parseDataUrl(dataUrl)
 
     // Attach image to response
-    response.attachImage({mimeType, data});
-    response.appendResponseLine(`Screenshot captured from tab ${params.tabId}`);
+    response.attachImage({ mimeType, data })
+    response.appendResponseLine(`Screenshot captured from tab ${params.tabId}`)
   },
-});
+})

@@ -3,11 +3,9 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler, ActionResponse} from '../ActionHandler';
-
-import {BrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
+import { z } from 'zod'
+import { BrowserOSAdapter } from '@/adapters/BrowserOSAdapter'
+import { ActionHandler } from '../ActionHandler'
 
 // Input schema
 const InputTextInputSchema = z.object({
@@ -18,15 +16,15 @@ const InputTextInputSchema = z.object({
     .positive()
     .describe('The nodeId from interactive snapshot'),
   text: z.string().describe('Text to type into the element'),
-});
+})
 
 // Output schema
 const InputTextOutputSchema = z.object({
   success: z.boolean().describe('Whether the input succeeded'),
-});
+})
 
-type InputTextInput = z.infer<typeof InputTextInputSchema>;
-type InputTextOutput = z.infer<typeof InputTextOutputSchema>;
+type InputTextInput = z.infer<typeof InputTextInputSchema>
+type InputTextOutput = z.infer<typeof InputTextOutputSchema>
 
 /**
  * InputTextAction - Type text into an element by its nodeId
@@ -54,15 +52,11 @@ export class InputTextAction extends ActionHandler<
   InputTextInput,
   InputTextOutput
 > {
-  readonly inputSchema = InputTextInputSchema;
-  private browserOSAdapter = BrowserOSAdapter.getInstance();
+  readonly inputSchema = InputTextInputSchema
+  private browserOSAdapter = BrowserOSAdapter.getInstance()
 
   async execute(input: InputTextInput): Promise<InputTextOutput> {
-    await this.browserOSAdapter.inputText(
-      input.tabId,
-      input.nodeId,
-      input.text,
-    );
-    return {success: true};
+    await this.browserOSAdapter.inputText(input.tabId, input.nodeId, input.text)
+    return { success: true }
   }
 }

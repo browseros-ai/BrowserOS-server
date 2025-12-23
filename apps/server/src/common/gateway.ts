@@ -3,81 +3,81 @@
  * Copyright 2025 BrowserOS
  */
 
-import {logger} from './logger.js';
+import { logger } from './logger.js'
 
 export interface Provider {
-  name: string;
-  model: string;
-  apiKey: string;
-  baseUrl?: string;
-  dailyRateLimit?: number;
+  name: string
+  model: string
+  apiKey: string
+  baseUrl?: string
+  dailyRateLimit?: number
 }
 
 export interface BrowserOSConfig {
-  providers: Provider[];
+  providers: Provider[]
 }
 
 export interface LLMConfig {
-  modelName: string;
-  baseUrl?: string;
-  apiKey: string;
-  provider: Provider;
+  modelName: string
+  baseUrl?: string
+  apiKey: string
+  provider: Provider
 }
 
 export async function fetchBrowserOSConfig(
   configUrl: string,
   browserosId?: string,
 ): Promise<BrowserOSConfig> {
-  logger.debug('Fetching BrowserOS config', {configUrl, browserosId});
+  logger.debug('Fetching BrowserOS config', { configUrl, browserosId })
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-  };
+  }
 
   if (browserosId) {
-    headers['X-BrowserOS-ID'] = browserosId;
+    headers['X-BrowserOS-ID'] = browserosId
   }
 
   try {
     const response = await fetch(configUrl, {
       method: 'GET',
       headers,
-    });
+    })
 
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await response.text()
       throw new Error(
         `Failed to fetch config: ${response.status} ${response.statusText} - ${errorText}`,
-      );
+      )
     }
 
-    const config = (await response.json()) as BrowserOSConfig;
+    const config = (await response.json()) as BrowserOSConfig
 
     if (!Array.isArray(config.providers) || config.providers.length === 0) {
       throw new Error(
         'Invalid config response: providers array is empty or missing',
-      );
+      )
     }
 
     for (const provider of config.providers) {
       if (!provider.name || !provider.model || !provider.apiKey) {
-        throw new Error('Invalid provider: missing name, model, or apiKey');
+        throw new Error('Invalid provider: missing name, model, or apiKey')
       }
     }
 
-    const defaultProvider = config.providers.find(p => p.name === 'default');
+    const defaultProvider = config.providers.find((p) => p.name === 'default')
     logger.info('✅ BrowserOS config fetched', {
       providerCount: config.providers.length,
       dailyRateLimit: defaultProvider?.dailyRateLimit,
-    });
+    })
 
-    return config;
+    return config
   } catch (error) {
     logger.error('❌ Failed to fetch BrowserOS config', {
       configUrl,
       error: error instanceof Error ? error.message : String(error),
-    });
-    throw error;
+    })
+    throw error
   }
 }
 
@@ -91,12 +91,12 @@ export function getLLMConfigFromProvider(
   config: BrowserOSConfig,
   providerName = 'default',
 ): LLMConfig {
-  const provider = config.providers.find(p => p.name === providerName);
+  const provider = config.providers.find((p) => p.name === providerName)
 
   if (!provider) {
     throw new Error(
-      `Provider '${providerName}' not found in config. Available providers: ${config.providers.map(p => p.name).join(', ')}`,
-    );
+      `Provider '${providerName}' not found in config. Available providers: ${config.providers.map((p) => p.name).join(', ')}`,
+    )
   }
 
   return {
@@ -104,5 +104,5 @@ export function getLLMConfigFromProvider(
     baseUrl: provider.baseUrl,
     apiKey: provider.apiKey,
     provider,
-  };
+  }
 }

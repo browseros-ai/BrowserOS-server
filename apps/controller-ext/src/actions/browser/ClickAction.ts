@@ -3,11 +3,9 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler, ActionResponse} from '../ActionHandler';
-
-import {BrowserOSAdapter} from '@/adapters/BrowserOSAdapter';
+import { z } from 'zod'
+import { BrowserOSAdapter } from '@/adapters/BrowserOSAdapter'
+import { ActionHandler } from '../ActionHandler'
 
 // Input schema
 const ClickInputSchema = z.object({
@@ -17,15 +15,15 @@ const ClickInputSchema = z.object({
     .int()
     .positive()
     .describe('The nodeId from interactive snapshot'),
-});
+})
 
 // Output schema
 const ClickOutputSchema = z.object({
   success: z.boolean().describe('Whether the click succeeded'),
-});
+})
 
-type ClickInput = z.infer<typeof ClickInputSchema>;
-type ClickOutput = z.infer<typeof ClickOutputSchema>;
+type ClickInput = z.infer<typeof ClickInputSchema>
+type ClickOutput = z.infer<typeof ClickOutputSchema>
 
 /**
  * ClickAction - Click an element by its nodeId
@@ -45,11 +43,11 @@ type ClickOutput = z.infer<typeof ClickOutputSchema>;
  * Used by: ClickTool, all automation workflows
  */
 export class ClickAction extends ActionHandler<ClickInput, ClickOutput> {
-  readonly inputSchema = ClickInputSchema;
-  private browserOSAdapter = BrowserOSAdapter.getInstance();
+  readonly inputSchema = ClickInputSchema
+  private browserOSAdapter = BrowserOSAdapter.getInstance()
 
   async execute(input: ClickInput): Promise<ClickOutput> {
-    await this.browserOSAdapter.click(input.tabId, input.nodeId);
-    return {success: true};
+    await this.browserOSAdapter.click(input.tabId, input.nodeId)
+    return { success: true }
   }
 }

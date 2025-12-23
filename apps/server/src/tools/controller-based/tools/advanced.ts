@@ -2,12 +2,12 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import {z} from 'zod';
+import { z } from 'zod'
 
-import {ToolCategories} from '../../types/ToolCategories.js';
-import {defineTool} from '../../types/ToolDefinition.js';
-import type {Context} from '../types/Context.js';
-import type {Response} from '../types/Response.js';
+import { ToolCategories } from '../../types/ToolCategories.js'
+import { defineTool } from '../../types/ToolDefinition.js'
+import type { Context } from '../types/Context.js'
+import type { Response } from '../types/Response.js'
 
 export const executeJavaScript = defineTool<z.ZodRawShape, Context, Response>({
   name: 'browser_execute_javascript',
@@ -23,25 +23,25 @@ export const executeJavaScript = defineTool<z.ZodRawShape, Context, Response>({
     windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {tabId, code, windowId} = request.params as {
-      tabId: number;
-      code: string;
-      windowId?: number;
-    };
+    const { tabId, code, windowId } = request.params as {
+      tabId: number
+      code: string
+      windowId?: number
+    }
 
     const result = await context.executeAction('executeJavaScript', {
       tabId,
       code,
       windowId,
-    });
-    const data = result as {result: any};
+    })
+    const data = result as { result: any }
 
-    response.appendResponseLine(`JavaScript executed in tab ${tabId}`);
+    response.appendResponseLine(`JavaScript executed in tab ${tabId}`)
     response.appendResponseLine(
       `Result: ${JSON.stringify(data.result, null, 2)}`,
-    );
+    )
   },
-});
+})
 
 export const sendKeys = defineTool<z.ZodRawShape, Context, Response>({
   name: 'browser_send_keys',
@@ -72,22 +72,22 @@ export const sendKeys = defineTool<z.ZodRawShape, Context, Response>({
     windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {tabId, key, windowId} = request.params as {
-      tabId: number;
-      key: string;
-      windowId?: number;
-    };
+    const { tabId, key, windowId } = request.params as {
+      tabId: number
+      key: string
+      windowId?: number
+    }
 
     const result = await context.executeAction('sendKeys', {
       tabId,
       key,
       windowId,
-    });
-    const data = result as {success: boolean; message: string};
+    })
+    const data = result as { success: boolean; message: string }
 
-    response.appendResponseLine(data.message);
+    response.appendResponseLine(data.message)
   },
-});
+})
 
 export const checkAvailability = defineTool<z.ZodRawShape, Context, Response>({
   name: 'browser_check_availability',
@@ -100,29 +100,29 @@ export const checkAvailability = defineTool<z.ZodRawShape, Context, Response>({
     windowId: z.number().optional().describe('Window ID for routing'),
   },
   handler: async (request, response, context) => {
-    const {windowId} = request.params as {windowId?: number};
-    const result = await context.executeAction('checkBrowserOS', {windowId});
+    const { windowId } = request.params as { windowId?: number }
+    const result = await context.executeAction('checkBrowserOS', { windowId })
     const data = result as {
-      available: boolean;
-      apis?: string[];
-      error?: string;
-    };
+      available: boolean
+      apis?: string[]
+      error?: string
+    }
 
     response.appendResponseLine(
       `BrowserOS APIs available: ${data.available ? 'Yes' : 'No'}`,
-    );
+    )
 
     if (data.error) {
-      response.appendResponseLine(`Error: ${data.error}`);
+      response.appendResponseLine(`Error: ${data.error}`)
     } else if (data.apis && data.apis.length > 0) {
-      response.appendResponseLine(`Total APIs: ${data.apis.length}`);
-      response.appendResponseLine('');
-      response.appendResponseLine('Available APIs:');
+      response.appendResponseLine(`Total APIs: ${data.apis.length}`)
+      response.appendResponseLine('')
+      response.appendResponseLine('Available APIs:')
       for (const api of data.apis) {
-        response.appendResponseLine(`  - ${api}`);
+        response.appendResponseLine(`  - ${api}`)
       }
     } else {
-      response.appendResponseLine('No API information available');
+      response.appendResponseLine('No API information available')
     }
   },
-});
+})

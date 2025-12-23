@@ -9,9 +9,9 @@
  * Single source of truth for all types + Zod schemas
  */
 
-import type {LanguageModelV2ToolResultOutput} from '@ai-sdk/provider';
-import type {jsonSchema} from 'ai';
-import {z} from 'zod';
+import type { LanguageModelV2ToolResultOutput } from '@ai-sdk/provider'
+import type { jsonSchema } from 'ai'
+import { z } from 'zod'
 // Vercel AI SDK
 
 // === Vercel SDK Runtime Shapes (What We Receive) ===
@@ -24,9 +24,9 @@ export const VercelToolCallSchema = z.object({
   toolCallId: z.string(),
   toolName: z.string(),
   input: z.unknown(), // Matches ToolCallPart interface
-});
+})
 
-export type VercelToolCall = z.infer<typeof VercelToolCallSchema>;
+export type VercelToolCall = z.infer<typeof VercelToolCallSchema>
 
 /**
  * Usage metadata from result (LanguageModelUsage)
@@ -39,9 +39,9 @@ export const VercelUsageSchema = z.object({
   totalTokens: z.number().optional(),
   reasoningTokens: z.number().optional(),
   cachedInputTokens: z.number().optional(),
-});
+})
 
-export type VercelUsage = z.infer<typeof VercelUsageSchema>;
+export type VercelUsage = z.infer<typeof VercelUsageSchema>
 
 /**
  * Finish reason from Vercel SDK
@@ -55,9 +55,9 @@ export const VercelFinishReasonSchema = z.enum([
   'error',
   'other',
   'unknown',
-]);
+])
 
-export type VercelFinishReason = z.infer<typeof VercelFinishReasonSchema>;
+export type VercelFinishReason = z.infer<typeof VercelFinishReasonSchema>
 
 /**
  * GenerateText result shape
@@ -68,11 +68,11 @@ export const VercelGenerateTextResultSchema = z.object({
   toolCalls: z.array(VercelToolCallSchema).optional(),
   finishReason: VercelFinishReasonSchema.optional(),
   usage: VercelUsageSchema.optional(),
-});
+})
 
 export type VercelGenerateTextResult = z.infer<
   typeof VercelGenerateTextResultSchema
->;
+>
 
 // === Stream Chunk Schemas ===
 
@@ -83,7 +83,7 @@ export type VercelGenerateTextResult = z.infer<
 export const VercelTextDeltaChunkSchema = z.object({
   type: z.literal('text-delta'),
   text: z.string(),
-});
+})
 
 /**
  * Tool call chunk from fullStream
@@ -94,7 +94,7 @@ export const VercelToolCallChunkSchema = z.object({
   toolCallId: z.string(),
   toolName: z.string(),
   input: z.unknown(), // SDK uses 'input' for both stream chunks and result.toolCalls
-});
+})
 
 /**
  * Finish chunk from fullStream
@@ -102,7 +102,7 @@ export const VercelToolCallChunkSchema = z.object({
 export const VercelFinishChunkSchema = z.object({
   type: z.literal('finish'),
   finishReason: VercelFinishReasonSchema.optional(),
-});
+})
 
 /**
  * Union of stream chunks we process
@@ -113,12 +113,12 @@ export const VercelStreamChunkSchema = z.discriminatedUnion('type', [
   VercelTextDeltaChunkSchema,
   VercelToolCallChunkSchema,
   VercelFinishChunkSchema,
-]);
+])
 
-export type VercelTextDeltaChunk = z.infer<typeof VercelTextDeltaChunkSchema>;
-export type VercelToolCallChunk = z.infer<typeof VercelToolCallChunkSchema>;
-export type VercelFinishChunk = z.infer<typeof VercelFinishChunkSchema>;
-export type VercelStreamChunk = z.infer<typeof VercelStreamChunkSchema>;
+export type VercelTextDeltaChunk = z.infer<typeof VercelTextDeltaChunkSchema>
+export type VercelToolCallChunk = z.infer<typeof VercelToolCallChunkSchema>
+export type VercelFinishChunk = z.infer<typeof VercelFinishChunkSchema>
+export type VercelStreamChunk = z.infer<typeof VercelStreamChunkSchema>
 
 // === Message Content Parts (What We Build for Vercel) ===
 
@@ -126,8 +126,8 @@ export type VercelStreamChunk = z.infer<typeof VercelStreamChunkSchema>;
  * Text part in message content
  */
 export interface VercelTextPart {
-  readonly type: 'text';
-  readonly text: string;
+  readonly type: 'text'
+  readonly text: string
 }
 
 /**
@@ -135,10 +135,10 @@ export interface VercelTextPart {
  * Uses 'input' property per ToolCallPart interface
  */
 export interface VercelToolCallPart {
-  readonly type: 'tool-call';
-  readonly toolCallId: string;
-  readonly toolName: string;
-  readonly input: unknown; // SDK uses 'input' for message parts
+  readonly type: 'tool-call'
+  readonly toolCallId: string
+  readonly toolName: string
+  readonly input: unknown // SDK uses 'input' for message parts
 }
 
 /**
@@ -147,10 +147,10 @@ export interface VercelToolCallPart {
  * Note: output must be structured in v5 (not a raw value)
  */
 export interface VercelToolResultPart {
-  readonly type: 'tool-result';
-  readonly toolCallId: string;
-  readonly toolName: string;
-  readonly output: LanguageModelV2ToolResultOutput; // v5 requires structured output
+  readonly type: 'tool-result'
+  readonly toolCallId: string
+  readonly toolName: string
+  readonly output: LanguageModelV2ToolResultOutput // v5 requires structured output
 }
 
 /**
@@ -163,9 +163,9 @@ export interface VercelToolResultPart {
  * - Binary data: Uint8Array, ArrayBuffer, or Buffer
  */
 export interface VercelImagePart {
-  readonly type: 'image';
-  readonly image: string | URL | Uint8Array | ArrayBuffer | Buffer;
-  readonly mediaType?: string;
+  readonly type: 'image'
+  readonly image: string | URL | Uint8Array | ArrayBuffer | Buffer
+  readonly mediaType?: string
 }
 
 /**
@@ -175,7 +175,7 @@ export type VercelContentPart =
   | VercelTextPart
   | VercelToolCallPart
   | VercelToolResultPart
-  | VercelImagePart;
+  | VercelImagePart
 
 // === Tool Definition (What We Build for Vercel) ===
 
@@ -185,9 +185,9 @@ export type VercelContentPart =
  * Note: AI SDK v5 uses 'inputSchema' (v4 used 'parameters')
  */
 export interface VercelTool {
-  readonly description: string;
-  readonly inputSchema: ReturnType<typeof jsonSchema>;
-  readonly execute?: (args: Record<string, unknown>) => Promise<unknown>;
+  readonly description: string
+  readonly inputSchema: ReturnType<typeof jsonSchema>
+  readonly execute?: (args: Record<string, unknown>) => Promise<unknown>
 }
 
 // === Helper Types ===
@@ -197,7 +197,7 @@ export interface VercelTool {
  * Minimal interface to avoid Hono dependency in adapter
  */
 export interface HonoSSEStream {
-  write(data: string): Promise<any>;
+  write(data: string): Promise<any>
 }
 
 /**
@@ -232,6 +232,6 @@ export const VercelAIConfigSchema = z.object({
   accessKeyId: z.string().optional(),
   secretAccessKey: z.string().optional(),
   sessionToken: z.string().optional(),
-});
+})
 
-export type VercelAIConfig = z.infer<typeof VercelAIConfigSchema>;
+export type VercelAIConfig = z.infer<typeof VercelAIConfigSchema>

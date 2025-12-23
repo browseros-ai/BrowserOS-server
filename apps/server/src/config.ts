@@ -5,15 +5,15 @@
  * Server configuration loading with multiple sources.
  * Precedence: CLI > Config File > Environment > Defaults
  */
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from 'node:fs'
+import path from 'node:path'
 
-import {Command, InvalidArgumentError} from 'commander';
-import {z} from 'zod';
+import { Command, InvalidArgumentError } from 'commander'
+import { z } from 'zod'
 
-import {version} from '../../../package.json' with {type: 'json'};
+import { version } from '../../../package.json' with { type: 'json' }
 
-const portSchema = z.number().int();
+const portSchema = z.number().int()
 
 export const ServerConfigSchema = z.object({
   cdpPort: portSchema.nullable(),
@@ -27,40 +27,42 @@ export const ServerConfigSchema = z.object({
   instanceInstallId: z.string().optional(),
   instanceBrowserosVersion: z.string().optional(),
   instanceChromiumVersion: z.string().optional(),
-});
+})
 
-export type ServerConfig = z.infer<typeof ServerConfigSchema>;
+export type ServerConfig = z.infer<typeof ServerConfigSchema>
 
 type PartialConfig = {
-  cdpPort?: number | null;
-  httpMcpPort?: number;
-  agentPort?: number;
-  extensionPort?: number;
-  resourcesDir?: string;
-  executionDir?: string;
-  mcpAllowRemote?: boolean;
-  instanceClientId?: string;
-  instanceInstallId?: string;
-  instanceBrowserosVersion?: string;
-  instanceChromiumVersion?: string;
-};
+  cdpPort?: number | null
+  httpMcpPort?: number
+  agentPort?: number
+  extensionPort?: number
+  resourcesDir?: string
+  executionDir?: string
+  mcpAllowRemote?: boolean
+  instanceClientId?: string
+  instanceInstallId?: string
+  instanceBrowserosVersion?: string
+  instanceChromiumVersion?: string
+}
 
-export type ConfigResult<T> = {ok: true; value: T} | {ok: false; error: string};
+export type ConfigResult<T> =
+  | { ok: true; value: T }
+  | { ok: false; error: string }
 
 export function loadServerConfig(
   argv: string[] = process.argv,
   env: NodeJS.ProcessEnv = process.env,
 ): ConfigResult<ServerConfig> {
   // 1. Parse CLI (commander with exitOverride - throws instead of exit)
-  const cli = parseCli(argv);
-  if (!cli.ok) return cli;
+  const cli = parseCli(argv)
+  if (!cli.ok) return cli
 
   // 2. Load config file (only if --config provided)
-  const file = loadConfigFile(cli.value.configPath);
-  if (!file.ok) return file;
+  const file = loadConfigFile(cli.value.configPath)
+  if (!file.ok) return file
 
   // 3. Load from environment
-  const envConfig = loadEnv(env);
+  const envConfig = loadEnv(env)
 
   // 4. Merge: Defaults < Env < File < CLI
   const merged = merge(
@@ -68,31 +70,31 @@ export function loadServerConfig(
     envConfig,
     file.value,
     cli.value.overrides,
-  );
+  )
 
   // 5. Validate with Zod (single source of truth)
-  const result = ServerConfigSchema.safeParse(merged);
+  const result = ServerConfigSchema.safeParse(merged)
   if (!result.success) {
     const errors = result.error.issues
-      .map(i => `  - ${i.path.join('.')}: ${i.message}`)
-      .join('\n');
+      .map((i) => `  - ${i.path.join('.')}: ${i.message}`)
+      .join('\n')
     return {
       ok: false,
       error: `Invalid server configuration:\n${errors}\n\nProvide via --config, CLI flags, or environment variables.`,
-    };
+    }
   }
 
-  return {ok: true, value: result.data};
+  return { ok: true, value: result.data }
 }
 
 interface CliResult {
-  configPath?: string;
-  cwd: string;
-  overrides: PartialConfig;
+  configPath?: string
+  cwd: string
+  overrides: PartialConfig
 }
 
 function parseCli(argv: string[]): ConfigResult<CliResult> {
-  const program = new Command();
+  const program = new Command()
 
   try {
     program
@@ -126,27 +128,27 @@ function parseCli(argv: string[]): ConfigResult<CliResult> {
         '--disable-mcp-server',
         '[DEPRECATED] No-op, kept for backwards compatibility',
       )
-      .exitOverride(err => {
+      .exitOverride((err) => {
         if (err.exitCode === 0) {
-          process.exit(0);
+          process.exit(0)
         }
-        throw err;
+        throw err
       })
-      .parse(argv);
+      .parse(argv)
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : String(e);
-    return {ok: false, error: message};
+    const message = e instanceof Error ? e.message : String(e)
+    return { ok: false, error: message }
   }
 
-  const opts = program.opts();
+  const opts = program.opts()
 
   if (opts.disableMcpServer) {
     console.warn(
       'Warning: --disable-mcp-server is deprecated and has no effect',
-    );
+    )
   }
 
-  const cwd = process.cwd();
+  const cwd = process.cwd()
 
   return {
     ok: true,
@@ -167,34 +169,34 @@ function parseCli(argv: string[]): ConfigResult<CliResult> {
         mcpAllowRemote: opts.allowRemoteInMcp || undefined,
       }),
     },
-  };
+  }
 }
 
 function parsePortArg(value: string): number {
-  const port = parseInt(value, 10);
-  if (isNaN(port)) {
-    throw new InvalidArgumentError('Not a valid port number');
+  const port = parseInt(value, 10)
+  if (Number.isNaN(port)) {
+    throw new InvalidArgumentError('Not a valid port number')
   }
-  return port;
+  return port
 }
 
 function loadConfigFile(explicitPath?: string): ConfigResult<PartialConfig> {
   if (!explicitPath) {
-    return {ok: true, value: {}};
+    return { ok: true, value: {} }
   }
 
   const absPath = path.isAbsolute(explicitPath)
     ? explicitPath
-    : path.resolve(process.cwd(), explicitPath);
+    : path.resolve(process.cwd(), explicitPath)
 
   if (!fs.existsSync(absPath)) {
-    return {ok: false, error: `Config file not found: ${absPath}`};
+    return { ok: false, error: `Config file not found: ${absPath}` }
   }
 
   try {
-    const content = fs.readFileSync(absPath, 'utf-8');
-    const cfg = JSON.parse(content);
-    const configDir = path.dirname(absPath);
+    const content = fs.readFileSync(absPath, 'utf-8')
+    const cfg = JSON.parse(content)
+    const configDir = path.dirname(absPath)
 
     return {
       ok: true,
@@ -230,10 +232,10 @@ function loadConfigFile(explicitPath?: string): ConfigResult<PartialConfig> {
             ? cfg.instance.chromium_version
             : undefined,
       }),
-    };
+    }
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : String(e);
-    return {ok: false, error: `Config file error: ${message}`};
+    const message = e instanceof Error ? e.message : String(e)
+    return { ok: false, error: `Config file error: ${message}` }
   }
 }
 
@@ -251,12 +253,12 @@ function loadEnv(env: NodeJS.ProcessEnv): PartialConfig {
     executionDir: env.EXECUTION_DIR,
     instanceInstallId: env.INSTALL_ID,
     instanceClientId: env.CLIENT_ID,
-  });
+  })
 }
 
 function safeParseInt(value: string): number | undefined {
-  const num = parseInt(value, 10);
-  return isNaN(num) ? undefined : num;
+  const num = parseInt(value, 10)
+  return Number.isNaN(num) ? undefined : num
 }
 
 function defaults(cwd: string): PartialConfig {
@@ -265,19 +267,19 @@ function defaults(cwd: string): PartialConfig {
     resourcesDir: cwd,
     executionDir: cwd,
     mcpAllowRemote: false,
-  };
+  }
 }
 
 function merge(...configs: PartialConfig[]): PartialConfig {
-  const result: PartialConfig = {};
+  const result: PartialConfig = {}
   for (const config of configs) {
     for (const [key, value] of Object.entries(config)) {
       if (value !== undefined) {
-        (result as Record<string, unknown>)[key] = value;
+        ;(result as Record<string, unknown>)[key] = value
       }
     }
   }
-  return result;
+  return result
 }
 
 function filterUndefined<T extends Record<string, unknown>>(
@@ -285,17 +287,17 @@ function filterUndefined<T extends Record<string, unknown>>(
 ): Partial<T> {
   return Object.fromEntries(
     Object.entries(obj).filter(([_, v]) => v !== undefined),
-  ) as Partial<T>;
+  ) as Partial<T>
 }
 
 function resolvePath(target: string, baseDir: string): string {
-  return path.isAbsolute(target) ? target : path.resolve(baseDir, target);
+  return path.isAbsolute(target) ? target : path.resolve(baseDir, target)
 }
 
 function resolvePathIfString(
   val: unknown,
   baseDir: string,
 ): string | undefined {
-  if (typeof val !== 'string') return undefined;
-  return resolvePath(val, baseDir);
+  if (typeof val !== 'string') return undefined
+  return resolvePath(val, baseDir)
 }

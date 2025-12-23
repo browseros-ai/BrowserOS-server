@@ -3,51 +3,48 @@
  * Copyright 2025 BrowserOS
  */
 
-// Types
-export type {Context} from './types/Context.js';
-export type {Response, ImageContentData} from './types/Response.js';
-
 // Response implementation
-export {ControllerResponse} from './response/ControllerResponse.js';
-
-// Utilities
-export {parseDataUrl} from './utils/parseDataUrl.js';
-
+export { ControllerResponse } from './response/ControllerResponse.js'
 // All controller tools (named exports)
-export * from './tools/index.js';
+export * from './tools/index.js'
+// Types
+export type { Context } from './types/Context.js'
+export type { ImageContentData, Response } from './types/Response.js'
+// Utilities
+export { parseDataUrl } from './utils/parseDataUrl.js'
 
 // Import all tools for the array export
 import {
+  checkAvailability,
   executeJavaScript,
   sendKeys,
-  checkAvailability,
-} from './tools/advanced.js';
+} from './tools/advanced.js'
 import {
-  getBookmarks,
   createBookmark,
+  getBookmarks,
   removeBookmark,
-} from './tools/bookmarks.js';
-import {getPageContent} from './tools/content.js';
-import {clickCoordinates, typeAtCoordinates} from './tools/coordinates.js';
-import {searchHistory, getRecentHistory} from './tools/history.js';
+} from './tools/bookmarks.js'
+import { getPageContent } from './tools/content.js'
+import { clickCoordinates, typeAtCoordinates } from './tools/coordinates.js'
+import { getRecentHistory, searchHistory } from './tools/history.js'
 import {
-  getInteractiveElements,
-  clickElement,
-  typeText,
   clearInput,
+  clickElement,
+  getInteractiveElements,
   scrollToElement,
-} from './tools/interaction.js';
-import {navigate} from './tools/navigation.js';
-import {getScreenshot} from './tools/screenshot.js';
-import {scrollDown, scrollUp} from './tools/scrolling.js';
+  typeText,
+} from './tools/interaction.js'
+import { navigate } from './tools/navigation.js'
+import { getScreenshot } from './tools/screenshot.js'
+import { scrollDown, scrollUp } from './tools/scrolling.js'
 import {
+  closeTab,
   getActiveTab,
+  getLoadStatus,
   listTabs,
   openTab,
-  closeTab,
   switchTab,
-  getLoadStatus,
-} from './tools/tabManagement.js';
+} from './tools/tabManagement.js'
 
 // Array export for convenience (27 tools)
 export const allControllerTools = [
@@ -77,4 +74,4 @@ export const allControllerTools = [
   removeBookmark,
   searchHistory,
   getRecentHistory,
-];
+]

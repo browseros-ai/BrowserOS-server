@@ -3,11 +3,9 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler} from '../ActionHandler';
-
-import {HistoryAdapter} from '@/adapters/HistoryAdapter';
+import { z } from 'zod'
+import { HistoryAdapter } from '@/adapters/HistoryAdapter'
+import { ActionHandler } from '../ActionHandler'
 
 // Input schema
 const GetRecentHistoryInputSchema = z.object({
@@ -25,7 +23,7 @@ const GetRecentHistoryInputSchema = z.object({
     .optional()
     .default(24)
     .describe('How many hours back to search (default: 24)'),
-});
+})
 
 // Output schema
 const GetRecentHistoryOutputSchema = z.object({
@@ -39,10 +37,10 @@ const GetRecentHistoryOutputSchema = z.object({
     }),
   ),
   count: z.number(),
-});
+})
 
-type GetRecentHistoryInput = z.infer<typeof GetRecentHistoryInputSchema>;
-type GetRecentHistoryOutput = z.infer<typeof GetRecentHistoryOutputSchema>;
+type GetRecentHistoryInput = z.infer<typeof GetRecentHistoryInputSchema>
+type GetRecentHistoryOutput = z.infer<typeof GetRecentHistoryOutputSchema>
 
 /**
  * GetRecentHistoryAction - Get recent browser history
@@ -73,26 +71,26 @@ export class GetRecentHistoryAction extends ActionHandler<
   GetRecentHistoryInput,
   GetRecentHistoryOutput
 > {
-  readonly inputSchema = GetRecentHistoryInputSchema;
-  private historyAdapter = new HistoryAdapter();
+  readonly inputSchema = GetRecentHistoryInputSchema
+  private historyAdapter = new HistoryAdapter()
 
   async execute(input: GetRecentHistoryInput): Promise<GetRecentHistoryOutput> {
     const results = await this.historyAdapter.getRecentHistory(
       input.maxResults,
       input.hoursBack,
-    );
+    )
 
-    const items = results.map(item => ({
+    const items = results.map((item) => ({
       id: item.id,
       url: item.url,
       title: item.title,
       lastVisitTime: item.lastVisitTime,
       visitCount: item.visitCount,
-    }));
+    }))
 
     return {
       items,
       count: items.length,
-    };
+    }
   }
 }

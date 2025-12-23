@@ -3,11 +3,9 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import {z} from 'zod';
-
-import {ActionHandler} from '../ActionHandler';
-
-import {TabAdapter} from '@/adapters/TabAdapter';
+import { z } from 'zod'
+import { TabAdapter } from '@/adapters/TabAdapter'
+import { ActionHandler } from '../ActionHandler'
 
 /**
  * GetActiveTabAction - Returns information about the currently active tab
@@ -50,24 +48,24 @@ const GetActiveTabInputSchema = z
         'Window ID to get active tab from. If not provided, uses current window.',
       ),
   })
-  .passthrough();
+  .passthrough()
 
 // Output type
 export interface GetActiveTabOutput {
-  tabId: number;
-  url: string;
-  title: string;
-  windowId: number;
+  tabId: number
+  url: string
+  title: string
+  windowId: number
 }
 
-type GetActiveTabInput = z.infer<typeof GetActiveTabInputSchema>;
+type GetActiveTabInput = z.infer<typeof GetActiveTabInputSchema>
 
 export class GetActiveTabAction extends ActionHandler<
   GetActiveTabInput,
   GetActiveTabOutput
 > {
-  readonly inputSchema = GetActiveTabInputSchema;
-  private tabAdapter = new TabAdapter();
+  readonly inputSchema = GetActiveTabInputSchema
+  private tabAdapter = new TabAdapter()
 
   /**
    * Execute getActiveTab action
@@ -83,15 +81,15 @@ export class GetActiveTabAction extends ActionHandler<
    */
   async execute(input: GetActiveTabInput): Promise<GetActiveTabOutput> {
     // Get active tab from Chrome (use windowId if provided)
-    const tab = await this.tabAdapter.getActiveTab(input.windowId);
+    const tab = await this.tabAdapter.getActiveTab(input.windowId)
 
     // Validate required fields exist
     if (tab.id === undefined) {
-      throw new Error('Active tab has no ID');
+      throw new Error('Active tab has no ID')
     }
 
     if (tab.windowId === undefined) {
-      throw new Error('Active tab has no window ID');
+      throw new Error('Active tab has no window ID')
     }
 
     // Return typed result
@@ -100,6 +98,6 @@ export class GetActiveTabAction extends ActionHandler<
       url: tab.url || '',
       title: tab.title || '',
       windowId: tab.windowId,
-    };
+    }
   }
 }
