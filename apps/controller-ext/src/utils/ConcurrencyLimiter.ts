@@ -19,7 +19,7 @@ export interface ConcurrencyStats {
 
 export class ConcurrencyLimiter {
   private isProcessing = false
-  private queue: Array<QueuedTask<any>> = []
+  private queue: Array<QueuedTask<unknown>> = []
 
   constructor(
     maxConcurrent: number,
@@ -74,7 +74,12 @@ export class ConcurrencyLimiter {
     const queueSizeBeforeRemoval = this.queue.length
 
     this.isProcessing = true
-    const { task, resolve, reject } = this.queue.shift()!
+    const item = this.queue.shift()
+    if (!item) {
+      this.isProcessing = false
+      return
+    }
+    const { task, resolve, reject } = item
 
     logger.info(
       `[MUTEX] Acquired. Started processing (${queueSizeBeforeRemoval} task(s) were queued, ${this.queue.length} still waiting).`,

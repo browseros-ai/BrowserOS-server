@@ -70,14 +70,20 @@ export class NavigateAction extends ActionHandler<
 
     if (!targetTabId) {
       const activeTab = await this.tabAdapter.getActiveTab(input.windowId)
-      targetTabId = activeTab.id!
+      if (activeTab.id === undefined) {
+        throw new Error('Active tab has no ID')
+      }
+      targetTabId = activeTab.id
     }
 
     // Navigate the tab
     const tab = await this.tabAdapter.navigateTab(targetTabId, input.url)
 
+    if (tab.id === undefined) {
+      throw new Error('Navigated tab has no ID')
+    }
     return {
-      tabId: tab.id!,
+      tabId: tab.id,
       url: input.url,
       message: `Navigating to ${input.url}`,
     }

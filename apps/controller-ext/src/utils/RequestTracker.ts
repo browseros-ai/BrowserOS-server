@@ -76,10 +76,12 @@ export class RequestTracker {
       (r) => r.status === 'pending' || r.status === 'executing',
     ).length
 
-    const completed = all.filter((r) => r.duration !== undefined)
+    const completed = all.filter(
+      (r): r is typeof r & { duration: number } => r.duration !== undefined,
+    )
     const avgDuration =
       completed.length > 0
-        ? completed.reduce((sum, r) => sum + r.duration!, 0) / completed.length
+        ? completed.reduce((sum, r) => sum + r.duration, 0) / completed.length
         : 0
 
     const failed = all.filter((r) => r.status === 'failed').length

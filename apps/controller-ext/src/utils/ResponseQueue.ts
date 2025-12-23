@@ -37,7 +37,8 @@ export class ResponseQueue {
     logger.info(`Flushing ${this.queue.length} queued responses...`)
 
     while (this.queue.length > 0) {
-      const response = this.queue.shift()!
+      const response = this.queue.shift()
+      if (!response) break
 
       try {
         send(response)

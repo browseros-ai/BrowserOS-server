@@ -41,10 +41,10 @@ export class CheckBrowserOSAction extends ActionHandler<
       console.log('[CheckBrowserOSAction] chrome exists:', chrome !== undefined)
 
       // Check if chrome.browserOS exists
-      const browserOSExists = typeof (chrome as any).browserOS !== 'undefined'
+      const browserOSExists = typeof chrome.browserOS !== 'undefined'
       console.log(
         '[CheckBrowserOSAction] typeof chrome.browserOS:',
-        typeof (chrome as any).browserOS,
+        typeof chrome.browserOS,
       )
       console.log('[CheckBrowserOSAction] browserOSExists:', browserOSExists)
 
@@ -59,7 +59,7 @@ export class CheckBrowserOSAction extends ActionHandler<
 
       // Get available APIs
       const apis: string[] = []
-      const browserOS = (chrome as any).browserOS
+      const browserOS = chrome.browserOS
 
       for (const key in browserOS) {
         if (typeof browserOS[key] === 'function') {

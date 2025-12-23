@@ -145,9 +145,9 @@ export class WebSocketClient {
       logger.debug(`Received: ${JSON.stringify(message).substring(0, 100)}...`)
 
       // Emit to all message handlers
-      this.messageHandlers.forEach((handler) =>
-        handler(message as ProtocolResponse),
-      )
+      for (const handler of this.messageHandlers) {
+        handler(message as ProtocolResponse)
+      }
     } catch (error) {
       logger.error(`Failed to parse message: ${error}`)
     }
@@ -274,7 +274,9 @@ export class WebSocketClient {
     logger.info(`Status changed: ${status}`)
 
     // Emit to all status handlers
-    this.statusHandlers.forEach((handler) => handler(status))
+    for (const handler of this.statusHandlers) {
+      handler(status)
+    }
   }
 
   private _sendSerialized(

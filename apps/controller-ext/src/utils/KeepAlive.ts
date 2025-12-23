@@ -8,34 +8,32 @@ import { logger } from '@/utils/Logger'
 const KEEPALIVE_ALARM_NAME = 'browseros-keepalive'
 const KEEPALIVE_INTERVAL_MINUTES = 0.33 // ~20 seconds
 
-export class KeepAlive {
-  private static isInitialized = false
+let isInitialized = false
 
-  static async start(): Promise<void> {
-    if (KeepAlive.isInitialized) {
-      logger.debug('KeepAlive already started')
-      return
+export async function startKeepAlive(): Promise<void> {
+  if (isInitialized) {
+    logger.debug('KeepAlive already started')
+    return
+  }
+
+  chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === KEEPALIVE_ALARM_NAME) {
+      logger.debug('KeepAlive: ping (service worker alive)')
     }
+  })
 
-    chrome.alarms.onAlarm.addListener((alarm) => {
-      if (alarm.name === KEEPALIVE_ALARM_NAME) {
-        logger.debug('KeepAlive: ping (service worker alive)')
-      }
-    })
+  await chrome.alarms.create(KEEPALIVE_ALARM_NAME, {
+    periodInMinutes: KEEPALIVE_INTERVAL_MINUTES,
+  })
 
-    await chrome.alarms.create(KEEPALIVE_ALARM_NAME, {
-      periodInMinutes: KEEPALIVE_INTERVAL_MINUTES,
-    })
+  isInitialized = true
+  logger.info(
+    `KeepAlive started: alarm every ${KEEPALIVE_INTERVAL_MINUTES * 60}s`,
+  )
+}
 
-    KeepAlive.isInitialized = true
-    logger.info(
-      `KeepAlive started: alarm every ${KEEPALIVE_INTERVAL_MINUTES * 60}s`,
-    )
-  }
-
-  static async stop(): Promise<void> {
-    await chrome.alarms.clear(KEEPALIVE_ALARM_NAME)
-    KeepAlive.isInitialized = false
-    logger.info('KeepAlive stopped')
-  }
+export async function stopKeepAlive(): Promise<void> {
+  await chrome.alarms.clear(KEEPALIVE_ALARM_NAME)
+  isInitialized = false
+  logger.info('KeepAlive stopped')
 }

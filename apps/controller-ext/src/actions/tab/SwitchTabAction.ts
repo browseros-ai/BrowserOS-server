@@ -54,8 +54,11 @@ export class SwitchTabAction extends ActionHandler<
   async execute(input: SwitchTabInput): Promise<SwitchTabOutput> {
     const tab = await this.tabAdapter.switchTab(input.tabId)
 
+    if (tab.id === undefined) {
+      throw new Error('Switched tab has no ID')
+    }
     return {
-      tabId: tab.id!,
+      tabId: tab.id,
       url: tab.url || '',
       title: tab.title || '',
     }

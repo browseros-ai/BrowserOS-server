@@ -152,7 +152,7 @@ describe('ToolConversionStrategy', () => {
 
         const result = strategy.geminiToVercel(tools)
 
-        expect(Object.keys(result!)).toHaveLength(2)
+        expect(Object.keys(result ?? {})).toHaveLength(2)
         expect(result?.tool1).toBeDefined()
         expect(result?.tool2).toBeDefined()
       },
@@ -182,7 +182,7 @@ describe('ToolConversionStrategy', () => {
 
       const result = strategy.geminiToVercel(tools)
 
-      expect(Object.keys(result!)).toHaveLength(2)
+      expect(Object.keys(result ?? {})).toHaveLength(2)
       expect(result?.tool1).toBeDefined()
       expect(result?.tool2).toBeDefined()
     })

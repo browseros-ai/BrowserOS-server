@@ -28,7 +28,7 @@ export { ActionResponseSchema }
  *   async execute(input: InputType): Promise<OutputType> { ... }
  * }
  */
-export abstract class ActionHandler<TInput = any, TOutput = any> {
+export abstract class ActionHandler<TInput = unknown, TOutput = unknown> {
   /**
    * Zod schema for input validation
    * Must be implemented by concrete actions
@@ -88,7 +88,7 @@ export abstract class ActionHandler<TInput = any, TOutput = any> {
   protected _formatError(error: unknown): string {
     // Zod validation error
     if (error instanceof z.ZodError) {
-      const errors = error.issues.map((e: any) => {
+      const errors = error.issues.map((e: z.ZodIssue) => {
         const path = e.path.length > 0 ? `${e.path.join('.')}: ` : ''
         return `${path}${e.message}`
       })

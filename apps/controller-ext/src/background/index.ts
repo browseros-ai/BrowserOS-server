@@ -5,7 +5,7 @@
  */
 
 import { getWebSocketPort } from '@/utils/ConfigHelper'
-import { KeepAlive } from '@/utils/KeepAlive'
+import { startKeepAlive, stopKeepAlive } from '@/utils/KeepAlive'
 import { logger } from '@/utils/Logger'
 import { BrowserOSController } from './BrowserOSController'
 
@@ -66,7 +66,7 @@ async function getOrCreateController(): Promise<BrowserOSController> {
   if (!controllerState.initPromise) {
     controllerState.initPromise = (async () => {
       try {
-        await KeepAlive.start()
+        await startKeepAlive()
         const controller = new BrowserOSController(getWebSocketPort)
         await controller.start()
 
@@ -80,7 +80,7 @@ async function getOrCreateController(): Promise<BrowserOSController> {
         setDebugController(null)
         stopStatsTimer()
         try {
-          await KeepAlive.stop()
+          await stopKeepAlive()
         } catch {
           // ignore
         }
@@ -112,7 +112,7 @@ async function shutdownController(reason: string): Promise<void> {
   const controller = controllerState.controller
   if (!controller) {
     try {
-      await KeepAlive.stop()
+      await stopKeepAlive()
     } catch {
       // ignore
     }
@@ -127,7 +127,7 @@ async function shutdownController(reason: string): Promise<void> {
   stopStatsTimer()
 
   try {
-    await KeepAlive.stop()
+    await stopKeepAlive()
   } catch {
     // ignore
   }
