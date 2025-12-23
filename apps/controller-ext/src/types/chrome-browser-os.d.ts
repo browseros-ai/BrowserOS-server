@@ -51,7 +51,7 @@ declare namespace chrome.browserOS {
     rect?: Rect
     attributes?: {
       in_viewport?: string // "true" if visible in viewport, "false" if not visible
-      [key: string]: any
+      [key: string]: string | undefined
     }
   }
 
@@ -75,7 +75,7 @@ declare namespace chrome.browserOS {
     role: string
     name?: string
     value?: string
-    attributes?: Record<string, any>
+    attributes?: Record<string, unknown>
     childIds?: number[]
   }
 
@@ -261,7 +261,7 @@ declare namespace chrome.browserOS {
     text: string
     url: string
     title?: string
-    attributes?: Record<string, any>
+    attributes?: Record<string, unknown>
     isExternal: boolean
   }
 
@@ -327,13 +327,16 @@ declare namespace chrome.browserOS {
   // Logs a metric event with optional properties
   function logMetric(
     eventName: string,
-    properties: Record<string, any>,
+    properties: Record<string, unknown>,
     callback: () => void,
   ): void
 
   function logMetric(eventName: string, callback: () => void): void
 
-  function logMetric(eventName: string, properties?: Record<string, any>): void
+  function logMetric(
+    eventName: string,
+    properties?: Record<string, unknown>,
+  ): void
 
   function logMetric(eventName: string): void
 
@@ -341,12 +344,12 @@ declare namespace chrome.browserOS {
   function executeJavaScript(
     tabId: number,
     code: string,
-    callback: (result: any) => void,
+    callback: (result: unknown) => void,
   ): void
 
   function executeJavaScript(
     code: string,
-    callback: (result: any) => void,
+    callback: (result: unknown) => void,
   ): void
 
   // Click at specific viewport coordinates
@@ -379,7 +382,7 @@ declare namespace chrome.browserOS {
   interface PrefObject {
     key: string
     type: string
-    value: any
+    value: unknown
   }
 
   // Get a specific preference value
@@ -388,14 +391,14 @@ declare namespace chrome.browserOS {
   // Set a specific preference value
   function setPref(
     name: string,
-    value: any,
+    value: unknown,
     pageId: string,
     callback: (success: boolean) => void,
   ): void
 
   function setPref(
     name: string,
-    value: any,
+    value: unknown,
     callback: (success: boolean) => void,
   ): void
 

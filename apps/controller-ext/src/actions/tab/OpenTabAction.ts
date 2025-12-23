@@ -76,8 +76,11 @@ export class OpenTabAction extends ActionHandler<OpenTabInput, OpenTabOutput> {
       input.windowId,
     )
 
+    if (tab.id === undefined) {
+      throw new Error('Opened tab has no ID')
+    }
     return {
-      tabId: tab.id!,
+      tabId: tab.id,
       url: tab.url || tab.pendingUrl || input.url || 'chrome://newtab/',
       title: tab.title,
     }

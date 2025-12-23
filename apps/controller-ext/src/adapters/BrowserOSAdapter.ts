@@ -30,8 +30,6 @@ export type SnapshotOptions = chrome.browserOS.SnapshotOptions
 
 export type PrefObject = chrome.browserOS.PrefObject
 
-import { VersionUtils } from '@/utils/versionUtils'
-
 // ============= BrowserOS Adapter =============
 
 // Screenshot size constants
@@ -412,43 +410,22 @@ export class BrowserOSAdapter {
   /**
    * Get a content snapshot from the page
    */
-  async getSnapshot(tabId: number, type: SnapshotType): Promise<Snapshot> {
+  async getSnapshot(tabId: number, _type: SnapshotType): Promise<Snapshot> {
     try {
-      logger.debug(
-        `[BrowserOSAdapter] Getting snapshot for tab ${tabId} with type ${type}`,
-      )
-      const version = await this.getVersion()
-      logger.debug(`[BrowserOSAdapter] BrowserOS version: ${version}`)
+      logger.debug(`[BrowserOSAdapter] Getting snapshot for tab ${tabId}`)
 
-      if (version && !VersionUtils.isVersionAtLeast(version, '137.0.7220.69')) {
-        // Older versions: pass the type parameter
-        return await new Promise<Snapshot>((resolve, reject) => {
-          chrome.browserOS.getSnapshot(tabId, type, (snapshot: Snapshot) => {
-            if (chrome.runtime.lastError) {
-              reject(new Error(chrome.runtime.lastError.message))
-            } else {
-              logger.debug(
-                `[BrowserOSAdapter] Retrieved snapshot: ${JSON.stringify(snapshot)}`,
-              )
-              resolve(snapshot)
-            }
-          })
+      return new Promise<Snapshot>((resolve, reject) => {
+        chrome.browserOS.getSnapshot(tabId, (snapshot: Snapshot) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message))
+          } else {
+            logger.debug(
+              `[BrowserOSAdapter] Retrieved snapshot: ${JSON.stringify(snapshot)}`,
+            )
+            resolve(snapshot)
+          }
         })
-      } else {
-        // Newer versions: don't pass type parameter
-        return await new Promise<Snapshot>((resolve, reject) => {
-          chrome.browserOS.getSnapshot(tabId, (snapshot: Snapshot) => {
-            if (chrome.runtime.lastError) {
-              reject(new Error(chrome.runtime.lastError.message))
-            } else {
-              logger.debug(
-                `[BrowserOSAdapter] Retrieved snapshot: ${JSON.stringify(snapshot)}`,
-              )
-              resolve(snapshot)
-            }
-          })
-        })
-      }
+      })
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error)
@@ -479,7 +456,7 @@ export class BrowserOSAdapter {
    * Generic method to invoke any BrowserOS API
    * Useful for future APIs or experimental features
    */
-  async invokeAPI(method: string, ...args: any[]): Promise<any> {
+  async invokeAPI(method: string, ...args: unknown[]): Promise<unknown> {
     try {
       logger.debug(`[BrowserOSAdapter] Invoking BrowserOS API: ${method}`)
 
@@ -559,7 +536,7 @@ export class BrowserOSAdapter {
    */
   async logMetric(
     eventName: string,
-    properties?: Record<string, any>,
+    properties?: Record<string, unknown>,
   ): Promise<void> {
     try {
       logger.debug(
@@ -613,17 +590,17 @@ export class BrowserOSAdapter {
    * @param code - The JavaScript code to execute
    * @returns The result of the execution
    */
-  async executeJavaScript(tabId: number, code: string): Promise<any> {
+  async executeJavaScript(tabId: number, code: string): Promise<unknown> {
     try {
       logger.debug(`[BrowserOSAdapter] Executing JavaScript in tab ${tabId}`)
 
-      return new Promise<any>((resolve, reject) => {
+      return new Promise<unknown>((resolve, reject) => {
         // Check if executeJavaScript API is available
         if (
           'executeJavaScript' in chrome.browserOS &&
           typeof chrome.browserOS.executeJavaScript === 'function'
         ) {
-          chrome.browserOS.executeJavaScript(tabId, code, (result: any) => {
+          chrome.browserOS.executeJavaScript(tabId, code, (result: unknown) => {
             if (chrome.runtime.lastError) {
               reject(new Error(chrome.runtime.lastError.message))
             } else {
@@ -779,7 +756,11 @@ export class BrowserOSAdapter {
    * @param pageId - Optional page ID for settings tracking
    * @returns Promise resolving to true if successful
    */
-  async setPref(name: string, value: any, pageId?: string): Promise<boolean> {
+  async setPref(
+    name: string,
+    value: unknown,
+    pageId?: string,
+  ): Promise<boolean> {
     try {
       console.log(
         `[BrowserOSAdapter] Setting preference ${name} to ${JSON.stringify(value)}`,

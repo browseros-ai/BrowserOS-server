@@ -65,8 +65,8 @@ describe('ResponseConversionStrategy', () => {
       expect(result.candidates?.[0].content?.parts?.[0]).toEqual({
         text: 'Hello world',
       })
-      expect(result.candidates?.[0].finishReason!).toBe(FinishReason.STOP)
-      expect(result.candidates?.[0].index).toBe(0)
+      expect(result.candidates?.[0]?.finishReason).toBe(FinishReason.STOP)
+      expect(result.candidates?.[0]?.index).toBe(0)
     })
 
     t('tests that usage metadata maps correctly', () => {
@@ -228,7 +228,7 @@ describe('ResponseConversionStrategy', () => {
         text: 'Test',
         finishReason: 'stop' as const,
       })
-      expect(result.candidates?.[0].finishReason!).toBe(FinishReason.STOP)
+      expect(result.candidates?.[0]?.finishReason).toBe(FinishReason.STOP)
     })
 
     t('tests that tool-calls finish reason maps to STOP', () => {
@@ -237,7 +237,7 @@ describe('ResponseConversionStrategy', () => {
         toolCalls: [{ toolCallId: 'call_1', toolName: 'tool', input: {} }],
         finishReason: 'tool-calls' as const,
       })
-      expect(result.candidates?.[0].finishReason!).toBe(FinishReason.STOP)
+      expect(result.candidates?.[0]?.finishReason).toBe(FinishReason.STOP)
     })
 
     t('tests that length finish reason maps to MAX_TOKENS', () => {
@@ -245,7 +245,7 @@ describe('ResponseConversionStrategy', () => {
         text: 'Test',
         finishReason: 'length' as const,
       })
-      expect(result.candidates?.[0].finishReason!).toBe(FinishReason.MAX_TOKENS)
+      expect(result.candidates?.[0]?.finishReason).toBe(FinishReason.MAX_TOKENS)
     })
 
     t('tests that max-tokens finish reason maps to MAX_TOKENS', () => {
@@ -253,7 +253,7 @@ describe('ResponseConversionStrategy', () => {
         text: 'Test',
         finishReason: 'max-tokens' as const,
       })
-      expect(result.candidates?.[0].finishReason!).toBe(FinishReason.MAX_TOKENS)
+      expect(result.candidates?.[0]?.finishReason).toBe(FinishReason.MAX_TOKENS)
     })
 
     t('tests that content-filter finish reason maps to SAFETY', () => {
@@ -261,7 +261,7 @@ describe('ResponseConversionStrategy', () => {
         text: 'Test',
         finishReason: 'content-filter' as const,
       })
-      expect(result.candidates?.[0].finishReason!).toBe(FinishReason.SAFETY)
+      expect(result.candidates?.[0]?.finishReason).toBe(FinishReason.SAFETY)
     })
 
     t('tests that error finish reason maps to OTHER', () => {
@@ -269,7 +269,7 @@ describe('ResponseConversionStrategy', () => {
         text: 'Test',
         finishReason: 'error' as const,
       })
-      expect(result.candidates?.[0].finishReason!).toBe(FinishReason.OTHER)
+      expect(result.candidates?.[0]?.finishReason).toBe(FinishReason.OTHER)
     })
 
     t('tests that other finish reason maps to OTHER', () => {
@@ -277,7 +277,7 @@ describe('ResponseConversionStrategy', () => {
         text: 'Test',
         finishReason: 'other' as const,
       })
-      expect(result.candidates?.[0].finishReason!).toBe(FinishReason.OTHER)
+      expect(result.candidates?.[0]?.finishReason).toBe(FinishReason.OTHER)
     })
 
     t('tests that unknown finish reason maps to OTHER', () => {
@@ -285,12 +285,12 @@ describe('ResponseConversionStrategy', () => {
         text: 'Test',
         finishReason: 'unknown' as const,
       })
-      expect(result.candidates?.[0].finishReason!).toBe(FinishReason.OTHER)
+      expect(result.candidates?.[0]?.finishReason).toBe(FinishReason.OTHER)
     })
 
     t('tests that undefined finish reason defaults to STOP', () => {
       const result = strategy.vercelToGemini({ text: 'Test' })
-      expect(result.candidates?.[0].finishReason!).toBe(FinishReason.STOP)
+      expect(result.candidates?.[0]?.finishReason).toBe(FinishReason.STOP)
     })
 
     t(
@@ -306,7 +306,7 @@ describe('ResponseConversionStrategy', () => {
         expect(result.candidates).toHaveLength(1)
         expect(result.candidates?.[0].content?.parts).toHaveLength(1)
         expect(result.candidates?.[0].content?.parts?.[0]).toEqual({ text: '' })
-        expect(result.candidates?.[0].finishReason!).toBe(FinishReason.OTHER)
+        expect(result.candidates?.[0]?.finishReason).toBe(FinishReason.OTHER)
       },
     )
   })

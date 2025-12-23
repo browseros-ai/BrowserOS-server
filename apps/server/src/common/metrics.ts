@@ -13,7 +13,7 @@ export interface MetricsConfig {
   install_id?: string
   browseros_version?: string
   chromium_version?: string
-  [key: string]: any
+  [key: string]: string | undefined
 }
 
 class MetricsService {
@@ -36,7 +36,7 @@ class MetricsService {
     return this.config?.client_id ?? null
   }
 
-  log(eventName: string, properties: Record<string, any> = {}): void {
+  log(eventName: string, properties: Record<string, unknown> = {}): void {
     if (!this.client || !this.config?.client_id) {
       return
     }

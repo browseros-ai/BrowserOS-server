@@ -102,12 +102,15 @@ export class GetTabsAction extends ActionHandler<GetTabsInput, GetTabsOutput> {
 
     // Convert to simplified TabInfo format
     const tabInfos: TabInfo[] = tabs
-      .filter((tab) => tab.id !== undefined && tab.windowId !== undefined)
+      .filter(
+        (tab): tab is chrome.tabs.Tab & { id: number; windowId: number } =>
+          tab.id !== undefined && tab.windowId !== undefined,
+      )
       .map((tab) => ({
-        id: tab.id!,
+        id: tab.id,
         url: tab.url || '',
         title: tab.title || '',
-        windowId: tab.windowId!,
+        windowId: tab.windowId,
         active: tab.active || false,
         index: tab.index,
       }))

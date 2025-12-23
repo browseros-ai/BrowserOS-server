@@ -197,7 +197,7 @@ export interface VercelTool {
  * Minimal interface to avoid Hono dependency in adapter
  */
 export interface HonoSSEStream {
-  write(data: string): Promise<any>
+  write(data: string): Promise<void>
 }
 
 /**

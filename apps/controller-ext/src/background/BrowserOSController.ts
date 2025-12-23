@@ -248,7 +248,7 @@ export class BrowserOSController {
   }
 
   private handleIncomingMessage(message: ProtocolResponse): void {
-    const rawMessage = message as any
+    const rawMessage = message as ProtocolResponse & Partial<ProtocolRequest>
 
     if (rawMessage.action) {
       this.processRequest(rawMessage).catch((error) => {
