@@ -9,6 +9,7 @@
  * Single entry point for all utility functions
  */
 
+export { createOpenRouterCompatibleFetch } from './fetch.js'
 export {
   isFileDataPart,
   isFunctionCallPart,

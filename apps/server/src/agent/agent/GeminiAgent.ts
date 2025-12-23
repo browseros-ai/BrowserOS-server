@@ -97,11 +97,13 @@ export class GeminiAgent {
         model: llmConfig.modelName,
         apiKey: llmConfig.apiKey,
         baseUrl: llmConfig.baseUrl,
+        upstreamProvider: llmConfig.providerType,
       }
 
       logger.info('Using BrowserOS config', {
         model: resolvedConfig.model,
         baseUrl: resolvedConfig.baseUrl,
+        upstreamProvider: resolvedConfig.upstreamProvider,
       })
     }
 
