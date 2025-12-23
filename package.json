@@ -20,7 +20,8 @@
     "test:cleanup": "./scripts/cleanup-test-resources.sh",
     "typecheck": "tsc --build",
     "format": "prettier --write --cache .",
-    "lint": "eslint --cache --fix .",
+    "lint": "bunx biome check",
+    "lint:fix": "bunx biome check --write --unsafe",
     "check-format": "prettier --check --cache .",
     "check-lint": "eslint --cache .",
     "docs": "npm run docs:generate && npm run format",
@@ -35,6 +36,7 @@
   },
   "homepage": "https://github.com/browseros-ai/BrowserOS#readme",
   "devDependencies": {
+    "@biomejs/biome": "2.3.10",
     "@eslint/js": "^9.35.0",
     "@stylistic/eslint-plugin": "^5.4.0",
     "@types/node": "^24.3.3",
