@@ -225,6 +225,8 @@ export const VercelAIConfigSchema = z.object({
   model: z.string().min(1, 'Model name is required'),
   apiKey: z.string().optional(),
   baseUrl: z.string().optional(),
+  // For BROWSEROS provider: upstream provider type from ai-gateway
+  upstreamProvider: z.string().optional(),
   // Azure-specific
   resourceName: z.string().optional(),
   // AWS Bedrock-specific

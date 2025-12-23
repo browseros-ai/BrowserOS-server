@@ -11,6 +11,7 @@ export interface Provider {
   apiKey: string
   baseUrl?: string
   dailyRateLimit?: number
+  providerType?: string // LLMProvider value from ai-gateway: "openrouter" | "azure" | "anthropic"
 }
 
 export interface BrowserOSConfig {
@@ -22,6 +23,7 @@ export interface LLMConfig {
   baseUrl?: string
   apiKey: string
   provider: Provider
+  providerType?: string
 }
 
 export async function fetchBrowserOSConfig(
@@ -104,5 +106,6 @@ export function getLLMConfigFromProvider(
     baseUrl: provider.baseUrl,
     apiKey: provider.apiKey,
     provider,
+    providerType: provider.providerType,
   }
 }

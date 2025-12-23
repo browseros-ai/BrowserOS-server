@@ -37,6 +37,7 @@ import {
 import type { VercelAIConfig } from './types.js'
 import { AIProvider } from './types.js'
 import type { UIMessageStreamWriter } from './ui-message-stream.js'
+import { createOpenRouterCompatibleFetch } from './utils/index.js'
 
 /**
  * Vercel AI ContentGenerator
@@ -260,6 +261,7 @@ export class VercelAIContentGenerator implements ContentGenerator {
           extraBody: {
             reasoning: {}, // Enable reasoning for Gemini 3 thought signatures
           },
+          fetch: createOpenRouterCompatibleFetch(),
         })
 
       case AIProvider.AZURE:
@@ -305,14 +307,36 @@ export class VercelAIContentGenerator implements ContentGenerator {
         })
 
       case AIProvider.BROWSEROS:
-        if (!config.baseUrl || !config.apiKey) {
-          throw new Error('BrowserOS provider requires baseUrl and apiKey')
+        if (!config.baseUrl) {
+          throw new Error('BrowserOS provider requires baseUrl')
         }
-        return createOpenAICompatible({
-          name: 'browseros',
-          baseURL: config.baseUrl,
-          apiKey: config.apiKey,
-        })
+        // Use native SDK based on upstream provider type from ai-gateway
+        switch (config.upstreamProvider) {
+          case AIProvider.OPENROUTER:
+            return createOpenRouter({
+              baseURL: config.baseUrl,
+              ...(config.apiKey && { apiKey: config.apiKey }),
+              fetch: createOpenRouterCompatibleFetch(),
+            })
+          case AIProvider.ANTHROPIC:
+            return createAnthropic({
+              baseURL: config.baseUrl,
+              ...(config.apiKey && { apiKey: config.apiKey }),
+            })
+          case AIProvider.AZURE:
+            return createAzure({
+              baseURL: config.baseUrl,
+              ...(config.apiKey && { apiKey: config.apiKey }),
+            })
+          default:
+            // Fallback to OpenAI-compatible SDK
+            logger.info('creating openai-compatible')
+            return createOpenAICompatible({
+              name: 'browseros',
+              baseURL: config.baseUrl,
+              ...(config.apiKey && { apiKey: config.apiKey }),
+            })
+        }
 
       case AIProvider.OPENAI_COMPATIBLE:
         if (!config.baseUrl) {
