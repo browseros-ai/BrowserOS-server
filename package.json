@@ -19,10 +19,8 @@
     "test:server": "bun run --filter @browseros/server test",
     "test:cleanup": "./scripts/cleanup-test-resources.sh",
     "typecheck": "tsc --build",
-    "format": "prettier --write --cache .",
     "lint": "bunx biome check",
     "lint:fix": "bunx biome check --write --unsafe",
-    "check-format": "prettier --check --cache .",
     "docs": "npm run docs:generate && npm run format",
     "docs:generate": "node --experimental-strip-types scripts/generate-docs.ts",
     "clean": "rimraf dist"
@@ -40,7 +38,6 @@
     "dotenv": "^17.2.3",
     "globals": "^16.4.0",
     "lefthook": "^1.11.13",
-    "prettier": "^3.6.2",
     "rimraf": "^6.0.1",
     "typescript": "^5.9.2"
   },
