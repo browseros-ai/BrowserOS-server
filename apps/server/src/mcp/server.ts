@@ -213,6 +213,13 @@ export function createHttpMcpServer(config: McpServerConfig): http.Server {
       return
     }
 
+    // Status endpoint for hot-swap checks
+    if (url.pathname === '/status') {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ can_update: true }))
+      return
+    }
+
     // Security check for all other endpoints (unless allowRemote is enabled)
     if (!allowRemote && !isLocalhostRequest(req)) {
       logger.warn(
