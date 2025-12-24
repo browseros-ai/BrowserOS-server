@@ -12,12 +12,12 @@ import {
   formatUIMessageStreamEvent,
 } from '../../agent/agent/gemini-vercel-sdk-adapter/ui-message-stream.js'
 import { AgentExecutionError } from '../../agent/errors.js'
-import type { ChatRequest } from '../../agent/http/types.js'
-import { ChatRequestSchema } from '../../agent/http/types.js'
 import type { RateLimiter } from '../../agent/rate-limiter/index.js'
 import { SessionManager } from '../../agent/session/SessionManager.js'
 import type { Logger } from '../../common/index.js'
 import { Sentry } from '../../common/sentry/instrument.js'
+import type { ChatRequest } from '../types.js'
+import { ChatRequestSchema } from '../types.js'
 import { validateRequest } from '../utils/validation.js'
 
 const DEFAULT_TEMP_DIR = '/tmp'

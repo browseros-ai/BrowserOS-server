@@ -26,9 +26,7 @@ import {
   ControllerBridge,
   ControllerContext,
 } from './controller-server/index.js'
-import { createHttpServer as createConsolidatedHttpServer } from './http/index.js'
-// Commented out - replaced by consolidated HTTP server
-// import { createHttpMcpServer, shutdownMcpServer } from './mcp/index.js'
+import { createHttpServer } from './http/index.js'
 import {
   allCdpTools,
   allControllerTools,
@@ -105,10 +103,7 @@ void (async () => {
   const tools = mergeTools(cdpContext, controllerContext)
   const toolMutex = new Mutex()
 
-  // === Consolidated HTTP Server ===
-  // Replaces separate MCP server (port 9100) and Agent server (port 9200)
-  // Now everything runs on one port
-  const consolidatedServer = createConsolidatedHttpServer({
+  const httpServer = createHttpServer({
     port: config.httpMcpPort,
     host: '0.0.0.0',
     logger,
@@ -134,7 +129,7 @@ void (async () => {
 
   logSummary(config)
 
-  const shutdown = createShutdownHandler(consolidatedServer, controllerBridge)
+  const shutdown = createShutdownHandler(httpServer, controllerBridge)
   process.on('SIGINT', shutdown)
   process.on('SIGTERM', shutdown)
 })()
@@ -202,42 +197,6 @@ function mergeTools(
   return [...cdpTools, ...wrappedControllerTools]
 }
 
-// === COMMENTED OUT: Replaced by consolidated HTTP server ===
-// function startMcpServer(params: {
-//   config: ServerConfig
-//   version: string
-//   tools: Array<ToolDefinition<any, any, any>>
-//   cdpContext: McpContext | null
-//   controllerContext: ControllerContext
-//   toolMutex: Mutex
-// }): http.Server {
-//   const { config, version, tools, cdpContext, controllerContext, toolMutex } =
-//     params
-//
-//   const mcpServer = createHttpMcpServer({
-//     port: config.httpMcpPort,
-//     version,
-//     tools,
-//     context: cdpContext || ({} as any),
-//     controllerContext,
-//     toolMutex,
-//     logger,
-//     allowRemote: config.mcpAllowRemote,
-//   })
-//
-//   logger.info(
-//     `[MCP Server] Listening on http://127.0.0.1:${config.httpMcpPort}/mcp`,
-//   )
-//   logger.info(
-//     `[MCP Server] Health check: http://127.0.0.1:${config.httpMcpPort}/health`,
-//   )
-//   if (config.mcpAllowRemote) {
-//     logger.warn('[MCP Server] Remote connections enabled (--mcp-allow-remote)')
-//   }
-//
-//   return mcpServer
-// }
-
 async function fetchDailyRateLimit(): Promise<number> {
   // Dev mode: skip fetch, use higher limit for local development
   if (process.env.NODE_ENV === 'development') {
@@ -273,37 +232,6 @@ async function fetchDailyRateLimit(): Promise<number> {
     return DEFAULT_DAILY_RATE_LIMIT
   }
 }
-
-// === COMMENTED OUT: Replaced by consolidated HTTP server ===
-// function startAgentServer(
-//   serverConfig: ServerConfig,
-//   dailyRateLimit: number,
-// ): {
-//   server: any
-//   config: any
-// } {
-//   const mcpServerUrl = `http://127.0.0.1:${serverConfig.httpMcpPort}/mcp`
-//
-//   const rateLimiter = new RateLimiter(db, dailyRateLimit)
-//   logger.info('[Agent Server] Rate limiter initialized', { dailyRateLimit })
-//
-//   const { server, config } = createAgentHttpServer({
-//     port: serverConfig.agentPort,
-//     host: '0.0.0.0',
-//     corsOrigins: ['*'],
-//     tempDir: serverConfig.executionDir || serverConfig.resourcesDir,
-//     mcpServerUrl,
-//     rateLimiter,
-//     browserosId,
-//   })
-//
-//   logger.info(
-//     `[Agent Server] Listening on http://127.0.0.1:${serverConfig.agentPort}`,
-//   )
-//   logger.info(`[Agent Server] MCP Server URL: ${mcpServerUrl}`)
-//
-//   return { server, config }
-// }
 
 function logSummary(serverConfig: ServerConfig) {
   logger.info('')
