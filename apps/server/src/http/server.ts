@@ -8,9 +8,6 @@
  * This server combines:
  * - Agent HTTP routes (chat, klavis, provider)
  * - MCP HTTP routes (using @hono/mcp transport)
- *
- * Phase 1: Infrastructure + /health route only
- * Subsequent phases will add more routes.
  */
 
 import { Hono } from 'hono'
@@ -18,6 +15,8 @@ import { cors } from 'hono/cors'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import { HttpAgentError } from '../agent/errors.js'
 import { health } from './routes/health.js'
+import { createKlavisRoutes } from './routes/klavis.js'
+import { createProviderRoutes } from './routes/provider.js'
 import type { Env, HttpServerConfig } from './types.js'
 import { defaultCorsConfig } from './utils/cors.js'
 
@@ -28,17 +27,17 @@ import { defaultCorsConfig } from './utils/cors.js'
  * @returns Bun server instance
  */
 export function createHttpServer(config: HttpServerConfig) {
-  const { port, host = '0.0.0.0', logger: log } = config
+  const { port, host = '0.0.0.0', logger: log, browserosId } = config
 
   // DECLARATIVE route composition - chain .route() calls for type inference
   const app = new Hono<Env>()
     .use('/*', cors(defaultCorsConfig))
     .route('/health', health)
-  // Phase 2+: Add more routes here
-  // .route('/klavis', createKlavisRoutes({ ... }))
-  // .route('/chat', createChatRoutes({ ... }))
-  // .route('/mcp', createMcpRoutes({ ... }))
-  // .route('/test-provider', createProviderRoutes())
+    .route('/test-provider', createProviderRoutes({ logger: log }))
+    .route(
+      '/klavis',
+      createKlavisRoutes({ browserosId: browserosId || '', logger: log }),
+    )
 
   // Error handler
   app.onError((err, c) => {
