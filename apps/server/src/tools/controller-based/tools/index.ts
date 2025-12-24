@@ -24,7 +24,7 @@ export {
 // Navigation
 export { navigate } from './navigation.js'
 // Screenshots
-export { getScreenshot } from './screenshot.js'
+export { getScreenshot, getScreenshotPointer } from './screenshot.js'
 // Scrolling
 export { scrollDown, scrollUp } from './scrolling.js'
 // Tab Management
