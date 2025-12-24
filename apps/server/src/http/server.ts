@@ -14,6 +14,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import { HttpAgentError } from '../agent/errors.js'
+import { createChatRoutes } from './routes/chat.js'
 import { health } from './routes/health.js'
 import { createKlavisRoutes } from './routes/klavis.js'
 import { createMcpRoutes } from './routes/mcp.js'
@@ -33,6 +34,8 @@ export function createHttpServer(config: HttpServerConfig) {
     host = '0.0.0.0',
     logger: log,
     browserosId,
+    tempDir,
+    rateLimiter,
     version,
     tools,
     cdpContext,
@@ -60,6 +63,16 @@ export function createHttpServer(config: HttpServerConfig) {
         toolMutex,
         logger: log,
         allowRemote,
+      }),
+    )
+    .route(
+      '/chat',
+      createChatRoutes({
+        logger: log,
+        port,
+        tempDir,
+        browserosId,
+        rateLimiter,
       }),
     )
 
