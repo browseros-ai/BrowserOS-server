@@ -1,6 +1,8 @@
 /**
  * @license
  * Copyright 2025 BrowserOS
+ *
+ * Test utilities: wrappers, mocks, and port management.
  */
 import { execSync } from 'node:child_process'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
@@ -15,11 +17,11 @@ import { logger } from '../../src/common/logger.js'
 import { McpContext } from '../../src/common/McpContext.js'
 import { McpResponse } from '../../src/tools/response/McpResponse.js'
 
-import { ensureBrowserOS } from './browseros.js'
-import { ensureServer } from './mcpServer.js'
+import { ensureBrowserOS } from './setup.js'
 
-const browserMutex = new Mutex()
-let cachedBrowser: Browser | undefined
+// =============================================================================
+// Port Management
+// =============================================================================
 
 export async function killProcessOnPort(port: number): Promise<void> {
   try {
@@ -55,31 +57,37 @@ export async function killProcessOnPort(port: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 1000))
 }
 
+// =============================================================================
+// Test Wrappers
+// =============================================================================
+
+const browserMutex = new Mutex()
+let cachedBrowser: Browser | undefined
+
 /**
  * Test helper that provides an isolated browser context for each test.
  *
  * Lifecycle:
- * - First test: Starts BrowserOS (10-15s)
- * - Subsequent tests: Reuses existing browser (fast)
- * - After suite exits: BrowserOS stays running (ready for next run)
+ * - First test: Starts full environment (~15-20s)
+ * - Subsequent tests: Reuses existing environment (fast)
+ * - After suite exits: Environment stays running (ready for next run)
  *
  * Cleanup:
- * - Run `bun run test:cleanup` when you need to kill BrowserOS
+ * - Run `bun run test:cleanup` when you need to kill processes
  */
 export async function withBrowser(
   cb: (response: McpResponse, context: McpContext) => Promise<void>,
   _options: { debug?: boolean } = {},
 ): Promise<void> {
   return await browserMutex.runExclusive(async () => {
-    const { cdpPort } = await ensureBrowserOS()
+    const config = await ensureBrowserOS()
 
     if (!cachedBrowser || !cachedBrowser.connected) {
       cachedBrowser = await puppeteer.connect({
-        browserURL: `http://127.0.0.1:${cdpPort}`,
+        browserURL: `http://127.0.0.1:${config.cdpPort}`,
       })
     }
 
-    // Close all existing pages first
     const existingPages = await cachedBrowser.pages()
     for (const page of existingPages) {
       try {
@@ -91,7 +99,6 @@ export async function withBrowser(
       }
     }
 
-    // Create a fresh new page
     await cachedBrowser.newPage()
 
     const response = new McpResponse()
@@ -100,6 +107,46 @@ export async function withBrowser(
     await cb(response, context)
   })
 }
+
+const mcpMutex = new Mutex()
+
+/**
+ * Test helper that provides an MCP client connected to the BrowserOS server.
+ *
+ * Lifecycle:
+ * - First test: Starts full environment (~15-20s)
+ * - Subsequent tests: Reuses existing environment (fast)
+ * - After suite exits: Environment stays running (ready for next run)
+ *
+ * Cleanup:
+ * - Run `bun run test:cleanup` when you need to kill processes
+ */
+export async function withMcpServer(
+  cb: (client: Client) => Promise<void>,
+): Promise<void> {
+  return await mcpMutex.runExclusive(async () => {
+    const config = await ensureBrowserOS()
+
+    const client = new Client({
+      name: 'browseros-test-client',
+      version: '1.0.0',
+    })
+
+    const serverUrl = new URL(`http://127.0.0.1:${config.httpMcpPort}/mcp`)
+    const transport = new StreamableHTTPClientTransport(serverUrl)
+
+    try {
+      await client.connect(transport)
+      await cb(client)
+    } finally {
+      await transport.close()
+    }
+  })
+}
+
+// =============================================================================
+// Mock Helpers
+// =============================================================================
 
 export function getMockRequest(
   options: {
@@ -179,41 +226,9 @@ export function html(
 </html>`
 }
 
-const mcpMutex = new Mutex()
-
-/**
- * Test helper that provides an MCP client connected to the BrowserOS server.
- *
- * Lifecycle:
- * - First test: Starts BrowserOS + Server (~15-20s)
- * - Subsequent tests: Reuses existing server (fast)
- * - After suite exits: Server stays running (ready for next run)
- *
- * Cleanup:
- * - Run `bun run test:cleanup` when you need to kill server
- */
-export async function withMcpServer(
-  cb: (client: Client) => Promise<void>,
-): Promise<void> {
-  return await mcpMutex.runExclusive(async () => {
-    const config = await ensureServer()
-
-    const client = new Client({
-      name: 'browseros-test-client',
-      version: '1.0.0',
-    })
-
-    const serverUrl = new URL(`http://127.0.0.1:${config.httpMcpPort}/mcp`)
-    const transport = new StreamableHTTPClientTransport(serverUrl)
-
-    try {
-      await client.connect(transport)
-      await cb(client)
-    } finally {
-      await transport.close()
-    }
-  })
-}
+// =============================================================================
+// Type Helpers
+// =============================================================================
 
 export interface McpContentItem {
   type: 'text' | 'image'

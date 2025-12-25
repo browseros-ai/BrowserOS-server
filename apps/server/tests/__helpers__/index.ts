@@ -2,12 +2,22 @@
  * @license
  * Copyright 2025 BrowserOS
  *
- * Test helpers index - re-exports all test utilities
+ * Test helpers public API.
  */
 
-export { cleanupBrowserOS, ensureBrowserOS } from './browseros.js'
-export { cleanupServer, ensureServer, type ServerConfig } from './mcpServer.js'
+// Setup & lifecycle
 export {
+  cleanupBrowserOS,
+  ensureBrowserOS,
+  type TestEnvironmentConfig,
+} from './setup.js'
+// Types
+export type { McpContentItem, TypedCallToolResult } from './utils.js'
+// Test wrappers
+// Port management
+// Mocks
+export {
+  asToolResult,
   getMockRequest,
   getMockResponse,
   html,
