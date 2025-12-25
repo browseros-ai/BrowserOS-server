@@ -2,6 +2,7 @@
  * @license
  * Copyright 2025 BrowserOS
  */
+import { TIMEOUTS } from '@browseros/shared/timeouts'
 import type { ElementHandle } from 'puppeteer-core'
 import z from 'zod'
 
@@ -197,7 +198,7 @@ export const uploadFile = defineTool({
         try {
           const page = context.getSelectedPage()
           const [fileChooser] = await Promise.all([
-            page.waitForFileChooser({ timeout: 3000 }),
+            page.waitForFileChooser({ timeout: TIMEOUTS.FILE_CHOOSER }),
             handle.asLocator().click(),
           ])
           await fileChooser.accept([filePath])

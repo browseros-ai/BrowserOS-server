@@ -5,26 +5,29 @@
  *
  * Centralized port configuration.
  * All port values in the monorepo should reference this file.
+ *
+ * in sync with:
+ *   chromium/src/chrome/browser/browseros/server/browseros_server_prefs.h
  */
 
-export const PORT_OFFSETS = {
-  CDP: 22,
-  HTTP_MCP: 23,
-  EXTENSION: 100,
+/**
+ * Production/development ports (base 9000, offset 100)
+ * Matches Chromium defaults in browseros_server_prefs.h
+ */
+export const DEFAULT_PORTS = {
+  cdp: 9000,
+  httpMcp: 9100,
+  extension: 9300,
 } as const
 
-function createPorts(base: number) {
-  return {
-    cdp: base + PORT_OFFSETS.CDP,
-    httpMcp: base + PORT_OFFSETS.HTTP_MCP,
-    extension: base + PORT_OFFSETS.EXTENSION,
-  } as const
-}
+/**
+ * Test ports (base 9005, offset 100)
+ * Uses 05 suffix to avoid conflicts with dev server
+ */
+export const TEST_PORTS = {
+  cdp: 9005,
+  httpMcp: 9105,
+  extension: 9305,
+} as const
 
-/** Production/development ports (base 9200) */
-export const DEFAULT_PORTS = createPorts(9200)
-
-/** Test ports - separate range to avoid conflicts with dev server (base 19200) */
-export const TEST_PORTS = createPorts(19200)
-
-export type Ports = ReturnType<typeof createPorts>
+export type Ports = typeof DEFAULT_PORTS

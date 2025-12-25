@@ -9,6 +9,7 @@
  * through the full VercelAIContentGenerator pipeline.
  */
 
+import { TIMEOUTS } from '@browseros/shared/timeouts'
 import type { Content } from '@google/genai'
 import { VercelAIContentGenerator } from './index.js'
 import type { VercelAIConfig } from './types.js'
@@ -20,7 +21,6 @@ export interface ProviderTestResult {
 }
 
 const TEST_PROMPT = "Respond with exactly: 'ok'"
-const TEST_TIMEOUT_MS = 15000
 
 /**
  * Test a provider connection by making a minimal generateContent call.
@@ -47,7 +47,7 @@ export async function testProviderConnection(
         model: config.model, // Required by type but ignored - class uses its own model
         contents,
         config: {
-          abortSignal: AbortSignal.timeout(TEST_TIMEOUT_MS),
+          abortSignal: AbortSignal.timeout(TIMEOUTS.TEST_PROVIDER),
         },
       },
       'provider-test',

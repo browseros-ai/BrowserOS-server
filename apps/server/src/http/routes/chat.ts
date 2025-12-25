@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+import { PATHS } from '@browseros/shared/paths'
 import { Hono } from 'hono'
 import { stream } from 'hono/streaming'
 import { AIProvider } from '../../agent/agent/gemini-vercel-sdk-adapter/types.js'
@@ -19,8 +20,6 @@ import { Sentry } from '../../common/sentry/instrument.js'
 import type { ChatRequest } from '../types.js'
 import { ChatRequestSchema } from '../types.js'
 import { validateRequest } from '../utils/validation.js'
-
-const DEFAULT_TEMP_DIR = '/tmp'
 
 interface ChatRouteDeps {
   logger: Logger
@@ -108,7 +107,7 @@ export function createChatRoutes(deps: ChatRouteDeps) {
           secretAccessKey: request.secretAccessKey,
           sessionToken: request.sessionToken,
           contextWindowSize: request.contextWindowSize,
-          tempDir: tempDir || DEFAULT_TEMP_DIR,
+          tempDir: tempDir || PATHS.DEFAULT_TEMP_DIR,
           mcpServerUrl,
           browserosId,
           enabledMcpServers: request.browserContext?.enabledMcpServers,

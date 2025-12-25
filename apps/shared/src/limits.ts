@@ -9,6 +9,7 @@
 export const RATE_LIMITS = {
   DEFAULT_DAILY: 5,
   DEV_DAILY: 100,
+  TEST_DAILY: Infinity,
 } as const
 
 export const AGENT_LIMITS = {

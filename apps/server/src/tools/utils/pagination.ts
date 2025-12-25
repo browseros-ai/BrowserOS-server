@@ -2,6 +2,8 @@
  * @license
  * Copyright 2025 BrowserOS
  */
+import { PAGINATION } from '@browseros/shared/limits'
+
 export interface PaginationOptions {
   pageSize?: number
   pageIdx?: number
@@ -17,8 +19,6 @@ export interface PaginationResult<Item> {
   endIndex: number
   invalidPage: boolean
 }
-
-const DEFAULT_PAGE_SIZE = 20
 
 export function paginate<Item>(
   items: readonly Item[],
@@ -39,7 +39,7 @@ export function paginate<Item>(
     }
   }
 
-  const pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE
+  const pageSize = options.pageSize ?? PAGINATION.DEFAULT_PAGE_SIZE
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const { currentPage, invalidPage } = resolvePageIndex(
     options.pageIdx,

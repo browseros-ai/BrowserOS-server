@@ -5,7 +5,7 @@
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-
+import { TIMEOUTS } from '@browseros/shared/timeouts'
 import type {
   Browser,
   ConsoleMessage,
@@ -33,9 +33,6 @@ export interface TextSnapshot {
   idToNode: Map<string, TextSnapshotNode>
   snapshotId: string
 }
-
-const DEFAULT_TIMEOUT = 5_000
-const NAVIGATION_TIMEOUT = 10_000
 
 function getNetworkMultiplierFromString(condition: string | null): number {
   const puppeteerCondition =
@@ -257,14 +254,14 @@ export class McpContext {
     // For waiters 5sec timeout should be sufficient.
     // Increased in case we throttle the CPU
     const cpuMultiplier = this.getCpuThrottlingRate()
-    page.setDefaultTimeout(DEFAULT_TIMEOUT * cpuMultiplier)
+    page.setDefaultTimeout(TIMEOUTS.MCP_DEFAULT * cpuMultiplier)
     // 10sec should be enough for the load event to be emitted during
     // navigations.
     // Increased in case we throttle the network requests
     const networkMultiplier = getNetworkMultiplierFromString(
       this.getNetworkConditions(),
     )
-    page.setDefaultNavigationTimeout(NAVIGATION_TIMEOUT * networkMultiplier)
+    page.setDefaultNavigationTimeout(TIMEOUTS.NAVIGATION * networkMultiplier)
   }
 
   getNavigationTimeout() {

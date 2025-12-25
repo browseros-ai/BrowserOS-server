@@ -8,6 +8,7 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import { RATE_LIMITS } from '@browseros/shared/limits'
 import { RateLimiter } from './agent/index.js'
 import {
   ensureBrowserConnected,
@@ -78,10 +79,6 @@ Sentry.setContext('browseros', {
   browseros_version: config.instanceBrowserosVersion,
   chromium_version: config.instanceChromiumVersion,
 })
-
-const DEFAULT_DAILY_RATE_LIMIT = 5
-const DEV_DAILY_RATE_LIMIT = 100
-const TEST_DAILY_RATE_LIMIT = Infinity
 
 void (async () => {
   logger.info(`Starting BrowserOS Server v${version}`)
@@ -202,23 +199,23 @@ async function fetchDailyRateLimit(): Promise<number> {
   // Test mode: skip rate limiting entirely
   if (process.env.NODE_ENV === 'test') {
     logger.info('[Config] Test mode: rate limiting disabled')
-    return TEST_DAILY_RATE_LIMIT
+    return RATE_LIMITS.TEST_DAILY
   }
 
   // Dev mode: skip fetch, use higher limit for local development
   if (process.env.NODE_ENV === 'development') {
     logger.info('[Config] Dev mode: using dev rate limit', {
-      dailyRateLimit: DEV_DAILY_RATE_LIMIT,
+      dailyRateLimit: RATE_LIMITS.DEV_DAILY,
     })
-    return DEV_DAILY_RATE_LIMIT
+    return RATE_LIMITS.DEV_DAILY
   }
 
   const configUrl = process.env.BROWSEROS_CONFIG_URL
   if (!configUrl) {
     logger.info('[Config] No BROWSEROS_CONFIG_URL, using default rate limit', {
-      dailyRateLimit: DEFAULT_DAILY_RATE_LIMIT,
+      dailyRateLimit: RATE_LIMITS.DEFAULT_DAILY,
     })
-    return DEFAULT_DAILY_RATE_LIMIT
+    return RATE_LIMITS.DEFAULT_DAILY
   }
 
   try {
@@ -227,16 +224,16 @@ async function fetchDailyRateLimit(): Promise<number> {
       (p) => p.name === 'default',
     )
     const dailyRateLimit =
-      defaultProvider?.dailyRateLimit ?? DEFAULT_DAILY_RATE_LIMIT
+      defaultProvider?.dailyRateLimit ?? RATE_LIMITS.DEFAULT_DAILY
 
     logger.info('[Config] Rate limit config fetched', { dailyRateLimit })
     return dailyRateLimit
   } catch (error) {
     logger.warn('[Config] Failed to fetch rate limit config, using default', {
       error: error instanceof Error ? error.message : String(error),
-      dailyRateLimit: DEFAULT_DAILY_RATE_LIMIT,
+      dailyRateLimit: RATE_LIMITS.DEFAULT_DAILY,
     })
-    return DEFAULT_DAILY_RATE_LIMIT
+    return RATE_LIMITS.DEFAULT_DAILY
   }
 }
 
