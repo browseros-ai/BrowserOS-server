@@ -5,7 +5,7 @@
  */
 
 import type { ProtocolResponse } from '@/protocol/types'
-import { logger } from './Logger'
+import { logger } from './logger'
 
 export class ResponseQueue {
   private queue: ProtocolResponse[] = []

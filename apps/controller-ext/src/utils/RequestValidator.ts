@@ -6,7 +6,7 @@
 
 import type { ProtocolRequest } from '@/protocol/types'
 import { ProtocolRequestSchema } from '@/protocol/types'
-import { logger } from './Logger'
+import { logger } from './logger'
 
 export class RequestValidator {
   private activeIds = new Set<string>()

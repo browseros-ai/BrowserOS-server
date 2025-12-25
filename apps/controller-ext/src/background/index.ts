@@ -6,7 +6,7 @@
 
 import { getWebSocketPort } from '@/utils/ConfigHelper'
 import { startKeepAlive, stopKeepAlive } from '@/utils/KeepAlive'
-import { logger } from '@/utils/Logger'
+import { logger } from '@/utils/logger'
 import { BrowserOSController } from './BrowserOSController'
 
 const STATS_LOG_INTERVAL_MS = 30000

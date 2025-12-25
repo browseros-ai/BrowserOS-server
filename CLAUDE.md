@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Coding guidelines
 
 - Write minimal code comments. Only add comments for non-obvious logic, complex algorithms, or critical warnings. Skip comments for self-explanatory code, obvious function names, and simple operations.
+- Logger messages should not include `[prefix]` tags (e.g., `[Config]`, `[HTTP Server]`). Source tracking automatically adds file:line:function in development mode.
 - Avoid magic constants scattered in the codebase. Use `@browseros/shared` for all shared configuration:
   - `@browseros/shared/ports` - Port numbers (DEFAULT_PORTS, TEST_PORTS)
   - `@browseros/shared/timeouts` - Timeout values (TIMEOUTS)

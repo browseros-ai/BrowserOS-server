@@ -3,59 +3,56 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
+import type { LoggerInterface, LogLevel } from '@browseros/shared/logger'
 import { LOGGING_CONFIG } from '@/config/constants'
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error'
+const LEVEL_PRIORITY: Record<LogLevel, number> = {
+  debug: 0,
+  info: 1,
+  warn: 2,
+  error: 3,
+}
 
-export class Logger {
+export class Logger implements LoggerInterface {
   private prefix: string
 
   constructor(prefix: string = LOGGING_CONFIG.prefix) {
     this.prefix = prefix
   }
 
-  log(message: string, level: LogLevel = 'info', data?: object): void {
-    if (!LOGGING_CONFIG.enabled) return
+  private shouldLog(level: LogLevel): boolean {
+    if (!LOGGING_CONFIG.enabled) return false
+    return LEVEL_PRIORITY[level] >= LEVEL_PRIORITY[LOGGING_CONFIG.level]
+  }
 
+  private formatMessage(message: string): string {
     const timestamp = new Date().toISOString()
-    const logMessage = `${this.prefix} [${timestamp}] ${message}`
-    const formattedData = data ? `\n${JSON.stringify(data, null, 2)}` : ''
-
-    switch (level) {
-      case 'debug':
-        if (LOGGING_CONFIG.level === 'debug')
-          console.log(logMessage + formattedData)
-        break
-      case 'info':
-        if (['debug', 'info'].includes(LOGGING_CONFIG.level))
-          console.info(logMessage + formattedData)
-        break
-      case 'warn':
-        if (['debug', 'info', 'warn'].includes(LOGGING_CONFIG.level))
-          console.warn(logMessage + formattedData)
-        break
-      case 'error':
-        console.error(logMessage + formattedData)
-        break
-    }
+    return `${this.prefix} [${timestamp}] ${message}`
   }
 
-  debug(message: string, data?: object): void {
-    this.log(message, 'debug', data)
+  private formatData(data?: Record<string, unknown>): string {
+    return data ? `\n${JSON.stringify(data, null, 2)}` : ''
   }
 
-  info(message: string, data?: object): void {
-    this.log(message, 'info', data)
+  debug(message: string, data?: Record<string, unknown>): void {
+    if (!this.shouldLog('debug')) return
+    console.log(this.formatMessage(message) + this.formatData(data))
   }
 
-  warn(message: string, data?: object): void {
-    this.log(message, 'warn', data)
+  info(message: string, data?: Record<string, unknown>): void {
+    if (!this.shouldLog('info')) return
+    console.info(this.formatMessage(message) + this.formatData(data))
   }
 
-  error(message: string, data?: object): void {
-    this.log(message, 'error', data)
+  warn(message: string, data?: Record<string, unknown>): void {
+    if (!this.shouldLog('warn')) return
+    console.warn(this.formatMessage(message) + this.formatData(data))
+  }
+
+  error(message: string, data?: Record<string, unknown>): void {
+    if (!this.shouldLog('error')) return
+    console.error(this.formatMessage(message) + this.formatData(data))
   }
 }
 
-// Global logger instance
 export const logger = new Logger()

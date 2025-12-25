@@ -5,7 +5,7 @@
  */
 /// <reference path="../types/chrome-browser-os.d.ts" />
 
-import { logger } from '@/utils/Logger'
+import { logger } from '@/utils/logger'
 
 // ============= Re-export types from chrome.browserOS namespace =============
 

@@ -26,14 +26,14 @@ export function createProviderRoutes(deps: ProviderRouteDeps) {
     async (c) => {
       const config = c.get('validatedBody') as VercelAIConfig
 
-      logger.info('[test-provider] Testing provider connection', {
+      logger.info('Testing provider connection', {
         provider: config.provider,
         model: config.model,
       })
 
       const result = await testProviderConnection(config)
 
-      logger.info('[test-provider] Provider test result', {
+      logger.info('Provider test result', {
         provider: config.provider,
         model: config.model,
         success: result.success,

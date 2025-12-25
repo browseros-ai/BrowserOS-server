@@ -92,7 +92,7 @@ export function createKlavisRoutes(deps: KlavisRouteDeps) {
       return c.json({ error: `Invalid server: ${serverName}` }, 400)
     }
 
-    logger.info('[klavis] Adding server to strata', { serverName })
+    logger.info('Adding server to strata', { serverName })
 
     const result = await klavisClient.createStrata(browserosId, [serverName])
 
@@ -122,7 +122,7 @@ export function createKlavisRoutes(deps: KlavisRouteDeps) {
       return c.json({ error: `Invalid server: ${serverName}` }, 400)
     }
 
-    logger.info('[klavis] Removing server from strata', { serverName })
+    logger.info('Removing server from strata', { serverName })
 
     await klavisClient.removeServer(browserosId, serverName)
 
