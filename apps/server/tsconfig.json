@@ -7,6 +7,6 @@
     "declarationMap": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*", "tests/**/*", "package.json"],
+  "include": ["src/**/*", "package.json"],
   "exclude": ["node_modules", "dist/**/*"]
 }
