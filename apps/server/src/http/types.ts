@@ -3,11 +3,15 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
+
 import { z } from 'zod'
+import { VercelAIConfigSchema } from '../agent/agent/gemini-vercel-sdk-adapter/types.js'
+import type { RateLimiter } from '../agent/rate-limiter/index.js'
+import type { Logger, McpContext, Mutex } from '../common/index.js'
+import type { ControllerContext } from '../controller-server/index.js'
+import type { ToolDefinition } from '../tools/index.js'
 
-import { VercelAIConfigSchema } from '../agent/gemini-vercel-sdk-adapter/types.js'
-import type { RateLimiter } from '../rate-limiter/index.js'
-
+// Chat request schemas (moved from agent/http/types.ts)
 export const TabSchema = z.object({
   id: z.number(),
   url: z.string().optional(),
@@ -43,22 +47,44 @@ export const ChatRequestSchema = VercelAIConfigSchema.extend({
 
 export type ChatRequest = z.infer<typeof ChatRequestSchema>
 
-export interface HttpServerConfig {
-  port: number
-  host?: string
-  corsOrigins?: string[]
-  tempDir?: string
-  mcpServerUrl?: string
-  rateLimiter?: RateLimiter
-  browserosId?: string
+/**
+ * Hono environment bindings for Bun.serve integration.
+ * The server binding is required for security checks (isLocalhostRequest).
+ */
+export type Env = {
+  Bindings: {
+    server: ReturnType<typeof Bun.serve>
+  }
+  Variables: AppVariables
 }
 
-export const HttpServerConfigSchema = z.object({
-  port: z.number().int().positive(),
-  host: z.string().optional().default('0.0.0.0'),
-  corsOrigins: z.array(z.string()).optional().default(['*']),
-  tempDir: z.string().optional().default('/tmp'),
-  mcpServerUrl: z.string().optional(),
-})
+/**
+ * Request-scoped variables set by middleware.
+ */
+export interface AppVariables {
+  validatedBody: unknown
+}
 
-export type ValidatedHttpServerConfig = z.infer<typeof HttpServerConfigSchema>
+/**
+ * Configuration for the consolidated HTTP server.
+ * This server handles all routes: health, klavis, chat, mcp, provider
+ */
+export interface HttpServerConfig {
+  // Server basics
+  port: number
+  host?: string
+  logger: Logger
+
+  // For MCP routes - server will create McpServer internally
+  version: string
+  tools: ToolDefinition[]
+  cdpContext: McpContext | null
+  controllerContext: ControllerContext
+  toolMutex: Mutex
+  allowRemote: boolean
+
+  // For Chat/Klavis routes
+  browserosId?: string
+  tempDir?: string
+  rateLimiter?: RateLimiter
+}

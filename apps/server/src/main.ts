@@ -7,12 +7,8 @@
 // Sentry import should happen before any other logic
 
 import fs from 'node:fs'
-import type http from 'node:http'
 import path from 'node:path'
-import {
-  createHttpServer as createAgentHttpServer,
-  RateLimiter,
-} from './agent/index.js'
+import { RateLimiter } from './agent/index.js'
 import {
   ensureBrowserConnected,
   fetchBrowserOSConfig,
@@ -30,7 +26,7 @@ import {
   ControllerBridge,
   ControllerContext,
 } from './controller-server/index.js'
-import { createHttpMcpServer, shutdownMcpServer } from './mcp/index.js'
+import { createHttpServer } from './http/index.js'
 import {
   allCdpTools,
   allControllerTools,
@@ -107,24 +103,33 @@ void (async () => {
   const tools = mergeTools(cdpContext, controllerContext)
   const toolMutex = new Mutex()
 
-  const mcpServer = startMcpServer({
-    config,
+  const httpServer = createHttpServer({
+    port: config.httpMcpPort,
+    host: '0.0.0.0',
+    logger,
+    // MCP config
     version,
     tools,
     cdpContext,
     controllerContext,
     toolMutex,
+    allowRemote: config.mcpAllowRemote,
+    // Chat/Klavis config
+    browserosId,
+    tempDir: config.executionDir || config.resourcesDir,
+    rateLimiter: new RateLimiter(db, dailyRateLimit),
   })
 
-  const agentServer = startAgentServer(config, dailyRateLimit)
+  logger.info(
+    `[HTTP Server] Listening on http://127.0.0.1:${config.httpMcpPort}`,
+  )
+  logger.info(
+    `[HTTP Server] Health: http://127.0.0.1:${config.httpMcpPort}/health`,
+  )
 
   logSummary(config)
 
-  const shutdown = createShutdownHandler(
-    mcpServer,
-    agentServer,
-    controllerBridge,
-  )
+  const shutdown = createShutdownHandler(httpServer, controllerBridge)
   process.on('SIGINT', shutdown)
   process.on('SIGTERM', shutdown)
 })()
@@ -192,41 +197,6 @@ function mergeTools(
   return [...cdpTools, ...wrappedControllerTools]
 }
 
-function startMcpServer(params: {
-  config: ServerConfig
-  version: string
-  tools: Array<ToolDefinition<any, any, any>>
-  cdpContext: McpContext | null
-  controllerContext: ControllerContext
-  toolMutex: Mutex
-}): http.Server {
-  const { config, version, tools, cdpContext, controllerContext, toolMutex } =
-    params
-
-  const mcpServer = createHttpMcpServer({
-    port: config.httpMcpPort,
-    version,
-    tools,
-    context: cdpContext || ({} as any),
-    controllerContext,
-    toolMutex,
-    logger,
-    allowRemote: config.mcpAllowRemote,
-  })
-
-  logger.info(
-    `[MCP Server] Listening on http://127.0.0.1:${config.httpMcpPort}/mcp`,
-  )
-  logger.info(
-    `[MCP Server] Health check: http://127.0.0.1:${config.httpMcpPort}/health`,
-  )
-  if (config.mcpAllowRemote) {
-    logger.warn('[MCP Server] Remote connections enabled (--mcp-allow-remote)')
-  }
-
-  return mcpServer
-}
-
 async function fetchDailyRateLimit(): Promise<number> {
   // Dev mode: skip fetch, use higher limit for local development
   if (process.env.NODE_ENV === 'development') {
@@ -263,50 +233,18 @@ async function fetchDailyRateLimit(): Promise<number> {
   }
 }
 
-function startAgentServer(
-  serverConfig: ServerConfig,
-  dailyRateLimit: number,
-): {
-  server: any
-  config: any
-} {
-  const mcpServerUrl = `http://127.0.0.1:${serverConfig.httpMcpPort}/mcp`
-
-  const rateLimiter = new RateLimiter(db, dailyRateLimit)
-  logger.info('[Agent Server] Rate limiter initialized', { dailyRateLimit })
-
-  const { server, config } = createAgentHttpServer({
-    port: serverConfig.agentPort,
-    host: '0.0.0.0',
-    corsOrigins: ['*'],
-    tempDir: serverConfig.executionDir || serverConfig.resourcesDir,
-    mcpServerUrl,
-    rateLimiter,
-    browserosId,
-  })
-
-  logger.info(
-    `[Agent Server] Listening on http://127.0.0.1:${serverConfig.agentPort}`,
-  )
-  logger.info(`[Agent Server] MCP Server URL: ${mcpServerUrl}`)
-
-  return { server, config }
-}
-
 function logSummary(serverConfig: ServerConfig) {
   logger.info('')
   logger.info('Services running:')
   logger.info(
     `  Controller Server: ws://127.0.0.1:${serverConfig.extensionPort}`,
   )
-  logger.info(`  Agent Server: http://127.0.0.1:${serverConfig.agentPort}`)
-  logger.info(`  MCP Server: http://127.0.0.1:${serverConfig.httpMcpPort}/mcp`)
+  logger.info(`  HTTP Server: http://127.0.0.1:${serverConfig.httpMcpPort}`)
   logger.info('')
 }
 
 function createShutdownHandler(
-  mcpServer: http.Server,
-  agentServer: { server: any; config: any },
+  httpServer: { server: ReturnType<typeof Bun.serve> },
   controllerBridge: ControllerBridge,
 ) {
   return () => {
@@ -318,8 +256,7 @@ function createShutdownHandler(
     }, 5000)
 
     Promise.all([
-      shutdownMcpServer(mcpServer, logger),
-      Promise.resolve(agentServer.server.stop()),
+      Promise.resolve(httpServer.server.stop()),
       controllerBridge.close(),
       metrics.shutdown(),
     ])

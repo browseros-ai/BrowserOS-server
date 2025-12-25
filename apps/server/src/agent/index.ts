@@ -12,18 +12,6 @@ export {
   SessionNotFoundError,
   ValidationError,
 } from './errors.js'
-export type {
-  ChatRequest,
-  HttpServerConfig,
-  HttpServerConfig as AgentServerConfig,
-  ValidatedHttpServerConfig,
-} from './http/index.js'
-export {
-  ChatRequestSchema,
-  createHttpServer,
-  createHttpServer as createAgentServer,
-  HttpServerConfigSchema,
-} from './http/index.js'
 export type { OAuthMcpServer } from './klavis/index.js'
 export { KlavisClient, OAUTH_MCP_SERVERS } from './klavis/index.js'
 export { RateLimitError, RateLimiter } from './rate-limiter/index.js'
