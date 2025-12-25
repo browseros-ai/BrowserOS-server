@@ -5,6 +5,8 @@
  */
 import { z } from 'zod'
 import { BrowserOSAdapter } from '@/adapters/BrowserOSAdapter'
+import { PointerOverlay } from '@/utils/PointerOverlay'
+import { SnapshotCache } from '@/utils/SnapshotCache'
 import { ActionHandler } from '../ActionHandler'
 
 // Input schema
@@ -47,6 +49,13 @@ export class ClickAction extends ActionHandler<ClickInput, ClickOutput> {
   private browserOSAdapter = BrowserOSAdapter.getInstance()
 
   async execute(input: ClickInput): Promise<ClickOutput> {
+    // Show pointer overlay before click
+    const rect = SnapshotCache.getNodeRect(input.tabId, input.nodeId)
+    if (rect) {
+      const { x, y } = PointerOverlay.getCenterCoordinates(rect)
+      await PointerOverlay.showPointerAndWait(input.tabId, x, y, 'Click')
+    }
+
     await this.browserOSAdapter.click(input.tabId, input.nodeId)
     return { success: true }
   }
