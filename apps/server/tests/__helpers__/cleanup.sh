@@ -24,7 +24,7 @@ HTTP_MCP_PORT=${HTTP_MCP_PORT:-9105}
 AGENT_PORT=${AGENT_PORT:-9205}
 EXTENSION_PORT=${EXTENSION_PORT:-9305}
 
-for port in 9000 9001 9002 9003 9004 9100 9200 $CDP_PORT $HTTP_MCP_PORT $AGENT_PORT $EXTENSION_PORT; do
+for port in $CDP_PORT $HTTP_MCP_PORT $AGENT_PORT $EXTENSION_PORT; do
   pid=$(lsof -ti :$port 2>/dev/null || true)
   if [ -n "$pid" ]; then
     echo "  Killing process on port $port (PID: $pid)..."
