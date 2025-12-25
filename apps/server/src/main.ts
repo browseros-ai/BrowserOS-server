@@ -60,7 +60,7 @@ identity.initialize({
 })
 
 const browserosId = identity.getBrowserOSId()
-logger.info('[Identity] BrowserOS ID initialized', {
+logger.info('BrowserOS ID initialized', {
   browserosId: browserosId.slice(0, 12),
   fromConfig: !!config.instanceInstallId,
 })
@@ -87,7 +87,7 @@ void (async () => {
   const dailyRateLimit = await fetchDailyRateLimit()
 
   logger.info(
-    `[Controller Server] Starting on ws://127.0.0.1:${config.extensionPort}`,
+    `Controller server starting on ws://127.0.0.1:${config.extensionPort}`,
   )
   const { controllerBridge, controllerContext } = createController(
     config.extensionPort,
@@ -118,12 +118,8 @@ void (async () => {
     rateLimiter: new RateLimiter(db, dailyRateLimit),
   })
 
-  logger.info(
-    `[HTTP Server] Listening on http://127.0.0.1:${config.httpMcpPort}`,
-  )
-  logger.info(
-    `[HTTP Server] Health: http://127.0.0.1:${config.httpMcpPort}/health`,
-  )
+  logger.info(`HTTP server listening on http://127.0.0.1:${config.httpMcpPort}`)
+  logger.info(`Health endpoint: http://127.0.0.1:${config.httpMcpPort}/health`)
 
   logSummary(config)
 
@@ -198,13 +194,13 @@ function mergeTools(
 async function fetchDailyRateLimit(): Promise<number> {
   // Test mode: skip rate limiting entirely
   if (process.env.NODE_ENV === 'test') {
-    logger.info('[Config] Test mode: rate limiting disabled')
+    logger.info('Test mode: rate limiting disabled')
     return RATE_LIMITS.TEST_DAILY
   }
 
   // Dev mode: skip fetch, use higher limit for local development
   if (process.env.NODE_ENV === 'development') {
-    logger.info('[Config] Dev mode: using dev rate limit', {
+    logger.info('Dev mode: using dev rate limit', {
       dailyRateLimit: RATE_LIMITS.DEV_DAILY,
     })
     return RATE_LIMITS.DEV_DAILY
@@ -212,7 +208,7 @@ async function fetchDailyRateLimit(): Promise<number> {
 
   const configUrl = process.env.BROWSEROS_CONFIG_URL
   if (!configUrl) {
-    logger.info('[Config] No BROWSEROS_CONFIG_URL, using default rate limit', {
+    logger.info('No BROWSEROS_CONFIG_URL, using default rate limit', {
       dailyRateLimit: RATE_LIMITS.DEFAULT_DAILY,
     })
     return RATE_LIMITS.DEFAULT_DAILY
@@ -226,10 +222,10 @@ async function fetchDailyRateLimit(): Promise<number> {
     const dailyRateLimit =
       defaultProvider?.dailyRateLimit ?? RATE_LIMITS.DEFAULT_DAILY
 
-    logger.info('[Config] Rate limit config fetched', { dailyRateLimit })
+    logger.info('Rate limit config fetched', { dailyRateLimit })
     return dailyRateLimit
   } catch (error) {
-    logger.warn('[Config] Failed to fetch rate limit config, using default', {
+    logger.warn('Failed to fetch rate limit config, using default', {
       error: error instanceof Error ? error.message : String(error),
       dailyRateLimit: RATE_LIMITS.DEFAULT_DAILY,
     })
