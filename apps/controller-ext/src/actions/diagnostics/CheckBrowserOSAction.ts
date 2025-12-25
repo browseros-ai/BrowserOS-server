@@ -59,7 +59,7 @@ export class CheckBrowserOSAction extends ActionHandler<
 
       // Get available APIs
       const apis: string[] = []
-      const browserOS = chrome.browserOS
+      const browserOS = chrome.browserOS as Record<string, unknown>
 
       for (const key in browserOS) {
         if (typeof browserOS[key] === 'function') {

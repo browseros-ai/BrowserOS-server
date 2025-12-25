@@ -52,8 +52,7 @@ Example with arguments: \`(el) => {
       }
       await context.waitForEventsAfterAction(async () => {
         const result = await page.evaluate(
-          async (fn, ...args) => {
-            // @ts-expect-error no types.
+          async (fn: (...a: unknown[]) => unknown, ...args: unknown[]) => {
             return JSON.stringify(await fn(...args))
           },
           ...args,
