@@ -2,9 +2,9 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 
 import {
   getNetworkRequest,
@@ -29,11 +29,11 @@ describe('network', () => {
       await getNetworkRequest.handler(
         { params: { url: 'data:text/html,<div>Hello MCP</div>' } },
         response,
-        context
+        context,
       )
       assert.equal(
         response.attachedNetworkRequestUrl,
-        'data:text/html,<div>Hello MCP</div>'
+        'data:text/html,<div>Hello MCP</div>',
       )
     })
   })
@@ -45,7 +45,7 @@ describe('network', () => {
       await getNetworkRequest.handler(
         { params: { url: 'data:text/html,<div>Hello MCP</div>' } },
         response,
-        context
+        context,
       )
       assert(!response.includeNetworkRequests)
     })

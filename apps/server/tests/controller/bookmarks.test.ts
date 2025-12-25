@@ -3,16 +3,16 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 
 import { withMcpServer } from '../__helpers__/utils.js'
 
 describe('MCP Controller Bookmark Tools', () => {
   describe('browser_get_bookmarks - Success Cases', () => {
     it('tests that getting all bookmarks succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_get_bookmarks',
           arguments: {},
@@ -24,7 +24,7 @@ describe('MCP Controller Bookmark Tools', () => {
         assert.ok(!result.isError, 'Should succeed')
         assert.ok(Array.isArray(result.content), 'Content should be array')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
         assert.ok(
           textContent.text.includes('Found'),
@@ -38,7 +38,7 @@ describe('MCP Controller Bookmark Tools', () => {
     }, 30000)
 
     it('tests that getting bookmarks from specific folder succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_get_bookmarks',
           arguments: { folderId: '1' },
@@ -49,13 +49,13 @@ describe('MCP Controller Bookmark Tools', () => {
 
         assert.ok(!result.isError, 'Should succeed')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
       })
     }, 30000)
 
     it('tests that empty bookmarks list is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_get_bookmarks',
           arguments: { folderId: '999999' },
@@ -64,7 +64,7 @@ describe('MCP Controller Bookmark Tools', () => {
         console.log('\n=== Get Empty Bookmarks Response ===')
         console.log(JSON.stringify(result, null, 2))
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
       })
     }, 30000)
@@ -72,7 +72,7 @@ describe('MCP Controller Bookmark Tools', () => {
 
   describe('browser_create_bookmark - Success Cases', () => {
     it('tests that creating bookmark with title and URL succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_create_bookmark',
           arguments: {
@@ -86,7 +86,7 @@ describe('MCP Controller Bookmark Tools', () => {
 
         assert.ok(!result.isError, 'Should succeed')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
         assert.ok(
           textContent.text.includes('Created bookmark'),
@@ -101,7 +101,7 @@ describe('MCP Controller Bookmark Tools', () => {
     }, 30000)
 
     it('tests that creating bookmark with parentId succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_create_bookmark',
           arguments: {
@@ -116,7 +116,7 @@ describe('MCP Controller Bookmark Tools', () => {
 
         assert.ok(!result.isError, 'Should succeed')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(
           textContent.text.includes('Created bookmark'),
           'Should confirm creation',
@@ -125,7 +125,7 @@ describe('MCP Controller Bookmark Tools', () => {
     }, 30000)
 
     it('tests that creating bookmark with special characters succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_create_bookmark',
           arguments: {
@@ -142,7 +142,7 @@ describe('MCP Controller Bookmark Tools', () => {
     }, 30000)
 
     it('tests that creating bookmark with unicode title succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_create_bookmark',
           arguments: {
@@ -159,7 +159,7 @@ describe('MCP Controller Bookmark Tools', () => {
     }, 30000)
 
     it('tests that creating bookmark with localhost URL succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_create_bookmark',
           arguments: {
@@ -178,7 +178,7 @@ describe('MCP Controller Bookmark Tools', () => {
 
   describe('browser_create_bookmark - Error Handling', () => {
     it('tests that missing title is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_create_bookmark',
@@ -201,7 +201,7 @@ describe('MCP Controller Bookmark Tools', () => {
     }, 30000)
 
     it('tests that missing URL is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_create_bookmark',
@@ -224,7 +224,7 @@ describe('MCP Controller Bookmark Tools', () => {
     }, 30000)
 
     it('tests that empty title is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_create_bookmark',
           arguments: {
@@ -244,7 +244,7 @@ describe('MCP Controller Bookmark Tools', () => {
 
   describe('browser_remove_bookmark - Success Cases', () => {
     it('tests that removing bookmark by ID succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // First create a bookmark
         const createResult = await client.callTool({
           name: 'browser_create_bookmark',
@@ -254,7 +254,7 @@ describe('MCP Controller Bookmark Tools', () => {
           },
         })
 
-        const createText = createResult.content.find(c => c.type === 'text')
+        const createText = createResult.content.find((c) => c.type === 'text')
         const idMatch = createText.text.match(/ID: (\d+)/)
         const bookmarkId = idMatch ? idMatch[1] : '1'
 
@@ -269,7 +269,7 @@ describe('MCP Controller Bookmark Tools', () => {
 
         assert.ok(!result.isError, 'Should succeed')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
         assert.ok(
           textContent.text.includes('Removed bookmark'),
@@ -279,7 +279,7 @@ describe('MCP Controller Bookmark Tools', () => {
     }, 30000)
 
     it('tests that removing multiple bookmarks sequentially succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Create two bookmarks
         const create1 = await client.callTool({
           name: 'browser_create_bookmark',
@@ -298,10 +298,10 @@ describe('MCP Controller Bookmark Tools', () => {
         })
 
         const id1Match = create1.content
-          .find(c => c.type === 'text')
+          .find((c) => c.type === 'text')
           .text.match(/ID: (\d+)/)
         const id2Match = create2.content
-          .find(c => c.type === 'text')
+          .find((c) => c.type === 'text')
           .text.match(/ID: (\d+)/)
 
         const id1 = id1Match ? id1Match[1] : '1'
@@ -330,7 +330,7 @@ describe('MCP Controller Bookmark Tools', () => {
 
   describe('browser_remove_bookmark - Error Handling', () => {
     it('tests that missing bookmarkId is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_remove_bookmark',
@@ -351,7 +351,7 @@ describe('MCP Controller Bookmark Tools', () => {
     }, 30000)
 
     it('tests that invalid bookmarkId is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_remove_bookmark',
           arguments: { bookmarkId: '999999999' },
@@ -368,7 +368,7 @@ describe('MCP Controller Bookmark Tools', () => {
 
   describe('Bookmark Tools - Response Structure Validation', () => {
     it('tests that bookmark tools return valid MCP response structure', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tools = [
           { name: 'browser_get_bookmarks', args: {} },
           {
@@ -420,7 +420,7 @@ describe('MCP Controller Bookmark Tools', () => {
 
   describe('Bookmark Tools - Workflow Tests', () => {
     it('tests complete bookmark workflow: create → get → verify → remove', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Create bookmark
         const createResult = await client.callTool({
           name: 'browser_create_bookmark',
@@ -435,7 +435,7 @@ describe('MCP Controller Bookmark Tools', () => {
 
         assert.ok(!createResult.isError, 'Create should succeed')
 
-        const createText = createResult.content.find(c => c.type === 'text')
+        const createText = createResult.content.find((c) => c.type === 'text')
         const idMatch = createText.text.match(/ID: (\d+)/)
         const bookmarkId = idMatch ? idMatch[1] : '1'
 
@@ -450,7 +450,7 @@ describe('MCP Controller Bookmark Tools', () => {
 
         assert.ok(!getResult.isError, 'Get should succeed')
 
-        const getText = getResult.content.find(c => c.type === 'text')
+        const getText = getResult.content.find((c) => c.type === 'text')
         assert.ok(
           getText.text.includes('Workflow Test'),
           'Should find created bookmark',
@@ -470,7 +470,7 @@ describe('MCP Controller Bookmark Tools', () => {
     }, 30000)
 
     it('tests bookmark batch operations workflow', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const bookmarks = [
           { title: 'Batch 1', url: 'https://batch1.com' },
           { title: 'Batch 2', url: 'https://batch2.com' },
@@ -491,7 +491,7 @@ describe('MCP Controller Bookmark Tools', () => {
             `Creating ${bookmark.title} should succeed`,
           )
 
-          const text = result.content.find(c => c.type === 'text')
+          const text = result.content.find((c) => c.type === 'text')
           const idMatch = text.text.match(/ID: (\d+)/)
           if (idMatch) {
             bookmarkIds.push(idMatch[1])

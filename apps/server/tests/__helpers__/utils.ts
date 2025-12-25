@@ -3,10 +3,9 @@
  * Copyright 2025 BrowserOS
  */
 import { execSync } from 'node:child_process'
-
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { Mutex } from 'async-mutex'
 import type { Browser } from 'puppeteer'
 import puppeteer from 'puppeteer'
@@ -69,7 +68,7 @@ export async function killProcessOnPort(port: number): Promise<void> {
  */
 export async function withBrowser(
   cb: (response: McpResponse, context: McpContext) => Promise<void>,
-  _options: { debug?: boolean } = {}
+  _options: { debug?: boolean } = {},
 ): Promise<void> {
   return await browserMutex.runExclusive(async () => {
     const { cdpPort } = await ensureBrowserOS()
@@ -111,7 +110,7 @@ export function getMockRequest(
     hasPostData?: boolean
     postData?: string
     fetchPostData?: Promise<string>
-  } = {}
+  } = {},
 ): HTTPRequest {
   return {
     url() {
@@ -150,9 +149,7 @@ export function getMockRequest(
 }
 
 export function getMockResponse(
-  options: {
-    status?: number
-  } = {}
+  options: { status?: number } = {},
 ): HTTPResponse {
   return {
     status() {
@@ -196,7 +193,7 @@ const mcpMutex = new Mutex()
  * - Run `bun run test:cleanup` when you need to kill server
  */
 export async function withMcpServer(
-  cb: (client: Client) => Promise<void>
+  cb: (client: Client) => Promise<void>,
 ): Promise<void> {
   return await mcpMutex.runExclusive(async () => {
     const config = await ensureServer()

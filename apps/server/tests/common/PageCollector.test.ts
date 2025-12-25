@@ -2,9 +2,9 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 import type { Browser, Frame, Page, Target } from 'puppeteer-core'
 
 import { PageCollector } from '../../src/common/PageCollector.js'

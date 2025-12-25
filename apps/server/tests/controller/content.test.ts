@@ -3,16 +3,16 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 
 import { withMcpServer } from '../__helpers__/utils.js'
 
 describe('MCP Controller Content Tools', () => {
   describe('browser_get_page_content - Success Cases', () => {
     it('tests that page content extraction with text type succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a page with content
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -21,9 +21,9 @@ describe('MCP Controller Content Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_get_page_content',
@@ -35,7 +35,7 @@ describe('MCP Controller Content Tools', () => {
 
         assert.ok(Array.isArray(result.content), 'Content should be array')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
 
         // If getSnapshot API is available, check for pagination info
@@ -49,7 +49,7 @@ describe('MCP Controller Content Tools', () => {
     }, 30000)
 
     it('tests that page content extraction with text-with-links type succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a page with links
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -58,9 +58,9 @@ describe('MCP Controller Content Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_get_page_content',
@@ -70,7 +70,7 @@ describe('MCP Controller Content Tools', () => {
         console.log('\n=== Get Page Content (Text with Links) Response ===')
         console.log(JSON.stringify(result, null, 2))
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
 
         // If getSnapshot API is available, check for pagination info
@@ -85,7 +85,7 @@ describe('MCP Controller Content Tools', () => {
     }, 30000)
 
     it('tests that page content extraction with specific page number succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a page with content
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -94,9 +94,9 @@ describe('MCP Controller Content Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_get_page_content',
@@ -106,7 +106,7 @@ describe('MCP Controller Content Tools', () => {
         console.log('\n=== Get Page Content (Page 1) Response ===')
         console.log(JSON.stringify(result, null, 2))
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
 
         // If getSnapshot API is available, check for page info
@@ -121,7 +121,7 @@ describe('MCP Controller Content Tools', () => {
     }, 30000)
 
     it('tests that page content extraction with all pages succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -129,9 +129,9 @@ describe('MCP Controller Content Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_get_page_content',
@@ -141,7 +141,7 @@ describe('MCP Controller Content Tools', () => {
         console.log('\n=== Get Page Content (All Pages) Response ===')
         console.log(JSON.stringify(result, null, 2))
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
 
         // If getSnapshot API is available, check for total pages
@@ -156,7 +156,7 @@ describe('MCP Controller Content Tools', () => {
     }, 30000)
 
     it('tests that page content extraction with different context window sizes succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -164,9 +164,9 @@ describe('MCP Controller Content Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Test different context windows
         const contextWindows = ['20k', '30k', '50k', '100k']
@@ -182,7 +182,7 @@ describe('MCP Controller Content Tools', () => {
           )
           console.log(JSON.stringify(result, null, 2))
 
-          const textContent = result.content.find(c => c.type === 'text')
+          const textContent = result.content.find((c) => c.type === 'text')
           assert.ok(textContent, 'Should have text content')
 
           // If getSnapshot API is available, check for context window info
@@ -198,7 +198,7 @@ describe('MCP Controller Content Tools', () => {
     }, 60000)
 
     it('tests that empty page content extraction is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -206,9 +206,9 @@ describe('MCP Controller Content Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_get_page_content',
@@ -220,7 +220,7 @@ describe('MCP Controller Content Tools', () => {
 
         assert.ok(!result.isError, 'Should succeed')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
       })
     }, 30000)
@@ -228,7 +228,7 @@ describe('MCP Controller Content Tools', () => {
 
   describe('browser_get_page_content - Error Handling', () => {
     it('tests that content extraction with invalid tab ID is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_get_page_content',
           arguments: { tabId: 999999999, type: 'text' },
@@ -241,14 +241,14 @@ describe('MCP Controller Content Tools', () => {
         assert.ok(Array.isArray(result.content), 'Should have content array')
 
         if (result.isError) {
-          const textContent = result.content.find(c => c.type === 'text')
+          const textContent = result.content.find((c) => c.type === 'text')
           assert.ok(textContent, 'Error should include text content')
         }
       })
     }, 30000)
 
     it('tests that non-numeric tab ID is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_get_page_content',
@@ -269,7 +269,7 @@ describe('MCP Controller Content Tools', () => {
     }, 30000)
 
     it('tests that invalid type enum is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -277,9 +277,9 @@ describe('MCP Controller Content Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         try {
           await client.callTool({
@@ -300,7 +300,7 @@ describe('MCP Controller Content Tools', () => {
     }, 30000)
 
     it('tests that invalid page number is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -308,9 +308,9 @@ describe('MCP Controller Content Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_get_page_content',
@@ -322,7 +322,7 @@ describe('MCP Controller Content Tools', () => {
 
         assert.ok(!result.isError, 'Should not throw error')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(
           textContent.text.includes('Error') ||
             textContent.text.includes('Invalid page'),
@@ -332,7 +332,7 @@ describe('MCP Controller Content Tools', () => {
     }, 30000)
 
     it('tests that non-numeric page number is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -340,9 +340,9 @@ describe('MCP Controller Content Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_get_page_content',
@@ -354,7 +354,7 @@ describe('MCP Controller Content Tools', () => {
 
         assert.ok(!result.isError, 'Should not throw error')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(
           textContent.text.includes('Error') ||
             textContent.text.includes('Invalid page'),
@@ -366,7 +366,7 @@ describe('MCP Controller Content Tools', () => {
 
   describe('browser_get_page_content - Response Structure Validation', () => {
     it('tests that content tool returns valid MCP response structure', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -374,9 +374,9 @@ describe('MCP Controller Content Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_get_page_content',
@@ -419,7 +419,7 @@ describe('MCP Controller Content Tools', () => {
 
   describe('browser_get_page_content - Workflow Tests', () => {
     it('tests complete content extraction workflow: navigate -> extract text -> extract text-with-links', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a page
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -431,9 +431,9 @@ describe('MCP Controller Content Tools', () => {
         console.log('\n=== Workflow: Navigate Response ===')
         console.log(JSON.stringify(navResult, null, 2))
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Extract text only
         const textResult = await client.callTool({
@@ -463,7 +463,7 @@ describe('MCP Controller Content Tools', () => {
     }, 30000)
 
     it('tests pagination workflow: extract all pages -> extract specific page', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -475,9 +475,9 @@ describe('MCP Controller Content Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Extract all pages with small context window
         const allPagesResult = await client.callTool({

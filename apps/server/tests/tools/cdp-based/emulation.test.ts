@@ -2,11 +2,14 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 
-import { emulateCpu, emulateNetwork } from '../../../src/tools/cdp-based/emulation.js'
+import {
+  emulateCpu,
+  emulateNetwork,
+} from '../../../src/tools/cdp-based/emulation.js'
 
 import { withBrowser } from '../../__helpers__/utils.js'
 
@@ -20,7 +23,7 @@ describe('emulation', () => {
           },
         },
         response,
-        context
+        context,
       )
 
       assert.strictEqual(context.getNetworkConditions(), 'Slow 3G')
@@ -36,7 +39,7 @@ describe('emulation', () => {
           },
         },
         response,
-        context
+        context,
       )
 
       assert.strictEqual(context.getNetworkConditions(), null)
@@ -52,7 +55,7 @@ describe('emulation', () => {
           },
         },
         response,
-        context
+        context,
       )
 
       assert.strictEqual(context.getNetworkConditions(), null)
@@ -69,7 +72,7 @@ describe('emulation', () => {
           },
         },
         response,
-        context
+        context,
       )
 
       assert.strictEqual(context.getNetworkConditions(), 'Slow 3G')
@@ -89,7 +92,7 @@ describe('emulation', () => {
           },
         },
         response,
-        context
+        context,
       )
 
       assert.strictEqual(context.getCpuThrottlingRate(), 4)
@@ -106,7 +109,7 @@ describe('emulation', () => {
           },
         },
         response,
-        context
+        context,
       )
 
       assert.strictEqual(context.getCpuThrottlingRate(), 1)
@@ -123,7 +126,7 @@ describe('emulation', () => {
           },
         },
         response,
-        context
+        context,
       )
 
       assert.strictEqual(context.getCpuThrottlingRate(), 4)

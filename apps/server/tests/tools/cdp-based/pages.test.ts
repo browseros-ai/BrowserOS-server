@@ -2,20 +2,20 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 import type { Dialog } from 'puppeteer-core'
 
 import {
-  listPages,
-  newPage,
   closePage,
-  selectPage,
+  handleDialog,
+  listPages,
   navigatePage,
   navigatePageHistory,
+  newPage,
   resizePage,
-  handleDialog,
+  selectPage,
 } from '../../../src/tools/cdp-based/pages.js'
 
 import { withBrowser } from '../../__helpers__/utils.js'
@@ -31,7 +31,11 @@ describe('pages', () => {
   it('browser_new_page - create a page', async () => {
     await withBrowser(async (response, context) => {
       assert.strictEqual(context.getSelectedPageIdx(), 0)
-      await newPage.handler({ params: { url: 'about:blank' } }, response, context)
+      await newPage.handler(
+        { params: { url: 'about:blank' } },
+        response,
+        context,
+      )
       assert.strictEqual(context.getSelectedPageIdx(), 1)
       assert.ok(response.includePages)
     })
@@ -54,7 +58,7 @@ describe('pages', () => {
       await closePage.handler({ params: { pageIdx: 0 } }, response, context)
       assert.deepStrictEqual(
         response.responseLines[0],
-        `The last open page cannot be closed. It is fine to keep it open.`
+        `The last open page cannot be closed. It is fine to keep it open.`,
       )
       assert.ok(response.includePages)
       assert.ok(!page.isClosed())
@@ -76,12 +80,12 @@ describe('pages', () => {
       await navigatePage.handler(
         { params: { url: 'data:text/html,<div>Hello MCP</div>' } },
         response,
-        context
+        context,
       )
       const page = context.getSelectedPage()
       assert.equal(
         await page.evaluate(() => document.querySelector('div')?.textContent),
-        'Hello MCP'
+        'Hello MCP',
       )
       assert.ok(response.includePages)
     })
@@ -99,13 +103,13 @@ describe('pages', () => {
         await navigatePage.handler(
           { params: { url: 'data:text/html,<div>Hello MCP</div>' } },
           response,
-          context
+          context,
         )
         assert.fail('should not reach here')
       } catch (err) {
         assert.strictEqual(
           (err as Error).message,
-          'The selected page has been closed. Call list_pages to see open pages.'
+          'The selected page has been closed. Call list_pages to see open pages.',
         )
       }
     })
@@ -118,12 +122,12 @@ describe('pages', () => {
       await navigatePageHistory.handler(
         { params: { navigate: 'back' } },
         response,
-        context
+        context,
       )
 
       assert.equal(
         await page.evaluate(() => document.location.href),
-        'about:blank'
+        'about:blank',
       )
       assert.ok(response.includePages)
     })
@@ -137,12 +141,12 @@ describe('pages', () => {
       await navigatePageHistory.handler(
         { params: { navigate: 'forward' } },
         response,
-        context
+        context,
       )
 
       assert.equal(
         await page.evaluate(() => document.querySelector('div')?.textContent),
-        'Hello MCP'
+        'Hello MCP',
       )
       assert.ok(response.includePages)
     })
@@ -153,12 +157,12 @@ describe('pages', () => {
       await navigatePageHistory.handler(
         { params: { navigate: 'forward' } },
         response,
-        context
+        context,
       )
 
       assert.equal(
         response.responseLines.at(0),
-        'Unable to navigate forward in currently selected page.'
+        'Unable to navigate forward in currently selected page.',
       )
       assert.ok(response.includePages)
     })
@@ -169,12 +173,12 @@ describe('pages', () => {
       await navigatePageHistory.handler(
         { params: { navigate: 'back' } },
         response,
-        context
+        context,
       )
 
       assert.equal(
         response.responseLines.at(0),
-        'Unable to navigate back in currently selected page.'
+        'Unable to navigate back in currently selected page.',
       )
       assert.ok(response.includePages)
     })
@@ -194,7 +198,7 @@ describe('pages', () => {
       await resizePage.handler(
         { params: { width: 700, height: 500 } },
         response,
-        context
+        context,
       )
       await resizePromise
       const dimensions = await page.evaluate(() => {
@@ -223,12 +227,12 @@ describe('pages', () => {
           },
         },
         response,
-        context
+        context,
       )
       assert.strictEqual(context.getDialog(), undefined)
       assert.strictEqual(
         response.responseLines[0],
-        'Successfully accepted the dialog'
+        'Successfully accepted the dialog',
       )
     })
   })
@@ -252,12 +256,12 @@ describe('pages', () => {
           },
         },
         response,
-        context
+        context,
       )
       assert.strictEqual(context.getDialog(), undefined)
       assert.strictEqual(
         response.responseLines[0],
-        'Successfully dismissed the dialog'
+        'Successfully dismissed the dialog',
       )
     })
   })
@@ -282,12 +286,12 @@ describe('pages', () => {
           },
         },
         response,
-        context
+        context,
       )
       assert.strictEqual(context.getDialog(), undefined)
       assert.strictEqual(
         response.responseLines[0],
-        'Successfully dismissed the dialog'
+        'Successfully dismissed the dialog',
       )
     })
   })

@@ -7,7 +7,7 @@ import http, {
   type Server,
   type ServerResponse,
 } from 'node:http'
-import { before, after, afterEach } from 'node:test'
+import { after, afterEach, before } from 'node:test'
 
 import { html } from '../__helpers__/utils.js'
 
@@ -27,10 +27,8 @@ class TestServer {
     return Math.floor(Math.random() * (max - min + 1) + min)
   }
 
-  #routes: Record<
-    string,
-    (req: IncomingMessage, res: ServerResponse) => void
-  > = {}
+  #routes: Record<string, (req: IncomingMessage, res: ServerResponse) => void> =
+    {}
 
   constructor(port: number) {
     this.#port = port
@@ -61,7 +59,7 @@ class TestServer {
 
   addRoute(
     path: string,
-    handler: (req: IncomingMessage, res: ServerResponse) => void
+    handler: (req: IncomingMessage, res: ServerResponse) => void,
   ) {
     if (this.#routes[path]) {
       throw new Error(`Route ${path} was already setup.`)
@@ -79,7 +77,7 @@ class TestServer {
       res.writeHead(404, { 'Content-Type': 'text/html' })
       res.end(
         html`<h1>404 - Not Found</h1>
-          <p>The requested page does not exist.</p>`
+          <p>The requested page does not exist.</p>`,
       )
     }
   }

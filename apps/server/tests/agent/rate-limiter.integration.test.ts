@@ -6,10 +6,14 @@
  * Integration tests for RateLimiter
  * Uses in-memory SQLite to test actual database behavior
  */
-import { describe, it, expect, beforeEach } from 'bun:test'
-import { Database } from 'bun:sqlite'
 
-import { RateLimiter, RateLimitError } from '../../src/agent/rate-limiter/index.js'
+import { Database } from 'bun:sqlite'
+import { beforeEach, describe, expect, it } from 'bun:test'
+
+import {
+  RateLimitError,
+  RateLimiter,
+} from '../../src/agent/rate-limiter/index.js'
 
 const DAILY_RATE_LIMIT_TEST = 3
 

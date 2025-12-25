@@ -3,24 +3,24 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 
 import { withMcpServer } from '../__helpers__/utils.js'
 
 describe('MCP Controller Advanced Tools', () => {
   describe('browser_execute_javascript - Success Cases', () => {
     it('tests that executing simple JavaScript succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_execute_javascript',
@@ -32,29 +32,26 @@ describe('MCP Controller Advanced Tools', () => {
 
         assert.ok(!result.isError, 'Should succeed')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
         assert.ok(
           textContent.text.includes('JavaScript executed'),
           'Should confirm execution',
         )
-        assert.ok(
-          textContent.text.includes('Result:'),
-          'Should include result',
-        )
+        assert.ok(textContent.text.includes('Result:'), 'Should include result')
       })
     }, 30000)
 
     it('tests that executing JavaScript returning string succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_execute_javascript',
@@ -69,15 +66,15 @@ describe('MCP Controller Advanced Tools', () => {
     }, 30000)
 
     it('tests that executing JavaScript returning object succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_execute_javascript',
@@ -95,15 +92,15 @@ describe('MCP Controller Advanced Tools', () => {
     }, 30000)
 
     it('tests that executing JavaScript returning array succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_execute_javascript',
@@ -118,15 +115,15 @@ describe('MCP Controller Advanced Tools', () => {
     }, 30000)
 
     it('tests that executing DOM manipulation JavaScript succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_execute_javascript',
@@ -144,15 +141,15 @@ describe('MCP Controller Advanced Tools', () => {
     }, 30000)
 
     it('tests that executing JavaScript returning undefined succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_execute_javascript',
@@ -167,15 +164,15 @@ describe('MCP Controller Advanced Tools', () => {
     }, 30000)
 
     it('tests that executing JavaScript returning null succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_execute_javascript',
@@ -190,15 +187,15 @@ describe('MCP Controller Advanced Tools', () => {
     }, 30000)
 
     it('tests that executing multiline JavaScript succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const code = `
             const x = 10;
@@ -221,7 +218,7 @@ describe('MCP Controller Advanced Tools', () => {
 
   describe('browser_execute_javascript - Error Handling', () => {
     it('tests that missing code is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_execute_javascript',
@@ -242,7 +239,7 @@ describe('MCP Controller Advanced Tools', () => {
     }, 30000)
 
     it('tests that missing tabId is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_execute_javascript',
@@ -263,15 +260,15 @@ describe('MCP Controller Advanced Tools', () => {
     }, 30000)
 
     it('tests that invalid JavaScript syntax is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_execute_javascript',
@@ -287,7 +284,7 @@ describe('MCP Controller Advanced Tools', () => {
     }, 30000)
 
     it('tests that invalid tabId is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_execute_javascript',
           arguments: { tabId: 999999, code: '1 + 1' },
@@ -297,25 +294,22 @@ describe('MCP Controller Advanced Tools', () => {
         console.log(JSON.stringify(result, null, 2))
 
         // Should error
-        assert.ok(
-          result.isError || result.content,
-          'Should handle invalid tab',
-        )
+        assert.ok(result.isError || result.content, 'Should handle invalid tab')
       })
     }, 30000)
   })
 
   describe('browser_send_keys - Success Cases', () => {
     it('tests that sending Enter key succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_send_keys',
@@ -327,21 +321,21 @@ describe('MCP Controller Advanced Tools', () => {
 
         assert.ok(!result.isError, 'Should succeed')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
       })
     }, 30000)
 
     it('tests that sending Escape key succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_send_keys',
@@ -356,15 +350,15 @@ describe('MCP Controller Advanced Tools', () => {
     }, 30000)
 
     it('tests that sending Tab key succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_send_keys',
@@ -379,15 +373,15 @@ describe('MCP Controller Advanced Tools', () => {
     }, 30000)
 
     it('tests that sending arrow keys succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const arrowKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']
 
@@ -405,15 +399,15 @@ describe('MCP Controller Advanced Tools', () => {
     }, 30000)
 
     it('tests that sending navigation keys succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const navKeys = ['Home', 'End', 'PageUp', 'PageDown']
 
@@ -431,15 +425,15 @@ describe('MCP Controller Advanced Tools', () => {
     }, 30000)
 
     it('tests that sending Delete key succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_send_keys',
@@ -454,15 +448,15 @@ describe('MCP Controller Advanced Tools', () => {
     }, 30000)
 
     it('tests that sending Backspace key succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_send_keys',
@@ -479,7 +473,7 @@ describe('MCP Controller Advanced Tools', () => {
 
   describe('browser_send_keys - Error Handling', () => {
     it('tests that missing key is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_send_keys',
@@ -500,7 +494,7 @@ describe('MCP Controller Advanced Tools', () => {
     }, 30000)
 
     it('tests that invalid key is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_send_keys',
@@ -521,7 +515,7 @@ describe('MCP Controller Advanced Tools', () => {
     }, 30000)
 
     it('tests that missing tabId is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_send_keys',
@@ -542,7 +536,7 @@ describe('MCP Controller Advanced Tools', () => {
     }, 30000)
 
     it('tests that invalid tabId is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_send_keys',
           arguments: { tabId: 999999, key: 'Enter' },
@@ -552,17 +546,14 @@ describe('MCP Controller Advanced Tools', () => {
         console.log(JSON.stringify(result, null, 2))
 
         // Should error
-        assert.ok(
-          result.isError || result.content,
-          'Should handle invalid tab',
-        )
+        assert.ok(result.isError || result.content, 'Should handle invalid tab')
       })
     }, 30000)
   })
 
   describe('browser_check_availability - Success Cases', () => {
     it('tests that checking BrowserOS availability succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_check_availability',
           arguments: {},
@@ -574,7 +565,7 @@ describe('MCP Controller Advanced Tools', () => {
         assert.ok(!result.isError, 'Should succeed')
         assert.ok(Array.isArray(result.content), 'Content should be array')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
         assert.ok(
           textContent.text.includes('BrowserOS APIs available'),
@@ -586,15 +577,15 @@ describe('MCP Controller Advanced Tools', () => {
 
   describe('Advanced Tools - Response Structure Validation', () => {
     it('tests that advanced tools return valid MCP response structure', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const tools = [
           {
@@ -648,7 +639,7 @@ describe('MCP Controller Advanced Tools', () => {
 
   describe('Advanced Tools - Workflow Tests', () => {
     it('tests workflow: check availability → execute JavaScript', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Check availability
         const availResult = await client.callTool({
           name: 'browser_check_availability',
@@ -666,9 +657,9 @@ describe('MCP Controller Advanced Tools', () => {
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const jsResult = await client.callTool({
           name: 'browser_execute_javascript',
@@ -686,15 +677,15 @@ describe('MCP Controller Advanced Tools', () => {
     }, 30000)
 
     it('tests workflow: execute JS → send keys → execute JS again', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Execute initial JS
         const js1Result = await client.callTool({
@@ -731,15 +722,15 @@ describe('MCP Controller Advanced Tools', () => {
     }, 30000)
 
     it('tests workflow: multiple key sends in sequence', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const keys = ['ArrowDown', 'ArrowDown', 'ArrowDown', 'Enter']
 

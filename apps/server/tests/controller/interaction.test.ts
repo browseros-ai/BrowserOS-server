@@ -3,16 +3,16 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 
 import { withMcpServer } from '../__helpers__/utils.js'
 
 describe('MCP Controller Interaction Tools', () => {
   describe('browser_get_interactive_elements - Success Cases', () => {
     it('tests that interactive elements are retrieved with simplified format', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a page with interactive elements
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -23,9 +23,9 @@ describe('MCP Controller Interaction Tools', () => {
 
         assert.ok(!navResult.isError, 'Navigation should succeed')
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Get interactive elements
         const result = await client.callTool({
@@ -39,7 +39,7 @@ describe('MCP Controller Interaction Tools', () => {
         assert.ok(!result.isError, 'Should succeed')
         assert.ok(Array.isArray(result.content), 'Content should be array')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
         assert.ok(
           textContent.text.includes('INTERACTIVE ELEMENTS'),
@@ -54,7 +54,7 @@ describe('MCP Controller Interaction Tools', () => {
     }, 30000)
 
     it('tests that interactive elements are retrieved with full format', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -62,9 +62,9 @@ describe('MCP Controller Interaction Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_get_interactive_elements',
@@ -76,7 +76,7 @@ describe('MCP Controller Interaction Tools', () => {
 
         assert.ok(!result.isError, 'Should succeed')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         // Full format includes more context (ctx:) in element descriptions
         assert.ok(
           textContent.text.includes('ctx:') ||
@@ -87,7 +87,7 @@ describe('MCP Controller Interaction Tools', () => {
     }, 30000)
 
     it('tests that page with no interactive elements is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -95,23 +95,21 @@ describe('MCP Controller Interaction Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_get_interactive_elements',
           arguments: { tabId },
         })
 
-        console.log(
-          '\n=== Get Interactive Elements (No Elements) Response ===',
-        )
+        console.log('\n=== Get Interactive Elements (No Elements) Response ===')
         console.log(JSON.stringify(result, null, 2))
 
         assert.ok(!result.isError, 'Should succeed')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(
           textContent.text.includes('INTERACTIVE ELEMENTS') &&
             textContent.text.includes('Snapshot ID:'),
@@ -123,7 +121,7 @@ describe('MCP Controller Interaction Tools', () => {
 
   describe('browser_get_interactive_elements - Error Handling', () => {
     it('tests that invalid tab ID is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_get_interactive_elements',
           arguments: { tabId: 999999999 },
@@ -136,14 +134,14 @@ describe('MCP Controller Interaction Tools', () => {
         assert.ok(Array.isArray(result.content), 'Should have content array')
 
         if (result.isError) {
-          const textContent = result.content.find(c => c.type === 'text')
+          const textContent = result.content.find((c) => c.type === 'text')
           assert.ok(textContent, 'Error should include text content')
         }
       })
     }, 30000)
 
     it('tests that non-numeric tab ID is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_get_interactive_elements',
@@ -166,7 +164,7 @@ describe('MCP Controller Interaction Tools', () => {
 
   describe('browser_click_element - Success Cases', () => {
     it('tests that element click succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a page with a clickable button
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -175,9 +173,9 @@ describe('MCP Controller Interaction Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Get interactive elements to find the button's nodeId
         const elementsResult = await client.callTool({
@@ -188,12 +186,12 @@ describe('MCP Controller Interaction Tools', () => {
         assert.ok(!elementsResult.isError, 'Get elements should succeed')
 
         const elementsText = elementsResult.content.find(
-          c => c.type === 'text',
+          (c) => c.type === 'text',
         )
         // Extract first nodeId from the response (format: [123])
         const nodeIdMatch = elementsText.text.match(/\[(\d+)\]/)
         assert.ok(nodeIdMatch, 'Should find a nodeId')
-        const nodeId = parseInt(nodeIdMatch[1])
+        const nodeId = parseInt(nodeIdMatch[1], 10)
 
         // Click the element
         const clickResult = await client.callTool({
@@ -206,7 +204,7 @@ describe('MCP Controller Interaction Tools', () => {
 
         assert.ok(!clickResult.isError, 'Should succeed')
 
-        const clickText = clickResult.content.find(c => c.type === 'text')
+        const clickText = clickResult.content.find((c) => c.type === 'text')
         assert.ok(clickText, 'Should have text content')
         assert.ok(
           clickText.text.includes(`Clicked element ${nodeId}`),
@@ -222,7 +220,7 @@ describe('MCP Controller Interaction Tools', () => {
 
   describe('browser_click_element - Error Handling', () => {
     it('tests that clicking with invalid tab ID is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_click_element',
           arguments: { tabId: 999999999, nodeId: 1 },
@@ -235,14 +233,14 @@ describe('MCP Controller Interaction Tools', () => {
         assert.ok(Array.isArray(result.content), 'Should have content array')
 
         if (result.isError) {
-          const textContent = result.content.find(c => c.type === 'text')
+          const textContent = result.content.find((c) => c.type === 'text')
           assert.ok(textContent, 'Error should include text content')
         }
       })
     }, 30000)
 
     it('tests that clicking with invalid node ID is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -250,9 +248,9 @@ describe('MCP Controller Interaction Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_click_element',
@@ -265,14 +263,14 @@ describe('MCP Controller Interaction Tools', () => {
         assert.ok(result, 'Should return a result')
 
         if (result.isError) {
-          const textContent = result.content.find(c => c.type === 'text')
+          const textContent = result.content.find((c) => c.type === 'text')
           assert.ok(textContent, 'Error should include text content')
         }
       })
     }, 30000)
 
     it('tests that non-numeric parameters are rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_click_element',
@@ -295,7 +293,7 @@ describe('MCP Controller Interaction Tools', () => {
 
   describe('browser_type_text - Success Cases', () => {
     it('tests that typing text into input succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a page with an input field
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -304,9 +302,9 @@ describe('MCP Controller Interaction Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Get interactive elements to find the input's nodeId
         const elementsResult = await client.callTool({
@@ -315,10 +313,10 @@ describe('MCP Controller Interaction Tools', () => {
         })
 
         const elementsText = elementsResult.content.find(
-          c => c.type === 'text',
+          (c) => c.type === 'text',
         )
         const nodeIdMatch = elementsText.text.match(/\[(\d+)\]/)
-        const nodeId = parseInt(nodeIdMatch[1])
+        const nodeId = parseInt(nodeIdMatch[1], 10)
 
         // Type text into the input
         const typeResult = await client.callTool({
@@ -331,7 +329,7 @@ describe('MCP Controller Interaction Tools', () => {
 
         assert.ok(!typeResult.isError, 'Should succeed')
 
-        const typeText = typeResult.content.find(c => c.type === 'text')
+        const typeText = typeResult.content.find((c) => c.type === 'text')
         assert.ok(typeText, 'Should have text content')
         assert.ok(
           typeText.text.includes(`Typed text into element ${nodeId}`),
@@ -341,7 +339,7 @@ describe('MCP Controller Interaction Tools', () => {
     }, 30000)
 
     it('tests that typing empty string succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -349,9 +347,9 @@ describe('MCP Controller Interaction Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const elementsResult = await client.callTool({
           name: 'browser_get_interactive_elements',
@@ -359,10 +357,10 @@ describe('MCP Controller Interaction Tools', () => {
         })
 
         const elementsText = elementsResult.content.find(
-          c => c.type === 'text',
+          (c) => c.type === 'text',
         )
         const nodeIdMatch = elementsText.text.match(/\[(\d+)\]/)
-        const nodeId = parseInt(nodeIdMatch[1])
+        const nodeId = parseInt(nodeIdMatch[1], 10)
 
         const typeResult = await client.callTool({
           name: 'browser_type_text',
@@ -377,7 +375,7 @@ describe('MCP Controller Interaction Tools', () => {
     }, 30000)
 
     it('tests that typing special characters succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -385,9 +383,9 @@ describe('MCP Controller Interaction Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const elementsResult = await client.callTool({
           name: 'browser_get_interactive_elements',
@@ -395,10 +393,10 @@ describe('MCP Controller Interaction Tools', () => {
         })
 
         const elementsText = elementsResult.content.find(
-          c => c.type === 'text',
+          (c) => c.type === 'text',
         )
         const nodeIdMatch = elementsText.text.match(/\[(\d+)\]/)
-        const nodeId = parseInt(nodeIdMatch[1])
+        const nodeId = parseInt(nodeIdMatch[1], 10)
 
         const typeResult = await client.callTool({
           name: 'browser_type_text',
@@ -415,7 +413,7 @@ describe('MCP Controller Interaction Tools', () => {
 
   describe('browser_type_text - Error Handling', () => {
     it('tests that typing with invalid tab ID is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_type_text',
           arguments: { tabId: 999999999, nodeId: 1, text: 'test' },
@@ -427,14 +425,14 @@ describe('MCP Controller Interaction Tools', () => {
         assert.ok(result, 'Should return a result')
 
         if (result.isError) {
-          const textContent = result.content.find(c => c.type === 'text')
+          const textContent = result.content.find((c) => c.type === 'text')
           assert.ok(textContent, 'Error should include text content')
         }
       })
     }, 30000)
 
     it('tests that typing with invalid node ID is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -442,9 +440,9 @@ describe('MCP Controller Interaction Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_type_text',
@@ -457,7 +455,7 @@ describe('MCP Controller Interaction Tools', () => {
         assert.ok(result, 'Should return a result')
 
         if (result.isError) {
-          const textContent = result.content.find(c => c.type === 'text')
+          const textContent = result.content.find((c) => c.type === 'text')
           assert.ok(textContent, 'Error should include text content')
         }
       })
@@ -466,7 +464,7 @@ describe('MCP Controller Interaction Tools', () => {
 
   describe('browser_clear_input - Success Cases', () => {
     it('tests that clearing input field succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a page with an input field
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -475,9 +473,9 @@ describe('MCP Controller Interaction Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Get interactive elements
         const elementsResult = await client.callTool({
@@ -486,10 +484,10 @@ describe('MCP Controller Interaction Tools', () => {
         })
 
         const elementsText = elementsResult.content.find(
-          c => c.type === 'text',
+          (c) => c.type === 'text',
         )
         const nodeIdMatch = elementsText.text.match(/\[(\d+)\]/)
-        const nodeId = parseInt(nodeIdMatch[1])
+        const nodeId = parseInt(nodeIdMatch[1], 10)
 
         // Clear the input
         const clearResult = await client.callTool({
@@ -502,7 +500,7 @@ describe('MCP Controller Interaction Tools', () => {
 
         assert.ok(!clearResult.isError, 'Should succeed')
 
-        const clearText = clearResult.content.find(c => c.type === 'text')
+        const clearText = clearResult.content.find((c) => c.type === 'text')
         assert.ok(clearText, 'Should have text content')
         assert.ok(
           clearText.text.includes(`Cleared element ${nodeId}`),
@@ -514,7 +512,7 @@ describe('MCP Controller Interaction Tools', () => {
 
   describe('browser_clear_input - Error Handling', () => {
     it('tests that clearing with invalid tab ID is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_clear_input',
           arguments: { tabId: 999999999, nodeId: 1 },
@@ -526,14 +524,14 @@ describe('MCP Controller Interaction Tools', () => {
         assert.ok(result, 'Should return a result')
 
         if (result.isError) {
-          const textContent = result.content.find(c => c.type === 'text')
+          const textContent = result.content.find((c) => c.type === 'text')
           assert.ok(textContent, 'Error should include text content')
         }
       })
     }, 30000)
 
     it('tests that clearing with invalid node ID is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -541,9 +539,9 @@ describe('MCP Controller Interaction Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_clear_input',
@@ -556,7 +554,7 @@ describe('MCP Controller Interaction Tools', () => {
         assert.ok(result, 'Should return a result')
 
         if (result.isError) {
-          const textContent = result.content.find(c => c.type === 'text')
+          const textContent = result.content.find((c) => c.type === 'text')
           assert.ok(textContent, 'Error should include text content')
         }
       })
@@ -565,7 +563,7 @@ describe('MCP Controller Interaction Tools', () => {
 
   describe('browser_scroll_to_element - Success Cases', () => {
     it('tests that scrolling to element succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a long page with a button at the bottom
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -574,9 +572,9 @@ describe('MCP Controller Interaction Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Get interactive elements
         const elementsResult = await client.callTool({
@@ -585,10 +583,10 @@ describe('MCP Controller Interaction Tools', () => {
         })
 
         const elementsText = elementsResult.content.find(
-          c => c.type === 'text',
+          (c) => c.type === 'text',
         )
         const nodeIdMatch = elementsText.text.match(/\[(\d+)\]/)
-        const nodeId = parseInt(nodeIdMatch[1])
+        const nodeId = parseInt(nodeIdMatch[1], 10)
 
         // Scroll to the element
         const scrollResult = await client.callTool({
@@ -601,7 +599,7 @@ describe('MCP Controller Interaction Tools', () => {
 
         assert.ok(!scrollResult.isError, 'Should succeed')
 
-        const scrollText = scrollResult.content.find(c => c.type === 'text')
+        const scrollText = scrollResult.content.find((c) => c.type === 'text')
         assert.ok(scrollText, 'Should have text content')
         assert.ok(
           scrollText.text.includes(`Scrolled to element ${nodeId}`),
@@ -613,7 +611,7 @@ describe('MCP Controller Interaction Tools', () => {
 
   describe('browser_scroll_to_element - Error Handling', () => {
     it('tests that scrolling with invalid tab ID is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_scroll_to_element',
           arguments: { tabId: 999999999, nodeId: 1 },
@@ -625,14 +623,14 @@ describe('MCP Controller Interaction Tools', () => {
         assert.ok(result, 'Should return a result')
 
         if (result.isError) {
-          const textContent = result.content.find(c => c.type === 'text')
+          const textContent = result.content.find((c) => c.type === 'text')
           assert.ok(textContent, 'Error should include text content')
         }
       })
     }, 30000)
 
     it('tests that scrolling with invalid node ID is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -640,9 +638,9 @@ describe('MCP Controller Interaction Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_scroll_to_element',
@@ -655,7 +653,7 @@ describe('MCP Controller Interaction Tools', () => {
         assert.ok(result, 'Should return a result')
 
         if (result.isError) {
-          const textContent = result.content.find(c => c.type === 'text')
+          const textContent = result.content.find((c) => c.type === 'text')
           assert.ok(textContent, 'Error should include text content')
         }
       })
@@ -664,7 +662,7 @@ describe('MCP Controller Interaction Tools', () => {
 
   describe('Interaction Tools - Workflow Tests', () => {
     it('tests complete interaction workflow: get elements -> click', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a page
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -676,9 +674,9 @@ describe('MCP Controller Interaction Tools', () => {
         console.log('\n=== Workflow: Navigate ===')
         console.log(JSON.stringify(navResult, null, 2))
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Get elements
         const elementsResult = await client.callTool({
@@ -692,10 +690,10 @@ describe('MCP Controller Interaction Tools', () => {
         assert.ok(!elementsResult.isError, 'Get elements should succeed')
 
         const elementsText = elementsResult.content.find(
-          c => c.type === 'text',
+          (c) => c.type === 'text',
         )
         const nodeIdMatch = elementsText.text.match(/\[(\d+)\]/)
-        const nodeId = parseInt(nodeIdMatch[1])
+        const nodeId = parseInt(nodeIdMatch[1], 10)
 
         // Click element
         const clickResult = await client.callTool({
@@ -711,7 +709,7 @@ describe('MCP Controller Interaction Tools', () => {
     }, 30000)
 
     it('tests complete form workflow: get elements -> type -> clear', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a form
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -720,9 +718,9 @@ describe('MCP Controller Interaction Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Get elements
         const elementsResult = await client.callTool({
@@ -734,11 +732,11 @@ describe('MCP Controller Interaction Tools', () => {
         console.log(JSON.stringify(elementsResult, null, 2))
 
         const elementsText = elementsResult.content.find(
-          c => c.type === 'text',
+          (c) => c.type === 'text',
         )
         // Get first input nodeId
         const nodeIdMatch = elementsText.text.match(/\[(\d+)\]/)
-        const nodeId = parseInt(nodeIdMatch[1])
+        const nodeId = parseInt(nodeIdMatch[1], 10)
 
         // Type text
         const typeResult = await client.callTool({
@@ -765,7 +763,7 @@ describe('MCP Controller Interaction Tools', () => {
     }, 30000)
 
     it('tests complete scroll workflow: get elements -> scroll to element -> click', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a long page
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -774,9 +772,9 @@ describe('MCP Controller Interaction Tools', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Get elements
         const elementsResult = await client.callTool({
@@ -785,10 +783,10 @@ describe('MCP Controller Interaction Tools', () => {
         })
 
         const elementsText = elementsResult.content.find(
-          c => c.type === 'text',
+          (c) => c.type === 'text',
         )
         const nodeIdMatch = elementsText.text.match(/\[(\d+)\]/)
-        const nodeId = parseInt(nodeIdMatch[1])
+        const nodeId = parseInt(nodeIdMatch[1], 10)
 
         // Scroll to element
         const scrollResult = await client.callTool({

@@ -2,9 +2,9 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 import type { ElementHandle } from 'puppeteer-core'
 
 import type { TextSnapshotNode } from '../../../src/common/McpContext.js'
@@ -38,7 +38,7 @@ describe('snapshotFormatter', () => {
       formatted,
       `uid=1_1 textbox "textbox" value="value"
   uid=1_2 statictext "text"
-`
+`,
     )
   })
 
@@ -69,7 +69,7 @@ describe('snapshotFormatter', () => {
       formatted,
       `uid=1_1 button "button" disableable disabled
   uid=1_2 statictext "text"
-`
+`,
     )
   })
 
@@ -100,7 +100,7 @@ describe('snapshotFormatter', () => {
       formatted,
       `uid=1_1 checkbox "checkbox" checked checked="true"
   uid=1_2 statictext "text"
-`
+`,
     )
   })
 
@@ -143,7 +143,7 @@ describe('snapshotFormatter', () => {
       `uid=1_1 root "root"
   uid=1_2 button "button" disableable disabled focusable focused
   uid=1_3 textbox "textbox" value="value"
-`
+`,
     )
   })
 })

@@ -2,9 +2,9 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 
 import { evaluateScript } from '../../../src/tools/cdp-based/script.js'
 
@@ -16,7 +16,7 @@ describe('script', () => {
       await evaluateScript.handler(
         { params: { function: String(() => 2 * 5) } },
         response,
-        context
+        context,
       )
       const lineEvaluation = response.responseLines.at(2)!
       assert.strictEqual(JSON.parse(lineEvaluation), 10)
@@ -27,7 +27,7 @@ describe('script', () => {
       await evaluateScript.handler(
         { params: { function: String(() => document.title) } },
         response,
-        context
+        context,
       )
 
       let lineEvaluation = response.responseLines.at(2)!
@@ -44,7 +44,7 @@ describe('script', () => {
       await evaluateScript.handler(
         { params: { function: String(() => document.title) } },
         response,
-        context
+        context,
       )
 
       lineEvaluation = response.responseLines.at(2)!
@@ -63,7 +63,7 @@ describe('script', () => {
           params: {
             function: String(() => {
               const scripts = Array.from(
-                document.head.querySelectorAll('script')
+                document.head.querySelectorAll('script'),
               ).map((s) => ({ src: s.src, async: s.async, defer: s.defer }))
 
               return { scripts }
@@ -71,7 +71,7 @@ describe('script', () => {
           },
         },
         response,
-        context
+        context,
       )
       const lineEvaluation = response.responseLines.at(2)!
       assert.deepEqual(JSON.parse(lineEvaluation), {
@@ -96,7 +96,7 @@ describe('script', () => {
           },
         },
         response,
-        context
+        context,
       )
       const lineEvaluation = response.responseLines.at(2)!
       assert.strictEqual(JSON.parse(lineEvaluation), 'Works')
@@ -121,7 +121,7 @@ describe('script', () => {
           },
         },
         response,
-        context
+        context,
       )
       const lineEvaluation = response.responseLines.at(2)!
       assert.strictEqual(JSON.parse(lineEvaluation), 'test')
@@ -146,7 +146,7 @@ describe('script', () => {
           },
         },
         response,
-        context
+        context,
       )
       const lineEvaluation = response.responseLines.at(2)!
       assert.strictEqual(JSON.parse(lineEvaluation), true)

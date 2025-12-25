@@ -3,25 +3,25 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 
 import { withMcpServer } from '../__helpers__/utils.js'
 
 describe('MCP Controller Coordinates Tools', () => {
   describe('browser_click_coordinates - Success Cases', () => {
     it('tests that clicking at coordinates in active tab succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Get active tab
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Click at coordinates
         const result = await client.callTool({
@@ -35,7 +35,7 @@ describe('MCP Controller Coordinates Tools', () => {
         assert.ok(!result.isError, 'Should succeed')
         assert.ok(Array.isArray(result.content), 'Content should be array')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
         assert.ok(
           textContent.text.includes('Clicked at coordinates'),
@@ -49,15 +49,15 @@ describe('MCP Controller Coordinates Tools', () => {
     }, 30000)
 
     it('tests that clicking at top-left coordinates succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_click_coordinates',
@@ -72,15 +72,15 @@ describe('MCP Controller Coordinates Tools', () => {
     }, 30000)
 
     it('tests that clicking at center coordinates succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_click_coordinates',
@@ -95,15 +95,15 @@ describe('MCP Controller Coordinates Tools', () => {
     }, 30000)
 
     it('tests that clicking at zero coordinates succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_click_coordinates',
@@ -118,15 +118,15 @@ describe('MCP Controller Coordinates Tools', () => {
     }, 30000)
 
     it('tests that clicking at large coordinates succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_click_coordinates',
@@ -141,15 +141,15 @@ describe('MCP Controller Coordinates Tools', () => {
     }, 30000)
 
     it('tests that clicking with decimal coordinates is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_click_coordinates',
@@ -160,7 +160,7 @@ describe('MCP Controller Coordinates Tools', () => {
         console.log(JSON.stringify(result, null, 2))
 
         assert.ok(result.isError, 'Should reject decimal coordinates')
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(
           textContent.text.includes('expected int'),
           'Should indicate integer required',
@@ -171,7 +171,7 @@ describe('MCP Controller Coordinates Tools', () => {
 
   describe('browser_click_coordinates - Error Handling', () => {
     it('tests that missing tabId is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_click_coordinates',
@@ -192,7 +192,7 @@ describe('MCP Controller Coordinates Tools', () => {
     }, 30000)
 
     it('tests that missing coordinates is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_click_coordinates',
@@ -213,7 +213,7 @@ describe('MCP Controller Coordinates Tools', () => {
     }, 30000)
 
     it('tests that non-numeric coordinates is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_click_coordinates',
@@ -234,15 +234,15 @@ describe('MCP Controller Coordinates Tools', () => {
     }, 30000)
 
     it('tests that negative coordinates are handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_click_coordinates',
@@ -258,7 +258,7 @@ describe('MCP Controller Coordinates Tools', () => {
     }, 30000)
 
     it('tests that invalid tabId is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_click_coordinates',
           arguments: { tabId: 999999, x: 100, y: 100 },
@@ -268,25 +268,22 @@ describe('MCP Controller Coordinates Tools', () => {
         console.log(JSON.stringify(result, null, 2))
 
         // Should error
-        assert.ok(
-          result.isError || result.content,
-          'Should handle invalid tab',
-        )
+        assert.ok(result.isError || result.content, 'Should handle invalid tab')
       })
     }, 30000)
   })
 
   describe('browser_type_at_coordinates - Success Cases', () => {
     it('tests that typing at coordinates succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_type_at_coordinates',
@@ -298,7 +295,7 @@ describe('MCP Controller Coordinates Tools', () => {
 
         assert.ok(!result.isError, 'Should succeed')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
         assert.ok(
           textContent.text.includes('Clicked at'),
@@ -312,15 +309,15 @@ describe('MCP Controller Coordinates Tools', () => {
     }, 30000)
 
     it('tests that typing special characters at coordinates succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_type_at_coordinates',
@@ -340,15 +337,15 @@ describe('MCP Controller Coordinates Tools', () => {
     }, 30000)
 
     it('tests that typing empty string at coordinates is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_type_at_coordinates',
@@ -359,7 +356,7 @@ describe('MCP Controller Coordinates Tools', () => {
         console.log(JSON.stringify(result, null, 2))
 
         assert.ok(result.isError, 'Should reject empty string')
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(
           textContent.text.includes('Too small') ||
             textContent.text.includes('>=1 characters'),
@@ -369,15 +366,15 @@ describe('MCP Controller Coordinates Tools', () => {
     }, 30000)
 
     it('tests that typing unicode at coordinates succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_type_at_coordinates',
@@ -392,15 +389,15 @@ describe('MCP Controller Coordinates Tools', () => {
     }, 30000)
 
     it('tests that typing long text at coordinates succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const longText = 'Lorem ipsum dolor sit amet '.repeat(50)
 
@@ -417,15 +414,15 @@ describe('MCP Controller Coordinates Tools', () => {
     }, 30000)
 
     it('tests that typing multiline text at coordinates succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_type_at_coordinates',
@@ -442,7 +439,7 @@ describe('MCP Controller Coordinates Tools', () => {
 
   describe('browser_type_at_coordinates - Error Handling', () => {
     it('tests that missing text is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_type_at_coordinates',
@@ -463,7 +460,7 @@ describe('MCP Controller Coordinates Tools', () => {
     }, 30000)
 
     it('tests that missing coordinates is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_type_at_coordinates',
@@ -484,7 +481,7 @@ describe('MCP Controller Coordinates Tools', () => {
     }, 30000)
 
     it('tests that invalid tabId is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_type_at_coordinates',
           arguments: { tabId: 999999, x: 100, y: 100, text: 'test' },
@@ -494,25 +491,22 @@ describe('MCP Controller Coordinates Tools', () => {
         console.log(JSON.stringify(result, null, 2))
 
         // Should error
-        assert.ok(
-          result.isError || result.content,
-          'Should handle invalid tab',
-        )
+        assert.ok(result.isError || result.content, 'Should handle invalid tab')
       })
     }, 30000)
   })
 
   describe('Coordinates Tools - Response Structure Validation', () => {
     it('tests that coordinates tools return valid MCP response structure', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const tools = [
           {
@@ -568,7 +562,7 @@ describe('MCP Controller Coordinates Tools', () => {
 
   describe('Coordinates Tools - Workflow Tests', () => {
     it('tests coordinate workflow: navigate → click → type', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to URL
         await client.callTool({
           name: 'browser_navigate',
@@ -581,9 +575,9 @@ describe('MCP Controller Coordinates Tools', () => {
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Click coordinates
         const clickResult = await client.callTool({
@@ -610,15 +604,15 @@ describe('MCP Controller Coordinates Tools', () => {
     }, 30000)
 
     it('tests multiple coordinate clicks in sequence', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tabResult = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
         })
 
-        const tabText = tabResult.content.find(c => c.type === 'text')
+        const tabText = tabResult.content.find((c) => c.type === 'text')
         const tabIdMatch = tabText.text.match(/ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const coordinates = [
           { x: 100, y: 100 },

@@ -2,9 +2,9 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 
 import {
   getMockRequest,
@@ -23,7 +23,7 @@ describe('McpResponse', () => {
         result[0].text,
         `# test response
 ## Pages
-0: about:blank [selected]`
+0: about:blank [selected]`,
       )
     })
   })
@@ -38,7 +38,7 @@ describe('McpResponse', () => {
         result[0].text,
         `# test response
 Testing 1
-Testing 2`
+Testing 2`,
       )
     })
   })
@@ -69,7 +69,7 @@ Testing 2`
 uid=1_0 RootWebArea ""
   uid=1_1 button "Click me" focusable focused
   uid=1_2 textbox "" value="Input"
-`
+`,
       )
     })
   })
@@ -80,7 +80,7 @@ uid=1_0 RootWebArea ""
       await page.setContent(
         html`<label
           >username<input name="username" value="mcp"
-        /></label>`
+        /></label>`,
       )
       await page.focus('input')
       response.setIncludeSnapshot(true)
@@ -93,7 +93,7 @@ uid=1_0 RootWebArea ""
 uid=1_0 RootWebArea "My test page"
   uid=1_1 StaticText "username"
   uid=1_2 textbox "username" value="mcp" focusable focused
-`
+`,
       )
     })
   })
@@ -108,7 +108,7 @@ uid=1_0 RootWebArea "My test page"
         `# test response
 ## Network emulation
 Emulating: Slow 3G
-Default navigation timeout set to 100000 ms`
+Default navigation timeout set to 100000 ms`,
       )
     })
   })
@@ -140,7 +140,7 @@ Default navigation timeout set to 100000 ms`
         result[0].text,
         `# test response
 ## CPU emulation
-Emulating: 4x slowdown`
+Emulating: 4x slowdown`,
       )
     })
   })
@@ -172,7 +172,7 @@ Emulating: 4x slowdown`
         `# test response
 # Open dialog
 alert: test (default value: ).
-Call handle_dialog to handle it before continuing.`
+Call handle_dialog to handle it before continuing.`,
       )
     })
   })
@@ -189,7 +189,7 @@ Call handle_dialog to handle it before continuing.`
         `# test response
 ## Network requests
 Showing 1-1 of 1 (Page 1 of 1).
-http://example.com GET [pending]`
+http://example.com GET [pending]`,
       )
     })
   })
@@ -210,7 +210,9 @@ http://example.com GET [pending]`
       response.setIncludeNetworkRequests(true)
       const httpResponse = getMockResponse()
       httpResponse.buffer = () => {
-        return Promise.resolve(Buffer.from(JSON.stringify({ response: 'body' })))
+        return Promise.resolve(
+          Buffer.from(JSON.stringify({ response: 'body' })),
+        )
       }
       httpResponse.headers = () => {
         return {
@@ -245,7 +247,7 @@ ${JSON.stringify({ request: 'body' })}
 ${JSON.stringify({ response: 'body' })}
 ## Network requests
 Showing 1-1 of 1 (Page 1 of 1).
-http://example.com POST [success - 200]`
+http://example.com POST [success - 200]`,
       )
     })
   })
@@ -268,7 +270,7 @@ Status:  [pending]
 - content-size:10
 ## Network requests
 Showing 1-1 of 1 (Page 1 of 1).
-http://example.com GET [pending]`
+http://example.com GET [pending]`,
       )
     })
   })
@@ -292,7 +294,7 @@ http://example.com GET [pending]`
       assert.ok(
         result[0].text.toString().startsWith(`# test response
 ## Console messages
-Log>`)
+Log>`),
       )
       assert.ok(result[0].text.toString().includes('Hello from the test'))
     })
@@ -307,7 +309,7 @@ Log>`)
         result[0].text.toString(),
         `# test response
 ## Console messages
-<no console messages found>`
+<no console messages found>`,
       )
     })
   })
@@ -334,7 +336,7 @@ describe('McpResponse network request filtering', () => {
 ## Network requests
 Showing 1-2 of 2 (Page 1 of 1).
 http://example.com GET [pending]
-http://example.com GET [pending]`
+http://example.com GET [pending]`,
       )
     })
   })
@@ -357,7 +359,7 @@ http://example.com GET [pending]`
         `# test response
 ## Network requests
 Showing 1-1 of 1 (Page 1 of 1).
-http://example.com GET [pending]`
+http://example.com GET [pending]`,
       )
     })
   })
@@ -379,7 +381,7 @@ http://example.com GET [pending]`
         result[0].text,
         `# test response
 ## Network requests
-No requests found.`
+No requests found.`,
       )
     })
   })
@@ -406,7 +408,7 @@ http://example.com GET [pending]
 http://example.com GET [pending]
 http://example.com GET [pending]
 http://example.com GET [pending]
-http://example.com GET [pending]`
+http://example.com GET [pending]`,
       )
     })
   })
@@ -435,7 +437,7 @@ http://example.com GET [pending]
 http://example.com GET [pending]
 http://example.com GET [pending]
 http://example.com GET [pending]
-http://example.com GET [pending]`
+http://example.com GET [pending]`,
       )
     })
   })
@@ -458,7 +460,7 @@ describe('McpResponse network pagination', () => {
   it('returns first page by default', async () => {
     await withBrowser(async (response, context) => {
       const requests = Array.from({ length: 30 }, (_, idx) =>
-        getMockRequest({ method: `GET-${idx}` })
+        getMockRequest({ method: `GET-${idx}` }),
       )
       context.getNetworkRequests = () => {
         return requests
@@ -475,7 +477,7 @@ describe('McpResponse network pagination', () => {
   it('returns subsequent page when pageIdx provided', async () => {
     await withBrowser(async (response, context) => {
       const requests = Array.from({ length: 25 }, (_, idx) =>
-        getMockRequest({ method: `GET-${idx}` })
+        getMockRequest({ method: `GET-${idx}` }),
       )
       context.getNetworkRequests = () => requests
       response.setIncludeNetworkRequests(true, {
@@ -501,7 +503,7 @@ describe('McpResponse network pagination', () => {
       const result = await response.handle('test', context)
       const text = (result[0].text as string).toString()
       assert.ok(
-        text.includes('Invalid page number provided. Showing first page.')
+        text.includes('Invalid page number provided. Showing first page.'),
       )
       assert.ok(text.includes('Showing 1-2 of 5 (Page 1 of 3).'))
     })

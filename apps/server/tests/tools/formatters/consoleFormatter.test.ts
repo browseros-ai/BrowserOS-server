@@ -2,9 +2,9 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 import type { ConsoleMessage } from 'puppeteer-core'
 
 import { formatConsoleEvent } from '../../../src/tools/formatters/consoleFormatter.js'
@@ -86,7 +86,7 @@ describe('consoleFormatter', () => {
     const result = await formatConsoleEvent(message)
     assert.equal(
       result,
-      'Log> script.js:10:5: Processing file: file.txt {"id":1,"status":"done"}'
+      'Log> script.js:10:5: Processing file: file.txt {"id":1,"status":"done"}',
     )
   })
 
@@ -129,7 +129,7 @@ describe('consoleFormatter', () => {
     const result = await formatConsoleEvent(message)
     assert.equal(
       result,
-      'Error> Something went wrong\nscript.js:10:5\nscript2.js:20:10'
+      'Error> Something went wrong\nscript.js:10:5\nscript2.js:20:10',
     )
   })
 

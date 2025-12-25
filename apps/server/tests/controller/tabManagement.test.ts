@@ -3,16 +3,16 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 
 import { withMcpServer } from '../__helpers__/utils.js'
 
 describe('MCP Controller Tab Management Tools', () => {
   describe('browser_get_active_tab - Success Cases', () => {
     it('tests that active tab information is successfully retrieved', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_get_active_tab',
           arguments: {},
@@ -25,17 +25,14 @@ describe('MCP Controller Tab Management Tools', () => {
         assert.ok(Array.isArray(result.content), 'Content should be an array')
         assert.ok(result.content.length > 0, 'Content should not be empty')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should include text content')
         assert.ok(
           textContent.text.includes('Active Tab:'),
           'Should include active tab title',
         )
         assert.ok(textContent.text.includes('URL:'), 'Should include URL')
-        assert.ok(
-          textContent.text.includes('Tab ID:'),
-          'Should include tab ID',
-        )
+        assert.ok(textContent.text.includes('Tab ID:'), 'Should include tab ID')
         assert.ok(
           textContent.text.includes('Window ID:'),
           'Should include window ID',
@@ -46,7 +43,7 @@ describe('MCP Controller Tab Management Tools', () => {
 
   describe('browser_list_tabs - Success Cases', () => {
     it('tests that all open tabs are successfully listed', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_list_tabs',
           arguments: {},
@@ -59,7 +56,7 @@ describe('MCP Controller Tab Management Tools', () => {
         assert.ok(Array.isArray(result.content), 'Content should be array')
         assert.ok(result.content.length > 0, 'Should have content')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
         assert.ok(
           textContent.text.includes('Found') &&
@@ -70,7 +67,7 @@ describe('MCP Controller Tab Management Tools', () => {
     }, 30000)
 
     it('tests that structured content includes tabs and count', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_list_tabs',
           arguments: {},
@@ -110,7 +107,7 @@ describe('MCP Controller Tab Management Tools', () => {
 
   describe('browser_open_tab - Success Cases', () => {
     it('tests that a new tab with URL is successfully opened', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_open_tab',
           arguments: {
@@ -126,22 +123,19 @@ describe('MCP Controller Tab Management Tools', () => {
         assert.ok(Array.isArray(result.content), 'Content should be array')
         assert.ok(result.content.length > 0, 'Should have content')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
         assert.ok(
           textContent.text.includes('Opened new tab'),
           'Should confirm tab opened',
         )
         assert.ok(textContent.text.includes('URL:'), 'Should include URL')
-        assert.ok(
-          textContent.text.includes('Tab ID:'),
-          'Should include tab ID',
-        )
+        assert.ok(textContent.text.includes('Tab ID:'), 'Should include tab ID')
       })
     }, 30000)
 
     it('tests that a new tab without URL is successfully opened', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_open_tab',
           arguments: {},
@@ -154,7 +148,7 @@ describe('MCP Controller Tab Management Tools', () => {
         assert.ok(Array.isArray(result.content), 'Content should be array')
         assert.ok(result.content.length > 0, 'Should have content')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
         assert.ok(
           textContent.text.includes('Opened new tab'),
@@ -164,7 +158,7 @@ describe('MCP Controller Tab Management Tools', () => {
     }, 30000)
 
     it('tests that a new tab in background is successfully opened', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_open_tab',
           arguments: {
@@ -184,7 +178,7 @@ describe('MCP Controller Tab Management Tools', () => {
 
   describe('browser_close_tab - Success and Error Cases', () => {
     it('tests that a tab is successfully closed by ID', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // First open a tab to close
         const openResult = await client.callTool({
           name: 'browser_open_tab',
@@ -197,10 +191,10 @@ describe('MCP Controller Tab Management Tools', () => {
         assert.ok(!openResult.isError, 'Open should succeed')
 
         // Extract tab ID from response
-        const openText = openResult.content.find(c => c.type === 'text')
+        const openText = openResult.content.find((c) => c.type === 'text')
         const tabIdMatch = openText.text.match(/Tab ID: (\d+)/)
         assert.ok(tabIdMatch, 'Should extract tab ID')
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Now close the tab
         const closeResult = await client.callTool({
@@ -212,12 +206,9 @@ describe('MCP Controller Tab Management Tools', () => {
         console.log(JSON.stringify(closeResult, null, 2))
 
         assert.ok(!closeResult.isError, 'Should succeed')
-        assert.ok(
-          Array.isArray(closeResult.content),
-          'Content should be array',
-        )
+        assert.ok(Array.isArray(closeResult.content), 'Content should be array')
 
-        const closeText = closeResult.content.find(c => c.type === 'text')
+        const closeText = closeResult.content.find((c) => c.type === 'text')
         assert.ok(closeText, 'Should have text content')
         assert.ok(
           closeText.text.includes(`Closed tab ${tabId}`),
@@ -227,7 +218,7 @@ describe('MCP Controller Tab Management Tools', () => {
     }, 30000)
 
     it('tests that invalid tab ID is handled gracefully', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_close_tab',
           arguments: { tabId: 999999999 },
@@ -241,7 +232,7 @@ describe('MCP Controller Tab Management Tools', () => {
 
         // May error or succeed depending on extension behavior
         if (result.isError) {
-          const textContent = result.content.find(c => c.type === 'text')
+          const textContent = result.content.find((c) => c.type === 'text')
           assert.ok(
             textContent,
             'Error should include text content explaining the issue',
@@ -251,7 +242,7 @@ describe('MCP Controller Tab Management Tools', () => {
     }, 30000)
 
     it('tests that non-numeric tab ID is rejected with validation error', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_close_tab',
@@ -275,7 +266,7 @@ describe('MCP Controller Tab Management Tools', () => {
 
   describe('browser_switch_tab - Success and Error Cases', () => {
     it('tests that switching to a tab by ID succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // First open a tab to switch to
         const openResult = await client.callTool({
           name: 'browser_open_tab',
@@ -288,10 +279,10 @@ describe('MCP Controller Tab Management Tools', () => {
         assert.ok(!openResult.isError, 'Open should succeed')
 
         // Extract tab ID
-        const openText = openResult.content.find(c => c.type === 'text')
+        const openText = openResult.content.find((c) => c.type === 'text')
         const tabIdMatch = openText.text.match(/Tab ID: (\d+)/)
         assert.ok(tabIdMatch, 'Should extract tab ID')
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Now switch to the tab
         const switchResult = await client.callTool({
@@ -308,7 +299,7 @@ describe('MCP Controller Tab Management Tools', () => {
           'Content should be array',
         )
 
-        const switchText = switchResult.content.find(c => c.type === 'text')
+        const switchText = switchResult.content.find((c) => c.type === 'text')
         assert.ok(switchText, 'Should have text content')
         assert.ok(
           switchText.text.includes('Switched to tab:'),
@@ -319,7 +310,7 @@ describe('MCP Controller Tab Management Tools', () => {
     }, 30000)
 
     it('tests that switching to invalid tab ID is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_switch_tab',
           arguments: { tabId: 999999999 },
@@ -332,7 +323,7 @@ describe('MCP Controller Tab Management Tools', () => {
         assert.ok(Array.isArray(result.content), 'Should have content array')
 
         if (result.isError) {
-          const textContent = result.content.find(c => c.type === 'text')
+          const textContent = result.content.find((c) => c.type === 'text')
           assert.ok(textContent, 'Error should include text content')
         }
       })
@@ -341,7 +332,7 @@ describe('MCP Controller Tab Management Tools', () => {
 
   describe('browser_get_load_status - Success and Error Cases', () => {
     it('tests that load status of active tab is successfully checked', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Get active tab first
         const activeResult = await client.callTool({
           name: 'browser_get_active_tab',
@@ -351,10 +342,10 @@ describe('MCP Controller Tab Management Tools', () => {
         assert.ok(!activeResult.isError, 'Get active tab should succeed')
 
         // Extract tab ID
-        const activeText = activeResult.content.find(c => c.type === 'text')
+        const activeText = activeResult.content.find((c) => c.type === 'text')
         const tabIdMatch = activeText.text.match(/Tab ID: (\d+)/)
         assert.ok(tabIdMatch, 'Should extract tab ID')
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Check load status
         const statusResult = await client.callTool({
@@ -371,7 +362,7 @@ describe('MCP Controller Tab Management Tools', () => {
           'Content should be array',
         )
 
-        const statusText = statusResult.content.find(c => c.type === 'text')
+        const statusText = statusResult.content.find((c) => c.type === 'text')
         assert.ok(statusText, 'Should have text content')
         assert.ok(
           statusText.text.includes('load status:'),
@@ -393,7 +384,7 @@ describe('MCP Controller Tab Management Tools', () => {
     }, 30000)
 
     it('tests that checking load status of invalid tab ID is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_get_load_status',
           arguments: { tabId: 999999999 },
@@ -406,7 +397,7 @@ describe('MCP Controller Tab Management Tools', () => {
         assert.ok(Array.isArray(result.content), 'Should have content array')
 
         if (result.isError) {
-          const textContent = result.content.find(c => c.type === 'text')
+          const textContent = result.content.find((c) => c.type === 'text')
           assert.ok(textContent, 'Error should include text content')
         }
       })
@@ -415,7 +406,7 @@ describe('MCP Controller Tab Management Tools', () => {
 
   describe('Tab Management - Response Structure Validation', () => {
     it('tests that all tab tools return valid MCP response structure', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tools = [
           { name: 'browser_get_active_tab', args: {} },
           { name: 'browser_list_tabs', args: {} },
@@ -465,7 +456,7 @@ describe('MCP Controller Tab Management Tools', () => {
 
   describe('Tab Management - Workflow Tests', () => {
     it('tests complete tab lifecycle: open -> switch -> close', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Open a new tab
         const openResult = await client.callTool({
           name: 'browser_open_tab',
@@ -481,10 +472,10 @@ describe('MCP Controller Tab Management Tools', () => {
         assert.ok(!openResult.isError, 'Open should succeed')
 
         // Extract tab ID
-        const openText = openResult.content.find(c => c.type === 'text')
+        const openText = openResult.content.find((c) => c.type === 'text')
         const tabIdMatch = openText.text.match(/Tab ID: (\d+)/)
         assert.ok(tabIdMatch, 'Should extract tab ID')
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Switch to the tab
         const switchResult = await client.callTool({
@@ -507,7 +498,7 @@ describe('MCP Controller Tab Management Tools', () => {
         console.log(JSON.stringify(activeResult, null, 2))
 
         assert.ok(!activeResult.isError, 'Get active should succeed')
-        const activeText = activeResult.content.find(c => c.type === 'text')
+        const activeText = activeResult.content.find((c) => c.type === 'text')
         assert.ok(
           activeText.text.includes(`Tab ID: ${tabId}`),
           'Should be the active tab',

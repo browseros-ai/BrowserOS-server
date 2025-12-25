@@ -3,16 +3,16 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 
 import { withMcpServer } from '../__helpers__/utils.js'
 
 describe('MCP Controller History Tools', () => {
   describe('browser_search_history - Success Cases', () => {
     it('tests that history search with query succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_search_history',
           arguments: { query: 'example' },
@@ -24,7 +24,7 @@ describe('MCP Controller History Tools', () => {
         assert.ok(!result.isError, 'Should succeed')
         assert.ok(Array.isArray(result.content), 'Content should be array')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
         assert.ok(
           textContent.text.includes('Found'),
@@ -38,7 +38,7 @@ describe('MCP Controller History Tools', () => {
     }, 30000)
 
     it('tests that history search with maxResults limit succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_search_history',
           arguments: { query: 'test', maxResults: 10 },
@@ -49,14 +49,14 @@ describe('MCP Controller History Tools', () => {
 
         assert.ok(!result.isError, 'Should succeed')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
         assert.ok(textContent.text.includes('Found'), 'Should show results')
       })
     }, 30000)
 
     it('tests that history search with empty query succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_search_history',
           arguments: { query: '' },
@@ -67,13 +67,13 @@ describe('MCP Controller History Tools', () => {
 
         assert.ok(!result.isError, 'Should succeed')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
       })
     }, 30000)
 
     it('tests that history search with special characters succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_search_history',
           arguments: { query: 'test@example.com' },
@@ -87,7 +87,7 @@ describe('MCP Controller History Tools', () => {
     }, 30000)
 
     it('tests that history search with large maxResults succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_search_history',
           arguments: { query: 'test', maxResults: 1000 },
@@ -103,7 +103,7 @@ describe('MCP Controller History Tools', () => {
 
   describe('browser_search_history - Error Handling', () => {
     it('tests that non-numeric maxResults is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_search_history',
@@ -124,7 +124,7 @@ describe('MCP Controller History Tools', () => {
     }, 30000)
 
     it('tests that zero maxResults is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_search_history',
           arguments: { query: 'test', maxResults: 0 },
@@ -135,7 +135,7 @@ describe('MCP Controller History Tools', () => {
 
         assert.ok(result.isError, 'Should be an error')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(
           textContent.text.includes('Too small') ||
             textContent.text.includes('expected number to be >0'),
@@ -145,7 +145,7 @@ describe('MCP Controller History Tools', () => {
     }, 30000)
 
     it('tests that negative maxResults is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_search_history',
           arguments: { query: 'test', maxResults: -1 },
@@ -162,7 +162,7 @@ describe('MCP Controller History Tools', () => {
 
   describe('browser_get_recent_history - Success Cases', () => {
     it('tests that getting recent history with default count succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_get_recent_history',
           arguments: {},
@@ -174,7 +174,7 @@ describe('MCP Controller History Tools', () => {
         assert.ok(!result.isError, 'Should succeed')
         assert.ok(Array.isArray(result.content), 'Content should be array')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
         assert.ok(
           textContent.text.includes('Retrieved'),
@@ -188,7 +188,7 @@ describe('MCP Controller History Tools', () => {
     }, 30000)
 
     it('tests that getting recent history with specific count succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_get_recent_history',
           arguments: { count: 10 },
@@ -199,13 +199,13 @@ describe('MCP Controller History Tools', () => {
 
         assert.ok(!result.isError, 'Should succeed')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
       })
     }, 30000)
 
     it('tests that getting recent history with large count succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_get_recent_history',
           arguments: { count: 500 },
@@ -219,7 +219,7 @@ describe('MCP Controller History Tools', () => {
     }, 30000)
 
     it('tests that getting recent history with count 1 succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_get_recent_history',
           arguments: { count: 1 },
@@ -235,7 +235,7 @@ describe('MCP Controller History Tools', () => {
 
   describe('browser_get_recent_history - Error Handling', () => {
     it('tests that non-numeric count is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_get_recent_history',
@@ -256,7 +256,7 @@ describe('MCP Controller History Tools', () => {
     }, 30000)
 
     it('tests that zero count returns all items', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_get_recent_history',
           arguments: { count: 0 },
@@ -267,7 +267,7 @@ describe('MCP Controller History Tools', () => {
 
         assert.ok(!result.isError, 'Should succeed')
 
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(
           textContent.text.includes('Retrieved'),
           'Should return results (zero not enforced)',
@@ -276,7 +276,7 @@ describe('MCP Controller History Tools', () => {
     }, 30000)
 
     it('tests that negative count is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_get_recent_history',
           arguments: { count: -1 },
@@ -293,7 +293,7 @@ describe('MCP Controller History Tools', () => {
 
   describe('History Tools - Response Structure Validation', () => {
     it('tests that history tools return valid MCP response structure', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const tools = [
           { name: 'browser_search_history', args: { query: 'test' } },
           { name: 'browser_get_recent_history', args: {} },
@@ -342,7 +342,7 @@ describe('MCP Controller History Tools', () => {
 
   describe('History Tools - Workflow Tests', () => {
     it('tests complete history workflow: get recent -> search specific', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Get recent history
         const recentResult = await client.callTool({
           name: 'browser_get_recent_history',
@@ -368,7 +368,7 @@ describe('MCP Controller History Tools', () => {
     }, 30000)
 
     it('tests history comparison workflow: get recent multiple times', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Get recent history first time
         const result1 = await client.callTool({
           name: 'browser_get_recent_history',

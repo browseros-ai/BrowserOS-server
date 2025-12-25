@@ -4,15 +4,14 @@
  *
  * Test helpers index - re-exports all test utilities
  */
+
+export { cleanupBrowserOS, ensureBrowserOS } from './browseros.js'
+export { cleanupServer, ensureServer, type ServerConfig } from './mcpServer.js'
 export {
-  withBrowser,
-  withMcpServer,
   getMockRequest,
   getMockResponse,
   html,
   killProcessOnPort,
+  withBrowser,
+  withMcpServer,
 } from './utils.js'
-
-export { ensureBrowserOS, cleanupBrowserOS } from './browseros.js'
-
-export { ensureServer, cleanupServer, type ServerConfig } from './mcpServer.js'

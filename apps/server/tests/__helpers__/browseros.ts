@@ -60,13 +60,14 @@ export async function ensureBrowserOS(options?: {
   cdpPort: number
   tempUserDataDir: string
 }> {
-  const cdpPort = options?.cdpPort ?? parseInt(process.env.CDP_PORT || '9005')
+  const cdpPort =
+    options?.cdpPort ?? parseInt(process.env.CDP_PORT || '9005', 10)
   const httpMcpPort =
-    options?.httpMcpPort ?? parseInt(process.env.HTTP_MCP_PORT || '9105')
+    options?.httpMcpPort ?? parseInt(process.env.HTTP_MCP_PORT || '9105', 10)
   const agentPort =
-    options?.agentPort ?? parseInt(process.env.AGENT_PORT || '9205')
+    options?.agentPort ?? parseInt(process.env.AGENT_PORT || '9205', 10)
   const extensionPort =
-    options?.extensionPort ?? parseInt(process.env.EXTENSION_PORT || '9305')
+    options?.extensionPort ?? parseInt(process.env.EXTENSION_PORT || '9305', 10)
   const binaryPath =
     options?.binaryPath ??
     process.env.BROWSEROS_BINARY ??
@@ -99,7 +100,7 @@ export async function ensureBrowserOS(options?: {
     console.log(`CDP port ${cdpPort} is in use by external process...`)
 
     throw new Error(
-      `CDP port ${cdpPort} is still in use after attempting to kill process. Please investigate manually.`
+      `CDP port ${cdpPort} is still in use after attempting to kill process. Please investigate manually.`,
     )
   }
 
@@ -123,7 +124,7 @@ export async function ensureBrowserOS(options?: {
     ],
     {
       stdio: ['ignore', 'pipe', 'pipe'],
-    }
+    },
   )
 
   browserosProcess.stdout?.on('data', (_data) => {

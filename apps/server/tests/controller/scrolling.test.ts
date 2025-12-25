@@ -2,16 +2,16 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 
-import { withMcpServer, type McpContentItem } from '../__helpers__/utils.js'
+import { type McpContentItem, withMcpServer } from '../__helpers__/utils.js'
 
 describe('MCP Controller Scrolling Tools', () => {
   describe('browser_scroll_down - Success Cases', () => {
     it('tests that scrolling down in active tab succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -22,10 +22,10 @@ describe('MCP Controller Scrolling Tools', () => {
 
         assert.ok(!navResult.isError, 'Navigation should succeed')
 
-        const navText = navContent.find(c => c.type === 'text')
+        const navText = navContent.find((c) => c.type === 'text')
         const tabIdMatch = navText?.text?.match(/Tab ID: (\d+)/)
         assert.ok(tabIdMatch, 'Should extract tab ID')
-        const tabId = parseInt(tabIdMatch![1])
+        const tabId = parseInt(tabIdMatch?.[1], 10)
 
         const scrollResult = await client.callTool({
           name: 'browser_scroll_down',
@@ -40,7 +40,7 @@ describe('MCP Controller Scrolling Tools', () => {
         assert.ok(Array.isArray(scrollContent), 'Content should be array')
         assert.ok(scrollContent.length > 0, 'Should have content')
 
-        const textContent = scrollContent.find(c => c.type === 'text')
+        const textContent = scrollContent.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
         assert.ok(
           textContent.text?.includes('Scrolled down'),
@@ -56,7 +56,7 @@ describe('MCP Controller Scrolling Tools', () => {
 
   describe('browser_scroll_up - Success Cases', () => {
     it('tests that scrolling up in active tab succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -67,10 +67,10 @@ describe('MCP Controller Scrolling Tools', () => {
 
         assert.ok(!navResult.isError, 'Navigation should succeed')
 
-        const navText = navContent.find(c => c.type === 'text')
+        const navText = navContent.find((c) => c.type === 'text')
         const tabIdMatch = navText?.text?.match(/Tab ID: (\d+)/)
         assert.ok(tabIdMatch, 'Should extract tab ID')
-        const tabId = parseInt(tabIdMatch![1])
+        const tabId = parseInt(tabIdMatch?.[1], 10)
 
         await client.callTool({
           name: 'browser_scroll_down',
@@ -89,7 +89,7 @@ describe('MCP Controller Scrolling Tools', () => {
         assert.ok(!scrollResult.isError, 'Should succeed')
         assert.ok(Array.isArray(scrollContent), 'Content should be array')
 
-        const textContent = scrollContent.find(c => c.type === 'text')
+        const textContent = scrollContent.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
         assert.ok(
           textContent.text?.includes('Scrolled up'),
@@ -101,7 +101,7 @@ describe('MCP Controller Scrolling Tools', () => {
 
   describe('Scrolling - Error Handling', () => {
     it('tests that scrolling down with invalid tab ID is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_scroll_down',
           arguments: { tabId: 999999999 },
@@ -115,14 +115,14 @@ describe('MCP Controller Scrolling Tools', () => {
         assert.ok(Array.isArray(content), 'Should have content array')
 
         if (result.isError) {
-          const textContent = content.find(c => c.type === 'text')
+          const textContent = content.find((c) => c.type === 'text')
           assert.ok(textContent, 'Error should include text content')
         }
       })
     }, 30000)
 
     it('tests that scrolling up with invalid tab ID is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_scroll_up',
           arguments: { tabId: 999999999 },
@@ -136,14 +136,14 @@ describe('MCP Controller Scrolling Tools', () => {
         assert.ok(Array.isArray(content), 'Should have content array')
 
         if (result.isError) {
-          const textContent = content.find(c => c.type === 'text')
+          const textContent = content.find((c) => c.type === 'text')
           assert.ok(textContent, 'Error should include text content')
         }
       })
     }, 30000)
 
     it('tests that scroll_down with non-numeric tab ID is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_scroll_down',
@@ -164,7 +164,7 @@ describe('MCP Controller Scrolling Tools', () => {
     }, 30000)
 
     it('tests that scroll_up with non-numeric tab ID is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_scroll_up',
@@ -187,7 +187,7 @@ describe('MCP Controller Scrolling Tools', () => {
 
   describe('Scrolling - Response Structure Validation', () => {
     it('tests that scrolling tools return valid MCP response structure', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -196,9 +196,9 @@ describe('MCP Controller Scrolling Tools', () => {
         })
         const navContent = navResult.content as McpContentItem[]
 
-        const navText = navContent.find(c => c.type === 'text')
+        const navText = navContent.find((c) => c.type === 'text')
         const tabIdMatch = navText?.text?.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch![1])
+        const tabId = parseInt(tabIdMatch?.[1], 10)
 
         const tools = [
           { name: 'browser_scroll_down', args: { tabId } },
@@ -247,7 +247,7 @@ describe('MCP Controller Scrolling Tools', () => {
 
   describe('Scrolling - Workflow Tests', () => {
     it('tests complete scrolling workflow: navigate, scroll down multiple times, scroll up', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const navResult = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -261,9 +261,9 @@ describe('MCP Controller Scrolling Tools', () => {
 
         assert.ok(!navResult.isError, 'Navigation should succeed')
 
-        const navText = navContent.find(c => c.type === 'text')
+        const navText = navContent.find((c) => c.type === 'text')
         const tabIdMatch = navText?.text?.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch![1])
+        const tabId = parseInt(tabIdMatch?.[1], 10)
 
         const scroll1 = await client.callTool({
           name: 'browser_scroll_down',

@@ -3,16 +3,16 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 
 import { withMcpServer } from '../__helpers__/utils.js'
 
 describe('MCP Controller Screenshot Tool', () => {
   describe('browser_get_screenshot - Success Cases', () => {
     it('tests that screenshot capture with default settings succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // First navigate to a page
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -24,10 +24,10 @@ describe('MCP Controller Screenshot Tool', () => {
         assert.ok(!navResult.isError, 'Navigation should succeed')
 
         // Extract tab ID
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
         assert.ok(tabIdMatch, 'Should extract tab ID')
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Capture screenshot
         const result = await client.callTool({
@@ -40,7 +40,7 @@ describe('MCP Controller Screenshot Tool', () => {
           JSON.stringify(
             {
               ...result,
-              content: result.content.map(c =>
+              content: result.content.map((c) =>
                 c.type === 'image'
                   ? { ...c, data: `<base64 data ${c.data?.length || 0} chars>` }
                   : c,
@@ -56,7 +56,7 @@ describe('MCP Controller Screenshot Tool', () => {
         assert.ok(result.content.length > 0, 'Content should not be empty')
 
         // Should have text description
-        const textContent = result.content.find(c => c.type === 'text')
+        const textContent = result.content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should include text content')
         assert.ok(
           textContent.text.includes('Screenshot captured'),
@@ -68,7 +68,7 @@ describe('MCP Controller Screenshot Tool', () => {
         )
 
         // Should have image data
-        const imageContent = result.content.find(c => c.type === 'image')
+        const imageContent = result.content.find((c) => c.type === 'image')
         assert.ok(imageContent, 'Should include image content')
         assert.ok(imageContent.data, 'Should have image data')
         assert.ok(imageContent.mimeType, 'Should have mime type')
@@ -80,7 +80,7 @@ describe('MCP Controller Screenshot Tool', () => {
     }, 30000)
 
     it('tests that screenshot capture with small size preset succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a page
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -89,9 +89,9 @@ describe('MCP Controller Screenshot Tool', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Capture with small size
         const result = await client.callTool({
@@ -107,7 +107,7 @@ describe('MCP Controller Screenshot Tool', () => {
           JSON.stringify(
             {
               ...result,
-              content: result.content.map(c =>
+              content: result.content.map((c) =>
                 c.type === 'image'
                   ? { ...c, data: `<base64 data ${c.data?.length || 0} chars>` }
                   : c,
@@ -120,14 +120,14 @@ describe('MCP Controller Screenshot Tool', () => {
 
         assert.ok(!result.isError, 'Should succeed')
 
-        const imageContent = result.content.find(c => c.type === 'image')
+        const imageContent = result.content.find((c) => c.type === 'image')
         assert.ok(imageContent, 'Should include image content')
         assert.ok(imageContent.data, 'Should have image data')
       })
     }, 30000)
 
     it('tests that screenshot capture with medium size preset succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a page
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -136,9 +136,9 @@ describe('MCP Controller Screenshot Tool', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Capture with medium size
         const result = await client.callTool({
@@ -154,7 +154,7 @@ describe('MCP Controller Screenshot Tool', () => {
           JSON.stringify(
             {
               ...result,
-              content: result.content.map(c =>
+              content: result.content.map((c) =>
                 c.type === 'image'
                   ? { ...c, data: `<base64 data ${c.data?.length || 0} chars>` }
                   : c,
@@ -167,13 +167,13 @@ describe('MCP Controller Screenshot Tool', () => {
 
         assert.ok(!result.isError, 'Should succeed')
 
-        const imageContent = result.content.find(c => c.type === 'image')
+        const imageContent = result.content.find((c) => c.type === 'image')
         assert.ok(imageContent, 'Should include image content')
       })
     }, 30000)
 
     it('tests that screenshot capture with large size preset succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a page
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -182,9 +182,9 @@ describe('MCP Controller Screenshot Tool', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Capture with large size
         const result = await client.callTool({
@@ -200,7 +200,7 @@ describe('MCP Controller Screenshot Tool', () => {
           JSON.stringify(
             {
               ...result,
-              content: result.content.map(c =>
+              content: result.content.map((c) =>
                 c.type === 'image'
                   ? { ...c, data: `<base64 data ${c.data?.length || 0} chars>` }
                   : c,
@@ -213,13 +213,13 @@ describe('MCP Controller Screenshot Tool', () => {
 
         assert.ok(!result.isError, 'Should succeed')
 
-        const imageContent = result.content.find(c => c.type === 'image')
+        const imageContent = result.content.find((c) => c.type === 'image')
         assert.ok(imageContent, 'Should include image content')
       })
     }, 30000)
 
     it('tests that screenshot capture with custom width and height succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a page
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -228,9 +228,9 @@ describe('MCP Controller Screenshot Tool', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Capture with custom dimensions
         const result = await client.callTool({
@@ -247,7 +247,7 @@ describe('MCP Controller Screenshot Tool', () => {
           JSON.stringify(
             {
               ...result,
-              content: result.content.map(c =>
+              content: result.content.map((c) =>
                 c.type === 'image'
                   ? { ...c, data: `<base64 data ${c.data?.length || 0} chars>` }
                   : c,
@@ -260,13 +260,13 @@ describe('MCP Controller Screenshot Tool', () => {
 
         assert.ok(!result.isError, 'Should succeed')
 
-        const imageContent = result.content.find(c => c.type === 'image')
+        const imageContent = result.content.find((c) => c.type === 'image')
         assert.ok(imageContent, 'Should include image content')
       })
     }, 30000)
 
     it('tests that screenshot capture with showHighlights enabled succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a page
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -275,9 +275,9 @@ describe('MCP Controller Screenshot Tool', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Capture with highlights
         const result = await client.callTool({
@@ -293,7 +293,7 @@ describe('MCP Controller Screenshot Tool', () => {
           JSON.stringify(
             {
               ...result,
-              content: result.content.map(c =>
+              content: result.content.map((c) =>
                 c.type === 'image'
                   ? { ...c, data: `<base64 data ${c.data?.length || 0} chars>` }
                   : c,
@@ -306,7 +306,7 @@ describe('MCP Controller Screenshot Tool', () => {
 
         assert.ok(!result.isError, 'Should succeed')
 
-        const imageContent = result.content.find(c => c.type === 'image')
+        const imageContent = result.content.find((c) => c.type === 'image')
         assert.ok(imageContent, 'Should include image content')
       })
     }, 30000)
@@ -314,7 +314,7 @@ describe('MCP Controller Screenshot Tool', () => {
 
   describe('browser_get_screenshot - Error Handling', () => {
     it('tests that screenshot of invalid tab ID is handled', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_get_screenshot',
           arguments: { tabId: 999999999 },
@@ -327,14 +327,14 @@ describe('MCP Controller Screenshot Tool', () => {
         assert.ok(Array.isArray(result.content), 'Should have content array')
 
         if (result.isError) {
-          const textContent = result.content.find(c => c.type === 'text')
+          const textContent = result.content.find((c) => c.type === 'text')
           assert.ok(textContent, 'Error should include text content')
         }
       })
     }, 30000)
 
     it('tests that screenshot with non-numeric tab ID is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         try {
           await client.callTool({
             name: 'browser_get_screenshot',
@@ -355,7 +355,7 @@ describe('MCP Controller Screenshot Tool', () => {
     }, 30000)
 
     it('tests that screenshot with invalid size preset is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a page first
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -364,9 +364,9 @@ describe('MCP Controller Screenshot Tool', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         try {
           await client.callTool({
@@ -390,7 +390,7 @@ describe('MCP Controller Screenshot Tool', () => {
     }, 30000)
 
     it('tests that screenshot with negative dimensions is rejected', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a page first
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -399,9 +399,9 @@ describe('MCP Controller Screenshot Tool', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Try with negative width
         const result = await client.callTool({
@@ -425,7 +425,7 @@ describe('MCP Controller Screenshot Tool', () => {
 
   describe('browser_get_screenshot - Response Structure Validation', () => {
     it('tests that screenshot tool returns valid MCP response structure', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a page
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -434,9 +434,9 @@ describe('MCP Controller Screenshot Tool', () => {
           },
         })
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         const result = await client.callTool({
           name: 'browser_get_screenshot',
@@ -493,7 +493,7 @@ describe('MCP Controller Screenshot Tool', () => {
 
   describe('browser_get_screenshot - Workflow Tests', () => {
     it('tests complete screenshot workflow: navigate, multiple screenshots with different sizes', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         // Navigate to a page
         const navResult = await client.callTool({
           name: 'browser_navigate',
@@ -505,9 +505,9 @@ describe('MCP Controller Screenshot Tool', () => {
         console.log('\n=== Workflow: Navigate Response ===')
         console.log(JSON.stringify(navResult, null, 2))
 
-        const navText = navResult.content.find(c => c.type === 'text')
+        const navText = navResult.content.find((c) => c.type === 'text')
         const tabIdMatch = navText.text.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch[1])
+        const tabId = parseInt(tabIdMatch[1], 10)
 
         // Take small screenshot
         const smallResult = await client.callTool({
@@ -520,7 +520,7 @@ describe('MCP Controller Screenshot Tool', () => {
           JSON.stringify(
             {
               ...smallResult,
-              content: smallResult.content.map(c =>
+              content: smallResult.content.map((c) =>
                 c.type === 'image'
                   ? { ...c, data: `<base64 ${c.data?.length || 0} chars>` }
                   : c,
@@ -544,7 +544,7 @@ describe('MCP Controller Screenshot Tool', () => {
           JSON.stringify(
             {
               ...largeResult,
-              content: largeResult.content.map(c =>
+              content: largeResult.content.map((c) =>
                 c.type === 'image'
                   ? { ...c, data: `<base64 ${c.data?.length || 0} chars>` }
                   : c,
@@ -568,7 +568,7 @@ describe('MCP Controller Screenshot Tool', () => {
           JSON.stringify(
             {
               ...customResult,
-              content: customResult.content.map(c =>
+              content: customResult.content.map((c) =>
                 c.type === 'image'
                   ? { ...c, data: `<base64 ${c.data?.length || 0} chars>` }
                   : c,

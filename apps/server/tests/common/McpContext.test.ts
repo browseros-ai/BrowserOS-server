@@ -2,9 +2,9 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 import sinon from 'sinon'
 
 import type { TraceResult } from '../../src/common/types.js'
@@ -26,7 +26,7 @@ describe('McpContext', () => {
       } catch (err) {
         assert.strict(
           (err as Error).message,
-          'This uid is coming from a stale snapshot. Call take_snapshot to get a fresh snapshot'
+          'This uid is coming from a stale snapshot. Call take_snapshot to get a fresh snapshot',
         )
       }
     })

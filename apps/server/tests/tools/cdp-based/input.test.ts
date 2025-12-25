@@ -2,18 +2,18 @@
  * @license
  * Copyright 2025 BrowserOS
  */
+
+import { describe, it } from 'bun:test'
 import assert from 'node:assert'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 
-import { describe, it } from 'bun:test'
-
 import {
   click,
-  hover,
-  fill,
   drag,
+  fill,
   fillForm,
+  hover,
   uploadFile,
 } from '../../../src/tools/cdp-based/input.js'
 
@@ -27,7 +27,7 @@ describe('input', () => {
     await withBrowser(async (response, context) => {
       const page = context.getSelectedPage()
       await page.setContent(
-        `<!DOCTYPE html><button onclick="this.innerText = 'clicked';">test`
+        `<!DOCTYPE html><button onclick="this.innerText = 'clicked';">test`,
       )
       await context.createTextSnapshot()
       await click.handler(
@@ -37,11 +37,11 @@ describe('input', () => {
           },
         },
         response,
-        context
+        context,
       )
       assert.strictEqual(
         response.responseLines[0],
-        'Successfully clicked on the element'
+        'Successfully clicked on the element',
       )
       assert.ok(response.includeSnapshot)
       assert.ok(await page.$('text/clicked'))
@@ -51,7 +51,7 @@ describe('input', () => {
     await withBrowser(async (response, context) => {
       const page = context.getSelectedPage()
       await page.setContent(
-        `<!DOCTYPE html><button ondblclick="this.innerText = 'dblclicked';">test`
+        `<!DOCTYPE html><button ondblclick="this.innerText = 'dblclicked';">test`,
       )
       await context.createTextSnapshot()
       await click.handler(
@@ -62,11 +62,11 @@ describe('input', () => {
           },
         },
         response,
-        context
+        context,
       )
       assert.strictEqual(
         response.responseLines[0],
-        'Successfully double clicked on the element'
+        'Successfully double clicked on the element',
       )
       assert.ok(response.includeSnapshot)
       assert.ok(await page.$('text/dblclicked'))
@@ -92,7 +92,7 @@ describe('input', () => {
           },
         },
         response,
-        context
+        context,
       )
       const [t1, t2] = await Promise.all([
         clickPromise.then(() => Date.now()),
@@ -121,7 +121,7 @@ describe('input', () => {
             }, 50)
           })
         </script>
-      `
+      `,
     )
     await withBrowser(async (response, context) => {
       const page = context.getSelectedPage()
@@ -135,7 +135,7 @@ describe('input', () => {
             },
           },
           response,
-          context
+          context,
         )
         .then(() => Date.now())
       const buttonChangeTime = await page.evaluate(() => {
@@ -151,7 +151,7 @@ describe('input', () => {
     await withBrowser(async (response, context) => {
       const page = context.getSelectedPage()
       await page.setContent(
-        `<!DOCTYPE html><button onmouseover="this.innerText = 'hovered';">test`
+        `<!DOCTYPE html><button onmouseover="this.innerText = 'hovered';">test`,
       )
       await context.createTextSnapshot()
       await hover.handler(
@@ -161,11 +161,11 @@ describe('input', () => {
           },
         },
         response,
-        context
+        context,
       )
       assert.strictEqual(
         response.responseLines[0],
-        'Successfully hovered over the element'
+        'Successfully hovered over the element',
       )
       assert.ok(response.includeSnapshot)
       assert.ok(await page.$('text/hovered'))
@@ -185,11 +185,11 @@ describe('input', () => {
           },
         },
         response,
-        context
+        context,
       )
       assert.strictEqual(
         response.responseLines[0],
-        'Successfully filled out the element'
+        'Successfully filled out the element',
       )
       assert.ok(response.includeSnapshot)
       assert.ok(await page.$('text/test'))
@@ -227,12 +227,12 @@ describe('input', () => {
           },
         },
         response,
-        context
+        context,
       )
       assert.ok(response.includeSnapshot)
       assert.strictEqual(
         response.responseLines[0],
-        'Successfully dragged an element'
+        'Successfully dragged an element',
       )
       assert.ok(await page.$('text/dropped'))
     })
@@ -264,12 +264,12 @@ describe('input', () => {
           },
         },
         response,
-        context
+        context,
       )
       assert.ok(response.includeSnapshot)
       assert.strictEqual(
         response.responseLines[0],
-        'Successfully filled out the form'
+        'Successfully filled out the form',
       )
       assert.deepStrictEqual(
         await page.evaluate(() => {
@@ -280,7 +280,7 @@ describe('input', () => {
             document.querySelector('input[name=email]').value,
           ]
         }),
-        ['test', 'test2']
+        ['test', 'test2'],
       )
     })
   })
@@ -304,12 +304,12 @@ describe('input', () => {
           },
         },
         response,
-        context
+        context,
       )
       assert.ok(response.includeSnapshot)
       assert.strictEqual(
         response.responseLines[0],
-        `File uploaded from ${testFilePath}.`
+        `File uploaded from ${testFilePath}.`,
       )
     })
 
@@ -339,12 +339,12 @@ describe('input', () => {
           },
         },
         response,
-        context
+        context,
       )
       assert.ok(response.includeSnapshot)
       assert.strictEqual(
         response.responseLines[0],
-        `File uploaded from ${testFilePath}.`
+        `File uploaded from ${testFilePath}.`,
       )
       const uploadedFileName = await page.$eval('#file-input', (el) => {
         const input = el as HTMLInputElement
@@ -374,12 +374,12 @@ describe('input', () => {
             },
           },
           response,
-          context
+          context,
         ),
         {
           message:
             'Failed to upload file. The element could not accept the file directly, and clicking it did not trigger a file chooser.',
-        }
+        },
       )
 
       assert.strictEqual(response.responseLines.length, 0)

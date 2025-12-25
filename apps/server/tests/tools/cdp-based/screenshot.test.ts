@@ -2,12 +2,12 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
-import { rm, stat, mkdir, chmod, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
+import { chmod, mkdir, rm, stat, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 import { screenshot } from '../../../src/tools/cdp-based/screenshot.js'
 
@@ -26,31 +26,39 @@ describe('screenshot', () => {
       assert.equal(response.images[0].mimeType, 'image/png')
       assert.equal(
         response.responseLines.at(0),
-        "Took a screenshot of the current page's viewport."
+        "Took a screenshot of the current page's viewport.",
       )
     })
   })
   it('browser_take_screenshot - with jpeg', async () => {
     await withBrowser(async (response, context) => {
-      await screenshot.handler({ params: { format: 'jpeg' } }, response, context)
+      await screenshot.handler(
+        { params: { format: 'jpeg' } },
+        response,
+        context,
+      )
 
       assert.equal(response.images.length, 1)
       assert.equal(response.images[0].mimeType, 'image/jpeg')
       assert.equal(
         response.responseLines.at(0),
-        "Took a screenshot of the current page's viewport."
+        "Took a screenshot of the current page's viewport.",
       )
     })
   })
   it('browser_take_screenshot - with webp', async () => {
     await withBrowser(async (response, context) => {
-      await screenshot.handler({ params: { format: 'webp' } }, response, context)
+      await screenshot.handler(
+        { params: { format: 'webp' } },
+        response,
+        context,
+      )
 
       assert.equal(response.images.length, 1)
       assert.equal(response.images[0].mimeType, 'image/webp')
       assert.equal(
         response.responseLines.at(0),
-        "Took a screenshot of the current page's viewport."
+        "Took a screenshot of the current page's viewport.",
       )
     })
   })
@@ -62,14 +70,14 @@ describe('screenshot', () => {
       await screenshot.handler(
         { params: { format: 'png', fullPage: true } },
         response,
-        context
+        context,
       )
 
       assert.equal(response.images.length, 1)
       assert.equal(response.images[0].mimeType, 'image/png')
       assert.equal(
         response.responseLines.at(0),
-        'Took a screenshot of the full current page.'
+        'Took a screenshot of the full current page.',
       )
     })
   })
@@ -77,22 +85,20 @@ describe('screenshot', () => {
   it('browser_take_screenshot - with full page resulting in a large screenshot', async () => {
     await withBrowser(async (response, context) => {
       const page = context.getSelectedPage()
-      await page.setContent(
-        `<div style="color:blue;">test</div>`.repeat(7_000)
-      )
+      await page.setContent(`<div style="color:blue;">test</div>`.repeat(7_000))
       await screenshot.handler(
         { params: { format: 'png', fullPage: true } },
         response,
-        context
+        context,
       )
 
       assert.equal(response.images.length, 0)
       assert.equal(
         response.responseLines.at(0),
-        'Took a screenshot of the full current page.'
+        'Took a screenshot of the full current page.',
       )
       assert.ok(
-        response.responseLines.at(1)?.match(/Saved screenshot to.*\.png/)
+        response.responseLines.at(1)?.match(/Saved screenshot to.*\.png/),
       )
     })
   })
@@ -112,14 +118,14 @@ describe('screenshot', () => {
           },
         },
         response,
-        context
+        context,
       )
 
       assert.equal(response.images.length, 1)
       assert.equal(response.images[0].mimeType, 'image/png')
       assert.equal(
         response.responseLines.at(0),
-        'Took a screenshot of node with uid "1_1".'
+        'Took a screenshot of node with uid "1_1".',
       )
     })
   })
@@ -134,17 +140,17 @@ describe('screenshot', () => {
         await screenshot.handler(
           { params: { format: 'png', filePath } },
           response,
-          context
+          context,
         )
 
         assert.equal(response.images.length, 0)
         assert.equal(
           response.responseLines.at(0),
-          "Took a screenshot of the current page's viewport."
+          "Took a screenshot of the current page's viewport.",
         )
         assert.equal(
           response.responseLines.at(1),
-          `Saved screenshot to ${filePath}.`
+          `Saved screenshot to ${filePath}.`,
         )
 
         const stats = await stat(filePath)
@@ -171,8 +177,8 @@ describe('screenshot', () => {
             screenshot.handler(
               { params: { format: 'png', filePath } },
               response,
-              context
-            )
+              context,
+            ),
           )
         })
       } finally {
@@ -194,8 +200,8 @@ describe('screenshot', () => {
             screenshot.handler(
               { params: { format: 'png', filePath } },
               response,
-              context
-            )
+              context,
+            ),
           )
         })
       } finally {
@@ -216,8 +222,8 @@ describe('screenshot', () => {
         screenshot.handler(
           { params: { format: 'png', filePath } },
           response,
-          context
-        )
+          context,
+        ),
       )
     })
   })

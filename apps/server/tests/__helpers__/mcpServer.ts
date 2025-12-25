@@ -5,7 +5,7 @@
  * Utility for managing BrowserOS MCP Server lifecycle in tests.
  * Reuses server across multiple test runs within the same test session.
  */
-import { spawn, type ChildProcess } from 'node:child_process'
+import { type ChildProcess, spawn } from 'node:child_process'
 
 import { ensureBrowserOS } from './browseros.js'
 import { killProcessOnPort } from './utils.js'
@@ -49,15 +49,17 @@ async function waitForServer(port: number, maxAttempts = 30): Promise<void> {
 }
 
 export async function ensureServer(
-  options?: Partial<ServerConfig>
+  options?: Partial<ServerConfig>,
 ): Promise<ServerConfig> {
   const config: ServerConfig = {
-    cdpPort: options?.cdpPort ?? parseInt(process.env.CDP_PORT || '9005'),
+    cdpPort: options?.cdpPort ?? parseInt(process.env.CDP_PORT || '9005', 10),
     httpMcpPort:
-      options?.httpMcpPort ?? parseInt(process.env.HTTP_MCP_PORT || '9105'),
-    agentPort: options?.agentPort ?? parseInt(process.env.AGENT_PORT || '9205'),
+      options?.httpMcpPort ?? parseInt(process.env.HTTP_MCP_PORT || '9105', 10),
+    agentPort:
+      options?.agentPort ?? parseInt(process.env.AGENT_PORT || '9205', 10),
     extensionPort:
-      options?.extensionPort ?? parseInt(process.env.EXTENSION_PORT || '9305'),
+      options?.extensionPort ??
+      parseInt(process.env.EXTENSION_PORT || '9305', 10),
   }
 
   // Fast path: already running with same config
@@ -87,7 +89,7 @@ export async function ensureServer(
   // Check if server already running (from previous test run)
   if (await isServerAvailable(config.httpMcpPort)) {
     console.log(
-      `Server already running on port ${config.httpMcpPort}, reusing it`
+      `Server already running on port ${config.httpMcpPort}, reusing it`,
     )
     serverConfig = config
     return config
@@ -116,7 +118,7 @@ export async function ensureServer(
     {
       stdio: ['ignore', 'pipe', 'pipe'],
       cwd: process.cwd(),
-    }
+    },
   )
 
   serverProcess.stdout?.on('data', (_data) => {

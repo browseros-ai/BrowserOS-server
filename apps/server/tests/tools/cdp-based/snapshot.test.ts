@@ -2,9 +2,9 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 
 import { takeSnapshot, waitFor } from '../../../src/tools/cdp-based/snapshot.js'
 
@@ -22,7 +22,7 @@ describe('snapshot', () => {
       const page = await context.getSelectedPage()
 
       await page.setContent(
-        html`<main><span>Hello</span><span> </span><div>World</div></main>`
+        html`<main><span>Hello</span><span> </span><div>World</div></main>`,
       )
       await waitFor.handler(
         {
@@ -31,12 +31,12 @@ describe('snapshot', () => {
           },
         },
         response,
-        context
+        context,
       )
 
       assert.equal(
         response.responseLines[0],
-        'Element with text "Hello" found.'
+        'Element with text "Hello" found.',
       )
       assert.ok(response.includeSnapshot)
     })
@@ -52,18 +52,18 @@ describe('snapshot', () => {
           },
         },
         response,
-        context
+        context,
       )
 
       await page.setContent(
-        html`<main><span>Hello</span><span> </span><div>World</div></main>`
+        html`<main><span>Hello</span><span> </span><div>World</div></main>`,
       )
 
       await handlePromise
 
       assert.equal(
         response.responseLines[0],
-        'Element with text "Hello World" found.'
+        'Element with text "Hello World" found.',
       )
       assert.ok(response.includeSnapshot)
     })
@@ -81,12 +81,12 @@ describe('snapshot', () => {
           },
         },
         response,
-        context
+        context,
       )
 
       assert.equal(
         response.responseLines[0],
-        'Element with text "Header" found.'
+        'Element with text "Header" found.',
       )
       assert.ok(response.includeSnapshot)
     })
@@ -98,7 +98,7 @@ describe('snapshot', () => {
 
       await page.setContent(
         html`<h1>Top level</h1>
-          <iframe srcdoc="<p>Hello iframe</p>"></iframe>`
+          <iframe srcdoc="<p>Hello iframe</p>"></iframe>`,
       )
 
       await waitFor.handler(
@@ -108,12 +108,12 @@ describe('snapshot', () => {
           },
         },
         response,
-        context
+        context,
       )
 
       assert.equal(
         response.responseLines[0],
-        'Element with text "Hello iframe" found.'
+        'Element with text "Hello iframe" found.',
       )
       assert.ok(response.includeSnapshot)
     })

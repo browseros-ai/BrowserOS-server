@@ -2,15 +2,15 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 
-import { withMcpServer, type McpContentItem } from '../__helpers__/utils.js'
+import { withMcpServer } from '../__helpers__/utils.js'
 
 describe('MCP Network Tools', () => {
   it('tests that list_network_requests returns network data', async () => {
-    await withMcpServer(async client => {
+    await withMcpServer(async (client) => {
       const result = await client.callTool({
         name: 'list_network_requests',
         arguments: {},

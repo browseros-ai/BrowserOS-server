@@ -2,9 +2,9 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 import { ProtocolError } from 'puppeteer-core'
 
 import {
@@ -129,7 +129,7 @@ describe('networkFormatter', () => {
       result,
       `${JSON.stringify({
         request: 'body',
-      })}`
+      })}`,
     )
   })
   it('getFormattedRequestBody - shows trunkated string correctly with postData', async () => {
@@ -192,7 +192,7 @@ describe('networkFormatter', () => {
     const response = getMockResponse()
     response.buffer = () => {
       return Promise.resolve(
-        Buffer.from('some text that is longer than expected')
+        Buffer.from('some text that is longer than expected'),
       )
     }
 

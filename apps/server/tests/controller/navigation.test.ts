@@ -2,16 +2,16 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import assert from 'node:assert'
 
 import { describe, it } from 'bun:test'
+import assert from 'node:assert'
 
-import { withMcpServer, type McpContentItem } from '../__helpers__/utils.js'
+import { type McpContentItem, withMcpServer } from '../__helpers__/utils.js'
 
 describe('MCP Controller Navigation Tools', () => {
   describe('browser_navigate - Success Cases', () => {
     it('tests that navigation to HTTPS URL succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -27,7 +27,7 @@ describe('MCP Controller Navigation Tools', () => {
         assert.ok(Array.isArray(content), 'Content should be an array')
         assert.ok(content.length > 0, 'Content should not be empty')
 
-        const textContent = content.find(c => c.type === 'text')
+        const textContent = content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should include text content')
         assert.ok(
           textContent.text?.includes('Navigating to'),
@@ -41,7 +41,7 @@ describe('MCP Controller Navigation Tools', () => {
     }, 30000)
 
     it('tests that navigation to data URL succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -57,7 +57,7 @@ describe('MCP Controller Navigation Tools', () => {
         assert.ok(Array.isArray(content), 'Content should be array')
         assert.ok(content.length > 0, 'Should have content')
 
-        const textContent = content.find(c => c.type === 'text')
+        const textContent = content.find((c) => c.type === 'text')
         assert.ok(textContent, 'Should have text content')
         assert.ok(
           textContent.text?.includes('data:text/html'),
@@ -67,7 +67,7 @@ describe('MCP Controller Navigation Tools', () => {
     }, 30000)
 
     it('tests that navigation to HTTP URL succeeds', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -87,7 +87,7 @@ describe('MCP Controller Navigation Tools', () => {
 
   describe('browser_navigate - Error Handling', () => {
     it('tests that invalid URL is handled gracefully', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -103,7 +103,7 @@ describe('MCP Controller Navigation Tools', () => {
         assert.ok(Array.isArray(content), 'Should have content array')
 
         if (result.isError) {
-          const textContent = content.find(c => c.type === 'text')
+          const textContent = content.find((c) => c.type === 'text')
           assert.ok(
             textContent,
             'Error should include text content explaining the issue',
@@ -113,7 +113,7 @@ describe('MCP Controller Navigation Tools', () => {
     }, 30000)
 
     it('tests that meaningful response structure is provided on any error', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_navigate',
           arguments: {
@@ -134,7 +134,7 @@ describe('MCP Controller Navigation Tools', () => {
 
         if (result.isError) {
           assert.ok(content.length > 0, 'Error response should have content')
-          const textContent = content.find(c => c.type === 'text')
+          const textContent = content.find((c) => c.type === 'text')
           assert.ok(textContent, 'Should have text explaining error')
           assert.ok(
             textContent.text && textContent.text.length > 0,
@@ -147,7 +147,7 @@ describe('MCP Controller Navigation Tools', () => {
 
   describe('browser_navigate - Response Structure Validation', () => {
     it('tests that valid MCP response structure is always returned', async () => {
-      await withMcpServer(async client => {
+      await withMcpServer(async (client) => {
         const result = await client.callTool({
           name: 'browser_navigate',
           arguments: {
