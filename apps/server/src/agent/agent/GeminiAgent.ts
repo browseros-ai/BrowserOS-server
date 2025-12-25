@@ -19,9 +19,8 @@ import {
   logger,
 } from '../../common/index.js'
 import { Sentry } from '../../common/sentry/instrument.js'
-
+import type { BrowserContext } from '../../http/types.js'
 import { AgentExecutionError } from '../errors.js'
-import type { BrowserContext } from '../http/types.js'
 import { KlavisClient } from '../klavis/index.js'
 import { getSystemPrompt } from './GeminiAgent.prompt.js'
 import {

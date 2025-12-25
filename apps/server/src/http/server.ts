@@ -14,8 +14,10 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import { HttpAgentError } from '../agent/errors.js'
+import { createChatRoutes } from './routes/chat.js'
 import { health } from './routes/health.js'
 import { createKlavisRoutes } from './routes/klavis.js'
+import { createMcpRoutes } from './routes/mcp.js'
 import { createProviderRoutes } from './routes/provider.js'
 import type { Env, HttpServerConfig } from './types.js'
 import { defaultCorsConfig } from './utils/cors.js'
@@ -27,7 +29,20 @@ import { defaultCorsConfig } from './utils/cors.js'
  * @returns Bun server instance
  */
 export function createHttpServer(config: HttpServerConfig) {
-  const { port, host = '0.0.0.0', logger: log, browserosId } = config
+  const {
+    port,
+    host = '0.0.0.0',
+    logger: log,
+    browserosId,
+    tempDir,
+    rateLimiter,
+    version,
+    tools,
+    cdpContext,
+    controllerContext,
+    toolMutex,
+    allowRemote,
+  } = config
 
   // DECLARATIVE route composition - chain .route() calls for type inference
   const app = new Hono<Env>()
@@ -37,6 +52,28 @@ export function createHttpServer(config: HttpServerConfig) {
     .route(
       '/klavis',
       createKlavisRoutes({ browserosId: browserosId || '', logger: log }),
+    )
+    .route(
+      '/mcp',
+      createMcpRoutes({
+        version,
+        tools,
+        cdpContext,
+        controllerContext,
+        toolMutex,
+        logger: log,
+        allowRemote,
+      }),
+    )
+    .route(
+      '/chat',
+      createChatRoutes({
+        logger: log,
+        port,
+        tempDir,
+        browserosId,
+        rateLimiter,
+      }),
     )
 
   // Error handler
