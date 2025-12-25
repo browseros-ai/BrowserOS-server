@@ -236,7 +236,7 @@ describe('HTTP Server Integration Tests', () => {
     it('handles multiple simultaneous requests without conflicts', async () => {
       assert.ok(mcpClient, 'MCP client should be connected')
 
-      const requests = Array.from({ length: 10 }, () => mcpClient?.listTools())
+      const requests = Array.from({ length: 10 }, () => mcpClient!.listTools())
 
       const results = await Promise.all(requests)
 
