@@ -1,322 +1,68 @@
-# BrowserOS MCP Server
+# BrowserOS Server
 
-A unified server that provides browser automation tools via Model Context Protocol (MCP) and direct Agent access. Built as a monorepo with shared tools and single binary output.
+The automation engine inside [BrowserOS](https://github.com/browseros-ai/BrowserOS). This MCP server powers the built-in AI agent and lets external tools like `claude-code` or `gemini-cli` control your browser.
+
+## How It Works
+
+When BrowserOS launches, this server starts automatically in the background. The built-in agent UI connects to it, giving you a sidepanel where you can chat with AI and automate browser tasks.
+
+```
+BrowserOS launches
+       ↓
+MCP Server starts (this repo)
+       ↓
+Agent extension connects
+       ↓
+You can chat and automate tasks
+```
+
+You can also connect external MCP clients to control BrowserOS from your terminal or other AI tools.
 
 ## Architecture
 
-```
-browseros-server/
-├── packages/
-│   ├── common/     # Shared utilities (context, mutex, browser connection)
-│   ├── tools/      # Browser automation tools (CDP + controller-based)
-│   ├── mcp/        # MCP HTTP server implementation
-│   ├── agent/      # Agent WebSocket server with Claude SDK
-│   └── server/     # Unified entry point with shared WebSocketManager
-```
+The server exposes browser automation tools through two channels:
 
-### Unified Server Architecture
+- **Controller tools** - High-level commands via a Chrome extension (navigation, clicks, screenshots, tabs, history, bookmarks)
+- **CDP tools** - Low-level access via Chrome DevTools Protocol (network inspection, console logs, emulation)
 
 ```
-┌─────────────────────────────────────────┐
-│         Unified Server Process          │
-│                                         │
-│  ┌───────────────────────────────────┐ │
-│  │   WebSocketManager (Port 9224)    │ │  ← Shared by all
-│  │   Browser Extension Connection    │ │
-│  └───────────────┬───────────────────┘ │
-│                  │                      │
-│        ┌─────────┴─────────┐           │
-│        │                   │           │
-│  ┌─────▼──────┐    ┌──────▼──────┐    │
-│  │ HTTP MCP   │    │   Agent     │    │
-│  │ (Port 9223)│    │ (Port 3000) │    │
-│  │            │    │             │    │
-│  │ External   │    │ Claude SDK  │    │
-│  │ MCP        │    │ In-process  │    │
-│  │ Clients    │    │ SDK MCP     │    │
-│  └────────────┘    └─────────────┘    │
-│                                         │
-└─────────────────────────────────────────┘
+apps/
+├── server/          # MCP server (HTTP + WebSocket)
+└── controller-ext/  # Chrome extension for browser control
 ```
 
-## Quick Start
-
-### Prerequisites
-
-- [Bun](https://bun.sh/) v1.0.0 or newer
-- [Chrome](https://www.google.com/chrome/) stable version
-- macOS, Linux, or Windows
-
-### Installation
+## For Developers
 
 ```bash
-# Clone the repository
-git clone https://github.com/browseros-ai/BrowserOS-server.git
-cd BrowserOS-server
-
 # Install dependencies
 bun install
 
+# Start the server (for local development)
+bun run start
+
 # Run tests
-bun test:all
+bun run test              # Unit tests
+bun run test:cdp          # CDP tests (needs browser running)
+bun run test:all          # Everything
 
-# Start the server
-bun start
+# Lint and type check
+bun run lint
+bun run typecheck
+
+# Build for production
+bun run dist:server       # All platforms
+bun run dist:ext          # Extension
 ```
 
-## Development
+## Using with External MCP Clients
 
-### Common Commands
+Once BrowserOS is running, you can connect any MCP client to `http://127.0.0.1:<port>/mcp`. See [our docs](https://docs.browseros.com/browseros-mcp/how-to-guide) for setup with `claude-code` and `gemini-cli`.
 
-| Command                | Description                     |
-| ---------------------- | ------------------------------- |
-| `bun start`            | Start the server (port 9223)    |
-| `bun test:all`         | Run all tests across packages   |
-| `bun test:common`      | Test common package             |
-| `bun test:tools`       | Test tools package              |
-| `bun test:mcp`         | Test MCP package                |
-| `bun test:server`      | Test server package             |
-| `bun run build:binary` | Compile to single binary        |
-| `bun run format`       | Format code (ESLint + Prettier) |
-| `bun run check-format` | Check code formatting           |
-| `bun run clean`        | Clean build artifacts           |
+## Related Repos
 
-### Running with Chrome
-
-The server needs Chrome to run. Set the executable path if Chrome is not in the default location:
-
-```bash
-PUPPETEER_EXECUTABLE_PATH="/path/to/chrome" bun start
-```
-
-### Building
-
-#### Server Binary
-
-Development builds (single platform):
-
-```bash
-bun run dev:server           # Current platform
-bun run dev:server:linux     # Linux x64
-bun run dev:server:macos     # macOS ARM64
-bun run dev:server:windows   # Windows x64
-
-# Output: dist/server/browseros-server
-```
-
-Production builds (all platforms):
-
-```bash
-bun run dist:server
-
-# Output: dist/server/
-#   - browseros-server-linux-x64
-#   - browseros-server-linux-arm64
-#   - browseros-server-darwin-x64
-#   - browseros-server-darwin-arm64
-#   - browseros-server-windows-x64.exe
-```
-
-#### Extension
-
-Development build (with source maps):
-
-```bash
-bun run dev:ext
-
-# Output: dist/ext/
-#   - background.js (unminified)
-#   - background.js.map
-#   - manifest.json
-```
-
-Production build (minified):
-
-```bash
-bun run dist:ext
-
-# Output: dist/ext/
-#   - background.js (minified)
-#   - manifest.json
-```
-
-## Package Structure
-
-### `@browseros/common`
-
-Shared utilities used by all packages:
-
-- `McpContext` - Browser context management
-- `Mutex` - Tool execution synchronization
-- Browser connection management
-- Logging utilities
-
-### `@browseros/tools`
-
-Browser automation tools (26 total):
-
-- Pure functions, no server logic
-- Zod schemas for validation
-- Response formatters
-- Direct CDP integration
-
-### `@browseros/mcp`
-
-MCP protocol implementation:
-
-- HTTP server with SSE transport
-- Tool registration with MCP SDK
-- Handles JSON-RPC protocol
-
-### `@browseros/agent`
-
-Agent WebSocket server with Claude SDK integration:
-
-- Multi-session WebSocket server for concurrent agents
-- Direct tool execution via shared WebSocketManager (no HTTP overhead)
-- Claude SDK integration with in-process MCP
-- Automatic session management and cleanup
-
-### `@browseros/server`
-
-Unified server orchestrating all components:
-
-- Starts HTTP MCP server and Agent WebSocket server
-- Single WebSocketManager shared by both MCP and Agent
-- CLI argument parsing with enable/disable flags
-- Graceful shutdown and resource cleanup
-
-## Testing
-
-Tests use Puppeteer with a real Chrome browser. All tests are in `packages/*/tests/`:
-
-```bash
-# Run all tests
-bun test:all
-
-# Run with coverage
-bun test --coverage
-
-# Run specific package tests
-bun test packages/tools
-
-# Run specific test file
-bun test packages/tools/tests/tools/pages.test.ts
-```
-
-### Test Coverage
-
-Current coverage across 16 test files with 26 tests passing.
-
-## Tools Reference
-
-The server provides 26 browser automation tools:
-
-<!-- BEGIN AUTO GENERATED TOOLS -->
-
-- **Input automation** (7 tools)
-  - [`click`](docs/tool-reference.md#click)
-  - [`drag`](docs/tool-reference.md#drag)
-  - [`fill`](docs/tool-reference.md#fill)
-  - [`fill_form`](docs/tool-reference.md#fill_form)
-  - [`handle_dialog`](docs/tool-reference.md#handle_dialog)
-  - [`hover`](docs/tool-reference.md#hover)
-  - [`upload_file`](docs/tool-reference.md#upload_file)
-- **Navigation automation** (7 tools)
-  - [`close_page`](docs/tool-reference.md#close_page)
-  - [`list_pages`](docs/tool-reference.md#list_pages)
-  - [`navigate_page`](docs/tool-reference.md#navigate_page)
-  - [`navigate_page_history`](docs/tool-reference.md#navigate_page_history)
-  - [`new_page`](docs/tool-reference.md#new_page)
-  - [`select_page`](docs/tool-reference.md#select_page)
-  - [`wait_for`](docs/tool-reference.md#wait_for)
-- **Emulation** (3 tools)
-  - [`emulate_cpu`](docs/tool-reference.md#emulate_cpu)
-  - [`emulate_network`](docs/tool-reference.md#emulate_network)
-  - [`resize_page`](docs/tool-reference.md#resize_page)
-- **Performance** (3 tools)
-  - [`performance_analyze_insight`](docs/tool-reference.md#performance_analyze_insight)
-  - [`performance_start_trace`](docs/tool-reference.md#performance_start_trace)
-  - [`performance_stop_trace`](docs/tool-reference.md#performance_stop_trace)
-- **Network** (2 tools)
-  - [`get_network_request`](docs/tool-reference.md#get_network_request)
-  - [`list_network_requests`](docs/tool-reference.md#list_network_requests)
-- **Debugging** (4 tools)
-  - [`evaluate_script`](docs/tool-reference.md#evaluate_script)
-  - [`list_console_messages`](docs/tool-reference.md#list_console_messages)
-  - [`take_screenshot`](docs/tool-reference.md#take_screenshot)
-  - [`take_snapshot`](docs/tool-reference.md#take_snapshot)
-
-<!-- END AUTO GENERATED TOOLS -->
-
-## Server Configuration
-
-### Command Line Arguments
-
-```bash
-# Default startup (MCP + Agent on default ports)
-bun start
-
-# Connect to existing Chrome instance (optional)
-bun start --cdp-port=9222
-
-# Specify server ports
-bun start --http-mcp-port=9223 --agent-port=3000 --extension-port=9224
-
-# Disable MCP HTTP server (Agent-only mode)
-bun start --disable-mcp-server
-
-# Disable Agent server (MCP-only mode)
-bun start --disable-agent-server
-
-# Full example
-bun start --cdp-port=9222 --http-mcp-port=9223 --agent-port=3000 --extension-port=9224
-```
-
-### Agent Testing
-
-```
-node packages/agent/scripts/tests/test-client.ts
-```
-
-### Environment Variables
-
-**Required for Agent:**
-
-- `ANTHROPIC_API_KEY` - Anthropic API key for Claude SDK (required for agent functionality)
-
-**Agent Configuration:**
-
-- `MAX_SESSIONS` - Maximum concurrent agent sessions (default: 5)
-- `SESSION_IDLE_TIMEOUT_MS` - Session idle timeout in milliseconds (default: 90000)
-- `EVENT_GAP_TIMEOUT_MS` - Max time between agent events in milliseconds (default: 60000)
-
-**Optional:**
-
-- `PUPPETEER_EXECUTABLE_PATH` - Path to Chrome executable
-- `DEBUG=mcp:*` - Enable debug logging
-- `LOG_LEVEL` - Logging level (debug, info, warn, error)
-- `NODE_ENV` - Environment (development, production)
-
-## Architecture Benefits
-
-- **Unified Process**: MCP and Agent run in single server process
-- **Shared WebSocket**: Single WebSocketManager for extension connection
-- **Zero Overhead**: Agent uses in-process SDK MCP (direct function calls)
-- **Single Binary**: Everything compiles to one executable
-- **Shared Tools**: Both MCP and Agent use same tool implementations
-- **No Duplication**: One source of truth for browser automation
-- **Type Safety**: Full TypeScript with Zod validation
-- **Modular**: Each package has single responsibility
-
-## Contributing
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for development guidelines.
+- [BrowserOS](https://github.com/browseros-ai/BrowserOS) - The Chromium fork (main product)
+- BrowserOS Agent - The built-in sidepanel extension for chatting with AI
 
 ## License
 
-AGPL-3.0 or later
-
-## Troubleshooting
-
-See [docs/troubleshooting.md](./docs/troubleshooting.md) for common issues.
+AGPL-3.0-or-later
