@@ -7,7 +7,7 @@ import { z } from 'zod'
 
 import type { ActionResponse } from '@/protocol/types'
 import { ActionResponseSchema } from '@/protocol/types'
-import { logger } from '@/utils/Logger'
+import { logger } from '@/utils/logger'
 
 // Re-export for convenience
 export type { ActionResponse }

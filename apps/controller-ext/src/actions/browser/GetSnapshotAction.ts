@@ -5,7 +5,7 @@
  */
 import { z } from 'zod'
 import { BrowserOSAdapter, type Snapshot } from '@/adapters/BrowserOSAdapter'
-import { logger } from '@/utils/Logger'
+import { logger } from '@/utils/logger'
 import { ActionHandler } from '../ActionHandler'
 
 // Input schema for getSnapshot action

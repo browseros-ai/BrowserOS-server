@@ -3,7 +3,7 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { logger } from '@/utils/Logger'
+import { logger } from '@/utils/logger'
 
 const KEEPALIVE_ALARM_NAME = 'browseros-keepalive'
 const KEEPALIVE_INTERVAL_MINUTES = 0.33 // ~20 seconds

@@ -8,6 +8,7 @@
     "./timeouts": "./src/timeouts.ts",
     "./limits": "./src/limits.ts",
     "./urls": "./src/urls.ts",
-    "./paths": "./src/paths.ts"
+    "./paths": "./src/paths.ts",
+    "./logger": "./src/logger.ts"
   }
 }

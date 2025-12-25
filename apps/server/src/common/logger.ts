@@ -1,119 +1,218 @@
 /**
  * @license
  * Copyright 2025 BrowserOS
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * Pino-based logger with:
+ * - Source tracking (file:line:function) in development
+ * - Async file writes with daily rotation
+ * - Pretty colored console in dev, structured JSON in prod
+ * - Metadata truncation in console output
  */
 
 import fs from 'node:fs'
 import path from 'node:path'
 import { CONTENT_LIMITS } from '@browseros/shared/limits'
+import type { LoggerInterface, LogLevel } from '@browseros/shared/logger'
+import pino from 'pino'
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error'
-interface FormatOptions {
-  useColor?: boolean
-  truncateStrings?: boolean
+const isDev = process.env.NODE_ENV === 'development'
+const LOG_FILE_NAME = 'browseros-server.log'
+const LOG_FILE_MAX_AGE_MS = 24 * 60 * 60 * 1000 // 1 day
+
+/**
+ * Parse caller info from stack trace.
+ * Returns "filename:line:function" or null if parsing fails.
+ */
+function parseCallerInfo(stack: string): string | null {
+  const lines = stack.split('\n')
+
+  for (const line of lines) {
+    // Skip internal frames
+    if (line.includes('logger.ts')) continue
+    if (line.includes('node_modules/pino')) continue
+    if (line.includes('node_modules\\pino')) continue
+    if (!line.includes(' at ')) continue
+
+    // Match: "at functionName (file:line:col)" or "at file:line:col"
+    const match = line.match(/at\s+(?:(.+?)\s+\()?(.+?):(\d+):(\d+)\)?/)
+    if (match) {
+      const [, fnName, file, lineNum] = match
+      const shortFile = file.replace(/^.*[/\\]/, '')
+      const fn = fnName || 'anonymous'
+      return `${shortFile}:${lineNum}:${fn}`
+    }
+  }
+
+  return null
 }
 
-const COLORS = {
-  debug: '\x1b[36m',
-  info: '\x1b[32m',
-  warn: '\x1b[33m',
-  error: '\x1b[31m',
+/**
+ * Truncate long string values in an object for console output.
+ */
+function truncateForConsole(
+  obj: Record<string, unknown>,
+  maxLen: number,
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === 'string' && value.length > maxLen) {
+      result[key] =
+        `${value.slice(0, maxLen)}... (+${value.length - maxLen} chars)`
+    } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+      result[key] = truncateForConsole(value as Record<string, unknown>, maxLen)
+    } else {
+      result[key] = value
+    }
+  }
+
+  return result
 }
 
-const RESET = '\x1b[0m'
+/**
+ * Rotate log file if it's older than max age.
+ * Simple startup-time rotation - deletes old backup, renames current to .old
+ */
+function rotateLogIfNeeded(logPath: string): void {
+  try {
+    const stat = fs.statSync(logPath)
+    const ageMs = Date.now() - stat.mtimeMs
 
-export class Logger {
-  private logFilePath?: string
+    if (ageMs > LOG_FILE_MAX_AGE_MS) {
+      const backupPath = `${logPath}.old`
+      try {
+        fs.unlinkSync(backupPath)
+      } catch {
+        // Backup doesn't exist, that's fine
+      }
+      fs.renameSync(logPath, backupPath)
+    }
+  } catch {
+    // File doesn't exist, nothing to rotate
+  }
+}
+
+/**
+ * Create pino transport configuration for console output.
+ */
+function createConsoleTransport(): pino.TransportSingleOptions {
+  if (isDev) {
+    return {
+      target: 'pino-pretty',
+      options: {
+        colorize: true,
+        translateTime: 'SYS:HH:MM:ss.l',
+        ignore: 'pid,hostname',
+      },
+    }
+  }
+
+  return {
+    target: 'pino/file',
+    options: { destination: 1 }, // stdout
+  }
+}
+
+export class Logger implements LoggerInterface {
+  private consoleLogger: pino.Logger
+  private fileLogger: pino.Logger | null = null
   private level: LogLevel
 
   constructor(level: LogLevel = 'info') {
     this.level = level
+    this.consoleLogger = this.createConsoleLogger()
   }
 
-  setLogFile(logDir: string) {
-    this.logFilePath = path.join(logDir, 'browseros-server.log')
-  }
-
-  private format(
-    level: LogLevel,
-    message: string,
-    meta?: object,
-    { useColor = true, truncateStrings = false }: FormatOptions = {},
-  ): string {
-    const timestamp = new Date().toISOString()
-    const prefix = useColor
-      ? `${COLORS[level]}[${timestamp}] [${level.toUpperCase()}]${RESET}`
-      : `[${timestamp}] [${level.toUpperCase()}]`
-    const metaStr = meta ? `\n${this.stringifyMeta(meta, truncateStrings)}` : ''
-    return `${prefix} ${message}${metaStr}`
-  }
-
-  private stringifyMeta(meta: object, truncateStrings: boolean): string {
-    return JSON.stringify(
-      meta,
-      (_key, value) => {
-        if (
-          truncateStrings &&
-          typeof value === 'string' &&
-          value.length > CONTENT_LIMITS.CONSOLE_META_CHAR
-        ) {
-          const extra = value.length - CONTENT_LIMITS.CONSOLE_META_CHAR
-          return `${value.slice(0, CONTENT_LIMITS.CONSOLE_META_CHAR)}... (+${extra} chars)`
-        }
-        return value
-      },
-      2,
-    )
-  }
-
-  private log(level: LogLevel, message: string, meta?: object) {
-    const formatted = this.format(level, message, meta, {
-      useColor: true,
-      truncateStrings: true,
-    })
-
-    switch (level) {
-      case 'error':
-        console.error(formatted)
-        break
-      case 'warn':
-        console.warn(formatted)
-        break
-      default:
-        console.log(formatted)
+  private createConsoleLogger(): pino.Logger {
+    const options: pino.LoggerOptions = {
+      level: this.level,
     }
 
-    if (this.logFilePath) {
-      const plainFormatted = this.format(level, message, meta, {
-        useColor: false,
-        truncateStrings: false,
-      })
-      try {
-        fs.appendFileSync(this.logFilePath, `${plainFormatted}\n`)
-      } catch (error) {
-        console.error(`Failed to write to log file: ${error}`)
+    // Add source tracking in development
+    if (isDev) {
+      options.mixin = () => {
+        const caller = parseCallerInfo(new Error().stack || '')
+        return caller ? { caller } : {}
+      }
+    }
+
+    return pino(options, pino.transport(createConsoleTransport()))
+  }
+
+  /**
+   * Configure file logging with async writes and rotation.
+   */
+  setLogFile(logDir: string): void {
+    const logPath = path.join(logDir, LOG_FILE_NAME)
+
+    // Rotate old logs on startup
+    rotateLogIfNeeded(logPath)
+
+    // Create async file destination
+    const fileDestination = pino.destination({
+      dest: logPath,
+      sync: false,
+      mkdir: true,
+    })
+
+    // File logger: always JSON, no source tracking (for performance)
+    this.fileLogger = pino({ level: this.level }, fileDestination)
+  }
+
+  setLevel(level: LogLevel): void {
+    this.level = level
+    this.consoleLogger.level = level
+    if (this.fileLogger) {
+      this.fileLogger.level = level
+    }
+  }
+
+  private log(
+    level: LogLevel,
+    message: string,
+    meta?: Record<string, unknown>,
+  ): void {
+    const logFn = this.consoleLogger[level].bind(this.consoleLogger)
+    const fileLogFn = this.fileLogger?.[level].bind(this.fileLogger)
+
+    // Console: truncate large values in dev
+    if (meta && isDev) {
+      const truncated = truncateForConsole(
+        meta,
+        CONTENT_LIMITS.CONSOLE_META_CHAR,
+      )
+      logFn(truncated, message)
+    } else if (meta) {
+      logFn(meta, message)
+    } else {
+      logFn(message)
+    }
+
+    // File: always log full data, no truncation
+    if (fileLogFn) {
+      if (meta) {
+        fileLogFn(meta, message)
+      } else {
+        fileLogFn(message)
       }
     }
   }
 
-  info(message: string, meta?: object) {
-    this.log('info', message, meta)
-  }
-
-  error(message: string, meta?: object) {
-    this.log('error', message, meta)
-  }
-
-  warn(message: string, meta?: object) {
-    this.log('warn', message, meta)
-  }
-
-  debug(message: string, meta?: object) {
+  debug(message: string, meta?: Record<string, unknown>): void {
     this.log('debug', message, meta)
   }
 
-  setLevel(level: LogLevel) {
-    this.level = level
+  info(message: string, meta?: Record<string, unknown>): void {
+    this.log('info', message, meta)
+  }
+
+  warn(message: string, meta?: Record<string, unknown>): void {
+    this.log('warn', message, meta)
+  }
+
+  error(message: string, meta?: Record<string, unknown>): void {
+    this.log('error', message, meta)
   }
 }
 

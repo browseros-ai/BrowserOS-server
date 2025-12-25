@@ -7,8 +7,6 @@
 import { CONTENT_LIMITS } from '@browseros/shared/limits'
 import { DEFAULT_PORTS } from '@browseros/shared/ports'
 import { TIMEOUTS } from '@browseros/shared/timeouts'
-
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 export type WebSocketProtocol = 'ws' | 'wss'
 
 export interface WebSocketConfig {
@@ -30,7 +28,7 @@ export interface ConcurrencyConfig {
 
 export interface LoggingConfig {
   readonly enabled: boolean
-  readonly level: LogLevel
+  readonly level: 'debug' | 'info' | 'warn' | 'error'
   readonly prefix: string
 }
 

@@ -6,7 +6,7 @@
 import { WEBSOCKET_CONFIG } from '@/config/constants'
 import type { ProtocolRequest, ProtocolResponse } from '@/protocol/types'
 import { ConnectionStatus } from '@/protocol/types'
-import { logger } from '@/utils/Logger'
+import { logger } from '@/utils/logger'
 
 export type PortProvider = () => Promise<number>
 

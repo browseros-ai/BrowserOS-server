@@ -7,7 +7,7 @@
 
 import { getBrowserOSAdapter } from '@/adapters/BrowserOSAdapter'
 import { WEBSOCKET_CONFIG } from '@/config/constants'
-import { logger } from '@/utils/Logger'
+import { logger } from '@/utils/logger'
 
 /**
  * Get the WebSocket port from BrowserOS preferences

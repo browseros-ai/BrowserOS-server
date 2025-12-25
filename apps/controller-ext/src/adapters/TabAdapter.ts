@@ -3,7 +3,7 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { logger } from '@/utils/Logger'
+import { logger } from '@/utils/logger'
 
 /**
  * TabAdapter - Wrapper for Chrome tabs API
