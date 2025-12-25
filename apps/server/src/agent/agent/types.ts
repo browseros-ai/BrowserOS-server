@@ -5,7 +5,7 @@
  */
 import { z } from 'zod'
 
-import { CustomMcpServerSchema } from '../http/types.js'
+import { CustomMcpServerSchema } from '../../http/types.js'
 
 import { VercelAIConfigSchema } from './gemini-vercel-sdk-adapter/types.js'
 
