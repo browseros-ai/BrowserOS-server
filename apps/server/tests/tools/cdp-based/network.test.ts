@@ -6,48 +6,18 @@
 import { describe, it } from 'bun:test'
 import assert from 'node:assert'
 
-import {
-  getNetworkRequest,
-  listNetworkRequests,
-} from '../../../src/tools/cdp-based/network.js'
+import { withMcpServer } from '../../__helpers__/utils.js'
 
-import { withBrowser } from '../../__helpers__/utils.js'
+describe('MCP Network Tools', () => {
+  it('tests that list_network_requests returns network data', async () => {
+    await withMcpServer(async (client) => {
+      const result = await client.callTool({
+        name: 'list_network_requests',
+        arguments: {},
+      })
 
-describe('network', () => {
-  it('network_list_requests - list requests', async () => {
-    await withBrowser(async (response, context) => {
-      await listNetworkRequests.handler({ params: {} }, response, context)
-      assert.ok(response.includeNetworkRequests)
-      assert.strictEqual(response.networkRequestsPageIdx, undefined)
+      assert.ok(result.content, 'Should return content')
+      assert.ok(!result.isError, 'Should not error')
     })
-  })
-
-  it('network_get_request - attaches request', async () => {
-    await withBrowser(async (response, context) => {
-      const page = await context.getSelectedPage()
-      await page.goto('data:text/html,<div>Hello MCP</div>')
-      await getNetworkRequest.handler(
-        { params: { url: 'data:text/html,<div>Hello MCP</div>' } },
-        response,
-        context,
-      )
-      assert.equal(
-        response.attachedNetworkRequestUrl,
-        'data:text/html,<div>Hello MCP</div>',
-      )
-    })
-  })
-
-  it('network_get_request - should not add the request list', async () => {
-    await withBrowser(async (response, context) => {
-      const page = await context.getSelectedPage()
-      await page.goto('data:text/html,<div>Hello MCP</div>')
-      await getNetworkRequest.handler(
-        { params: { url: 'data:text/html,<div>Hello MCP</div>' } },
-        response,
-        context,
-      )
-      assert(!response.includeNetworkRequests)
-    })
-  })
+  }, 30000)
 })

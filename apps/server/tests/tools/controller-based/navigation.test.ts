@@ -6,7 +6,7 @@
 import { describe, it } from 'bun:test'
 import assert from 'node:assert'
 
-import { type McpContentItem, withMcpServer } from '../__helpers__/utils.js'
+import { type McpContentItem, withMcpServer } from '../../__helpers__/utils.js'
 
 describe('MCP Controller Navigation Tools', () => {
   describe('browser_navigate - Success Cases', () => {

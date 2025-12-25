@@ -7,7 +7,7 @@
 import { describe, it } from 'bun:test'
 import assert from 'node:assert'
 
-import { withMcpServer } from '../__helpers__/utils.js'
+import { withMcpServer } from '../../__helpers__/utils.js'
 
 describe('MCP Controller History Tools', () => {
   describe('browser_search_history - Success Cases', () => {
