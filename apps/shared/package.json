@@ -1,0 +1,13 @@
+{
+  "name": "@browseros/shared",
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./ports": "./src/ports.ts",
+    "./timeouts": "./src/timeouts.ts",
+    "./limits": "./src/limits.ts",
+    "./urls": "./src/urls.ts",
+    "./paths": "./src/paths.ts"
+  }
+}

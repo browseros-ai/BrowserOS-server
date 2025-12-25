@@ -2,11 +2,11 @@
  * @license
  * Copyright 2025 BrowserOS
  */
+
 import { isUtf8 } from 'node:buffer'
+import { CONTENT_LIMITS } from '@browseros/shared/limits'
 
 import type { HTTPRequest, HTTPResponse } from 'puppeteer-core'
-
-const BODY_CONTEXT_SIZE_LIMIT = 10000
 
 export function getShortDescriptionForRequest(request: HTTPRequest): string {
   return `${request.url()} ${request.method()} ${getStatusFromRequest(request)}`
@@ -42,7 +42,7 @@ export function getFormattedHeaderValue(
 
 export async function getFormattedResponseBody(
   httpResponse: HTTPResponse,
-  sizeLimit = BODY_CONTEXT_SIZE_LIMIT,
+  sizeLimit = CONTENT_LIMITS.BODY_CONTEXT_SIZE,
 ): Promise<string | undefined> {
   try {
     const responseBuffer = await httpResponse.buffer()
@@ -66,7 +66,7 @@ export async function getFormattedResponseBody(
 
 export async function getFormattedRequestBody(
   httpRequest: HTTPRequest,
-  sizeLimit: number = BODY_CONTEXT_SIZE_LIMIT,
+  sizeLimit: number = CONTENT_LIMITS.BODY_CONTEXT_SIZE,
 ): Promise<string | undefined> {
   if (httpRequest.hasPostData()) {
     const data = httpRequest.postData()

@@ -5,6 +5,8 @@
  * Unified test environment orchestrator.
  * Ensures server + browser + extension are all ready.
  */
+import { TEST_PORTS } from '@browseros/shared/ports'
+
 import {
   type BrowserConfig,
   getBrowserState,
@@ -21,9 +23,15 @@ export interface TestEnvironmentConfig {
 }
 
 const DEFAULT_CONFIG: TestEnvironmentConfig = {
-  cdpPort: Number.parseInt(process.env.CDP_PORT || '9005', 10),
-  httpMcpPort: Number.parseInt(process.env.HTTP_MCP_PORT || '9105', 10),
-  extensionPort: Number.parseInt(process.env.EXTENSION_PORT || '9305', 10),
+  cdpPort: Number.parseInt(process.env.CDP_PORT || String(TEST_PORTS.cdp), 10),
+  httpMcpPort: Number.parseInt(
+    process.env.HTTP_MCP_PORT || String(TEST_PORTS.httpMcp),
+    10,
+  ),
+  extensionPort: Number.parseInt(
+    process.env.EXTENSION_PORT || String(TEST_PORTS.extension),
+    10,
+  ),
 }
 
 const DEFAULT_BINARY_PATH =

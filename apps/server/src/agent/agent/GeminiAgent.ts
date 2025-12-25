@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+import { AGENT_LIMITS } from '@browseros/shared/limits'
+import { TIMEOUTS } from '@browseros/shared/timeouts'
 import {
   executeToolCall,
   type GeminiClient,
@@ -30,11 +32,6 @@ import {
 import type { HonoSSEStream } from './gemini-vercel-sdk-adapter/types.js'
 import { UIMessageStreamWriter } from './gemini-vercel-sdk-adapter/ui-message-stream.js'
 import type { AgentConfig } from './types.js'
-
-const MAX_TURNS = 100
-const TOOL_TIMEOUT_MS = 120000 // 2 minutes timeout per tool call
-const DEFAULT_CONTEXT_WINDOW = 1000000 // 1M tokens (gemini-cli-core default)
-const DEFAULT_COMPRESSION_RATIO = 0.75 // Compress at 75% of context window
 
 interface McpHttpServerOptions {
   httpUrl: string
@@ -109,18 +106,21 @@ export class GeminiAgent {
     const modelString = `${resolvedConfig.provider}/${resolvedConfig.model}`
 
     // Calculate compression threshold based on context window size
-    // Formula: (DEFAULT_COMPRESSION_RATIO * contextWindowSize) / DEFAULT_CONTEXT_WINDOW
+    // Formula: (COMPRESSION_RATIO * contextWindowSize) / CONTEXT_WINDOW
     // This converts absolute token threshold to gemini-cli-core's multiplier format
     const contextWindow =
-      resolvedConfig.contextWindowSize ?? DEFAULT_CONTEXT_WINDOW
+      resolvedConfig.contextWindowSize ?? AGENT_LIMITS.DEFAULT_CONTEXT_WINDOW
     const compressionThreshold =
-      (DEFAULT_COMPRESSION_RATIO * contextWindow) / DEFAULT_CONTEXT_WINDOW
+      (AGENT_LIMITS.DEFAULT_COMPRESSION_RATIO * contextWindow) /
+      AGENT_LIMITS.DEFAULT_CONTEXT_WINDOW
 
     logger.info('Compression config', {
       contextWindow,
       compressionRatio: compressionThreshold,
       compressionThreshold,
-      compressesAtTokens: Math.floor(DEFAULT_COMPRESSION_RATIO * contextWindow),
+      compressesAtTokens: Math.floor(
+        AGENT_LIMITS.DEFAULT_COMPRESSION_RATIO * contextWindow,
+      ),
     })
 
     // Build MCP servers config
@@ -294,7 +294,7 @@ export class GeminiAgent {
       turnCount++
       logger.debug(`Turn ${turnCount}`, { conversationId: this.conversationId })
 
-      if (turnCount > MAX_TURNS) {
+      if (turnCount > AGENT_LIMITS.MAX_TURNS) {
         logger.warn('Max turns exceeded', {
           conversationId: this.conversationId,
           turnCount,
@@ -373,10 +373,10 @@ export class GeminiAgent {
                 () =>
                   reject(
                     new Error(
-                      `Tool "${requestInfo.name}" timed out after ${TOOL_TIMEOUT_MS / 1000}s`,
+                      `Tool "${requestInfo.name}" timed out after ${TIMEOUTS.TOOL_CALL / 1000}s`,
                     ),
                   ),
-                TOOL_TIMEOUT_MS,
+                TIMEOUTS.TOOL_CALL,
               )
             })
 

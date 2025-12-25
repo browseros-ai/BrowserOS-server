@@ -17,6 +17,7 @@
       "name": "browseros-controller",
       "version": "1.0.0",
       "dependencies": {
+        "@browseros/shared": "workspace:*",
         "zod": "^4.1.12",
       },
       "devDependencies": {
@@ -46,6 +47,7 @@
         "@ai-sdk/openai-compatible": "^1.0.27",
         "@ai-sdk/provider": "2.0.0",
         "@ai-sdk/ui-utils": "^1.2.11",
+        "@browseros/shared": "workspace:*",
         "@google/gemini-cli-core": "^0.16.0",
         "@google/genai": "1.30.0",
         "@hono/mcp": "^0.2.2",
@@ -74,6 +76,10 @@
       "optionalDependencies": {
         "chrome-devtools-mcp": "latest",
       },
+    },
+    "apps/shared": {
+      "name": "@browseros/shared",
+      "version": "0.0.1",
     },
   },
   "trustedDependencies": [
@@ -133,6 +139,8 @@
     "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@2.3.10", "", { "os": "win32", "cpu": "x64" }, "sha512-pHEFgq7dUEsKnqG9mx9bXihxGI49X+ar+UBrEIj3Wqj3UCZp1rNgV+OoyjFgcXsjCWpuEAF4VJdkZr3TrWdCbQ=="],
 
     "@browseros/server": ["@browseros/server@workspace:apps/server"],
+
+    "@browseros/shared": ["@browseros/shared@workspace:apps/shared"],
 
     "@discoveryjs/json-ext": ["@discoveryjs/json-ext@0.6.3", "", {}, "sha512-4B4OijXeVNOPZlYA2oEwWOTkzyltLao+xbotHQeqN++Rv27Y6s818+n2Qkp8q+Fxhn0t/5lA5X1Mxktud8eayQ=="],
 

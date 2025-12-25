@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-const KLAVIS_PROXY_URL = 'https://llm.browseros.com/klavis'
+import { EXTERNAL_URLS } from '@browseros/shared/urls'
 
 export interface StrataCreateResponse {
   strataServerUrl: string
@@ -17,7 +17,7 @@ export class KlavisClient {
   private baseUrl: string
 
   constructor(baseUrl?: string) {
-    this.baseUrl = baseUrl || KLAVIS_PROXY_URL
+    this.baseUrl = baseUrl || EXTERNAL_URLS.KLAVIS_PROXY
   }
 
   private async request<T>(

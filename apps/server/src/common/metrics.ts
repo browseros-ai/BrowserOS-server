@@ -2,10 +2,12 @@
  * @license
  * Copyright 2025 BrowserOS
  */
+import { EXTERNAL_URLS } from '@browseros/shared/urls'
 import { PostHog } from 'posthog-node'
 
 const POSTHOG_API_KEY = process.env.POSTHOG_API_KEY
-const POSTHOG_HOST = process.env.POSTHOG_ENDPOINT || 'https://us.i.posthog.com'
+const POSTHOG_HOST =
+  process.env.POSTHOG_ENDPOINT || EXTERNAL_URLS.POSTHOG_DEFAULT
 const EVENT_PREFIX = 'browseros.server.'
 
 export interface MetricsConfig {

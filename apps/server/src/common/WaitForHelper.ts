@@ -2,10 +2,13 @@
  * @license
  * Copyright 2025 BrowserOS
  */
+import { TIMEOUTS } from '@browseros/shared/timeouts'
 import type { Page, Protocol } from 'puppeteer-core'
 import type { CdpPage } from 'puppeteer-core/internal/cdp/Page.js'
 
 import { logger } from './logger.js'
+
+const POLL_INTERVAL = 100
 
 export class WaitForHelper {
   #abortController = new AbortController()
@@ -20,10 +23,10 @@ export class WaitForHelper {
     cpuTimeoutMultiplier: number,
     networkTimeoutMultiplier: number,
   ) {
-    this.#stableDomTimeout = 3000 * cpuTimeoutMultiplier
-    this.#stableDomFor = 100 * cpuTimeoutMultiplier
-    this.#expectNavigationIn = 100 * cpuTimeoutMultiplier
-    this.#navigationTimeout = 3000 * networkTimeoutMultiplier
+    this.#stableDomTimeout = TIMEOUTS.STABLE_DOM * cpuTimeoutMultiplier
+    this.#stableDomFor = POLL_INTERVAL * cpuTimeoutMultiplier
+    this.#expectNavigationIn = POLL_INTERVAL * cpuTimeoutMultiplier
+    this.#navigationTimeout = TIMEOUTS.STABLE_DOM * networkTimeoutMultiplier
     this.#page = page as unknown as CdpPage
   }
 

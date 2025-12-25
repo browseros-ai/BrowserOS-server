@@ -3,6 +3,7 @@
  * Copyright 2025 BrowserOS
  */
 
+import { TIMEOUTS } from '@browseros/shared/timeouts'
 import type { WebSocket } from 'ws'
 import { WebSocketServer } from 'ws'
 import type { Logger } from '../common/index.js'
@@ -116,7 +117,7 @@ export class ControllerBridge {
   async sendRequest(
     action: string,
     payload: unknown,
-    timeoutMs = 30000,
+    timeoutMs: number = TIMEOUTS.CONTROLLER_BRIDGE,
   ): Promise<unknown> {
     if (!this.isConnected()) {
       throw new Error('BrowserOS helper service not connected')

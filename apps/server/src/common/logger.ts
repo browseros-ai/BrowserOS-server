@@ -2,8 +2,10 @@
  * @license
  * Copyright 2025 BrowserOS
  */
+
 import fs from 'node:fs'
 import path from 'node:path'
+import { CONTENT_LIMITS } from '@browseros/shared/limits'
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 interface FormatOptions {
@@ -19,7 +21,6 @@ const COLORS = {
 }
 
 const RESET = '\x1b[0m'
-const CONSOLE_META_CHAR_LIMIT = 100
 
 export class Logger {
   private logFilePath?: string
@@ -54,10 +55,10 @@ export class Logger {
         if (
           truncateStrings &&
           typeof value === 'string' &&
-          value.length > CONSOLE_META_CHAR_LIMIT
+          value.length > CONTENT_LIMITS.CONSOLE_META_CHAR
         ) {
-          const extra = value.length - CONSOLE_META_CHAR_LIMIT
-          return `${value.slice(0, CONSOLE_META_CHAR_LIMIT)}... (+${extra} chars)`
+          const extra = value.length - CONTENT_LIMITS.CONSOLE_META_CHAR
+          return `${value.slice(0, CONTENT_LIMITS.CONSOLE_META_CHAR)}... (+${extra} chars)`
         }
         return value
       },

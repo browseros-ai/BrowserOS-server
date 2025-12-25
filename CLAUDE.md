@@ -5,6 +5,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Coding guidelines
 
 - Write minimal code comments. Only add comments for non-obvious logic, complex algorithms, or critical warnings. Skip comments for self-explanatory code, obvious function names, and simple operations.
+- Avoid magic constants scattered in the codebase. Use `@browseros/shared` for all shared configuration:
+  - `@browseros/shared/ports` - Port numbers (DEFAULT_PORTS, TEST_PORTS)
+  - `@browseros/shared/timeouts` - Timeout values (TIMEOUTS)
+  - `@browseros/shared/limits` - Rate limits, pagination, content limits (RATE_LIMITS, AGENT_LIMITS, etc.)
+  - `@browseros/shared/urls` - External service URLs (EXTERNAL_URLS)
+  - `@browseros/shared/paths` - File system paths (PATHS)
 
 ## Project Overview
 
@@ -52,7 +58,7 @@ bun run dist:ext                 # Build extension for production
 
 ## Architecture
 
-This is a monorepo with two apps in `apps/`:
+This is a monorepo with three packages in `apps/`:
 
 ### Server (`apps/server`)
 The main MCP server that exposes browser automation tools via HTTP/SSE.
@@ -73,6 +79,11 @@ The main MCP server that exposes browser automation tools via HTTP/SSE.
 **Tool types:**
 - CDP tools require a direct CDP connection (`--cdp-port`)
 - Controller tools work via the browser extension over WebSocket
+
+### Shared (`apps/shared`)
+Shared constants and configuration used by both server and extension. Avoids magic numbers.
+
+**Exports:** `@browseros/shared/ports`, `@browseros/shared/timeouts`, `@browseros/shared/limits`, `@browseros/shared/urls`, `@browseros/shared/paths`
 
 ### Controller Extension (`apps/controller-ext`)
 Chrome extension that receives commands from the server via WebSocket.

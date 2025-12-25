@@ -3,13 +3,13 @@
  * Copyright 2025 BrowserOS
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
+
 import type { Database } from 'bun:sqlite'
+import { RATE_LIMITS } from '@browseros/shared/limits'
 
 import { logger } from '../../common/index.js'
 
 import { RateLimitError } from './errors.js'
-
-const DEFAULT_DAILY_RATE_LIMIT = 5
 
 export interface RecordParams {
   conversationId: string
@@ -22,7 +22,10 @@ export class RateLimiter {
   private insertStmt: ReturnType<Database['prepare']>
   private dailyRateLimit: number
 
-  constructor(db: Database, dailyRateLimit: number = DEFAULT_DAILY_RATE_LIMIT) {
+  constructor(
+    db: Database,
+    dailyRateLimit: number = RATE_LIMITS.DEFAULT_DAILY,
+  ) {
     this.dailyRateLimit = dailyRateLimit
     this.countStmt = db.prepare(`
       SELECT COUNT(*) as count
