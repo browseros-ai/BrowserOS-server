@@ -85,6 +85,7 @@ export class VercelAIContentGenerator implements ContentGenerator {
   /**
    * Non-streaming content generation
    */
+  // @ts-expect-error Intentional override of gemini-cli-core's ContentGenerator to use Vercel AI SDK
   async generateContent(
     request: GenerateContentParameters,
     _userPromptId: string,
@@ -116,6 +117,7 @@ export class VercelAIContentGenerator implements ContentGenerator {
   /**
    * Streaming content generation
    */
+  // @ts-expect-error Intentional override of gemini-cli-core's ContentGenerator to use Vercel AI SDK
   async generateContentStream(
     request: GenerateContentParameters,
     _userPromptId: string,

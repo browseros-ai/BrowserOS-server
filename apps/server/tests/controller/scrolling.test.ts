@@ -198,7 +198,7 @@ describe('MCP Controller Scrolling Tools', () => {
 
         const navText = navContent.find((c) => c.type === 'text')
         const tabIdMatch = navText?.text?.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch?.[1], 10)
+        const tabId = parseInt(tabIdMatch?.[1] ?? '0', 10)
 
         const tools = [
           { name: 'browser_scroll_down', args: { tabId } },
@@ -263,7 +263,7 @@ describe('MCP Controller Scrolling Tools', () => {
 
         const navText = navContent.find((c) => c.type === 'text')
         const tabIdMatch = navText?.text?.match(/Tab ID: (\d+)/)
-        const tabId = parseInt(tabIdMatch?.[1], 10)
+        const tabId = parseInt(tabIdMatch?.[1] ?? '0', 10)
 
         const scroll1 = await client.callTool({
           name: 'browser_scroll_down',
