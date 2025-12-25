@@ -47,6 +47,32 @@ async function waitForServer(port: number, maxAttempts = 30): Promise<void> {
   throw new Error(`Server failed to start on port ${port} within timeout`)
 }
 
+async function waitForExtensionConnection(
+  port: number,
+  maxAttempts = 30,
+): Promise<void> {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:${port}/extension-status`,
+        {
+          signal: AbortSignal.timeout(2000),
+        },
+      )
+      if (response.ok) {
+        const data = (await response.json()) as { extensionConnected: boolean }
+        if (data.extensionConnected) {
+          return
+        }
+      }
+    } catch {
+      // Server not ready yet
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500))
+  }
+  throw new Error(`Extension failed to connect on port ${port} within timeout`)
+}
+
 export async function ensureServer(
   options?: Partial<ServerConfig>,
 ): Promise<ServerConfig> {
@@ -75,13 +101,6 @@ export async function ensureServer(
     await cleanupServer()
   }
 
-  // Ensure BrowserOS is running first
-  await ensureBrowserOS({
-    cdpPort: config.cdpPort,
-    httpMcpPort: config.httpMcpPort,
-    extensionPort: config.extensionPort,
-  })
-
   // Check if server already running (from previous test run)
   if (await isServerAvailable(config.httpMcpPort)) {
     console.log(
@@ -91,11 +110,13 @@ export async function ensureServer(
     return config
   }
 
-  // Kill conflicting processes
+  // Kill conflicting processes first
   await killProcessOnPort(config.httpMcpPort)
   await killProcessOnPort(config.extensionPort)
+  await killProcessOnPort(config.cdpPort)
 
-  // Start server - updated path for new structure
+  // Start server FIRST so WebSocket is ready for extension
+  // Server will initially fail CDP connection (that's OK, it handles it gracefully)
   console.log(`Starting BrowserOS Server on port ${config.httpMcpPort}...`)
   serverProcess = spawn(
     'bun',
@@ -129,14 +150,22 @@ export async function ensureServer(
     console.error('Failed to start server:', error)
   })
 
+  // Wait for server (WebSocket will be ready even if CDP connection failed)
   console.log('Waiting for server to be ready...')
   await waitForServer(config.httpMcpPort)
   console.log('Server is ready')
 
-  // Give extension time to connect to WebSocket
+  // NOW start BrowserOS - extension will connect to the already-running WebSocket
+  await ensureBrowserOS({
+    cdpPort: config.cdpPort,
+    httpMcpPort: config.httpMcpPort,
+    extensionPort: config.extensionPort,
+  })
+
+  // Wait for extension to connect to WebSocket
   console.log('Waiting for extension to connect...')
-  await new Promise((resolve) => setTimeout(resolve, 5000))
-  console.log('Ready\n')
+  await waitForExtensionConnection(config.httpMcpPort)
+  console.log('Extension connected\n')
 
   serverConfig = config
   return config
