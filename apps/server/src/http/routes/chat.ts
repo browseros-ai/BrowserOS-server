@@ -37,7 +37,7 @@ export function createChatRoutes(deps: ChatRouteDeps) {
   const mcpServerUrl = `http://127.0.0.1:${port}/mcp`
 
   // Session manager - one per server instance
-  const sessionManager = new SessionManager(logger)
+  const sessionManager = new SessionManager()
 
   const chat = new Hono()
 
@@ -115,9 +115,15 @@ export function createChatRoutes(deps: ChatRouteDeps) {
           customMcpServers: request.browserContext?.customMcpServers,
         })
 
+        const sseStream = {
+          write: async (data: string): Promise<void> => {
+            await honoStream.write(data)
+          },
+        }
+
         await agent.execute(
           request.message,
-          honoStream,
+          sseStream,
           abortSignal,
           request.browserContext,
         )

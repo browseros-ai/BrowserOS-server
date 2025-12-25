@@ -2,7 +2,7 @@
  * @license
  * Copyright 2025 BrowserOS
  */
-import { Locator } from 'puppeteer-core'
+import { type Frame, Locator } from 'puppeteer-core'
 import z from 'zod'
 
 import { ToolCategories } from '../types/ToolCategories.js'
@@ -38,7 +38,7 @@ export const waitFor = defineTool({
     const frames = page.frames()
 
     const locator = Locator.race(
-      frames.flatMap((frame) => [
+      frames.flatMap((frame: Frame) => [
         frame.locator(`aria/${request.params.text}`),
         frame.locator(`text/${request.params.text}`),
       ]),

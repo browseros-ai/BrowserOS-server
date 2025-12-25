@@ -12,7 +12,7 @@ import {
   MCPServerConfig,
   type ToolCallRequestInfo,
 } from '@google/gemini-cli-core'
-import type { Part } from '@google/genai'
+import type { Content, Part } from '@google/genai'
 import {
   fetchBrowserOSConfig,
   getLLMConfigFromProvider,
@@ -223,7 +223,7 @@ export class GeminiAgent {
     )
   }
 
-  getHistory() {
+  getHistory(): Content[] {
     return this.client.getHistory()
   }
 

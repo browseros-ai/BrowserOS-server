@@ -23,6 +23,7 @@ const CONSOLE_META_CHAR_LIMIT = 100
 
 export class Logger {
   private logFilePath?: string
+  private level: LogLevel
 
   constructor(level: LogLevel = 'info') {
     this.level = level

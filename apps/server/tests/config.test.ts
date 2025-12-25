@@ -40,7 +40,6 @@ describe('loadServerConfig', () => {
         'src/index.ts',
         '--cdp-port=9222',
         '--http-mcp-port=9223',
-        '--agent-port=9225',
         '--extension-port=9224',
       ])
 
@@ -48,7 +47,8 @@ describe('loadServerConfig', () => {
       if (!result.ok) return
       assert.strictEqual(result.value.cdpPort, 9222)
       assert.strictEqual(result.value.httpMcpPort, 9223)
-      assert.strictEqual(result.value.agentPort, 9225)
+      // agentPort is deprecated - always equals httpMcpPort
+      assert.strictEqual(result.value.agentPort, 9223)
       assert.strictEqual(result.value.extensionPort, 9224)
       assert.strictEqual(result.value.mcpAllowRemote, false)
     })
@@ -58,7 +58,6 @@ describe('loadServerConfig', () => {
         'bun',
         'src/index.ts',
         '--http-mcp-port=9223',
-        '--agent-port=9225',
         '--extension-port=9224',
         '--allow-remote-in-mcp',
       ])
@@ -73,7 +72,6 @@ describe('loadServerConfig', () => {
         'bun',
         'src/index.ts',
         '--http-mcp-port=9223',
-        '--agent-port=9225',
         '--extension-port=9224',
       ])
 
@@ -88,7 +86,6 @@ describe('loadServerConfig', () => {
       const result = loadServerConfig(['bun', 'src/index.ts'], {
         CDP_PORT: '9222',
         HTTP_MCP_PORT: '9223',
-        AGENT_PORT: '9225',
         EXTENSION_PORT: '9224',
       })
 
@@ -96,7 +93,8 @@ describe('loadServerConfig', () => {
       if (!result.ok) return
       assert.strictEqual(result.value.cdpPort, 9222)
       assert.strictEqual(result.value.httpMcpPort, 9223)
-      assert.strictEqual(result.value.agentPort, 9225)
+      // agentPort is deprecated - always equals httpMcpPort
+      assert.strictEqual(result.value.agentPort, 9223)
       assert.strictEqual(result.value.extensionPort, 9224)
     })
 
@@ -106,12 +104,10 @@ describe('loadServerConfig', () => {
           'bun',
           'src/index.ts',
           '--http-mcp-port=1111',
-          '--agent-port=2222',
           '--extension-port=3333',
         ],
         {
           HTTP_MCP_PORT: '9999',
-          AGENT_PORT: '9999',
           EXTENSION_PORT: '9999',
         },
       )
@@ -119,7 +115,8 @@ describe('loadServerConfig', () => {
       assert.strictEqual(result.ok, true)
       if (!result.ok) return
       assert.strictEqual(result.value.httpMcpPort, 1111)
-      assert.strictEqual(result.value.agentPort, 2222)
+      // agentPort is deprecated - always equals httpMcpPort
+      assert.strictEqual(result.value.agentPort, 1111)
       assert.strictEqual(result.value.extensionPort, 3333)
     })
   })
@@ -133,7 +130,6 @@ describe('loadServerConfig', () => {
           ports: {
             cdp: 9222,
             http_mcp: 3000,
-            agent: 3001,
             extension: 3002,
           },
           flags: {
@@ -152,7 +148,8 @@ describe('loadServerConfig', () => {
       if (!result.ok) return
       assert.strictEqual(result.value.cdpPort, 9222)
       assert.strictEqual(result.value.httpMcpPort, 3000)
-      assert.strictEqual(result.value.agentPort, 3001)
+      // agentPort is deprecated - always equals httpMcpPort
+      assert.strictEqual(result.value.agentPort, 3000)
       assert.strictEqual(result.value.extensionPort, 3002)
       assert.strictEqual(result.value.mcpAllowRemote, true)
     })
@@ -164,7 +161,6 @@ describe('loadServerConfig', () => {
         JSON.stringify({
           ports: {
             http_mcp: 3000,
-            agent: 3001,
             extension: 3002,
           },
         }),
@@ -180,7 +176,8 @@ describe('loadServerConfig', () => {
       assert.strictEqual(result.ok, true)
       if (!result.ok) return
       assert.strictEqual(result.value.httpMcpPort, 9999)
-      assert.strictEqual(result.value.agentPort, 3001)
+      // agentPort is deprecated - always equals httpMcpPort
+      assert.strictEqual(result.value.agentPort, 9999)
     })
 
     it('config file takes precedence over env', () => {
@@ -190,7 +187,6 @@ describe('loadServerConfig', () => {
         JSON.stringify({
           ports: {
             http_mcp: 3000,
-            agent: 3001,
             extension: 3002,
           },
         }),
@@ -213,7 +209,7 @@ describe('loadServerConfig', () => {
       fs.writeFileSync(
         configPath,
         JSON.stringify({
-          ports: { http_mcp: 3000, agent: 3001, extension: 3002 },
+          ports: { http_mcp: 3000, extension: 3002 },
           directories: {
             resources: '../data',
             execution: './logs',
@@ -238,7 +234,7 @@ describe('loadServerConfig', () => {
       fs.writeFileSync(
         configPath,
         JSON.stringify({
-          ports: { http_mcp: 3000, agent: 3001, extension: 3002 },
+          ports: { http_mcp: 3000, extension: 3002 },
           instance: {
             client_id: 'user-123',
             install_id: 'install-456',
@@ -270,7 +266,6 @@ describe('loadServerConfig', () => {
       assert.strictEqual(result.ok, false)
       if (result.ok) return
       assert.ok(result.error.includes('httpMcpPort'))
-      assert.ok(result.error.includes('agentPort'))
       assert.ok(result.error.includes('extensionPort'))
     })
 
@@ -308,7 +303,6 @@ describe('loadServerConfig', () => {
         JSON.stringify({
           ports: {
             http_mcp: 'not-a-number',
-            agent: 3001,
             extension: 3002,
           },
         }),
@@ -331,7 +325,7 @@ describe('loadServerConfig', () => {
       fs.writeFileSync(
         configPath,
         JSON.stringify({
-          ports: { http_mcp: 3000, agent: 3001, extension: 3002 },
+          ports: { http_mcp: 3000, extension: 3002 },
           instance: {
             client_id: 123, // should be string
             browseros_version: true, // should be string
@@ -359,7 +353,6 @@ describe('loadServerConfig', () => {
         'bun',
         'src/index.ts',
         '--http-mcp-port=3000',
-        '--agent-port=3001',
         '--extension-port=3002',
       ])
 
@@ -374,7 +367,6 @@ describe('loadServerConfig', () => {
         'bun',
         'src/index.ts',
         '--http-mcp-port=3000',
-        '--agent-port=3001',
         '--extension-port=3002',
       ])
 
@@ -388,13 +380,25 @@ describe('loadServerConfig', () => {
         'bun',
         'src/index.ts',
         '--http-mcp-port=3000',
-        '--agent-port=3001',
         '--extension-port=3002',
       ])
 
       assert.strictEqual(result.ok, true)
       if (!result.ok) return
       assert.strictEqual(result.value.cdpPort, null)
+    })
+
+    it('agentPort always equals httpMcpPort (deprecated)', () => {
+      const result = loadServerConfig([
+        'bun',
+        'src/index.ts',
+        '--http-mcp-port=3000',
+        '--extension-port=3002',
+      ])
+
+      assert.strictEqual(result.ok, true)
+      if (!result.ok) return
+      assert.strictEqual(result.value.agentPort, result.value.httpMcpPort)
     })
   })
 })

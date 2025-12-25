@@ -50,7 +50,7 @@ export class ConcurrencyLimiter {
     return new Promise<T>((resolve, reject) => {
       this.queue.push({
         task,
-        resolve,
+        resolve: resolve as (value: unknown) => void,
         reject,
       })
 

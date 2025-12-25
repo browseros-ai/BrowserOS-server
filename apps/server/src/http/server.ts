@@ -15,6 +15,7 @@ import { cors } from 'hono/cors'
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import { HttpAgentError } from '../agent/errors.js'
 import { createChatRoutes } from './routes/chat.js'
+import { createExtensionStatusRoute } from './routes/extension-status.js'
 import { health } from './routes/health.js'
 import { createKlavisRoutes } from './routes/klavis.js'
 import { createMcpRoutes } from './routes/mcp.js'
@@ -48,6 +49,10 @@ export function createHttpServer(config: HttpServerConfig) {
   const app = new Hono<Env>()
     .use('/*', cors(defaultCorsConfig))
     .route('/health', health)
+    .route(
+      '/extension-status',
+      createExtensionStatusRoute({ controllerContext }),
+    )
     .route('/test-provider', createProviderRoutes({ logger: log }))
     .route(
       '/klavis',

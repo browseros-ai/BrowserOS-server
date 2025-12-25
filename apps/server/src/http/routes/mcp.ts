@@ -9,6 +9,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { SetLevelRequestSchema } from '@modelcontextprotocol/sdk/types.js'
 import { Hono } from 'hono'
+import type { z } from 'zod'
 import type { Logger, McpContext, Mutex } from '../../common/index.js'
 import { metrics } from '../../common/index.js'
 import { Sentry } from '../../common/sentry/instrument.js'
@@ -52,14 +53,15 @@ function createMcpServerWithTools(deps: McpRouteDeps): McpServer {
 
   // Register each tool with the MCP server
   for (const tool of tools) {
+    // @ts-expect-error TS2589: Type instantiation too deep with complex Zod schema generics
     server.registerTool(
       tool.name,
       {
         description: tool.description,
-        inputSchema: tool.schema,
+        inputSchema: tool.schema as z.ZodRawShape,
         annotations: tool.annotations,
       },
-      async (params: Record<string, unknown>): Promise<CallToolResult> => {
+      (async (params: Record<string, unknown>): Promise<CallToolResult> => {
         const startTime = performance.now()
 
         // Serialize tool execution with mutex
@@ -120,7 +122,7 @@ function createMcpServerWithTools(deps: McpRouteDeps): McpServer {
         } finally {
           guard.dispose()
         }
-      },
+      }) as (params: Record<string, unknown>) => Promise<CallToolResult>,
     )
   }
 

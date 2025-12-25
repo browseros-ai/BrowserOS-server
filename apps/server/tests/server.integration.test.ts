@@ -98,6 +98,7 @@ describe('HTTP Server Integration Tests', () => {
       {
         stdio: ['ignore', 'pipe', 'pipe'],
         cwd: process.cwd(),
+        env: { ...process.env, NODE_ENV: 'test' },
       },
     )
 
@@ -235,8 +236,9 @@ describe('HTTP Server Integration Tests', () => {
   describe('Concurrent request handling', () => {
     it('handles multiple simultaneous requests without conflicts', async () => {
       assert.ok(mcpClient, 'MCP client should be connected')
+      const client = mcpClient
 
-      const requests = Array.from({ length: 10 }, () => mcpClient?.listTools())
+      const requests = Array.from({ length: 10 }, () => client.listTools())
 
       const results = await Promise.all(requests)
 
