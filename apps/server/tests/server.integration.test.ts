@@ -2,24 +2,26 @@
  * @license
  * Copyright 2025 BrowserOS
  *
- * Self-contained integration test for MCP server
- * Starts BrowserOS binary, starts MCP server, tests functionality, then cleans up
+ * Integration tests for the consolidated HTTP server.
+ * Starts BrowserOS, starts HTTP server, tests all endpoints, then cleans up.
  */
 
-import { afterAll, beforeAll, describe, it } from 'bun:test'
+import { afterAll, beforeAll, describe, it, setDefaultTimeout } from 'bun:test'
 import assert from 'node:assert'
 import { spawn } from 'node:child_process'
 import { URL } from 'node:url'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
-import { ensureBrowserOS, killProcessOnPort } from './utils.js'
+import { cleanupBrowser, ensureBrowserOS, killProcessOnPort } from './utils.js'
+
+// Set longer timeout for hooks and tests (30 seconds) - browser startup/shutdown takes time
+setDefaultTimeout(30000)
 
 // Test configuration
 const CDP_PORT = parseInt(process.env.CDP_PORT || '9001', 10)
-const HTTP_MCP_PORT = parseInt(process.env.HTTP_MCP_PORT || '9002', 10)
-const AGENT_PORT = parseInt(process.env.AGENT_PORT || '9003', 10)
+const HTTP_PORT = parseInt(process.env.HTTP_MCP_PORT || '9002', 10)
 const EXTENSION_PORT = parseInt(process.env.EXTENSION_PORT || '9004', 10)
-const BASE_URL = `http://127.0.0.1:${HTTP_MCP_PORT}`
+const BASE_URL = `http://127.0.0.1:${HTTP_PORT}`
 
 let serverProcess: ReturnType<typeof spawn> | null = null
 let mcpClient: Client | null = null
@@ -59,25 +61,29 @@ async function waitForServer(maxAttempts = 30): Promise<void> {
   throw new Error('Server failed to start within timeout')
 }
 
-describe('MCP Server Integration Tests', () => {
+describe('HTTP Server Integration Tests', () => {
   beforeAll(async () => {
     // Start BrowserOS (or reuse if already running)
-    await ensureBrowserOS({ cdpPort: CDP_PORT })
+    await ensureBrowserOS({
+      cdpPort: CDP_PORT,
+      httpPort: HTTP_PORT,
+      extensionPort: EXTENSION_PORT,
+    })
 
-    // Check if MCP server port is already in use
-    await killProcessOnPort(HTTP_MCP_PORT)
+    // Check if server port is already in use
+    await killProcessOnPort(HTTP_PORT)
     await killProcessOnPort(EXTENSION_PORT)
 
-    const portAvailable = await isPortAvailable(HTTP_MCP_PORT)
+    const portAvailable = await isPortAvailable(HTTP_PORT)
     if (!portAvailable) {
       console.log(
-        `Server already running on port ${HTTP_MCP_PORT}, using existing server\n`,
+        `Server already running on port ${HTTP_PORT}, using existing server\n`,
       )
       return
     }
 
-    // Start MCP server
-    console.log(`Starting MCP server on port ${HTTP_MCP_PORT}...`)
+    // Start HTTP server
+    console.log(`Starting HTTP server on port ${HTTP_PORT}...`)
     serverProcess = spawn(
       'bun',
       [
@@ -85,9 +91,7 @@ describe('MCP Server Integration Tests', () => {
         '--cdp-port',
         CDP_PORT.toString(),
         '--http-mcp-port',
-        HTTP_MCP_PORT.toString(),
-        '--agent-port',
-        AGENT_PORT.toString(),
+        HTTP_PORT.toString(),
         '--extension-port',
         EXTENSION_PORT.toString(),
       ],
@@ -106,12 +110,12 @@ describe('MCP Server Integration Tests', () => {
     })
 
     serverProcess.on('error', (error) => {
-      console.error('Failed to start MCP server:', error)
+      console.error('Failed to start HTTP server:', error)
     })
 
-    // Wait for MCP server to be ready
+    // Wait for server to be ready
     await waitForServer()
-    console.log('MCP server is ready\n')
+    console.log('HTTP server is ready\n')
 
     // Connect MCP client
     mcpClient = new Client({
@@ -136,9 +140,9 @@ describe('MCP Server Integration Tests', () => {
       console.log('MCP client closed')
     }
 
-    // Shutdown MCP server
+    // Shutdown HTTP server
     if (serverProcess) {
-      console.log('Shutting down MCP server...')
+      console.log('Shutting down HTTP server...')
       serverProcess.kill('SIGTERM')
 
       await new Promise<void>((resolve) => {
@@ -153,14 +157,15 @@ describe('MCP Server Integration Tests', () => {
         })
       })
 
-      console.log('MCP server stopped')
+      console.log('HTTP server stopped')
       serverProcess = null
     }
 
-    // Note: We do NOT cleanup BrowserOS here because:
-    // 1. It's shared across all tests in the suite
-    // 2. Other tests may run after this and need the browser
-    // 3. Process exit will handle final cleanup
+    // Cleanup BrowserOS if we started it
+    // Set KEEP_BROWSER=1 to keep browser open for debugging
+    if (!process.env.KEEP_BROWSER) {
+      await cleanupBrowser()
+    }
   })
 
   describe('Health endpoint', () => {
@@ -168,8 +173,8 @@ describe('MCP Server Integration Tests', () => {
       const response = await fetch(`${BASE_URL}/health`)
       assert.strictEqual(response.status, 200)
 
-      const text = await response.text()
-      assert.strictEqual(text, 'OK')
+      const json = await response.json()
+      assert.strictEqual(json.status, 'ok')
     })
   })
 
@@ -243,6 +248,95 @@ describe('MCP Server Integration Tests', () => {
       })
 
       console.log(`All ${results.length} concurrent requests succeeded`)
+    })
+  })
+
+  describe('Chat endpoint', () => {
+    it(
+      'streams a chat response with BrowserOS provider',
+      async () => {
+        const conversationId = crypto.randomUUID()
+
+        const response = await fetch(`${BASE_URL}/chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            conversationId,
+            message: 'Open amazon.com in a new tab',
+            provider: 'browseros',
+            model: 'claude-sonnet-4-20250514',
+          }),
+        })
+
+        assert.strictEqual(response.status, 200, 'Chat should return 200')
+        assert.ok(
+          response.headers.get('content-type')?.includes('text/event-stream'),
+          'Should return SSE stream',
+        )
+
+        // Read and parse SSE stream
+        const reader = response.body?.getReader()
+        assert.ok(reader, 'Should have response body reader')
+
+        const decoder = new TextDecoder()
+        let fullResponse = ''
+        let eventCount = 0
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          const chunk = decoder.decode(value, { stream: true })
+          fullResponse += chunk
+          eventCount++
+
+          // Log first few events for debugging
+          if (eventCount <= 3) {
+            console.log(`[CHAT] Event ${eventCount}:`, chunk.slice(0, 100))
+          }
+        }
+
+        console.log(
+          `[CHAT] Received ${eventCount} events, ${fullResponse.length} bytes total`,
+        )
+
+        // Verify we got SSE formatted data
+        assert.ok(
+          fullResponse.includes('data:'),
+          'Should contain SSE data events',
+        )
+
+        // Cleanup: delete the session
+        const deleteResponse = await fetch(
+          `${BASE_URL}/chat/${conversationId}`,
+          {
+            method: 'DELETE',
+          },
+        )
+        assert.strictEqual(deleteResponse.status, 200, 'Should delete session')
+      },
+      { timeout: 30000 },
+    )
+
+    it('returns 400 for invalid chat request', async () => {
+      const response = await fetch(`${BASE_URL}/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          // Missing required fields
+          message: 'Hello',
+        }),
+      })
+
+      assert.strictEqual(
+        response.status,
+        400,
+        'Should return 400 for invalid request',
+      )
     })
   })
 })
