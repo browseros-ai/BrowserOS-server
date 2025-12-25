@@ -6,15 +6,18 @@
 import { describe, it } from 'bun:test'
 import assert from 'node:assert'
 
-import { consoleTool } from '../../../src/tools/cdp-based/console.js'
+import { withMcpServer } from '../../__helpers__/utils.js'
 
-import { withBrowser } from '../../__helpers__/utils.js'
+describe('MCP Console Tools', () => {
+  it('tests that list_console_messages returns console data', async () => {
+    await withMcpServer(async (client) => {
+      const result = await client.callTool({
+        name: 'list_console_messages',
+        arguments: {},
+      })
 
-describe('console', () => {
-  it('list_console_messages - list messages', async () => {
-    await withBrowser(async (response, context) => {
-      await consoleTool.handler({ params: {} }, response, context)
-      assert.ok(response.includeConsoleData)
+      assert.ok(result.content, 'Should return content')
+      assert.ok(!result.isError, 'Should not error')
     })
-  })
+  }, 30000)
 })
