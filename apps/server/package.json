@@ -13,6 +13,7 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@browseros/shared": "workspace:*",
     "@ai-sdk/amazon-bedrock": "^3.0.59",
     "@ai-sdk/anthropic": "^2.0.47",
     "@ai-sdk/azure": "^2.0.74",
