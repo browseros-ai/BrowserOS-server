@@ -13,7 +13,6 @@ import { killProcessOnPort } from './utils.js'
 export interface ServerConfig {
   cdpPort: number
   httpMcpPort: number
-  agentPort: number
   extensionPort: number
 }
 
@@ -55,8 +54,6 @@ export async function ensureServer(
     cdpPort: options?.cdpPort ?? parseInt(process.env.CDP_PORT || '9005', 10),
     httpMcpPort:
       options?.httpMcpPort ?? parseInt(process.env.HTTP_MCP_PORT || '9105', 10),
-    agentPort:
-      options?.agentPort ?? parseInt(process.env.AGENT_PORT || '9205', 10),
     extensionPort:
       options?.extensionPort ??
       parseInt(process.env.EXTENSION_PORT || '9305', 10),
@@ -82,7 +79,6 @@ export async function ensureServer(
   await ensureBrowserOS({
     cdpPort: config.cdpPort,
     httpMcpPort: config.httpMcpPort,
-    agentPort: config.agentPort,
     extensionPort: config.extensionPort,
   })
 
@@ -97,7 +93,6 @@ export async function ensureServer(
 
   // Kill conflicting processes
   await killProcessOnPort(config.httpMcpPort)
-  await killProcessOnPort(config.agentPort)
   await killProcessOnPort(config.extensionPort)
 
   // Start server - updated path for new structure
@@ -110,14 +105,13 @@ export async function ensureServer(
       config.cdpPort.toString(),
       '--http-mcp-port',
       config.httpMcpPort.toString(),
-      '--agent-port',
-      config.agentPort.toString(),
       '--extension-port',
       config.extensionPort.toString(),
     ],
     {
       stdio: ['ignore', 'pipe', 'pipe'],
       cwd: process.cwd(),
+      env: { ...process.env, NODE_ENV: 'test' },
     },
   )
 

@@ -72,7 +72,10 @@ export function loadServerConfig(
     cli.value.overrides,
   )
 
-  // 5. Validate with Zod (single source of truth)
+  // 5. agentPort is deprecated - always use httpMcpPort
+  merged.agentPort = merged.httpMcpPort
+
+  // 6. Validate with Zod (single source of truth)
   const result = ServerConfigSchema.safeParse(merged)
   if (!result.success) {
     const errors = result.error.issues
@@ -148,6 +151,12 @@ function parseCli(argv: string[]): ConfigResult<CliResult> {
     )
   }
 
+  if (opts.agentPort !== undefined) {
+    console.warn(
+      'Warning: --agent-port is deprecated and has no effect. Agent uses --http-mcp-port.',
+    )
+  }
+
   const cwd = process.cwd()
 
   return {
@@ -158,7 +167,6 @@ function parseCli(argv: string[]): ConfigResult<CliResult> {
       overrides: filterUndefined({
         cdpPort: opts.cdpPort,
         httpMcpPort: opts.httpMcpPort,
-        agentPort: opts.agentPort,
         extensionPort: opts.extensionPort,
         resourcesDir: opts.resourcesDir
           ? resolvePath(opts.resourcesDir, cwd)
@@ -203,7 +211,6 @@ function loadConfigFile(explicitPath?: string): ConfigResult<PartialConfig> {
       value: filterUndefined({
         cdpPort: cfg.ports?.cdp,
         httpMcpPort: cfg.ports?.http_mcp,
-        agentPort: cfg.ports?.agent,
         extensionPort: cfg.ports?.extension,
         resourcesDir: resolvePathIfString(
           cfg.directories?.resources,
@@ -245,7 +252,6 @@ function loadEnv(env: NodeJS.ProcessEnv): PartialConfig {
     httpMcpPort: env.HTTP_MCP_PORT
       ? safeParseInt(env.HTTP_MCP_PORT)
       : undefined,
-    agentPort: env.AGENT_PORT ? safeParseInt(env.AGENT_PORT) : undefined,
     extensionPort: env.EXTENSION_PORT
       ? safeParseInt(env.EXTENSION_PORT)
       : undefined,

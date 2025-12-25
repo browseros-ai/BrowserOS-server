@@ -593,7 +593,7 @@ export class MessageConversionStrategy {
         // Check if this assistant message has tool_call parts
         if (Array.isArray(content)) {
           const toolCallParts = content.filter(
-            (p): p is VercelContentPart =>
+            (p) =>
               typeof p === 'object' &&
               p !== null &&
               (p as { type?: string }).type === 'tool-call',
@@ -630,7 +630,7 @@ export class MessageConversionStrategy {
 
             // Keep non-tool-call parts (text, etc.) + valid tool calls
             const nonToolCallParts = content.filter(
-              (p): p is VercelContentPart =>
+              (p) =>
                 typeof p === 'object' &&
                 p !== null &&
                 (p as { type?: string }).type !== 'tool-call',

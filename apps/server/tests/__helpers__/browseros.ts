@@ -53,7 +53,6 @@ async function waitForCdp(cdpPort: number, maxAttempts = 30): Promise<void> {
 export async function ensureBrowserOS(options?: {
   cdpPort?: number
   httpMcpPort?: number
-  agentPort?: number
   extensionPort?: number
   binaryPath?: string
 }): Promise<{
@@ -64,8 +63,6 @@ export async function ensureBrowserOS(options?: {
     options?.cdpPort ?? parseInt(process.env.CDP_PORT || '9005', 10)
   const httpMcpPort =
     options?.httpMcpPort ?? parseInt(process.env.HTTP_MCP_PORT || '9105', 10)
-  const agentPort =
-    options?.agentPort ?? parseInt(process.env.AGENT_PORT || '9205', 10)
   const extensionPort =
     options?.extensionPort ?? parseInt(process.env.EXTENSION_PORT || '9305', 10)
   const binaryPath =
@@ -118,7 +115,6 @@ export async function ensureBrowserOS(options?: {
       `--user-data-dir=${tempUserDataDir}`,
       `--remote-debugging-port=${cdpPort}`,
       `--browseros-mcp-port=${httpMcpPort}`,
-      `--browseros-agent-port=${agentPort}`,
       `--browseros-extension-port=${extensionPort}`,
       '--disable-browseros-server',
     ],

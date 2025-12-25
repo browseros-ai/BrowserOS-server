@@ -81,6 +81,7 @@ Sentry.setContext('browseros', {
 
 const DEFAULT_DAILY_RATE_LIMIT = 5
 const DEV_DAILY_RATE_LIMIT = 100
+const TEST_DAILY_RATE_LIMIT = Infinity
 
 void (async () => {
   logger.info(`Starting BrowserOS Server v${version}`)
@@ -198,6 +199,12 @@ function mergeTools(
 }
 
 async function fetchDailyRateLimit(): Promise<number> {
+  // Test mode: skip rate limiting entirely
+  if (process.env.NODE_ENV === 'test') {
+    logger.info('[Config] Test mode: rate limiting disabled')
+    return TEST_DAILY_RATE_LIMIT
+  }
+
   // Dev mode: skip fetch, use higher limit for local development
   if (process.env.NODE_ENV === 'development') {
     logger.info('[Config] Dev mode: using dev rate limit', {

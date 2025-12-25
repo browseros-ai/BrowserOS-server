@@ -98,6 +98,7 @@ describe('HTTP Server Integration Tests', () => {
       {
         stdio: ['ignore', 'pipe', 'pipe'],
         cwd: process.cwd(),
+        env: { ...process.env, NODE_ENV: 'test' },
       },
     )
 
