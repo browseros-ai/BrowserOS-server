@@ -20,6 +20,3 @@ export { McpContext } from './McpContext.js'
 export { Mutex } from './Mutex.js'
 export { type MetricsConfig, metrics } from './metrics.js'
 export type { TraceResult } from './types.js'
-// Utils exports
-export * from './utils/index.js'
-export { readVersion } from './utils/index.js'

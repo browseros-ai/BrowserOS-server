@@ -198,9 +198,18 @@ async function main() {
   const rootDir = resolve(import.meta.dir, '..')
   process.chdir(rootDir)
 
+  const serverPkg = JSON.parse(
+    readFileSync(join(rootDir, 'apps/server/package.json'), 'utf-8'),
+  )
+  const version = serverPkg.version
+
   console.log(`🚀 Building BrowserOS server binaries`)
+  console.log(`   Version: ${version}`)
   console.log(`   Mode: ${mode}`)
   console.log(`   Targets: ${targets.join(', ')}`)
+  console.log(
+    `\n   Tip: bun run version:server [patch|minor|major] to bump version`,
+  )
 
   const envFile = mode === 'prod' ? '.env.prod' : '.env.dev'
   const envPath = join(rootDir, envFile)

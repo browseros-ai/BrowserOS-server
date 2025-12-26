@@ -11,7 +11,7 @@ import path from 'node:path'
 import { Command, InvalidArgumentError } from 'commander'
 import { z } from 'zod'
 
-import { version } from '../../../package.json' with { type: 'json' }
+import { VERSION } from './version.js'
 
 const portSchema = z.number().int()
 
@@ -103,7 +103,7 @@ function parseCli(argv: string[]): ConfigResult<CliResult> {
     program
       .name('browseros-server')
       .description('BrowserOS Unified Server - MCP + Agent')
-      .version(version)
+      .version(VERSION)
       .option('--config <path>', 'Path to JSON configuration file')
       .option(
         '--cdp-port <port>',

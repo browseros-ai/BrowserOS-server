@@ -4,7 +4,7 @@
  */
 import * as Sentry from '@sentry/bun'
 
-import pkg from '../../../package.json'
+import { VERSION } from '../../version.js'
 
 const SENTRY_ENVIRONMENT = process.env.NODE_ENV || 'development'
 
@@ -15,7 +15,7 @@ Sentry.init({
   // https://docs.sentry.io/platforms/javascript/guides/bun/configuration/options/#sendDefaultPii
   sendDefaultPii: true,
   environment: SENTRY_ENVIRONMENT,
-  release: pkg?.version ?? undefined,
+  release: VERSION,
 })
 
 export { Sentry }

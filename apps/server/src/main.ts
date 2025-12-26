@@ -19,7 +19,6 @@ import {
   McpContext,
   Mutex,
   metrics,
-  readVersion,
 } from './common/index.js'
 import { Sentry } from './common/sentry/instrument.js'
 import { loadServerConfig, type ServerConfig } from './config.js'
@@ -33,8 +32,8 @@ import {
   allControllerTools,
   type ToolDefinition,
 } from './tools/index.js'
+import { VERSION } from './version.js'
 
-const version = readVersion()
 const configResult = loadServerConfig()
 
 if (!configResult.ok) {
@@ -81,7 +80,7 @@ Sentry.setContext('browseros', {
 })
 
 void (async () => {
-  logger.info(`Starting BrowserOS Server v${version}`)
+  logger.info(`Starting BrowserOS Server v${VERSION}`)
 
   // Fetch rate limit config from Cloudflare worker
   const dailyRateLimit = await fetchDailyRateLimit()
@@ -106,7 +105,7 @@ void (async () => {
     host: '0.0.0.0',
     logger,
     // MCP config
-    version,
+    version: VERSION,
     tools,
     cdpContext,
     controllerContext,
