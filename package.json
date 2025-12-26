@@ -1,7 +1,7 @@
 {
-  "name": "browseros-server",
-  "version": "0.0.25",
-  "description": "Unified BrowserOS server with MCP and Agent support",
+  "name": "browseros-monorepo",
+  "version": "1.0.0",
+  "description": "BrowserOS monorepo - server, extension, and shared packages",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -26,7 +26,8 @@
     "lint:fix": "bunx biome check --write --unsafe",
     "docs": "npm run docs:generate && npm run format",
     "docs:generate": "node --experimental-strip-types scripts/generate-docs.ts",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "version:server": "cd apps/server && npm version"
   },
   "repository": "browseros-ai/BrowserOS-server",
   "author": "BrowserOS",

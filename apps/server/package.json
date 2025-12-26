@@ -1,7 +1,7 @@
 {
   "name": "@browseros/server",
-  "version": "0.0.1",
-  "description": "Unified BrowserOS server - main application",
+  "version": "0.0.30",
+  "description": "BrowserOS server",
   "type": "module",
   "main": "./src/index.ts",
   "bin": {
