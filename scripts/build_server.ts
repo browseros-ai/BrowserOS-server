@@ -151,9 +151,37 @@ function runCommand(
   })
 }
 
+async function uploadSourceMaps(
+  outfile: string,
+  version: string,
+  envVars: Record<string, string>,
+): Promise<void> {
+  const binaryName = outfile.split('/').pop() ?? ''
+
+  const args = [
+    'sourcemaps',
+    'upload',
+    '--release',
+    version,
+    '--dist',
+    binaryName,
+    `${outfile}.map`,
+  ]
+
+  const uploadEnv: Record<string, string> = {
+    PATH: process.env.PATH ?? '',
+    SENTRY_AUTH_TOKEN: envVars.SENTRY_AUTH_TOKEN,
+    SENTRY_ORG: envVars.SENTRY_ORG,
+    SENTRY_PROJECT: envVars.SENTRY_PROJECT,
+  }
+
+  await runCommand('sentry-cli', args, uploadEnv)
+}
+
 async function buildTarget(
   target: BuildTarget,
   mode: 'prod' | 'dev',
+  version: string,
   envVars: Record<string, string>,
 ): Promise<void> {
   console.log(`\n📦 Building ${target.name}...`)
@@ -186,6 +214,12 @@ async function buildTarget(
         ['scripts/patch-windows-exe.ts', target.outfile],
         process.env,
       )
+    }
+
+    if (mode === 'prod' && envVars.SENTRY_AUTH_TOKEN) {
+      console.log(`📤 Uploading source maps to Sentry...`)
+      await uploadSourceMaps(target.outfile, version, envVars)
+      console.log(`✅ Source maps uploaded for ${target.name}`)
     }
   } catch (error) {
     console.error(`❌ Failed to build ${target.name}:`, error)
@@ -231,7 +265,7 @@ async function main() {
 
   for (const targetKey of targets) {
     const target = TARGETS[targetKey]
-    await buildTarget(target, mode, envVars)
+    await buildTarget(target, mode, version, envVars)
   }
 
   console.log(`\n✨ All builds completed successfully!`)
