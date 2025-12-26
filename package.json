@@ -27,7 +27,7 @@
     "docs": "npm run docs:generate && npm run format",
     "docs:generate": "node --experimental-strip-types scripts/generate-docs.ts",
     "clean": "rimraf dist",
-    "version:server": "cd apps/server && npm version"
+    "version:server": "cd apps/server && npm version --no-git-tag-version"
   },
   "repository": "browseros-ai/BrowserOS-server",
   "author": "BrowserOS",
