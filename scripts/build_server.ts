@@ -21,7 +21,7 @@
  */
 
 import { spawn } from 'node:child_process'
-import { mkdirSync, readFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, rmSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 import { parse } from 'dotenv'
@@ -151,10 +151,52 @@ function runCommand(
   })
 }
 
+async function buildSourceMapBundle(
+  buildEnv: NodeJS.ProcessEnv,
+): Promise<void> {
+  const args = [
+    'build',
+    'apps/server/src/index.ts',
+    '--outdir',
+    'dist/server/sourcemaps',
+    '--target=bun',
+    '--minify',
+    '--sourcemap=external',
+    '--env',
+    'inline',
+    '--external=*?binary',
+  ]
+
+  await runCommand('bun', args, buildEnv)
+}
+
+async function uploadSourceMaps(
+  version: string,
+  envVars: Record<string, string>,
+): Promise<void> {
+  const uploadEnv: Record<string, string> = {
+    PATH: process.env.PATH ?? '',
+    SENTRY_AUTH_TOKEN: envVars.SENTRY_AUTH_TOKEN,
+    SENTRY_ORG: envVars.SENTRY_ORG,
+    SENTRY_PROJECT: envVars.SENTRY_PROJECT,
+  }
+
+  await runCommand(
+    'sentry-cli',
+    ['sourcemaps', 'inject', 'dist/server/sourcemaps'],
+    uploadEnv,
+  )
+
+  await runCommand(
+    'sentry-cli',
+    ['sourcemaps', 'upload', '--release', version, 'dist/server/sourcemaps'],
+    uploadEnv,
+  )
+}
+
 async function buildTarget(
   target: BuildTarget,
-  mode: 'prod' | 'dev',
-  envVars: Record<string, string>,
+  buildEnv: NodeJS.ProcessEnv,
 ): Promise<void> {
   console.log(`\n📦 Building ${target.name}...`)
 
@@ -171,9 +213,6 @@ async function buildTarget(
     'inline',
     '--external=*?binary',
   ]
-
-  const buildEnv =
-    mode === 'prod' ? createCleanEnv(envVars) : { ...process.env, ...envVars }
 
   try {
     await runCommand('bun', args, buildEnv)
@@ -229,9 +268,30 @@ async function main() {
 
   mkdirSync('dist/server', { recursive: true })
 
+  const buildEnv =
+    mode === 'prod' ? createCleanEnv(envVars) : { ...process.env, ...envVars }
+
+  const shouldUploadSourceMaps = mode === 'prod' && envVars.SENTRY_AUTH_TOKEN
+
+  if (shouldUploadSourceMaps) {
+    console.log(`\n🗺️  Building source map bundle...`)
+    await buildSourceMapBundle(buildEnv)
+    console.log(`✅ Source map bundle created`)
+  }
+
   for (const targetKey of targets) {
     const target = TARGETS[targetKey]
-    await buildTarget(target, mode, envVars)
+    await buildTarget(target, buildEnv)
+  }
+
+  if (shouldUploadSourceMaps) {
+    console.log(
+      `\n📤 Injecting debug IDs and uploading source maps to Sentry...`,
+    )
+    await uploadSourceMaps(version, envVars)
+    console.log(`✅ Source maps injected and uploaded`)
+
+    rmSync('dist/server/sourcemaps', { recursive: true, force: true })
   }
 
   console.log(`\n✨ All builds completed successfully!`)

@@ -27,7 +27,7 @@
     "docs": "npm run docs:generate && npm run format",
     "docs:generate": "node --experimental-strip-types scripts/generate-docs.ts",
     "clean": "rimraf dist",
-    "version:server": "cd apps/server && npm version"
+    "version:server": "cd apps/server && npm version --no-git-tag-version"
   },
   "repository": "browseros-ai/BrowserOS-server",
   "author": "BrowserOS",
@@ -38,6 +38,7 @@
   "homepage": "https://github.com/browseros-ai/BrowserOS#readme",
   "devDependencies": {
     "@biomejs/biome": "2.3.10",
+    "@sentry/cli": "^2.42.2",
     "@types/node": "^24.3.3",
     "dotenv": "^17.2.3",
     "globals": "^16.4.0",
