@@ -35,7 +35,7 @@
     "hono": "^4.6.0",
     "@hono/mcp": "^0.2.2",
     "posthog-node": "^4.17.0",
-    "puppeteer-core": "24.23.0",
+    "puppeteer-core": "24.34.0",
     "ws": "^8.18.0",
     "zod": "^3.24.2",
     "pino": "^9.6.0"
@@ -46,7 +46,7 @@
     "@types/debug": "^4.1.12",
     "@types/node": "^24.3.3",
     "@types/ws": "^8.5.13",
-    "puppeteer": "24.23.0",
+    "puppeteer": "24.34.0",
     "typescript": "^5.9.2"
   },
   "optionalDependencies": {
