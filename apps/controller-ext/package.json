@@ -26,8 +26,8 @@
   },
   "devDependencies": {
     "@types/chrome": "^0.1.24",
-    "@types/node": "^24.7.1",
-    "copy-webpack-plugin": "^12.0.2",
+    "@types/node": "^25.0.3",
+    "copy-webpack-plugin": "^13.0.1",
     "terser-webpack-plugin": "^5.3.11",
     "ts-loader": "^9.5.4",
     "typescript": "^5.9.3",
