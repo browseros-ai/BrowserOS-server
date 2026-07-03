@@ -1,7 +1,7 @@
 ---
 name: dev6-review-fix
 description: Apply fixes for review comments from dev5-review and commit. Sub-skill of the /dev workflow.
-argument-hint: [feature_name]
+argument-hint: "[feature_name]"
 ---
 
 # Dev Workflow — Step 6: Fix Review Comments

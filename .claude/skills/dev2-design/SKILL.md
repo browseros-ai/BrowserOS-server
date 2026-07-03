@@ -1,7 +1,7 @@
 ---
 name: dev2-design
 description: Generate high-level design options for a feature. Presents 2-4 design alternatives with pros and cons. Sub-skill of the /dev workflow.
-argument-hint: [feature_name]
+argument-hint: "[feature_name]"
 ---
 
 # Dev Workflow — Step 2: Design Options

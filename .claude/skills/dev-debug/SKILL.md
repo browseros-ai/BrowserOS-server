@@ -2,7 +2,7 @@
 name: dev-debug
 description: Debug an issue by identifying root causes, fixing the most probable one, testing, and committing. Use with "/dev-debug <description of the issue>".
 disable-model-invocation: true
-argument-hint: [issue description]
+argument-hint: "[issue description]"
 ---
 
 # Debug Workflow

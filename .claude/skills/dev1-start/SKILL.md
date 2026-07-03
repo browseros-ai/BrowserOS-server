@@ -1,7 +1,7 @@
 ---
 name: dev1-start
 description: Start a new feature development. Does a high-level exploration of the codebase to understand the stack and project layout, then kicks off the design phase. Sub-skill of the /dev workflow.
-argument-hint: [feature description]
+argument-hint: "[feature description]"
 ---
 
 # Dev Workflow — Step 1: Start & Explore

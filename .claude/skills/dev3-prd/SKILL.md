@@ -1,7 +1,7 @@
 ---
 name: dev3-prd
 description: Generate questions, clarify unknowns, then write a PRD using pyramid principles. Sub-skill of the /dev workflow.
-argument-hint: [feature_name]
+argument-hint: "[feature_name]"
 ---
 
 # Dev Workflow — Step 3: Questions & PRD

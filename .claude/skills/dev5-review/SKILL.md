@@ -1,7 +1,7 @@
 ---
 name: dev5-review
 description: Review implemented code for quality, correctness, and style. Produces review comments and creates a commit. Sub-skill of the /dev workflow.
-argument-hint: [feature_name]
+argument-hint: "[feature_name]"
 ---
 
 # Dev Workflow — Step 5: Code Review

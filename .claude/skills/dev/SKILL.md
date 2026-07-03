@@ -2,7 +2,7 @@
 name: dev
 description: Full feature development workflow. Explores codebase, designs, writes PRD, implements, reviews, fixes, and creates PR. Use with "/dev <feature description>".
 disable-model-invocation: true
-argument-hint: [feature description]
+argument-hint: "[feature description]"
 ---
 
 # Dev Workflow — Orchestrator
