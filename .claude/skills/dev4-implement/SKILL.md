@@ -1,7 +1,7 @@
 ---
 name: dev4-implement
 description: Implement a feature from its PRD. Creates a work tree if needed, writes clean code following Google-level standards, and tests iteratively. Sub-skill of the /dev workflow.
-argument-hint: [feature_name]
+argument-hint: "[feature_name]"
 ---
 
 # Dev Workflow — Step 4: Implement

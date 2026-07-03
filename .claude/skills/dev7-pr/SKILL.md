@@ -1,7 +1,7 @@
 ---
 name: dev7-pr
 description: Create a PR, push to GitHub, wait for Greptile review, address comments, and push final. Sub-skill of the /dev workflow.
-argument-hint: [feature_name]
+argument-hint: "[feature_name]"
 ---
 
 # Dev Workflow — Step 7: PR & External Review
